@@ -10,23 +10,90 @@
   var esc = global.Interactions.esc;
   var asset = global.Interactions.asset;
 
-  // Markdown muy ligero: **negrita**, *cursiva*, listas con "- ", saltos de línea.
+  // Markdown ligero y SEGURO -> HTML. Soporta:
+  //   ## / ### encabezados, **negrita**, *cursiva*, [texto](url),
+  //   listas con "- ", listas numeradas con "1. ",
+  //   bloques destacados:  ::: tip|warn|important|info ... :::
+  // Todo el texto pasa por inline()/rich() que escapa antes de aplicar formato.
+  // Colores alineados con la paleta corporativa de teleformación:
+  //   #6DC3C0 turquesa · #F4C910 naranja · #F4D6D2 rosa · #7787BF violeta.
+  var CALLOUTS = {
+    tip:       { cls: 'me-callout-tip',       icon: '💡', label: 'Consejo' },
+    info:      { cls: 'me-callout-info',      icon: 'ℹ️', label: 'Información' },
+    warn:      { cls: 'me-callout-warn',      icon: '⚠️', label: 'Atención' },
+    important: { cls: 'me-callout-important', icon: '📌', label: 'Importante' },
+    fact:      { cls: 'me-callout-fact',      icon: '🧠', label: '¿Sabías que…?' },
+    reflect:   { cls: 'me-callout-reflect',   icon: '💭', label: 'Reflexiona' },
+    case:      { cls: 'me-callout-case',      icon: '🧪', label: 'Caso práctico' }
+  };
+  function renderCallout(type, innerHtml) {
+    var c = CALLOUTS[type] || CALLOUTS.info;
+    return '<aside class="me-callout ' + c.cls + '" role="note">' +
+      '<p class="me-callout-title"><span class="me-callout-ico" aria-hidden="true">' + c.icon +
+      '</span>' + c.label + '</p>' +
+      '<div class="me-callout-body">' + innerHtml + '</div></aside>';
+  }
+  // Bloque personalizado: "::: custom | #color | icono | título". El color se
+  // valida (solo hex) para evitar inyección en el atributo style; icono y título
+  // se escapan como el resto del texto.
+  function renderCustomCallout(params, innerHtml) {
+    var parts = String(params).split('|');
+    var color = (parts[0] || '').trim();
+    var icon = (parts[1] || '').trim();
+    var title = (parts[2] || '').trim();
+    var safe = /^#[0-9a-fA-F]{3,8}$/.test(color) ? color : '#7787BF';
+    var style = 'border-left-color:' + safe + ';background:color-mix(in srgb,' + safe + ' 18%,white);';
+    return '<aside class="me-callout me-callout-custom" role="note" style="' + style + '">' +
+      '<p class="me-callout-title">' +
+      (icon ? '<span class="me-callout-ico" aria-hidden="true">' + esc(icon) + '</span>' : '') +
+      esc(title) + '</p>' +
+      '<div class="me-callout-body">' + innerHtml + '</div></aside>';
+  }
+
   function mdToHtml(text) {
     if (!text) return '';
-    var lines = String(text).split(/\r?\n/);
-    var html = '', inList = false;
-    lines.forEach(function (ln) {
-      var li = /^\s*-\s+(.*)/.exec(ln);
-      if (li) {
-        if (!inList) { html += '<ul>'; inList = true; }
-        html += '<li>' + inline(li[1]) + '</li>';
-      } else {
-        if (inList) { html += '</ul>'; inList = false; }
-        if (ln.trim() === '') html += '';
-        else html += '<p>' + inline(ln) + '</p>';
+    return blocksToHtml(String(text).split(/\r?\n/));
+  }
+  function blocksToHtml(lines) {
+    var html = '', inUl = false, inOl = false, i;
+    function closeLists() {
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (inOl) { html += '</ol>'; inOl = false; }
+    }
+    for (i = 0; i < lines.length; i++) {
+      var ln = lines[i];
+      // Apertura de bloque destacado: "::: tipo" o "::: custom | #color | icono | título".
+      var open = /^\s*:::\s*([A-Za-z]+)\s*(.*)$/.exec(ln);
+      if (open) {
+        closeLists();
+        var type = open[1].toLowerCase();
+        var rest = open[2] || '';
+        var inner = [];
+        for (i++; i < lines.length && !/^\s*:::\s*$/.test(lines[i]); i++) inner.push(lines[i]);
+        var innerHtml = blocksToHtml(inner);
+        html += type === 'custom' ? renderCustomCallout(rest, innerHtml) : renderCallout(type, innerHtml);
+        continue;
       }
-    });
-    if (inList) html += '</ul>';
+      var h = /^(#{2,3})\s+(.*)$/.exec(ln); // ## y ### (h1 es el título)
+      if (h) { closeLists(); var lv = h[1].length; html += '<h' + lv + '>' + inline(h[2]) + '</h' + lv + '>'; continue; }
+      var oli = /^\s*\d+\.\s+(.*)/.exec(ln);
+      if (oli) {
+        if (inUl) { html += '</ul>'; inUl = false; }
+        if (!inOl) { html += '<ol>'; inOl = true; }
+        html += '<li>' + inline(oli[1]) + '</li>';
+        continue;
+      }
+      var uli = /^\s*-\s+(.*)/.exec(ln);
+      if (uli) {
+        if (inOl) { html += '</ol>'; inOl = false; }
+        if (!inUl) { html += '<ul>'; inUl = true; }
+        html += '<li>' + inline(uli[1]) + '</li>';
+        continue;
+      }
+      closeLists();
+      if (ln.trim() !== '') html += '<p>' + inline(ln) + '</p>';
+    }
+    closeLists();
     return html;
   }
   function inline(s) {

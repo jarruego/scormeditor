@@ -1,61 +1,64 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { downloadScorm } from '../export/exportScorm'
 import { validateCourse } from '../validation/validators'
 import {
   isFsSupported,
-  linkSaveFile,
-  linkSaveFolder,
-  openProjectFile,
-  openProjectFolder,
-  reconnectFile,
+  openProject,
+  openProjectFromFile,
+  saveProject,
+  saveProjectAs,
 } from '../store/autosave'
 
 const DISCARD_MSG =
-  'Esto reemplazará el curso que tienes abierto. Si hay un destino vinculado, el autoguardado lo sobrescribirá. ¿Continuar?'
+  'Esto reemplazará el curso que tienes abierto. Los cambios que no hayas guardado en el archivo de proyecto se perderán. ¿Continuar?'
 function confirmDiscard() {
   return window.confirm(DISCARD_MSG)
-}
-
-const SAVE_LABEL: Record<string, string> = {
-  idle: '',
-  saving: '○ Guardando…',
-  saved: '● Guardado',
-  error: '⚠ Error al guardar',
 }
 
 export function Toolbar() {
   const course = useCourseStore((s) => s.course)
   const assets = useCourseStore((s) => s.assets)
-  const importJson = useCourseStore((s) => s.importJson)
-  const exportJson = useCourseStore((s) => s.exportJson)
   const resetSample = useCourseStore((s) => s.resetSample)
   const importError = useCourseStore((s) => s.importError)
-  const saveState = useCourseStore((s) => s.saveState)
   const linkedFileName = useCourseStore((s) => s.linkedFileName)
-  const linkedNeedsPermission = useCourseStore((s) => s.linkedNeedsPermission)
-  const linkedIsFolder = useCourseStore((s) => s.linkedIsFolder)
+  const projectDirty = useCourseStore((s) => s.projectDirty)
+  const undo = useCourseStore((s) => s.undo)
+  const redo = useCourseStore((s) => s.redo)
+  const canUndo = useCourseStore((s) => s.past.length > 0)
+  const canRedo = useCourseStore((s) => s.future.length > 0)
+  const setActiveTab = useCourseStore((s) => s.setActiveTab)
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const fsOk = isFsSupported()
 
+  // Cierra el menú al hacer clic fuera o pulsar Escape.
+  useEffect(() => {
+    if (!menuOpen) return
+    function onDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
+
   const val = validateCourse(course)
+  const isSaved = !!linkedFileName && !projectDirty
 
-  function onImport(e: React.ChangeEvent<HTMLInputElement>) {
+  function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file) return
-    file.text().then((t) => importJson(t))
     e.target.value = ''
-  }
-
-  function onExportJson() {
-    const blob = new Blob([exportJson()], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${course.course.id || 'course'}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    if (!file) return
+    if (confirmDiscard()) void openProjectFromFile(file)
   }
 
   async function onExportScorm() {
@@ -67,14 +70,17 @@ export function Toolbar() {
     }
   }
 
+  // Ejecuta la acción de un ítem del menú y lo cierra.
+  function runMenu(action: () => void) {
+    setMenuOpen(false)
+    action()
+  }
+
   function onNewDemo() {
     if (confirmDiscard()) resetSample()
   }
-  function onOpenFile() {
-    if (confirmDiscard()) openProjectFile()
-  }
-  function onOpenFolder() {
-    if (confirmDiscard()) openProjectFolder()
+  function onOpen() {
+    if (confirmDiscard()) void openProject()
   }
 
   return (
@@ -82,43 +88,62 @@ export function Toolbar() {
       <strong className="ed-logo">SCORMEditor</strong>
       <span className="ed-course-name">{course.course.title || 'Curso sin título'}</span>
 
-      {/* Estado de autoguardado */}
-      <span className={`ed-save ed-save-${saveState}`} title="Autoguardado en el navegador (IndexedDB)">
-        {SAVE_LABEL[saveState]}
-      </span>
-      {linkedFileName && !linkedNeedsPermission && (
-        <span className="ed-linked" title="Autoguardado también en este destino del disco">
-          {linkedIsFolder ? '📁' : '📄'} {linkedFileName}
-        </span>
-      )}
-      {linkedNeedsPermission && (
-        <button className="ed-warnbtn" onClick={reconnectFile} title="Volver a dar permiso al destino">
-          🔒 Reconectar {linkedFileName}
-        </button>
-      )}
+      {/* Estado del documento: un único concepto de guardado = el archivo. */}
+      <button
+        className={`ed-docstate ${isSaved ? 'is-saved' : 'is-dirty'}`}
+        onClick={() => void saveProject()}
+        title={
+          isSaved
+            ? `Proyecto guardado en ${linkedFileName}. Ctrl+S para volver a guardar.`
+            : 'Cambios sin guardar. Pulsa para guardar el proyecto (Ctrl+S). Tus cambios se conservan automáticamente por si cierras sin guardar.'
+        }
+      >
+        {isSaved ? `✓ Guardado · ${linkedFileName}` : `● Sin guardar${linkedFileName ? ` · ${linkedFileName}` : ''}`}
+      </button>
 
       <div className="ed-toolbar-actions">
-        {fsOk ? (
-          <>
-            <button onClick={onOpenFile}>Abrir archivo…</button>
-            <button onClick={onOpenFolder}>Abrir carpeta…</button>
-            <button onClick={linkSaveFile}>Guardar en archivo…</button>
-            <button onClick={linkSaveFolder} title="Proyecto portable: course.json + assets/">Guardar en carpeta…</button>
-          </>
-        ) : (
-          <>
-            <input ref={fileRef} type="file" accept="application/json" hidden onChange={onImport} />
-            <button onClick={() => fileRef.current?.click()}>Importar JSON</button>
-            <button onClick={onExportJson}>Exportar JSON</button>
-          </>
-        )}
-        <button onClick={onNewDemo}>Nuevo (demo)</button>
-        <button className="ed-primary" disabled={busy} onClick={onExportScorm}>
-          {busy ? 'Generando…' : 'Exportar SCORM ZIP'}
-        </button>
-        <span className={`ed-status ${val.ok ? 'ok' : 'err'}`} title="Errores / Avisos">
+        <button onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)" aria-label="Deshacer">↶ Deshacer</button>
+        <button onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Mayús+Z)" aria-label="Rehacer">↷ Rehacer</button>
+
+        <input ref={fileRef} type="file" accept=".scormproj,application/zip" hidden onChange={onImportFile} />
+        <div className="ed-menu" ref={menuRef}>
+          <button
+            className="ed-menu-trigger"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            {busy ? 'Generando…' : 'Archivo ▾'}
+          </button>
+          {menuOpen && (
+            <div className="ed-menu-list" role="menu">
+              <button role="menuitem" onClick={() => runMenu(fsOk ? onOpen : () => fileRef.current?.click())} title="Abrir un proyecto .scormproj">
+                Abrir proyecto…
+              </button>
+              <button role="menuitem" onClick={() => runMenu(() => void saveProject())} title="Guardar el proyecto (Ctrl+S)">
+                Guardar{linkedFileName ? '' : ' proyecto…'}
+              </button>
+              {fsOk && (
+                <button role="menuitem" onClick={() => runMenu(() => void saveProjectAs())} title="Guardar una copia en un archivo nuevo">
+                  Guardar como…
+                </button>
+              )}
+              <hr className="ed-menu-sep" />
+              <button role="menuitem" onClick={() => runMenu(onNewDemo)}>Nuevo (demo)</button>
+              <button role="menuitem" className="ed-menu-primary" disabled={busy} onClick={() => runMenu(onExportScorm)}>
+                {busy ? 'Generando…' : 'Exportar SCORM ZIP'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <button
+          className={`ed-status ${val.ok ? 'ok' : 'err'}`}
+          onClick={() => setActiveTab('validation')}
+          title="Ver pantalla de validación"
+        >
           {val.errors} ⛔ · {val.warnings} ⚠
-        </span>
+        </button>
       </div>
 
       {importError && <div className="ed-import-error">⛔ {importError}</div>}

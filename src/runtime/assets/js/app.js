@@ -69,6 +69,12 @@
       var loc = parseInt(SCORM.getLocation(), 10);
       if (!isNaN(loc) && loc >= 0 && loc < SCREENS.length) current = loc;
     }
+    // En modo autor (Vista estudiante) arranca en la diapositiva activa del editor.
+    if (AUTHOR && global.__START_SCREEN_ID__) {
+      for (var si = 0; si < SCREENS.length; si++) {
+        if (SCREENS[si].screen && SCREENS[si].screen.id === global.__START_SCREEN_ID__) { current = si; break; }
+      }
+    }
     if (SCORM.getStatus() === 'not attempted') SCORM.setStatus('incomplete');
     // En móvil el menú lateral arranca cerrado para no tapar el contenido.
     if (isMobile()) {
@@ -210,6 +216,11 @@
     current = idx;
     screenEnter = Date.now();
     var entry = SCREENS[idx];
+    // En modo autor avisa al editor de la pantalla actual, para que al volver a
+    // la pestaña «Editar» se sitúe en la misma diapositiva (test final excluido).
+    if (AUTHOR && entry.screen && !entry.isFinalTest && global.parent && global.parent !== global) {
+      try { global.parent.postMessage({ type: 'me-screen-change', screenId: entry.screen.id }, '*'); } catch (e) {}
+    }
     var content = document.getElementById('me-content');
 
     if (entry.isFinalTest) {

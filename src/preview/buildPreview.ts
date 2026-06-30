@@ -11,7 +11,7 @@ import { getRuntimeFiles } from '../scorm/runtimeAssets'
  * (mapa rutaRelativa -> blob:), de modo que imágenes, vídeo, audio de locución y
  * subtítulos se reproducen también en la previsualización.
  */
-export function buildPreviewHtml(course: Course, assetUrls: Record<string, string> = {}): string {
+export function buildPreviewHtml(course: Course, assetUrls: Record<string, string> = {}, startScreenId?: string): string {
   const files = getRuntimeFiles()
   const get = (p: string) => files.find((f) => f.path === p)?.content ?? ''
 
@@ -35,12 +35,13 @@ export function buildPreviewHtml(course: Course, assetUrls: Record<string, strin
 
   const data = JSON.stringify(course).replace(/<\/script>/gi, '<\\/script>')
   const assetsJson = JSON.stringify(assetUrls).replace(/<\/script>/gi, '<\\/script>')
+  const startJson = JSON.stringify(startScreenId || null)
 
   return `<!doctype html><html lang="${course.shell.language || 'es'}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>${css}</style></head>
 <body>${body}
-<script>window.__COURSE_DATA__ = ${data}; window.__AUTHOR_MODE__ = true; window.__ASSETS__ = ${assetsJson};</script>
+<script>window.__COURSE_DATA__ = ${data}; window.__AUTHOR_MODE__ = true; window.__ASSETS__ = ${assetsJson}; window.__START_SCREEN_ID__ = ${startJson};</script>
 <script>${js}</script>
 </body></html>`
 }

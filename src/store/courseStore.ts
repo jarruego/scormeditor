@@ -20,7 +20,10 @@ function blankScreen(type: ScreenType = 'content'): Screen {
 
 interface Located { mi: number; ui: number; si: number }
 
-export type SaveState = 'idle' | 'saving' | 'saved' | 'error'
+export type Tab = 'editor' | 'preview' | 'validation' | 'report'
+
+/** Instantánea para el historial de deshacer/rehacer. */
+type CourseSnapshot = { course: Course; selectedScreenId: string | null }
 
 interface CourseState {
   course: Course
@@ -28,19 +31,20 @@ interface CourseState {
   selectedScreenId: string | null
   importError: string | null
 
+  // Pestaña activa de la interfaz
+  activeTab: Tab
+  setActiveTab: (tab: Tab) => void
+
   // Persistencia / autoguardado
-  saveState: SaveState
-  linkedFileName: string | null
-  linkedNeedsPermission: boolean
-  linkedIsFolder: boolean
-  setSaveState: (s: SaveState) => void
-  setLinked: (name: string | null, needsPermission?: boolean, isFolder?: boolean) => void
+  linkedFileName: string | null // archivo de proyecto vinculado, si lo hay
+  projectDirty: boolean // cambios sin guardar en el archivo de proyecto
+  setProjectDirty: (dirty: boolean) => void
+  setLinked: (name: string | null) => void
   hydrate: (course: Course, assets: AssetMap) => void
   replaceAssets: (assets: AssetMap) => void
 
   setCourse: (c: Course) => void
   importJson: (text: string) => boolean
-  exportJson: () => string
   resetSample: () => void
 
   selectScreen: (id: string | null) => void
@@ -55,26 +59,70 @@ interface CourseState {
   moveScreen: (id: string, toUnitId: string, toIndex: number) => void
 
   addAsset: (path: string, blob: Blob) => void
+
+  // Historial de cambios (deshacer / rehacer)
+  past: CourseSnapshot[]
+  future: CourseSnapshot[]
+  undo: () => void
+  redo: () => void
 }
 
-export const useCourseStore = create<CourseState>((set, get) => ({
+export const useCourseStore = create<CourseState>((set, get) => {
+  // ---- Historial (deshacer / rehacer) -----------------------------------
+  const COALESCE_MS = 400 // ediciones de texto seguidas dentro de esta ventana = 1 paso
+  const MAX_HISTORY = 50
+  let lastKey: string | null = null
+  let lastTime = 0
+
+  // Apila el estado ACTUAL en `past` antes de aplicar una mutación e invalida el
+  // `future` (rehacer). Si la acción se agrupa con la anterior (misma clave y
+  // dentro de la ventana de tiempo) no crea un paso nuevo: así un párrafo entero
+  // tecleado se deshace de una vez en lugar de letra a letra.
+  function snapshot(coalesceKey?: string) {
+    const now = Date.now()
+    const coalesce = !!coalesceKey && coalesceKey === lastKey && now - lastTime < COALESCE_MS
+    lastKey = coalesceKey ?? null
+    lastTime = now
+    if (coalesce) {
+      set({ future: [] })
+      return
+    }
+    const { past, course, selectedScreenId } = get()
+    const entry: CourseSnapshot = { course, selectedScreenId }
+    const next = past.length >= MAX_HISTORY ? [...past.slice(1), entry] : [...past, entry]
+    set({ past: next, future: [] })
+  }
+  function resetCoalesce() {
+    lastKey = null
+    lastTime = 0
+  }
+
+  return {
   course: sampleCourse,
   assets: {},
   selectedScreenId: sampleCourse.modules[0]?.units[0]?.screens[0]?.id ?? null,
   importError: null,
 
-  saveState: 'idle',
+  activeTab: 'editor',
+  setActiveTab: (tab) => set({ activeTab: tab }),
+
+  past: [],
+  future: [],
+
   linkedFileName: null,
-  linkedNeedsPermission: false,
-  linkedIsFolder: false,
-  setSaveState: (s) => set({ saveState: s }),
-  setLinked: (name, needsPermission = false, isFolder = false) =>
-    set({ linkedFileName: name, linkedNeedsPermission: needsPermission, linkedIsFolder: isFolder }),
-  hydrate: (course, assets) =>
-    set({ course, assets, importError: null, selectedScreenId: course.modules[0]?.units[0]?.screens[0]?.id ?? null }),
+  projectDirty: false,
+  setProjectDirty: (dirty) => set({ projectDirty: dirty }),
+  setLinked: (name) => set({ linkedFileName: name }),
+  hydrate: (course, assets) => {
+    resetCoalesce()
+    set({ course, assets, importError: null, past: [], future: [], selectedScreenId: course.modules[0]?.units[0]?.screens[0]?.id ?? null })
+  },
   replaceAssets: (assets) => set({ assets }),
 
-  setCourse: (c) => set({ course: c }),
+  setCourse: (c) => {
+    resetCoalesce()
+    set({ course: c, past: [], future: [] })
+  },
 
   importJson: (text) => {
     try {
@@ -84,7 +132,8 @@ export const useCourseStore = create<CourseState>((set, get) => ({
         set({ importError: parsed.error.issues.slice(0, 5).map((i) => `${i.path.join('.')}: ${i.message}`).join('\n') })
         return false
       }
-      set({ course: parsed.data, importError: null, selectedScreenId: parsed.data.modules[0]?.units[0]?.screens[0]?.id ?? null })
+      resetCoalesce()
+      set({ course: parsed.data, importError: null, past: [], future: [], selectedScreenId: parsed.data.modules[0]?.units[0]?.screens[0]?.id ?? null })
       return true
     } catch (e) {
       set({ importError: `JSON inválido: ${(e as Error).message}` })
@@ -92,9 +141,10 @@ export const useCourseStore = create<CourseState>((set, get) => ({
     }
   },
 
-  exportJson: () => JSON.stringify(get().course, null, 2),
-
-  resetSample: () => set({ course: sampleCourse, importError: null, selectedScreenId: sampleCourse.modules[0]?.units[0]?.screens[0]?.id ?? null }),
+  resetSample: () => {
+    resetCoalesce()
+    set({ course: sampleCourse, importError: null, past: [], future: [], selectedScreenId: sampleCourse.modules[0]?.units[0]?.screens[0]?.id ?? null })
+  },
 
   selectScreen: (id) => set({ selectedScreenId: id }),
 
@@ -117,6 +167,7 @@ export const useCourseStore = create<CourseState>((set, get) => ({
   updateScreen: (id, patch) => {
     const loc = get().locate(id)
     if (!loc) return
+    snapshot(`update:${id}`)
     const course = clone(get().course)
     const cur = course.modules[loc.mi].units[loc.ui].screens[loc.si]
     course.modules[loc.mi].units[loc.ui].screens[loc.si] = { ...cur, ...patch }
@@ -128,6 +179,7 @@ export const useCourseStore = create<CourseState>((set, get) => ({
   },
 
   addScreen: (unitId, afterId) => {
+    snapshot()
     const course = clone(get().course)
     outer: for (const m of course.modules)
       for (const u of m.units)
@@ -143,6 +195,7 @@ export const useCourseStore = create<CourseState>((set, get) => ({
   duplicateScreen: (id) => {
     const loc = get().locate(id)
     if (!loc) return
+    snapshot()
     const course = clone(get().course)
     const screens = course.modules[loc.mi].units[loc.ui].screens
     const copy: Screen = { ...clone(screens[loc.si]), id: newId('s'), title: screens[loc.si].title + ' (copia)' }
@@ -154,6 +207,7 @@ export const useCourseStore = create<CourseState>((set, get) => ({
   deleteScreen: (id) => {
     const loc = get().locate(id)
     if (!loc) return
+    snapshot()
     const course = clone(get().course)
     course.modules[loc.mi].units[loc.ui].screens.splice(loc.si, 1)
     set({ course, selectedScreenId: get().selectedScreenId === id ? null : get().selectedScreenId })
@@ -162,6 +216,7 @@ export const useCourseStore = create<CourseState>((set, get) => ({
   moveScreen: (id, toUnitId, toIndex) => {
     const loc = get().locate(id)
     if (!loc) return
+    snapshot()
     const course = clone(get().course)
     const [moved] = course.modules[loc.mi].units[loc.ui].screens.splice(loc.si, 1)
     outer: for (const m of course.modules)
@@ -175,4 +230,31 @@ export const useCourseStore = create<CourseState>((set, get) => ({
   },
 
   addAsset: (path, blob) => set({ assets: { ...get().assets, [path]: blob } }),
-}))
+
+  undo: () => {
+    const { past, future, course, selectedScreenId } = get()
+    if (past.length === 0) return
+    const previous = past[past.length - 1]
+    set({
+      course: previous.course,
+      selectedScreenId: previous.selectedScreenId,
+      past: past.slice(0, -1),
+      future: [{ course, selectedScreenId }, ...future],
+    })
+    resetCoalesce()
+  },
+
+  redo: () => {
+    const { past, future, course, selectedScreenId } = get()
+    if (future.length === 0) return
+    const nextState = future[0]
+    set({
+      course: nextState.course,
+      selectedScreenId: nextState.selectedScreenId,
+      past: [...past, { course, selectedScreenId }],
+      future: future.slice(1),
+    })
+    resetCoalesce()
+  },
+  }
+})

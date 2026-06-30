@@ -119,7 +119,7 @@ Reglas que NO se pueden romper:
   "type": "content",
   "title": "Definición del Plan de Apoyos Integrado",
   "objective": "Definir el Plan de Apoyos Integrado.",
-  "student_text": "Texto para el estudiante. Admite markdown ligero:\n- viñetas con guion\n- **negrita** y *cursiva*.",
+  "student_text": "## Encabezado\nTexto para el estudiante. Admite markdown ligero:\n- viñetas con guion\n1. lista numerada\n- **negrita**, *cursiva* y [enlace](https://ejemplo.com)\n\n::: tip\nBloque destacado (tip | warn | important | info | fact | reflect | case).\n:::\n\n::: custom | #6DC3C0 | 🎯 | Título a medida\nBloque personalizado: color (hex), icono y título a elegir.\n:::",
   "source_refs": [
     { "doc": "Curso PAI T.1-4.pdf", "locator": "p.8", "transform": "resumen" }
   ],

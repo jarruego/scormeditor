@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
-import { initAutoSave } from './store/autosave'
+import { useEffect } from 'react'
+import { initAutoSave, saveProject } from './store/autosave'
+import { useCourseStore } from './store/courseStore'
+import type { Tab } from './store/courseStore'
 import { Toolbar } from './components/Toolbar'
 import { CourseTree } from './components/CourseTree'
 import { ScreenEditor } from './components/ScreenEditor'
@@ -7,13 +9,32 @@ import { ValidationPanel } from './components/ValidationPanel'
 import { StudentPreview } from './components/StudentPreview'
 import { ReportPanel } from './components/ReportPanel'
 
-type Tab = 'editor' | 'preview' | 'validation' | 'report'
-
 export function App() {
-  const [tab, setTab] = useState<Tab>('editor')
+  const tab = useCourseStore((s) => s.activeTab)
+  const setTab = useCourseStore((s) => s.setActiveTab)
 
   useEffect(() => {
     initAutoSave()
+  }, [])
+
+  // Atajos globales: Ctrl/Cmd+Z deshacer, Ctrl/Cmd+Shift+Z o Ctrl+Y rehacer.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return
+      const key = e.key.toLowerCase()
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        useCourseStore.getState().undo()
+      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault()
+        useCourseStore.getState().redo()
+      } else if (key === 's') {
+        e.preventDefault()
+        void saveProject()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   return (

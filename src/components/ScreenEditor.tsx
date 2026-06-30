@@ -78,7 +78,7 @@ export function ScreenEditor() {
       </label>
 
       <label className="ed-field">
-        <span>Texto del estudiante (texto enriquecido: negrita, cursiva, enlaces)</span>
+        <span>Texto del estudiante (texto enriquecido: encabezados, negrita, cursiva, enlaces, listas y destacados)</span>
         <RichTextArea value={screen.student_text} onChange={(v) => patch({ student_text: v })} />
       </label>
 
