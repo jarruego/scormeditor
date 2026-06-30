@@ -201,6 +201,35 @@ La app se llamaba MecoSCORM. Se renombró **todo** a SCORMEditor: carpeta del re
 (`SCORMEDITOR-COURSE`), `brand`, diálogos de guardado, docs y la base IndexedDB
 (`DB_NAME = 'scormeditor'`). No deben quedar referencias a «mecoscorm» en el código.
 
+## Ingesta: el GPT generador y los ficheros de conocimiento (`docs/`)
+El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGPT**
+(diseñador instruccional) a partir de un PDF/Word, y SCORMEditor lo abre. Ese GPT es
+la «fuente» del documento, así que su contrato de salida y el formato que abre el
+editor **deben ir sincronizados**.
+
+- **Salida del GPT = `.scormproj`** (no un `course.json` suelto). Decidido jun 2026:
+  antes «escupía» un JSON; ahora, con Code Interpreter, empaqueta el mismo
+  `course.json` + las imágenes extraídas del PDF en el ZIP `.scormproj` que abre el
+  editor. Fallback (sin Code Interpreter): solo `course.json` en texto.
+- **Invariante de ingesta (la que importa al mantener el formato):** las claves de
+  las entradas `assets/…` del ZIP que produce el GPT deben **coincidir literalmente**
+  con las rutas que el `course.json` referencia (`visual_resource.src`,
+  `hotspots.image`, `tracks[].src`, `audio_src`). Es el mismo contrato que
+  `loadProjectFromBlob()` espera (ver sección de Persistencia). Si una imagen no
+  existe, el GPT pone `kind:"none"` + nota en `editor_notes`, nunca un `src` roto.
+- **Ficheros de conocimiento del GPT, en `docs/`** (mantenerlos al día si cambia el
+  formato `.scormproj`, el esquema de `course.json` o `autosave.ts`):
+  - `instrucciones-gpt.md`: el system prompt del GPT. **Límite duro 8000 caracteres**
+    (campo Instructions de un GPT); verificar con `wc -m` tras editar.
+  - `contrato-course-json.md`: referencia normativa del `course.json` + **§11
+    Empaquetado `.scormproj`** (incluye el builder Python `build_scormproj` /
+    `extract_pdf_images`). Manda en caso de conflicto.
+  - `ejemplo-course-json.md`: ejemplo dorado (few-shot) de un `course.json` válido.
+  - `guia-diseno-interacciones.md`: criterio pedagógico (troceo, elección de
+    interacción, evaluación, antipatrones).
+- El GPT también lee una copia del contrato en el `Downloads` del usuario; al tocar
+  el de `docs/` hay que recordar que la subida al GPT se hace desde estos ficheros.
+
 ## Convenciones del repo
 - Idioma de UI, comentarios y commits: **español** (con acentos correctos).
 - Sin dependencias nuevas salvo necesidad real (hoy: React, zustand, zod, JSZip,

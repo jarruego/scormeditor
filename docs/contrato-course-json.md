@@ -153,6 +153,42 @@ Reglas que NO se pueden romper:
   `{ "doc": "...", "locator": "p.8" , "quote": "...", "transform": "resumen|reescritura|..." }`
   (solo `doc` es obligatorio).
 
+### 4.1 Markdown ligero y bloques destacados (callouts) en `student_text`
+
+`student_text` se escribe en **texto plano con markdown ligero** (NO HTML). El
+editor SCORMEditor lo renderiza. Sintaxis admitida:
+
+- `## ` y `### ` encabezados (el `#`/H1 se reserva al título de pantalla).
+- `**negrita**`, `*cursiva*`, `[texto](url)` (http(s) o mailto).
+- `- ` listas con viñetas; `1. ` listas numeradas.
+- **Bloques destacados (callouts)**: una línea `::: tipo`, el contenido en las
+  líneas siguientes, y una línea `:::` para cerrar. Usa `\n` en el JSON:
+
+```json
+"student_text": "Texto normal.\n\n::: tip\nEste es un consejo para el alumnado.\n:::\n\nMás texto."
+```
+
+Tipos de callout disponibles (escribe el **keyword**, no el icono ni la etiqueta;
+el editor pone icono y título automáticamente):
+
+| keyword | Resultado en SCORMEditor |
+|---|---|
+| `tip` | 💡 Consejo |
+| `warn` | ⚠️ Atención |
+| `important` | 📌 Importante |
+| `fact` | 🧠 ¿Sabías que…? |
+| `reflect` | 💭 Reflexiona |
+| `case` | 🧪 Caso práctico |
+| `info` | ℹ️ Información |
+
+- **Bloque personalizado** (cuando ninguno encaje):
+  `::: custom | #color | icono | título` … `:::` (color en hex; p. ej.
+  `::: custom | #7787BF | 📖 | Glosario`). Úsalo con moderación.
+- Dentro de un callout vale markdown ligero (viñetas, negrita…). **No** anides un
+  callout dentro de otro.
+- El contenido de un callout va **escapado** por el runtime: escribe texto plano,
+  nunca HTML.
+
 ---
 
 ## 5. `visual_resource`

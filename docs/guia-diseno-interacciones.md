@@ -16,6 +16,30 @@ Ritmo recomendado por tema: portada → objetivos → ruta → 4–8 pantallas d
 (intercalando informativas y evaluables) → casos → resumen → autoevaluación →
 glosario/bibliografía (van en sus arrays raíz, no como pantallas).
 
+## Detectar bloques destacados (callouts) en el documento de origen
+Los documentos suelen traer ya «cajas» o frases con intención de aviso, consejo,
+dato curioso, caso o reflexión. **Reconócelas y vuélcalas como callout** en
+`student_text` (sintaxis `::: tipo … :::`, ver §4.1 del contrato), para que lleguen
+ya formateadas a SCORMEditor en vez de como texto plano. Heurística de mapeo:
+
+| Señal en el origen | Callout |
+|---|---|
+| «Consejo», «Truco», «Recomendación», «Buena práctica» | `tip` |
+| «Atención», «Cuidado», «Aviso», «Importante evitar», «¡Ojo!» | `warn` |
+| «Importante», «Recuerda», «Clave», «No olvides» | `important` |
+| «¿Sabías que…?», «Dato», «Curiosidad» | `fact` |
+| «Reflexiona», «Piensa en…», «Para reflexionar» | `reflect` |
+| «Caso práctico», «Ejemplo», «Situación», «Supuesto» | `case` |
+| Nota informativa general que no encaja arriba | `info` |
+| Una caja recurrente del documento sin equivalente (p. ej. «Glosario», «Normativa») | `custom` con icono/color |
+
+Pautas:
+- No fuerces callouts: un párrafo normal de desarrollo va como texto, no como caja.
+- Si un «Caso práctico» del documento admite una decisión, valora convertirlo en
+  interacción `scenario_decision` en vez de (o además de) un callout `case`.
+- No abuses: 1–2 callouts por pantalla como mucho; si hay más, probablemente toque
+  trocear la pantalla.
+
 ## Elegir la interacción adecuada
 Cada pantalla de desarrollo debería tener su práctica. Criterio rápido:
 
