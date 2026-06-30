@@ -1,0 +1,46 @@
+import type { Course } from '../schema/course.schema'
+import { getRuntimeFiles } from '../scorm/runtimeAssets'
+
+/**
+ * Construye un documento HTML autocontenido (mismos CSS/JS de la carcasa)
+ * con los datos del curso inyectados en window.__COURSE_DATA__.
+ * Se usa como srcdoc del iframe de "Vista estudiante". Sin LMS → SCORM entra
+ * en modo standalone automáticamente.
+ *
+ * Los assets subidos al editor se inyectan como blob URLs en window.__ASSETS__
+ * (mapa rutaRelativa -> blob:), de modo que imágenes, vídeo, audio de locución y
+ * subtítulos se reproducen también en la previsualización.
+ */
+export function buildPreviewHtml(course: Course, assetUrls: Record<string, string> = {}): string {
+  const files = getRuntimeFiles()
+  const get = (p: string) => files.find((f) => f.path === p)?.content ?? ''
+
+  const css = get('assets/css/styles.css')
+  // Orden de carga idéntico al index.html de la carcasa
+  const jsOrder = [
+    'assets/js/scorm_api.js',
+    'assets/js/accessibility.js',
+    'assets/js/interactions.js',
+    'assets/js/renderer.js',
+    'assets/js/app.js',
+  ]
+  const js = jsOrder.map(get).join('\n;\n')
+
+  // Extraemos el <body> de la carcasa para reutilizar el markup exacto
+  const indexHtml = get('index.html')
+  const bodyMatch = /<body>([\s\S]*?)<\/body>/i.exec(indexHtml)
+  let body = bodyMatch ? bodyMatch[1] : ''
+  // Quitamos los <script src> (los inlineamos nosotros)
+  body = body.replace(/<script\s+src=[^>]*><\/script>/gi, '')
+
+  const data = JSON.stringify(course).replace(/<\/script>/gi, '<\\/script>')
+  const assetsJson = JSON.stringify(assetUrls).replace(/<\/script>/gi, '<\\/script>')
+
+  return `<!doctype html><html lang="${course.shell.language || 'es'}"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>${css}</style></head>
+<body>${body}
+<script>window.__COURSE_DATA__ = ${data}; window.__AUTHOR_MODE__ = true; window.__ASSETS__ = ${assetsJson};</script>
+<script>${js}</script>
+</body></html>`
+}

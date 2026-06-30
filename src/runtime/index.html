@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Curso SCORM</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="print/print.css" media="print">
+</head>
+<body>
+  <a class="me-skip" href="#me-content">Saltar al contenido</a>
+  <div id="me-app">
+    <!-- Barra superior -->
+    <header class="me-topbar" role="banner">
+      <button id="me-toggle-menu" class="me-icon-btn" aria-expanded="true" aria-controls="me-menu" title="Mostrar/ocultar menú (Alt+M)">☰</button>
+      <span id="me-brand" class="me-brand">Curso</span>
+      <span id="me-course-title" class="me-course-title"></span>
+      <div class="me-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progreso del curso">
+        <div id="me-progress-bar" class="me-progress-bar"></div>
+      </div>
+      <span id="me-progress-label" class="me-progress-label">0%</span>
+      <button id="me-btn-help" class="me-icon-btn" title="Ayuda">?</button>
+    </header>
+
+    <div class="me-body">
+      <!-- Menú lateral -->
+      <nav id="me-menu" class="me-menu" aria-label="Índice del curso"></nav>
+
+      <!-- Área principal -->
+      <main id="me-content" class="me-content" tabindex="-1" aria-live="polite"></main>
+    </div>
+
+    <!-- Barra de herramientas / navegación -->
+    <footer class="me-toolbar" role="contentinfo">
+      <button id="me-prev" class="me-btn">◂ Anterior</button>
+      <div class="me-tools">
+        <button id="me-btn-transcript" class="me-btn me-ghost" title="Transcripción (Alt+T)">Transcripción</button>
+        <button id="me-btn-glossary" class="me-btn me-ghost">Glosario</button>
+        <button id="me-btn-resources" class="me-btn me-ghost">Recursos</button>
+        <button id="me-btn-print" class="me-btn me-ghost">Imprimir</button>
+      </div>
+      <span id="me-position" class="me-position">0 / 0</span>
+      <button id="me-next" class="me-btn me-primary">Siguiente ▸</button>
+    </footer>
+  </div>
+
+  <!-- Modal genérico -->
+  <div id="me-modal" class="me-modal" role="dialog" aria-modal="true" aria-labelledby="me-modal-title" hidden>
+    <div class="me-modal-card">
+      <div class="me-modal-head">
+        <h2 class="me-modal-title" id="me-modal-title"></h2>
+        <button class="me-modal-close me-icon-btn" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="me-modal-body"></div>
+    </div>
+  </div>
+
+  <script src="assets/js/scorm_api.js"></script>
+  <script src="assets/js/accessibility.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script src="assets/js/renderer.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

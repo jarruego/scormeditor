@@ -1,0 +1,13 @@
+/* print.css — Estilos de impresión de la pantalla actual */
+@media print {
+  .me-topbar, .me-menu, .me-toolbar, .me-skip, .me-modal, .me-lightbox, .me-interaction .me-check { display: none !important; }
+  #me-app { display: block; height: auto; }
+  .me-body { display: block; }
+  .me-content { overflow: visible; padding: 0; }
+  .me-screen { border: none; max-width: 100%; box-shadow: none; }
+  .me-transcript[open], .me-transcript { display: block; }
+  .me-transcript summary { display: none; }
+  body { background: #fff; color: #000; }
+  a[href]::after { content: " (" attr(href) ")"; font-size: .8em; color: #555; }
+  .me-feedback { border: 1px solid #999 !important; }
+}
