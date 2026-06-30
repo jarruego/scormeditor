@@ -5,6 +5,40 @@ Complemento pedagógico de `contrato-course-json.md` (la referencia estructural)
 contenido, qué interacción elegir y cómo evaluar. Ante conflicto, **manda el
 contrato**.
 
+## Regla nº 1: disección sin pérdida de contenido (NO resumir)
+El error más grave y más frecuente es **resumir**: quedarse con la idea general y
+tirar frases, ejemplos, datos, definiciones, matices o ítems de lista. **No se hace
+eso.** El curso debe contener **todo** el contenido del documento; lo que cambia es la
+*presentación* (troceada en pantallas cortas + interacción), no la *cantidad* de
+información.
+
+**Método obligatorio (con Code Interpreter):**
+1. **Extrae el texto** de la unidad del PDF/DOC (no trabajes de memoria ni «de un
+   vistazo»: trabaja sobre el texto real extraído).
+2. **Segméntalo por epígrafes/ideas** en orden. Cada segmento → **una pantalla**.
+3. Para cada pantalla: `transcript` = ese segmento **reescrito para e-learning**
+   (más claro, mejor hilado) **conservando todo**: cada concepto, ejemplo, dato,
+   cifra, definición y elemento de lista del origen. `student_text` = la versión
+   breve y visual de esa misma idea (titulares, viñetas, un callout si procede).
+4. Si un segmento es muy largo o mezcla ideas, **pártelo en más pantallas**; nunca lo
+   comprimas para que «quepa».
+
+**Objetivo cuantitativo de control:** la suma de los `transcript` de un tema debe ser
+**del mismo orden que la prosa de origen de ese tema** (orientativo: ≥ 80 %). Si tu
+salida es mucho más corta que el documento, **estás resumiendo**: añade pantallas. Un
+tema denso puede necesitar 12–20+ pantallas; eso es correcto, no un problema.
+
+**Marca el control** en `quality_checklist`:
+`"Contenido del documento trazado sin pérdidas": true`.
+
+### Evitar el truncado por límite de respuesta (clave)
+Un `course.json` con transcripts completos pesa mucho (cientos de KB). **No lo
+generes tecleándolo entero en el chat**: ahí es donde el modelo comprime para que
+quepa. En su lugar, **constrúyelo en Python por partes** (un `dict` por tema, los vas
+acumulando) y **vuelca el resultado al `.scormproj`** con el builder del contrato
+(§11). Si aun así es enorme, genera la unidad **tema a tema** y combina los `dict`
+antes de empaquetar. El usuario solo recibe el archivo, no el JSON.
+
 ## Principio rector: una idea por pantalla
 Si una pantalla necesita dos párrafos largos de `student_text` o un `transcript` que
 explica dos conceptos distintos, **divídela**. Señales de que hay que trocear:
@@ -12,9 +46,10 @@ explica dos conceptos distintos, **divídela**. Señales de que hay que trocear:
 - Hay más de una pregunta posible sobre la pantalla.
 - El `student_text` supera ~5–6 líneas visibles.
 
-Ritmo recomendado por tema: portada → objetivos → ruta → 4–8 pantallas de desarrollo
-(intercalando informativas y evaluables) → casos → resumen → autoevaluación →
-glosario/bibliografía (van en sus arrays raíz, no como pantallas).
+Ritmo recomendado por tema: portada → objetivos → ruta → **tantas pantallas de
+desarrollo como ideas tenga el tema** (intercalando informativas y evaluables) →
+casos → resumen → autoevaluación → glosario/bibliografía (van en sus arrays raíz, no
+como pantallas). No hay tope: lo manda la cantidad de contenido del documento.
 
 ## Detectar bloques destacados (callouts) en el documento de origen
 Los documentos suelen traer ya «cajas» o frases con intención de aviso, consejo,
