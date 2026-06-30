@@ -18,6 +18,28 @@ npm run build      # build de producción del editor
 npm run typecheck  # verificación de tipos
 ```
 
+## Guardar y abrir proyectos
+
+El editor trabaja con un **archivo de proyecto** `.scormproj`: un ZIP que
+contiene `course.json` + `assets/`. Es el documento real, igual que un `.docx`
+o un `.fig`. El flujo es el estándar de cualquier app de documento:
+
+> editar → **● Sin guardar** → `Ctrl+S` → **✓ Guardado**
+
+- **Menú «Archivo»** de la barra superior: *Abrir proyecto…*, *Guardar*,
+  *Guardar como…*, *Nuevo (demo)* y *Exportar SCORM ZIP*.
+- El **indicador de estado** junto al título es además un botón: pulsarlo guarda.
+- En **Chrome/Edge** (File System Access API) se reescribe el mismo archivo sin
+  volver a preguntar; el permiso, si caduca tras recargar, se vuelve a pedir de
+  forma transparente al guardar. En **Firefox/Safari** abrir usa el selector de
+  archivos y guardar descarga el `.scormproj`.
+- **Recuperación automática**: en paralelo, el trabajo se conserva en IndexedDB
+  por si cierras sin guardar; al reabrir se restaura solo. No es «el guardado»
+  (ese es siempre el `.scormproj`), solo una red de seguridad.
+
+> El `.scormproj` es el **proyecto editable**; *Exportar SCORM ZIP* genera el
+> paquete final para subir al LMS. Son cosas distintas.
+
 ## Arquitectura
 
 Dos mundos **desacoplados**:
@@ -124,8 +146,9 @@ entrada en `migrations.ts`.
 - UI de carga de media (drag&drop a `assets/img|media`, generación de `.vtt`).
 - DnD entre unidades distintas (hoy: reordenación intra-unidad + movimiento por
   acción; el store ya soporta `moveScreen` cross-unit).
-- Persistencia en IndexedDB (autoguardado) y export/import de proyecto completo
-  (course.json + assets).
+- ✅ Persistencia en IndexedDB (recuperación automática) y proyecto completo
+  `.scormproj` (course.json + assets) con abrir/guardar. Ver «Guardar y abrir
+  proyectos».
 - Editores específicos por tipo de interacción (acordeón, tabs, sort, hotspots).
 - Tests de empaquetado SCORM contra Moodle (SCORM Cloud / `scorm-again`).
 

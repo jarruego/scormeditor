@@ -140,14 +140,53 @@ solo habla con ese contrato; no conoce el tipo concreto.
   entrar (`rules` en `course.json`; `mastery_score`/`masteryscore` en el manifiesto).
 - El test final usa el id reservado `__final__` (excluido del postMessage de sync).
 
-## Persistencia y autoguardado (`src/store/persistence.ts`, `autosave.ts`)
-- **Autoguardado por defecto** en IndexedDB (`DB_NAME = 'scormeditor'`, store `kv`):
-  guarda curso + assets (Blobs) vía structured clone. `doSave()` escribe **siempre**
-  en IndexedDB y, si hay destino vinculado, también en disco.
-- **File System Access API** (opcional, solo navegadores compatibles): vincular un
-  **archivo** (`linkSaveFile`) o **carpeta** (`linkSaveFolder`) de destino; los
-  handles se persisten y se re-piden permiso al reabrir. Diálogos rotulados
-  «Curso SCORMEditor (JSON)».
+## Persistencia y modelo de documento (`src/store/persistence.ts`, `autosave.ts`)
+
+### Un único concepto de «guardado»: el archivo de proyecto `.scormproj`
+Decisión de jun 2026 (revertido el modelo anterior de archivo/carpeta JSON +
+varios estados de guardado, que confundía). Ahora hay **un solo documento**: un
+archivo `.scormproj` (constante `PROJECT_EXT`) que es un **ZIP** con
+`course.json` + `assets/` dentro (`buildProjectBlob()`, `compression: 'STORE'`
+para reempaquetar casi instantáneo; los media ya vienen comprimidos). Modelo
+mental tipo `.docx`/`.fig`/`.sb3`: «editar → Sin guardar → Ctrl+S → Guardado».
+- **Abrir** (`openProject` con File System Access; `openProjectFromFile` como
+  fallback): `loadProjectFromBlob()` lee el ZIP, exige `course.json` (si falta,
+  error), llama a `importJson` (parsea+migra+valida) y vuelca el resto de
+  entradas a `AssetMap` por su `entry.name` (las claves ya incluyen `assets/`).
+- **Guardar** (`saveProject` / Ctrl+S / clic en el indicador): construye el blob
+  y, si hay `projectHandle`, reescribe el mismo archivo; si no, abre
+  `showSaveFilePicker` (sugerido `<courseId>.scormproj`) y lo vincula.
+  `saveProjectAs()` fuerza destino nuevo (`projectHandle = null`).
+- **Guardado manual, no automático al disco.** El archivo solo se escribe cuando
+  el usuario guarda. Diálogos rotulados «Proyecto SCORMEditor».
+
+### Recuperación automática (IndexedDB) — invisible, NO es «el guardado»
+Copia interna continua en IndexedDB (`DB_NAME = 'scormeditor'`, store `kv`,
+clave `project`) con `{ course, assets, dirty }` vía structured clone; debounce
+800 ms (`scheduleSave`/`doSave`). Solo evita perder trabajo si se cierra sin
+guardar; **nunca se presenta al usuario como «guardado»** (ese es siempre el
+`.scormproj`). El flag `dirty` se persiste para que, tras recargar, el indicador
+diga la verdad y no afirme «Guardado» si los últimos cambios no llegaron al
+archivo. `initAutoSave()` (llamado una vez desde `App.tsx`) restaura esa copia,
+re-vincula el `projectHandle` guardado y se suscribe a cambios de `course`/
+`assets` → marca `projectDirty` y agenda recuperación.
+
+### Permisos del File System Access — transparentes (sin botón «Reconectar»)
+Los permisos del handle no sobreviven a un reload. **No** hay botón de reconectar:
+al **Guardar**, `ensurePermission(handle, true)` re-pide permiso en ese momento;
+si el usuario lo deniega/cancela, el documento simplemente sigue «Sin guardar».
+Sin File System Access (Firefox/Safari), abrir usa `<input file>` y guardar
+descarga el blob (`downloadBlob`).
+
+### Estado en el store y UI
+`courseStore`: `activeTab: Tab` (`'editor'|'preview'|'validation'|'report'`,
+fuente única de la pestaña activa, también para que el badge de validación
+navegue a ella), `linkedFileName`, `projectDirty` + `setProjectDirty`,
+`setLinked(name)`. La toolbar (`Toolbar.tsx`) muestra **un único indicador**
+`.ed-docstate` (`✓ Guardado · archivo` / `● Sin guardar`) que es un botón =
+guardar; un menú **«Archivo ▾»** (`.ed-menu`) agrupa Abrir / Guardar /
+Guardar como… / Nuevo (demo) / Exportar SCORM ZIP; y el badge de validación
+`.ed-status` enlaza a la pestaña de validación.
 
 ## Responsive / móvil
 La carcasa es 100% responsive. En `max-width:760px` el menú lateral pasa a
