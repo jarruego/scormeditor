@@ -1,8 +1,16 @@
-# Contrato de salida `course.json` (SCORMEditor)
+# Contrato de salida `.scormproj` (SCORMEditor)
 
-Instrucciones para la herramienta/GPT que genera el JSON a partir del documento.
-**La salida debe ser exclusivamente un objeto JSON válido** (UTF-8, sin comentarios,
-sin texto antes/después, sin ```fences```). Todo `id` debe ser único y estable.
+Instrucciones para la herramienta/GPT que genera el material a partir del documento.
+
+**La salida es un archivo `.scormproj`** (un ZIP con `course.json` + `assets/`
+dentro; ver §11) generado con Code Interpreter y entregado como enlace de descarga.
+El `course.json` que va dentro debe ser un **objeto JSON válido** (UTF-8, sin
+comentarios, sin texto antes/después, sin ```fences```) y cumplir TODO este
+contrato. Todo `id` debe ser único y estable.
+
+> Compatibilidad: si Code Interpreter no estuviera disponible, se admite como
+> fallback devolver **solo** el `course.json` en texto plano (sin fences); el
+> usuario lo empaquetaría a mano. El formato preferido es siempre `.scormproj`.
 
 ---
 
@@ -68,8 +76,7 @@ Reglas que NO se pueden romper:
 }
 ```
 
-- `score_source`: `"final_test"` | `"unit_tests"` | `"mixed"` (por defecto
-  `"mixed"`: la nota sale de todas las interacciones evaluables + el test final).
+- `score_source`: `"final_test"` | `"unit_tests"` | `"mixed"`.
 - `navigation`: `"free"` | `"sequential"` | `"mixed"` (usa el nombre en inglés).
 - `attempts_allowed`: `0` = ilimitados.
 
@@ -119,7 +126,7 @@ Reglas que NO se pueden romper:
   "type": "content",
   "title": "Definición del Plan de Apoyos Integrado",
   "objective": "Definir el Plan de Apoyos Integrado.",
-  "student_text": "## Encabezado\nTexto para el estudiante. Admite markdown ligero:\n- viñetas con guion\n1. lista numerada\n- **negrita**, *cursiva* y [enlace](https://ejemplo.com)\n\n::: tip\nBloque destacado (tip | warn | important | info | fact | reflect | case).\n:::\n\n::: custom | #6DC3C0 | 🎯 | Título a medida\nBloque personalizado: color (hex), icono y título a elegir.\n:::",
+  "student_text": "Texto para el estudiante. Admite markdown ligero:\n- viñetas con guion\n- **negrita** y *cursiva*.",
   "source_refs": [
     { "doc": "Curso PAI T.1-4.pdf", "locator": "p.8", "transform": "resumen" }
   ],
@@ -127,7 +134,6 @@ Reglas que NO se pueden romper:
   "interaction": null,
   "required": true,
   "min_time_seconds": 25,
-  "audio_src": "",
   "transcript": "",
   "accessibility": { "alt_text_ok": true, "keyboard_ok": true, "contrast_ok": true },
   "scorm": { "counts_for_completion": true },
@@ -143,11 +149,6 @@ Reglas que NO se pueden romper:
 - `min_time_seconds`: control de permanencia mínima (no antifraude duro).
 - `interaction`: un objeto (ver §6) **o `null`**. Máximo **una interacción por
   pantalla**.
-- `audio_src`: ruta del **audio de locución** de la diapositiva
-  (`assets/media/…`), opcional. Se reproduce arriba del contenido.
-- `transcript`: transcripción de la diapositiva. **Se muestra SOLO en el botón
-  «Transcripción»** (nunca dentro del contenido) y es la alternativa textual del
-  audio/vídeo. Si rellenas `audio_src`, **`transcript` es obligatorio**.
 - `source_refs[]` (trazabilidad, recomendado en cada pantalla):
   `{ "doc": "...", "locator": "p.8" , "quote": "...", "transform": "resumen|reescritura|..." }`
   (solo `doc` es obligatorio).
@@ -164,18 +165,11 @@ Reglas que NO se pueden romper:
   "caption": "",
   "poster": "",
   "tracks": [],
-  "has_voice": false,
-  "layout": "top",
-  "media_width": "50"
+  "has_voice": false
 }
 ```
 
 - `kind`: `"none"` | `"image"` | `"video_youtube"` | `"video_file"` | `"audio"`.
-- `layout`: posición del recurso respecto al texto en pantallas de contenido:
-  `"top"` (arriba, por defecto) | `"bottom"` (debajo) | `"left"` (izquierda) |
-  `"right"` (derecha). No aplica a `audio`.
-- `media_width`: ancho del recurso en disposiciones laterales `left`/`right`:
-  `"33"` | `"50"` (por defecto) | `"66"` (% del ancho; el texto ocupa el resto).
 - Si `kind="image"` → `alt` **obligatorio y no vacío**.
 - Si `kind="video_youtube"` → `src` = **ID de YouTube** (no la URL completa).
 - Si `kind="video_file"`/`"audio"` y hay voz → `has_voice: true` **y** `tracks` con
@@ -204,7 +198,7 @@ Estructura común a TODAS:
   "feedback": { "correct": "Texto de acierto.", "incorrect": "Texto de error.", "explanation": "Explicación pedagógica." },
   "scored": true,
   "points": 1,
-  "attempts": 1,
+  "retries": 2,
   "learning_objective": "Texto del objetivo vinculado.",
   "source_refs": []
 }
@@ -213,11 +207,7 @@ Estructura común a TODAS:
 - `type` (enum cerrado): `accordion`, `tabs`, `flip_cards`, `match_pairs`,
   `sort_steps`, `single_choice`, `true_false`, `classification`,
   `scenario_decision`, `case_practice`, `hotspots`, `video`.
-- `attempts`: intentos permitidos para comprobar la respuesta. **`1` por
-  defecto**, `0` = ilimitados, o un número N. El alumno pulsa el botón
-  «Comprobar» para ver acierto/error; cuando la respuesta es correcta o se
-  agotan los intentos, queda resuelta y puede avanzar igualmente. Aplica a
-  `single_choice`, `true_false`, `sort_steps`, `match_pairs`, `classification`.
+- `retries`: `0` = ilimitados.
 - `learning_objective`: rellénalo siempre (el validador lo pide).
 - Reglas del validador para preguntas evaluables: deben tener **respuesta
   correcta** y **feedback** (acierto/error).
@@ -382,7 +372,6 @@ preguntas.
    están exentas).
 3. Toda imagen (`kind="image"`) con `alt`.
 4. Todo vídeo con `transcript`; medios con voz (`has_voice:true`) con `tracks` VTT.
-   Toda pantalla con `audio_src` debe tener `transcript`.
 5. Toda pregunta evaluable con **respuesta correcta** y **feedback**.
 6. Toda interacción con `learning_objective`.
 7. Cada unidad con `summary` (o pantalla `summary`) y al menos una actividad/test.
@@ -403,4 +392,121 @@ preguntas.
 - [ ] `bibliography` usa `ref`; `quality_checklist` es objeto de booleanos.
 - [ ] Sin afirmaciones de homologación SEPE; nota normativa como "pendiente de
       revisión por la entidad".
+- [ ] Empaquetado como `.scormproj` (§11): `course.json` en la raíz del ZIP +
+      `assets/` con TODOS los binarios referenciados; ninguna ruta `assets/…` del
+      `course.json` apunta a un fichero ausente.
+
+---
+
+## 11. Empaquetado `.scormproj` (entrega final)
+
+El editor SCORMEditor abre **archivos de proyecto `.scormproj`**: un **ZIP** que
+contiene `course.json` en la raíz y una carpeta `assets/` con los binarios. Modelo
+mental tipo `.docx`/`.sb3`: un solo archivo que el usuario abre con doble clic o
+desde *Archivo ▸ Abrir*.
+
+### Reglas del paquete (no se pueden romper)
+
+1. **`course.json` en la raíz** del ZIP (nombre exacto, en minúsculas). Es el
+   mismo objeto JSON que define este contrato (§1–§10), serializado UTF-8 con
+   sangría de 2 espacios.
+2. **Carpeta `assets/`**: cada binario va bajo `assets/…`. Las **claves de las
+   entradas del ZIP coinciden EXACTAMENTE** con las rutas que el `course.json`
+   referencia. Es decir, si una pantalla lleva
+   `"visual_resource": { "src": "assets/img/s06.png" }`, dentro del ZIP **debe
+   existir** la entrada `assets/img/s06.png`. Lo mismo para `hotspots.image`,
+   `tracks[].src` y `audio_src`.
+3. **Sin rutas rotas**: toda ruta `assets/…` referenciada en `course.json` debe
+   tener su fichero real en el ZIP. Si no hay binario para una imagen, **no la
+   referencies**: pon `kind:"none"` en esa pantalla y anótalo en `editor_notes`
+   (`"Imagen pendiente de subir: figura p.8"`), en vez de dejar un `src` que apunte
+   a la nada.
+4. **Vídeo de YouTube**: `kind:"video_youtube"` usa el **ID** en `src` y **no**
+   genera ningún fichero en `assets/` (no es un binario local).
+5. **Convención de nombres**: `assets/img/…` imágenes, `assets/media/…` audio/
+   vídeo/subtítulos VTT. Nombres en minúsculas, sin espacios ni acentos
+   (`u01_t01_modelo.png`).
+6. **Nombre del archivo**: `<course.id>.scormproj`.
+
+### Imágenes a partir del PDF de origen
+
+Cuando el documento de origen sea un PDF, **extrae sus imágenes** e inclúyelas en
+`assets/img/` con un nombre estable, referenciándolas desde la pantalla
+correspondiente (usa el `source_refs[].locator` —p. ej. `p.8`— para saber de qué
+página sale cada figura). Para cada imagen incluida, rellena `alt` (obligatorio) y,
+si procede, `caption`. Las figuras decorativas o de baja calidad: omítelas
+(`kind:"none"`) antes que ensuciar el curso.
+
+### Builder en Code Interpreter (Python)
+
+Construye el `course.json` como `dict`, reúne los binarios en un `dict`
+`ruta → bytes` y empaqueta con esta función. Valida que no haya rutas rotas
+**antes** de devolver el archivo.
+
+```python
+import json, zipfile, os, re
+
+def build_scormproj(course: dict, asset_files: dict, out_dir="/mnt/data"):
+    """
+    course      -> dict del course.json (ya conforme a §1–§10).
+    asset_files -> { "assets/img/s06.png": b"...bytes...", ... }
+                   Claves con prefijo "assets/" que COINCIDEN EXACTAMENTE con las
+                   rutas referenciadas en course.json.
+    Devuelve (ruta_del_scormproj, lista_de_huerfanos).
+    """
+    blob = json.dumps(course, ensure_ascii=False)
+    referenced = set(re.findall(r'"(assets/[^"]+)"', blob))
+
+    # Toda ruta referenciada debe tener su binario (regla 3: sin rutas rotas).
+    missing = sorted(referenced - set(asset_files))
+    if missing:
+        raise ValueError(
+            "Faltan binarios para rutas referenciadas en course.json:\n  - "
+            + "\n  - ".join(missing)
+            + "\nIncluye el fichero o cambia la pantalla a kind:'none'."
+        )
+
+    # Assets incluidos pero NO referenciados: no rompen, pero conviene revisarlos.
+    orphans = sorted(set(asset_files) - referenced)
+
+    course_id = (course.get("course") or {}).get("id") or "curso"
+    out_path = os.path.join(out_dir, f"{course_id}.scormproj")
+    # STORE (sin comprimir), igual que la app: el reempaquetado es instantáneo y
+    # los media ya vienen comprimidos. (DEFLATE también lo abriría sin problema.)
+    with zipfile.ZipFile(out_path, "w", compression=zipfile.ZIP_STORED) as z:
+        z.writestr("course.json", json.dumps(course, ensure_ascii=False, indent=2))
+        for path, data in asset_files.items():
+            z.writestr(path, data)
+    return out_path, orphans
+
+
+def extract_pdf_images(pdf_path):
+    """Extrae las imágenes incrustadas de un PDF. Devuelve
+    [(pagina_1based, ext, bytes), ...]. Requiere PyMuPDF (import fitz)."""
+    import fitz
+    doc = fitz.open(pdf_path)
+    out = []
+    for pno in range(len(doc)):
+        for img in doc.get_page_images(pno):
+            base = doc.extract_image(img[0])
+            out.append((pno + 1, base["ext"], base["image"]))
+    return out
+```
+
+Uso típico:
+
+```python
+# 1) course = { "schema_version": "1.0.0", "course": {...}, ... }  (§1–§10)
+# 2) Elegir, de las imágenes extraídas, las que se usan y asignarles ruta+alt:
+asset_files = {
+    "assets/img/s06.png": img_bytes_de_la_figura_pagina_8,
+    # ...
+}
+# 3) Las rutas de asset_files deben aparecer tal cual en course.json (visual_resource.src, etc.)
+path, orphans = build_scormproj(course, asset_files)
+print("Generado:", path, "| huérfanos:", orphans)
+```
+
+Devuelve al usuario **el enlace de descarga del `.scormproj`** y, si los hubo,
+menciona los assets huérfanos o las imágenes que dejaste como `kind:"none"`.
 ```
