@@ -102,6 +102,16 @@ poder diseñar apoyos realmente pers…"`, `title = "- Religión"`).
   «Elige la opción correcta», «Ordena los pasos»…), así que **no** hace falta anunciarlo
   en el título.
 
+### Posición de la imagen según su proporción (`visual_resource.layout`)
+Coloca cada imagen según su forma, para que el texto respire (SCORMEditor ya lo
+soporta; al extraer del PDF conoces `width`/`height`, calcula el ratio):
+- **Apaisada** (ancho > alto, ratio ≳ 1.2) → `"layout": "top"` (o `"bottom"`): encima o
+  debajo del texto, a lo ancho.
+- **Cuadrada o vertical** (alto ≥ ancho) → `"layout": "right"` con `"media_width": "50"`
+  (o `"33"` si es muy vertical): la imagen al lado y el texto a su izquierda.
+Recuerda (regla estructural): una pantalla con imagen es de **desarrollo**; no metas
+además una interacción evaluable en ella.
+
 ### Presentar el texto de forma amena (interactividades informativas)
 **Úsalas de forma habitual** para el contenido denso o estructurado: son la forma de
 tener pantallas ricas sin muros de texto ni trocear de más. Meten el texto fuente en un

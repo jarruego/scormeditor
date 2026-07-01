@@ -231,12 +231,22 @@ Reglas de formato (para que el editor lo renderice bien):
   "caption": "",
   "poster": "",
   "tracks": [],
-  "has_voice": false
+  "has_voice": false,
+  "layout": "top",
+  "media_width": "50"
 }
 ```
 
 - `kind`: `"none"` | `"image"` | `"video_youtube"` | `"video_file"` | `"audio"`.
 - Si `kind="image"` → `alt` **obligatorio y no vacío**.
+- **`layout` según la proporción de la imagen** (`layout`: `top`|`bottom`|`left`|
+  `right`, def. `top`; `media_width`: `33`|`50`|`66`, solo aplica en `left`/`right`):
+  - Imagen **apaisada** (ancho > alto, ratio ≳ 1.2) → `"layout": "top"` (o `"bottom"`):
+    encima/debajo del texto, a lo ancho.
+  - Imagen **cuadrada o vertical** (alto ≥ ancho) → `"layout": "right"` con
+    `"media_width": "50"` (o `"33"` si es muy vertical), para que el texto quede al lado.
+  - Al extraer del PDF ya conoces las dimensiones (`extract_image` da `width`/`height`);
+    calcula el ratio y fija `layout` en consecuencia.
 - Si `kind="video_youtube"` → `src` = **ID de YouTube** (no la URL completa).
 - Si `kind="video_file"`/`"audio"` y hay voz → `has_voice: true` **y** `tracks` con
   subtítulos VTT:

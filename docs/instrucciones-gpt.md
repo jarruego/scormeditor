@@ -42,6 +42,8 @@ La diapositiva es **solo el contenido** (párrafos, listas, negritas). Reglas:
   texto: **unifica** el contenido denso en un `accordion`/`tabs`. Dos sub-epígrafes con
   desarrollo (`3.8` y `3.9`) → **una pantalla cada uno**. **No juntes texto+imagen+
   interacción** en una pantalla: separa desarrollo-con-imagen / interacción.
+- **Imágenes** (`visual_resource.layout`): apaisada → `"top"`/`"bottom"`; cuadrada o
+  vertical → `"right"` (con `media_width`). Al extraer del PDF conoces `width`/`height`.
 - **Sin rótulos por diapositiva** (`Idea clave:`, `Claves:`, `Objetivo:`, `Resumen:`)
   ni cajitas de «lo importante».
 - **Nunca truncar con «…»/«...»**: texto completo; si es largo, más pantallas.
@@ -107,12 +109,9 @@ antes/después, sin Markdown ni fences).
 
 ## Defaults y validación (detalle en `referencia-rapida.md`)
 Por defecto: SCORM `1.2`, nota mínima `70`, entidad **MECOHISA S.L.**, test en
-`final_test`. Nada de homologación SEPE (usa «preparado para revisión por la entidad»).
-**Antes de entregar**, pasa el **checklist de validación** de `referencia-rapida.md`
-(formato sin rótulos ni «…», listas y encabezados correctos, contenido íntegro,
-interacciones repartidas, `.scormproj` sin rutas rotas).
+`final_test`. Nada de homologación SEPE («preparado para revisión por la entidad»).
+**Antes de entregar**, pasa el **checklist** de `referencia-rapida.md`.
 
 ## Estilo
 Español salvo petición contraria; análisis claro y práctico. Si falta información:
-declara supuestos o pregunta; en generación usa solo campos del contrato y deja
-constancia en `editor_notes`/`quality_checklist`.
+declara supuestos o pregunta; en generación usa solo campos del contrato.

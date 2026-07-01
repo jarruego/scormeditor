@@ -128,6 +128,21 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
 .ed-link { border: none; background: none; color: var(--c-primary); text-decoration: underline; padding: 0 .25rem; }
 .ed-disclaimer { font-size: .8rem; color: var(--c-muted); margin-top: 1rem; border-top: 1px dashed var(--c-border); padding-top: .75rem; }
 
+/* Narración por voz (TTS) */
+.ed-modal-backdrop { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .35); display: flex; align-items: flex-start; justify-content: center; padding: 4vh 1rem; overflow-y: auto; }
+.ed-modal { background: var(--c-surface); border-radius: 10px; box-shadow: 0 12px 40px rgba(0, 0, 0, .3); width: 100%; max-width: 640px; }
+.ed-modal-head { display: flex; align-items: center; justify-content: space-between; padding: .75rem 1rem; border-bottom: 1px solid var(--c-border); }
+.ed-modal-head h2 { margin: 0; font-size: 1.1rem; }
+.ed-modal-x { border: none; background: none; font-size: 1.1rem; color: var(--c-muted); padding: .2rem .5rem; }
+.ed-modal-body { padding: 1rem; display: grid; gap: .9rem; }
+.ed-tts-msg { font-size: .85rem; color: var(--c-muted); align-self: center; }
+.ed-tts-stats { margin: 0; font-size: .9rem; }
+.ed-tts-progress { display: grid; gap: .4rem; }
+.ed-tts-bar { height: 8px; background: var(--c-bg); border-radius: 99px; overflow: hidden; }
+.ed-tts-bar-fill { height: 100%; background: var(--c-primary); transition: width .2s ease; }
+.ed-tts-result { font-size: .9rem; }
+.ed-tts-errors { margin: .3rem 0 0; padding-left: 1.1rem; color: #7a1a14; font-size: .85rem; }
+
 /* Preview / report */
 .ed-preview, .ed-report { display: grid; grid-template-rows: auto 1fr; height: 100%; gap: .5rem; }
 .ed-preview-note, .ed-report-actions { font-size: .85rem; color: var(--c-muted); }

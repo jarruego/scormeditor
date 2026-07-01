@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { ScreenType, InteractionType, type Interaction } from '../schema/course.schema'
 import { RichTextArea } from './RichTextArea'
 import { InteractionConfigEditor } from './InteractionConfigEditor'
 import { FileButton } from './FileButton'
+import { generateForScreen, hasApiKey } from '../tts/tts'
 
 const LAYOUTS: { value: 'top' | 'bottom' | 'left' | 'right'; label: string }[] = [
   { value: 'top', label: 'Arriba del texto' },
@@ -15,8 +17,28 @@ export function ScreenEditor() {
   const id = useCourseStore((s) => s.selectedScreenId)
   const screen = useCourseStore((s) => (id ? s.getScreen(id) : null))
   const update = useCourseStore((s) => s.updateScreen)
+  const [ttsBusy, setTtsBusy] = useState(false)
+  const [ttsMsg, setTtsMsg] = useState<string | null>(null)
 
   if (!id || !screen) return <div className="ed-empty">Selecciona una pantalla en el árbol para editarla.</div>
+
+  async function onGenerateAudio() {
+    if (!id) return
+    setTtsMsg(null)
+    if (!hasApiKey()) {
+      setTtsMsg('⛔ Falta la clave de API. Configúrala en el botón «🔊 Narración» de la barra superior.')
+      return
+    }
+    setTtsBusy(true)
+    try {
+      await generateForScreen(id)
+      setTtsMsg('✓ Audio generado desde la transcripción.')
+    } catch (e) {
+      setTtsMsg(`⛔ ${(e as Error).message}`)
+    } finally {
+      setTtsBusy(false)
+    }
+  }
 
   const patch = (p: Parameters<typeof update>[1]) => update(id, p)
   const vr = screen.visual_resource
@@ -197,6 +219,14 @@ export function ScreenEditor() {
           <span>Transcripción (se muestra SOLO con el botón «Transcripción»; alternativa textual del audio)</span>
           <textarea rows={3} value={screen.transcript} onChange={(e) => patch({ transcript: e.target.value })} />
         </label>
+        <div className="ed-row">
+          <button type="button" className="ed-primary" disabled={ttsBusy || !screen.transcript.trim()}
+            onClick={onGenerateAudio}
+            title={screen.transcript.trim() ? 'Genera el audio con voz a partir de la transcripción' : 'Escribe primero una transcripción'}>
+            {ttsBusy ? 'Generando…' : screen.audio_src ? '🔊 Regenerar audio desde la transcripción' : '🔊 Generar audio desde la transcripción'}
+          </button>
+          {ttsMsg && <span className="ed-tts-msg">{ttsMsg}</span>}
+        </div>
       </fieldset>
 
       <fieldset className="ed-group">

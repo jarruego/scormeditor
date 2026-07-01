@@ -9,6 +9,7 @@ import {
   saveProject,
   saveProjectAs,
 } from '../store/autosave'
+import { TtsPanel } from './TtsPanel'
 
 const DISCARD_MSG =
   'Esto reemplazará el curso que tienes abierto. Los cambios que no hayas guardado en el archivo de proyecto se perderán. ¿Continuar?'
@@ -30,6 +31,7 @@ export function Toolbar() {
   const setActiveTab = useCourseStore((s) => s.setActiveTab)
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const [ttsOpen, setTtsOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const fsOk = isFsSupported()
@@ -105,6 +107,10 @@ export function Toolbar() {
         <button onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)" aria-label="Deshacer">↶ Deshacer</button>
         <button onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Mayús+Z)" aria-label="Rehacer">↷ Rehacer</button>
 
+        <button onClick={() => setTtsOpen(true)} title="Generar la narración de las diapositivas a partir de la transcripción">
+          🔊 Narración
+        </button>
+
         <input ref={fileRef} type="file" accept=".scormproj,application/zip" hidden onChange={onImportFile} />
         <div className="ed-menu" ref={menuRef}>
           <button
@@ -147,6 +153,8 @@ export function Toolbar() {
       </div>
 
       {importError && <div className="ed-import-error">⛔ {importError}</div>}
+
+      {ttsOpen && <TtsPanel onClose={() => setTtsOpen(false)} />}
     </header>
   )
 }
