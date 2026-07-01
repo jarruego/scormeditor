@@ -1,6 +1,7 @@
 /* styles.css — Carcasa SCORM. Sin dependencias. Responsive + accesible. */
 :root {
   --me-primary: #0b5fff;
+  --me-progress: #6DC3C0;
   --me-bg: #f5f6f8;
   --me-surface: #ffffff;
   --me-text: #1b1f24;
@@ -34,10 +35,10 @@ body {
   background: var(--me-surface); border-bottom: 1px solid var(--me-border);
 }
 .me-brand { font-weight: 700; color: var(--me-primary); }
-.me-course-title { color: var(--me-muted); font-size: .9rem; flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.me-progress { flex: 1; height: 8px; background: var(--me-border); border-radius: 99px; overflow: hidden; min-width: 80px; }
-.me-progress-bar { height: 100%; width: 0; background: var(--me-primary); transition: width .3s ease; }
-.me-progress-label { font-size: .8rem; color: var(--me-muted); min-width: 36px; text-align: right; }
+.me-course-title { color: var(--me-muted); font-size: .9rem; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Herramientas (Transcripción, Glosario, Recursos, Imprimir) ancladas a la
+   derecha de la barra superior. */
+.me-topbar .me-tools { margin-left: auto; }
 
 /* Body */
 .me-body { display: grid; grid-template-columns: 280px 1fr; overflow: hidden; }
@@ -115,9 +116,21 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-forum-tag { display: inline-block; background: var(--me-primary); color: #fff; padding: .1rem .5rem; border-radius: 99px; font-size: .8rem; }
 
 /* Toolbar */
-.me-toolbar { display: flex; align-items: center; gap: .5rem; padding: .6rem .9rem; background: var(--me-surface); border-top: 1px solid var(--me-border); flex-wrap: wrap; }
-.me-tools { display: flex; gap: .4rem; flex: 1; flex-wrap: wrap; }
-.me-position { color: var(--me-muted); font-size: .85rem; }
+.me-toolbar { display: flex; align-items: center; gap: .75rem; padding: .6rem .9rem; background: var(--me-surface); border-top: 1px solid var(--me-border); flex-wrap: wrap; }
+.me-tools { display: flex; gap: .4rem; flex-wrap: wrap; }
+/* Barra de progreso entre Anterior y Siguiente: más gruesa y en un color propio
+   (turquesa corporativo), distinto del azul de los botones. Muestra la posición
+   (nº actual / total) centrada.
+   Dos capas: `-done` = tramo completado (tono tenue) y `-bar` = posición actual
+   (tono sólido). Al retroceder, la posición actual dibuja la barra más corta y
+   el tramo completado por delante queda en el tono tenue: se ve que estás
+   retrocediendo sin perder de vista lo ya completado. Una marca señala la
+   posición actual. */
+.me-progress { position: relative; flex: 1; height: 26px; min-width: 140px; background: var(--me-border); border-radius: 99px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.me-progress-done { position: absolute; inset: 0 auto 0 0; height: 100%; width: 0; background: color-mix(in srgb, var(--me-progress) 32%, white); transition: width .3s ease; }
+.me-progress-bar { position: absolute; inset: 0 auto 0 0; height: 100%; width: 0; background: var(--me-progress); transition: width .3s ease; }
+.me-progress-bar::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: color-mix(in srgb, var(--me-progress) 65%, black); }
+.me-position { position: relative; z-index: 1; color: var(--me-text); font-size: .85rem; font-weight: 600; text-shadow: 0 1px 1px rgba(255,255,255,.6); }
 
 /* Buttons */
 .me-btn { font: inherit; padding: .5rem .9rem; border-radius: 6px; border: 1px solid var(--me-border); background: var(--me-surface); cursor: pointer; }
@@ -131,6 +144,10 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 
 /* Interacciones */
 .me-interaction { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--me-border); }
+/* Etiqueta del tipo de ejercicio (coletilla). El "kind" (Actividad/Interactivo)
+   va en una pastilla; el resto describe qué hacer. */
+.me-inter-tag { margin: 0 0 .75rem; font-size: .85rem; color: var(--me-muted); display: flex; align-items: center; gap: .5rem; }
+.me-inter-tag-kind { display: inline-block; background: color-mix(in srgb, var(--me-progress) 22%, white); color: color-mix(in srgb, var(--me-progress) 55%, black); border: 1px solid color-mix(in srgb, var(--me-progress) 45%, white); padding: .1rem .55rem; border-radius: 99px; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
 .me-prompt { font-weight: 600; }
 .me-instructions { color: var(--me-muted); }
 .me-choices { border: none; padding: 0; margin: 0; display: grid; gap: .4rem; }
@@ -218,21 +235,18 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
     box-shadow: 4px 0 18px rgba(0,0,0,.28); transform: translateX(-100%); }
   #me-app:not(.me-menu-hidden) .me-menu { transform: translateX(0); }
 
-  /* Barra superior compacta */
-  .me-topbar { gap: .5rem; padding: .5rem .6rem; }
+  /* Barra superior compacta; las herramientas pasan a una fila propia */
+  .me-topbar { gap: .5rem; padding: .5rem .6rem; flex-wrap: wrap; }
   .me-brand { font-size: .95rem; }
+  .me-topbar .me-tools { order: 5; width: 100%; margin-left: 0; justify-content: center; }
 
   /* Contenido con menos margen */
   .me-content { padding: .9rem .8rem; }
   .me-screen { padding: 1rem; }
   .me-screen h1 { font-size: 1.25rem; }
 
-  /* Barra de navegación: Anterior · posición · Siguiente arriba; herramientas debajo */
-  .me-toolbar { gap: .4rem; padding: .5rem .6rem; }
-  #me-prev { order: 1; }
-  #me-position { order: 2; margin: 0 auto; }
-  #me-next { order: 3; }
-  .me-tools { order: 4; width: 100%; justify-content: center; }
+  /* Barra de navegación: Anterior · progreso · Siguiente en una fila */
+  .me-toolbar { gap: .5rem; padding: .5rem .6rem; }
 
   /* Objetivos táctiles cómodos (>=44px) */
   .me-btn, .me-icon-btn { min-height: 44px; }

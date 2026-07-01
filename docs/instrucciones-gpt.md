@@ -20,22 +20,28 @@ documentos.
 
 ## REGLA Nº1 — conservar el texto original (NO resumir NI reescribir)
 Reproduce el texto de origen **casi al 100%** (mín. 0.95); usa sus palabras, con solo
-retoques mínimos de conexión al cortar entre pantallas. Trabaja sobre el **texto
-extraído** (no de memoria) y **repártelo en muchas pantallas cortas** (20-40+ por tema
-es normal). Cada trozo va **visible** (`student_text` y/o dentro de accordion/tabs/
-flip_cards que lo **contienen**) **y duplicado en `transcript`**. Nunca comprimas ni
-truncues: si no cabe, más pantallas.
+retoques mínimos de conexión. Trabaja sobre el **texto extraído** (no de memoria) y
+repártelo en **pantallas sustanciales** (un apartado con su desarrollo cada una, varios
+párrafos; **NO micro-diapositivas de una frase**). Cada trozo va **visible**
+(`student_text` y/o dentro de accordion/tabs/flip_cards que lo **contienen**) **y
+duplicado en `transcript`**. Nunca comprimas ni truncues. Conservar el 100% se logra
+con pantallas **densas** + interactividades **informativas**, NO con muchas pantallas
+diminutas (referencia: ~80 pantallas/unidad, no ~160).
 
 ## Formato de `student_text` y `title`
 La diapositiva es **solo el contenido** (párrafos, listas, negritas). Reglas:
 - **`title` corto y descriptivo** (2-6 palabras), **NO** un fragmento del contenido a
   mitad de frase **ni repetido como primera línea del `student_text`** (el `title` ya es
   la cabecera; el cuerpo no lo repite). Continuación: si un apartado se parte en varias
-  pantallas, todas mantienen **el mismo `title`**.
-- **Análisis estructural**: encabezado + subtítulo + su cuerpo van en **una** pantalla
-  (no en tres); **ninguna pantalla vacía** (solo título sin texto); no aísles un
-  encabezado del contenido que introduce. La granularidad viene de partir cuerpos
-  largos, no de aislar títulos.
+  pantallas, todas mantienen **el mismo `title`**. Interacción: `title` = **el del tema**
+  (nunca `"Checkpoint…"`; la app rotula sola el tipo).
+  Numeración de epígrafes en los `title`: **todo o nada**, por defecto **quítala**.
+- **Análisis estructural**: encabezado + subtítulo + su cuerpo = **una** pantalla (no
+  tres); **ninguna pantalla vacía ni diminuta**; no aísles un encabezado de su
+  contenido. **No elimines interactividades** informativas troceándolas en pantallas de
+  texto: **unifica** el contenido denso en un `accordion`/`tabs`. Dos sub-epígrafes con
+  desarrollo (`3.8` y `3.9`) → **una pantalla cada uno**. **No juntes texto+imagen+
+  interacción** en una pantalla: separa desarrollo-con-imagen / interacción.
 - **Sin rótulos por diapositiva** (`Idea clave:`, `Claves:`, `Objetivo:`, `Resumen:`)
   ni cajitas de «lo importante».
 - **Nunca truncar con «…»/«...»**: texto completo; si es largo, más pantallas.
@@ -52,9 +58,11 @@ La diapositiva es **solo el contenido** (párrafos, listas, negritas). Reglas:
   (tipos en §4.1); no las pierdas como texto plano.
 
 ## Interactividad
-**No** una interacción en cada pantalla: la mayoría son solo texto.
-- **Informativas** (`accordion`/`tabs`/`flip_cards`) **solo** cuando el trozo sea denso
-  y se presente mejor así: **contienen** el texto (no lo resumen).
+No en cada pantalla, pero **sí con frecuencia** (referencia: ~6 informativas + ~15
+aplicadas por unidad).
+- **Informativas** (`accordion`/`tabs`/`flip_cards`) para contenido denso/estructurado:
+  **contienen** el texto (no lo resumen). **Úsalas habitualmente**; no las suprimas
+  convirtiéndolas en micro-pantallas de texto.
 - **Aplicadas** (`scenario_decision`/`classification`/`single_choice`/`case_practice`)
   como checkpoints **repartidos cada 4-8 pantallas a lo largo del tema** (obligatorio:
   al menos ⌈N/8⌉ por tema de N pantallas; NO acumulados al final). **Si no llegas a esa

@@ -22,25 +22,32 @@ coherentes (partir una frase larga, añadir un titular o una frase puente, resol
    para **conservar las negritas como `**...**`**; usa tamaño/color/recuadro para
    detectar **encabezados** (→ `## `/`### `) y **cajas destacadas** (→ callouts, ver
    abajo). Trabaja sobre lo extraído, no de memoria.
-2. **Segméntalo en bloques de contenido autónomos**, en orden. Un **encabezado va
-   SIEMPRE junto al texto que introduce**: título + subtítulo + su cuerpo son **una
-   sola pantalla**, no tres. La granularidad (más pantallas) viene de **partir cuerpos
-   largos**, NO de aislar encabezados. Un tema denso puede necesitar **20-40+
-   pantallas**; es correcto, pero cada una debe llevar **cuerpo real**.
-   - **Nunca una pantalla vacía** (solo un título/encabezado sin texto). Si un
-     encabezado no tiene cuerpo propio, va con el contenido que encabeza.
+2. **Segméntalo en bloques de contenido SUSTANCIALES**, en orden. Una pantalla = un
+   **apartado o idea con su desarrollo completo** (varios párrafos, su lista, su
+   ejemplo), NO una frase suelta. Un **encabezado va SIEMPRE junto al texto que
+   introduce** (título + subtítulo + cuerpo = una pantalla, no tres). Referencia de
+   densidad: apunta a **pantallas de varios párrafos** (del orden de ~250-400
+   caracteres de media, como mínimo); **evita micro-diapositivas** (una frase). Salen
+   las pantallas que el contenido pida (típico: **1-2 por epígrafe**), no el doble.
+   - **Nunca una pantalla diminuta ni vacía** (una frase, o solo un título). Si un
+     encabezado o un fragmento no da para pantalla propia, **únelo** al contenido
+     contiguo.
    - **Nunca partas un título/subtítulo de su contenido** en pantallas distintas.
-3. Cada pantalla lleva su trozo del texto **casi literal**, **visible** en
-   `student_text` y/o dentro de una interactividad informativa (ver «Presentar el
-   texto…» más abajo), y **además duplicado íntegro en `transcript`** (accesibilidad/
-   narración). Nada de contenido queda solo en `transcript`: el alumno lo ve en pantalla.
-4. Si un trozo es largo o mezcla ideas, **pártelo en más pantallas**; nunca lo
-   comprimas para que «quepa».
+3. Para presentar contenido **denso o estructurado** (listas, sub-apartados, bloques
+   paralelos), **usa una interactividad informativa** (accordion/tabs/flip_cards): así
+   la pantalla queda rica sin ser un muro de texto **y sin trocear de más**. Preferir
+   esto a partir el mismo contenido en muchas pantallas pequeñas.
+4. Cada pantalla lleva su trozo del texto **casi literal**, **visible** en
+   `student_text` y/o dentro de una interactividad informativa, y **además duplicado
+   íntegro en `transcript`**. Nada de contenido queda solo en `transcript`.
 
 **Objetivo cuantitativo de control:** la suma del texto conservado por tema (visible +
 `transcript`, sin contar el duplicado) debe **cubrir ~100%** de la prosa de origen de
 ese tema (**mínimo ≥ 0.95**, ideal ≈ 1.0; puede pasar de 1.0 por las frases puente). Si
-sale por debajo, **estás resumiendo**: añade pantallas y recupera lo omitido.
+sale por debajo, **estás resumiendo**: recupera lo omitido. **Ojo**: cubrir el 100% NO
+significa muchas pantallas diminutas — se logra con pantallas **sustanciales** y con
+interactividades **informativas que contienen** el texto. Menos pantallas y más densas
+> muchas micro-pantallas.
 
 **Marca el control** en `quality_checklist`:
 `"Contenido del documento trazado sin pérdidas": true`.
@@ -82,11 +89,25 @@ poder diseñar apoyos realmente pers…"`, `title = "- Religión"`).
 - **Continuación**: si un apartado/subtema se parte en **varias pantallas**, todas
   **mantienen el mismo `title`** (la diapositiva es continuación de la anterior); no
   pongas de título el primer ítem de la lista que continúa.
+- **Numeración de epígrafes: todo o nada (coherencia).** Si el documento numera los
+  apartados (`3.1`, `3.2`…), **decídelo una vez para toda la unidad**: o **conservas la
+  numeración en TODOS** los `title` o la **quitas en TODOS**. Nunca mezcles (unos con
+  `3.1` y otros sin número, o saltar de `3.1` a `3.8`). **Por defecto, quítala**: el
+  `title` es un rótulo corto y limpio (`"Evaluación y ajuste"`, no `"3.8 Evaluación y
+  ajuste"`); el orden ya lo da la secuencia de pantallas.
+- **Nunca titules una interacción `"Checkpoint"`, `"Checkpoint de…"`, `"Actividad"` ni
+  similar.** El `title` de una pantalla con interacción es **el del tema que se trabaja**
+  (`"Áreas clave"`, `"Formatos de recogida"`), igual que una de contenido. La app añade
+  **automáticamente** una etiqueta con el tipo de ejercicio (Actividad/Interactivo:
+  «Elige la opción correcta», «Ordena los pasos»…), así que **no** hace falta anunciarlo
+  en el título.
 
 ### Presentar el texto de forma amena (interactividades informativas)
-Cuando un trozo sea denso, **repártelo en una interactividad informativa que lo
-contiene** (no lo resume), como **alternativa** a un bloque largo — no en todas las
-pantallas, solo cuando ayude:
+**Úsalas de forma habitual** para el contenido denso o estructurado: son la forma de
+tener pantallas ricas sin muros de texto ni trocear de más. Meten el texto fuente en un
+formato ameno (**lo contienen**, no lo resumen). Un tema suele llevar **varias** (de
+referencia, el resultado que buscamos tenía ~6 informativas + ~15 aplicadas en la
+unidad). **No las elimines convirtiéndolas en pantallas de texto pequeñas.** Cuándo:
 - **`accordion`**: sub-apartados o lista de puntos con desarrollo → cada `item` = un
   apartado con su texto original.
 - **`tabs`**: 2-4 bloques paralelos (tipos, fases, enfoques) → una pestaña por bloque.
@@ -106,9 +127,9 @@ para colocarla **encima** del texto, cuando el manual fuente presente antes la a
 y luego el desarrollo (también ajustable en el editor).
 
 ### Cadencia de interactividades
-No metas una interacción en cada pantalla. La mayoría son **solo texto**. Usa:
-- **Informativas** (accordion/tabs/flip_cards) **solo** cuando el trozo sea denso y se
-  presente mejor así.
+No en cada pantalla, pero **sí con frecuencia**. Usa:
+- **Informativas** (accordion/tabs/flip_cards) para el contenido denso/estructurado
+  (habituales; **no las suprimas** en favor de micro-pantallas de texto).
 - **Aplicadas y evaluables** (`scenario_decision`, `classification`, `single_choice`,
   `case_practice`) como **checkpoints repartidos a lo largo del tema, uno cada 4-8
   pantallas** de contenido. Es **obligatorio el reparto**: **NO las acumules al final**.
@@ -128,17 +149,33 @@ acumulando) y **vuelca el resultado al `.scormproj`** con el builder del contrat
 (§11). Si aun así es enorme, genera la unidad **tema a tema** y combina los `dict`
 antes de empaquetar. El usuario solo recibe el archivo, no el JSON.
 
-## Principio rector: una idea por pantalla
-Si una pantalla necesita dos párrafos largos de `student_text` o un `transcript` que
-explica dos conceptos distintos, **divídela**. Señales de que hay que trocear:
-- El `transcript` cambia de tema a mitad.
-- Hay más de una pregunta posible sobre la pantalla.
-- El `student_text` supera ~5–6 líneas visibles.
+## Principio rector: una idea por pantalla (una idea, no una frase)
+Cada pantalla desarrolla **una idea/apartado completo** (varios párrafos, su lista, su
+ejemplo). Divide una pantalla **solo** cuando mezcle **dos ideas distintas** o el
+cuerpo sea **realmente largo** (más de lo que se lee cómodo de una vez). **No** dividas
+por dividir: un apartado corto pero completo es **una** pantalla, no tres frases en
+tres pantallas. Si un apartado es denso o va en lista, preséntalo con una interactividad
+informativa antes que trocearlo.
 
-Ritmo recomendado por tema: portada → objetivos → ruta → **tantas pantallas de
-desarrollo como ideas tenga el tema** (intercalando informativas y evaluables) →
-casos → resumen → autoevaluación → glosario/bibliografía (van en sus arrays raíz, no
-como pantallas). No hay tope: lo manda la cantidad de contenido del documento.
+**Un sub-epígrafe con texto suficiente = su propia pantalla.** No metas **dos
+sub-apartados numerados** distintos (p. ej. `3.8` y `3.9`) en una misma pantalla si cada
+uno tiene desarrollo propio: cada uno va en su diapositiva. Solo se agrupan si son muy
+breves y comparten idea.
+
+**No juntes texto + imagen + interacción en una misma pantalla.** Cuando un apartado
+tenga contenido sustancial **con imagen** *y además* pida una interacción, **sepáralo en
+dos pantallas**: (1) el desarrollo con su `visual_resource` (texto + imagen) y (2) la
+interacción (misma temática, sin repetir la imagen). Una pantalla con texto largo,
+imagen y actividad a la vez queda saturada y obliga al alumno a hacer scroll. La
+interacción puede llevar un `prompt` breve que la contextualice. (Sí es correcto que una
+interacción **informativa** —accordion/tabs/flip_cards— sea el cuerpo de la pantalla sin
+imagen aparte.)
+
+Ritmo recomendado por tema: portada → objetivos → ruta → pantallas de desarrollo
+**sustanciales** (intercalando informativas y checkpoints) → casos → resumen →
+autoevaluación → glosario/bibliografía (en sus arrays raíz). Las pantallas las manda el
+contenido, pero **densas**: como referencia, el resultado buscado tenía ~80 pantallas
+en una unidad, no ~160.
 
 ## Detectar bloques destacados (callouts) en el documento de origen
 Los documentos suelen traer ya «cajas», recuadros de color o frases con intención de
@@ -232,8 +269,12 @@ Convierte «reflexiona sobre…» en algo accionable siempre que puedas:
 - Notas internas («este SCO», «esta pantalla») dentro de `student_text`/`transcript`.
 - Dejar un `visual_resource.src` apuntando a una imagen que **no** está en el ZIP.
 - **Fallos de análisis estructural** (frecuentes, evítalos):
-  - Pantalla **vacía**: solo un título/encabezado sin cuerpo. Toda pantalla lleva
-    contenido real.
+  - **Micro-diapositivas**: trocear en pantallas de una frase. Cada pantalla es un
+    apartado con su desarrollo (varios párrafos); menos pantallas y más densas.
+  - **Eliminar interactividades informativas** convirtiendo un accordion/tabs en varias
+    pantallas de texto pequeñas: al revés, **unifica** el contenido denso EN un
+    accordion/tabs.
+  - Pantalla **vacía o diminuta**: solo un título, o una frase suelta.
   - **Aislar un encabezado** en su propia pantalla y el cuerpo en otra: van juntos.
   - **Partir título + subtítulo + contenido en 3 pantallas**: son **una** pantalla.
   - **`title` = fragmento del texto** (mitad de frase) o repetido como primera línea
@@ -243,3 +284,11 @@ Convierte «reflexiona sobre…» en algo accionable siempre que puedas:
   - **Partir una actividad/reflexión/caso** (`case_practice`, `reflection`,
     `forum_prompt`) en varias pantallas: la actividad completa (tareas + cómo
     realizarla + preguntas) es **una sola** pantalla, aunque sea larga.
+  - **Titular una interacción `"Checkpoint…"`** (o `"Actividad"`): el `title` es el del
+    tema; la app ya rotula el tipo de ejercicio.
+  - **Numeración de epígrafes inconsistente** en los `title` (unos con `3.1`, otros sin
+    número, saltos como `3.1`→`3.8`): o en todos o en ninguno (por defecto, en ninguno).
+  - **Texto + imagen + interacción en la misma pantalla**: separa el desarrollo con
+    imagen (una pantalla) de la interacción (otra).
+  - **Dos sub-epígrafes con desarrollo (`3.8` y `3.9`) en una sola pantalla**: uno por
+    pantalla.

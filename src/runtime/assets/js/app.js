@@ -207,10 +207,10 @@
     if (t < 0 || t >= SCREENS.length) return;
     if (delta > 0 && !AUTHOR && !screenSatisfied(current)) { A11Y.announce(blockReason(current)); return; }
     if (!canNavigateTo(t)) { A11Y.announce('Pantalla no disponible todavía.'); return; }
-    goTo(t);
+    goTo(t, false, true);
   }
 
-  function goTo(idx, isRestore) {
+  function goTo(idx, isRestore, fromNav) {
     saveTime();
     if (activeController) activeController = null;
     current = idx;
@@ -256,7 +256,13 @@
     refreshMenuChecks();
     refreshNavState();
     document.getElementById('me-position').textContent = (idx + 1) + ' / ' + SCREENS.length;
-    if (!isRestore) A11Y.focusMain();
+    // Al navegar con Anterior/Siguiente, si el menú lateral está visible el foco
+    // se mueve al tema actual del menú (para orientarse en el índice); si no,
+    // al contenido. En restauración no se roba el foco.
+    if (!isRestore) {
+      if (fromNav && menuVisible()) focusCurrentMenuLink();
+      else A11Y.focusMain();
+    }
     recomputeAndPersist();
     startMinTimer();
   }
@@ -314,11 +320,12 @@
   function updateProgress() {
     var total = SCREENS.length;
     var visited = SCREENS.filter(function (e) { return STATE.visited[e.screen.id]; }).length;
-    var pct = total ? Math.round((visited / total) * 100) : 0;
+    var donePct = total ? Math.round((visited / total) * 100) : 0;   // completado (tono tenue)
+    var posPct = total ? Math.round(((current + 1) / total) * 100) : 0; // posición actual (tono sólido)
     var bar = document.getElementById('me-progress-bar');
-    bar.style.width = pct + '%';
-    bar.parentElement.setAttribute('aria-valuenow', String(pct));
-    document.getElementById('me-progress-label').textContent = pct + '%';
+    bar.style.width = posPct + '%';
+    document.getElementById('me-progress-done').style.width = donePct + '%';
+    bar.parentElement.setAttribute('aria-valuenow', String(donePct));
   }
 
   function computeScore() {
@@ -421,6 +428,19 @@
     next.disabled = last || (!AUTHOR && !screenSatisfied(current));
     next.textContent = last ? 'Fin' : 'Siguiente ▸';
   }
+  // El menú lateral está visible cuando #me-app NO lleva la clase me-menu-hidden
+  // (cubre tanto el plegado de escritorio como el slide-over cerrado en móvil).
+  function menuVisible() {
+    return !document.getElementById('me-app').classList.contains('me-menu-hidden');
+  }
+  // Lleva el foco al tema actual del menú lateral y lo hace visible en el scroll.
+  function focusCurrentMenuLink() {
+    var link = document.querySelector('.me-menu-link.is-current');
+    if (!link) { A11Y.focusMain(); return; }
+    link.focus();
+    if (link.scrollIntoView) link.scrollIntoView({ block: 'nearest' });
+  }
+
   function refreshMenuChecks() {
     document.querySelectorAll('.me-menu-link').forEach(function (b) {
       var i = parseInt(b.getAttribute('data-idx'), 10);

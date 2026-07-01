@@ -80,11 +80,14 @@
       // Cubre títulos que el origen trae como "**Título**" en vez de "## Título".
       var bh = /^\s*\*\*(.+?)\*\*\s*:?\s*$/.exec(ln);
       if (bh) { closeLists(); html += '<h3>' + inline(bh[1]) + '</h3>'; continue; }
-      var oli = /^\s*\d+[.)]\s+(.*)/.exec(ln);
+      var oli = /^\s*(\d+)[.)]\s+(.*)/.exec(ln);
       if (oli) {
         if (inUl) { html += '</ul>'; inUl = false; }
-        if (!inOl) { html += '<ol>'; inOl = true; }
-        html += '<li>' + inline(oli[1]) + '</li>';
+        // Honra el número que escribió el autor (value="N"): así, aunque haya
+        // párrafos o sublistas entre los ítems y la lista se "parta" en varios
+        // <ol>, la numeración sigue siendo 1, 2, 3 y no se reinicia a 1.
+        if (!inOl) { html += '<ol start="' + oli[1] + '">'; inOl = true; }
+        html += '<li value="' + oli[1] + '">' + inline(oli[2]) + '</li>';
         continue;
       }
       // Viñetas: además de "-", admite "*", "•", "·", "–", "—" (los que suelen

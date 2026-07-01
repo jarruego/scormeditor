@@ -9,16 +9,18 @@
 </head>
 <body>
   <a class="me-skip" href="#me-content">Saltar al contenido</a>
-  <div id="me-app">
+  <div id="me-app" class="me-menu-hidden">
     <!-- Barra superior -->
     <header class="me-topbar" role="banner">
-      <button id="me-toggle-menu" class="me-icon-btn" aria-expanded="true" aria-controls="me-menu" title="Mostrar/ocultar menú (Alt+M)">☰</button>
+      <button id="me-toggle-menu" class="me-icon-btn" aria-expanded="false" aria-controls="me-menu" title="Mostrar/ocultar menú (Alt+M)">☰</button>
       <span id="me-brand" class="me-brand">Curso</span>
       <span id="me-course-title" class="me-course-title"></span>
-      <div class="me-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progreso del curso">
-        <div id="me-progress-bar" class="me-progress-bar"></div>
+      <div class="me-tools">
+        <button id="me-btn-transcript" class="me-btn me-ghost" title="Transcripción (Alt+T)">Transcripción</button>
+        <button id="me-btn-glossary" class="me-btn me-ghost">Glosario</button>
+        <button id="me-btn-resources" class="me-btn me-ghost">Recursos</button>
+        <button id="me-btn-print" class="me-btn me-ghost">Imprimir</button>
       </div>
-      <span id="me-progress-label" class="me-progress-label">0%</span>
       <button id="me-btn-help" class="me-icon-btn" title="Ayuda">?</button>
     </header>
 
@@ -32,14 +34,12 @@
 
     <!-- Barra de herramientas / navegación -->
     <footer class="me-toolbar" role="contentinfo">
-      <button id="me-prev" class="me-btn">◂ Anterior</button>
-      <div class="me-tools">
-        <button id="me-btn-transcript" class="me-btn me-ghost" title="Transcripción (Alt+T)">Transcripción</button>
-        <button id="me-btn-glossary" class="me-btn me-ghost">Glosario</button>
-        <button id="me-btn-resources" class="me-btn me-ghost">Recursos</button>
-        <button id="me-btn-print" class="me-btn me-ghost">Imprimir</button>
+      <button id="me-prev" class="me-btn me-primary">◂ Anterior</button>
+      <div class="me-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progreso del curso">
+        <div id="me-progress-done" class="me-progress-done"></div>
+        <div id="me-progress-bar" class="me-progress-bar"></div>
+        <span id="me-position" class="me-position">0 / 0</span>
       </div>
-      <span id="me-position" class="me-position">0 / 0</span>
       <button id="me-next" class="me-btn me-primary">Siguiente ▸</button>
     </footer>
   </div>

@@ -207,9 +207,11 @@ Reglas de formato (para que el editor lo renderice bien):
   a mitad de frase, y **no repetido como primera línea del `student_text`** (el `title`
   ya es la cabecera). Si un apartado se parte en varias pantallas, todas mantienen el
   mismo `title` (continuación).
-- **Ninguna pantalla vacía** (solo título sin cuerpo). Un encabezado + su subtítulo + su
-  cuerpo van en **una** pantalla, no en tres; no aísles el encabezado del texto que
-  introduce. La granularidad viene de partir cuerpos largos, no de aislar títulos.
+- **Pantallas sustanciales, ninguna vacía ni diminuta.** Cada pantalla = un apartado
+  con su desarrollo (varios párrafos), no una frase. Un encabezado + su subtítulo + su
+  cuerpo van en **una** pantalla, no en tres. **Evita micro-diapositivas** y **no
+  elimines interactividades** informativas convirtiéndolas en varias pantallas de
+  texto: unifica el contenido denso en un `accordion`/`tabs`.
 - **Conserva las negritas del documento fuente** (`**...**`) y los **bloques marcados**
   (Importante, ¿Sabías que?, Consejo…) como callouts (§4.1). Extrae con formato, no en
   plano: el texto plano pierde negritas y cajas.
@@ -446,8 +448,9 @@ preguntas.
     literal (mínimo ~0.95, ideal ≈1.0), NO un resumen ni una reescritura. Solo se
     permiten retoques mínimos de conexión para cortar entre pantallas. El texto va
     **visible** (`student_text` y/o dentro de interactividades informativas) y
-    **duplicado en `transcript`**. La presentación se trocea en más pantallas cortas;
-    la información NO se recorta (ver guía).
+    **duplicado en `transcript`**. Se reparte en pantallas **sustanciales** (no
+    micro-diapositivas) e interactividades informativas; la información NO se recorta
+    (ver guía).
 
 ---
 

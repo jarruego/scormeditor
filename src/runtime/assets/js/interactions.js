@@ -561,9 +561,35 @@
     return { result: function () { return { completed: true, scored: false }; } };
   });
 
+  // Etiqueta/coletilla que indica el TIPO de ejercicio. Así el título de la
+  // pantalla puede ser el del tema (no "Checkpoint…") y la app señala por sí
+  // misma qué clase de actividad es. Evaluable ⇒ "Actividad"; informativa ⇒
+  // "Interactivo".
+  var TYPE_LABELS = {
+    accordion:      { kind: 'Interactivo', text: 'Despliega cada apartado' },
+    tabs:           { kind: 'Interactivo', text: 'Explora las pestañas' },
+    flip_cards:     { kind: 'Interactivo', text: 'Voltea las tarjetas' },
+    hotspots:       { kind: 'Interactivo', text: 'Explora los puntos de la imagen' },
+    case_practice:  { kind: 'Actividad',   text: 'Caso práctico' },
+    single_choice:  { kind: 'Actividad',   text: 'Elige la opción correcta' },
+    true_false:     { kind: 'Actividad',   text: 'Verdadero o falso' },
+    sort_steps:     { kind: 'Actividad',   text: 'Ordena los pasos' },
+    match_pairs:    { kind: 'Actividad',   text: 'Relaciona los pares' },
+    classification: { kind: 'Actividad',   text: 'Clasifica los elementos' }
+  };
+  function typeTag(type) {
+    var t = TYPE_LABELS[type];
+    if (!t) return '';
+    return '<p class="me-inter-tag"><span class="me-inter-tag-kind">' + esc(t.kind) +
+      '</span> ' + esc(t.text) + '</p>';
+  }
+
   global.Interactions = { register: register, render: function (el, data, ctx) {
     var f = registry[data.type];
     if (!f) { el.innerHTML = '<p class="me-warn">Tipo de interacción no soportado: ' + esc(data.type) + '</p>'; return { result: function () { return { completed: true, scored: false }; } }; }
-    return f(el, data, ctx);
+    var ctrl = f(el, data, ctx);
+    var tag = typeTag(data.type);
+    if (tag) el.insertAdjacentHTML('afterbegin', tag);
+    return ctrl;
   }, esc: esc, rich: rich, stripTags: stripTags, asset: assetUrl };
 })(window);
