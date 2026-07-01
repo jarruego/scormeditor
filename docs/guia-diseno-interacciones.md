@@ -5,31 +5,53 @@ Complemento pedagógico de `contrato-course-json.md` (la referencia estructural)
 contenido, qué interacción elegir y cómo evaluar. Ante conflicto, **manda el
 contrato**.
 
-## Regla nº 1: disección sin pérdida de contenido (NO resumir)
-El error más grave y más frecuente es **resumir**: quedarse con la idea general y
-tirar frases, ejemplos, datos, definiciones, matices o ítems de lista. **No se hace
-eso.** El curso debe contener **todo** el contenido del documento; lo que cambia es la
-*presentación* (troceada en pantallas cortas + interacción), no la *cantidad* de
-información.
+## Regla nº 1: conservar el texto original (NO resumir, NI reescribir)
+El error más grave es **resumir o parafrasear**: quedarse con la idea general y tirar
+frases, ejemplos, datos, definiciones, matices o ítems de lista. **No se hace eso.** El
+curso debe contener el texto original **prácticamente al 100%**. Lo que cambia es la
+*presentación* (repartir el texto en más pantallas cortas + interacción), **no** el
+texto en sí. **No reescribas «para e-learning»**: usa las palabras del documento; solo
+se permiten **retoques mínimos de conexión** para que los cortes entre pantallas sean
+coherentes (partir una frase larga, añadir un titular o una frase puente, resolver un
+«como se vio antes»). Ante la duda, **más pantallas** antes que recortar.
 
 **Método obligatorio (con Code Interpreter):**
-1. **Extrae el texto** de la unidad del PDF/DOC (no trabajes de memoria ni «de un
-   vistazo»: trabaja sobre el texto real extraído).
-2. **Segméntalo por epígrafes/ideas** en orden. Cada segmento → **una pantalla**.
-3. Para cada pantalla: `transcript` = ese segmento **reescrito para e-learning**
-   (más claro, mejor hilado) **conservando todo**: cada concepto, ejemplo, dato,
-   cifra, definición y elemento de lista del origen. `student_text` = la versión
-   breve y visual de esa misma idea (titulares, viñetas, un callout si procede).
-4. Si un segmento es muy largo o mezcla ideas, **pártelo en más pantallas**; nunca lo
+1. **Extrae el texto** de la unidad del PDF/DOC (texto real extraído, no de memoria).
+2. **Segméntalo por epígrafes/ideas** en orden, en trozos **pequeños y coherentes**.
+   Cada trozo → **una pantalla**. Un tema denso puede necesitar **20-40+ pantallas**;
+   es correcto, no un problema.
+3. Cada pantalla lleva su trozo del texto **casi literal**, **visible** en
+   `student_text` y/o dentro de una interactividad informativa (ver «Presentar el
+   texto…» más abajo), y **además duplicado íntegro en `transcript`** (accesibilidad/
+   narración). Nada de contenido queda solo en `transcript`: el alumno lo ve en pantalla.
+4. Si un trozo es largo o mezcla ideas, **pártelo en más pantallas**; nunca lo
    comprimas para que «quepa».
 
-**Objetivo cuantitativo de control:** la suma de los `transcript` de un tema debe ser
-**del mismo orden que la prosa de origen de ese tema** (orientativo: ≥ 80 %). Si tu
-salida es mucho más corta que el documento, **estás resumiendo**: añade pantallas. Un
-tema denso puede necesitar 12–20+ pantallas; eso es correcto, no un problema.
+**Objetivo cuantitativo de control:** la suma del texto conservado por tema (visible +
+`transcript`, sin contar el duplicado) debe **cubrir ~100%** de la prosa de origen de
+ese tema (**mínimo ≥ 0.95**, ideal ≈ 1.0; puede pasar de 1.0 por las frases puente). Si
+sale por debajo, **estás resumiendo**: añade pantallas y recupera lo omitido.
 
 **Marca el control** en `quality_checklist`:
 `"Contenido del documento trazado sin pérdidas": true`.
+
+### Presentar el texto de forma amena (interactividades informativas)
+Para que «casi el texto íntegro» no sean muros de párrafo, **reparte el texto en
+interactividades informativas que lo contienen** (no lo resumen):
+- **`accordion`**: cuando el trozo tiene sub-apartados o una lista de puntos con
+  desarrollo → cada `item` = un apartado con su texto original.
+- **`tabs`**: cuando hay 2-4 bloques paralelos (tipos, fases, enfoques) → una pestaña
+  por bloque.
+- **`flip_cards`**: pares término→definición, concepto→ejemplo → `front`/`back`.
+El texto de cada `item`/`tab`/`card` es el **texto fuente** de esa parte, no un
+resumen. En `transcript` va igualmente el trozo completo.
+
+### Cadencia de interactividades aplicadas
+Cada **4-8 pantallas** de contenido (según lo pida el material), intercala **una
+pantalla de checkpoint** con una interactividad **aplicada y evaluable**:
+`scenario_decision`, `classification`, `single_choice` o `case_practice`. Recuerda:
+**una sola interacción por pantalla** (contrato), así que el checkpoint es su propia
+pantalla; no mezcles la informativa y la aplicada en la misma.
 
 ### Evitar el truncado por límite de respuesta (clave)
 Un `course.json` con transcripts completos pesa mucho (cientos de KB). **No lo

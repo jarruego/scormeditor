@@ -414,10 +414,12 @@ preguntas.
 8. `glossary` y `bibliography` no vacíos.
 9. Si `score_source="final_test"` → `assessments.final_test` con preguntas.
 10. `scorm.identifier` no vacío.
-11. **Sin pérdida de contenido**: el conjunto de `transcript` de un tema cubre TODO
-    el contenido de origen de ese tema (concepto, ejemplo, dato, definición, lista),
-    no un resumen. La presentación se trocea en pantallas cortas; la información NO se
-    recorta. Trocea en más pantallas antes que comprimir (ver guía).
+11. **Texto original conservado (~100%)**: el curso reproduce el texto de origen casi
+    literal (mínimo ~0.95, ideal ≈1.0), NO un resumen ni una reescritura. Solo se
+    permiten retoques mínimos de conexión para cortar entre pantallas. El texto va
+    **visible** (`student_text` y/o dentro de interactividades informativas) y
+    **duplicado en `transcript`**. La presentación se trocea en más pantallas cortas;
+    la información NO se recorta (ver guía).
 
 ---
 
@@ -432,8 +434,8 @@ preguntas.
 - [ ] `bibliography` usa `ref`; `quality_checklist` es objeto de booleanos.
 - [ ] Sin afirmaciones de homologación SEPE; nota normativa como "pendiente de
       revisión por la entidad".
-- [ ] **Sin pérdida de contenido** (regla 9.11): los `transcript` cubren todo el
-      documento (≈ misma extensión que la prosa de origen), no un resumen.
+- [ ] **Texto original conservado ~100%** (regla 9.11): casi literal (≥0.95), visible
+      + en `transcript`, sin resumir ni reescribir.
       `quality_checklist`: `"Contenido del documento trazado sin pérdidas": true`.
 - [ ] Empaquetado como `.scormproj` (§11): `course.json` en la raíz del ZIP +
       `assets/` con TODOS los binarios referenciados; ninguna ruta `assets/…` del
