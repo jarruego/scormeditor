@@ -76,14 +76,20 @@
       }
       var h = /^(#{2,3})\s+(.*)$/.exec(ln); // ## y ### (h1 es el título)
       if (h) { closeLists(); var lv = h[1].length; html += '<h' + lv + '>' + inline(h[2]) + '</h' + lv + '>'; continue; }
-      var oli = /^\s*\d+\.\s+(.*)/.exec(ln);
+      // Línea que es SOLO negrita (con dos puntos opcionales) => encabezado.
+      // Cubre títulos que el origen trae como "**Título**" en vez de "## Título".
+      var bh = /^\s*\*\*(.+?)\*\*\s*:?\s*$/.exec(ln);
+      if (bh) { closeLists(); html += '<h3>' + inline(bh[1]) + '</h3>'; continue; }
+      var oli = /^\s*\d+[.)]\s+(.*)/.exec(ln);
       if (oli) {
         if (inUl) { html += '</ul>'; inUl = false; }
         if (!inOl) { html += '<ol>'; inOl = true; }
         html += '<li>' + inline(oli[1]) + '</li>';
         continue;
       }
-      var uli = /^\s*-\s+(.*)/.exec(ln);
+      // Viñetas: además de "-", admite "*", "•", "·", "–", "—" (los que suelen
+      // aparecer en PDF/DOC), para que las listas no queden como párrafo corrido.
+      var uli = /^\s*[-*•·–—]\s+(.*)/.exec(ln);
       if (uli) {
         if (inOl) { html += '</ol>'; inOl = false; }
         if (!inUl) { html += '<ul>'; inUl = true; }
@@ -169,10 +175,11 @@
       return '<h1>' + esc(s.title) + '</h1>' + mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text));
     },
     content: function (s) {
-      var html = '<h1>' + esc(s.title) + '</h1>';
-      if (s.objective) html += '<p class="me-objective"><strong>Objetivo:</strong> ' + esc(s.objective) + '</p>';
-      html += mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text));
-      return html;
+      // El `objective` NO se muestra como banner en cada pantalla de contenido
+      // (queda como metadato de trazabilidad); los objetivos se presentan al alumno
+      // en la pantalla dedicada `objectives`.
+      return '<h1>' + esc(s.title) + '</h1>' +
+        mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text));
     },
     unit_quiz: function (s) {
       return '<h1>' + esc(s.title) + '</h1>' + mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text));

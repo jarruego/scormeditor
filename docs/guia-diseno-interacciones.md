@@ -35,23 +35,42 @@ sale por debajo, **estás resumiendo**: añade pantallas y recupera lo omitido.
 **Marca el control** en `quality_checklist`:
 `"Contenido del documento trazado sin pérdidas": true`.
 
-### Presentar el texto de forma amena (interactividades informativas)
-Para que «casi el texto íntegro» no sean muros de párrafo, **reparte el texto en
-interactividades informativas que lo contienen** (no lo resumen):
-- **`accordion`**: cuando el trozo tiene sub-apartados o una lista de puntos con
-  desarrollo → cada `item` = un apartado con su texto original.
-- **`tabs`**: cuando hay 2-4 bloques paralelos (tipos, fases, enfoques) → una pestaña
-  por bloque.
-- **`flip_cards`**: pares término→definición, concepto→ejemplo → `front`/`back`.
-El texto de cada `item`/`tab`/`card` es el **texto fuente** de esa parte, no un
-resumen. En `transcript` va igualmente el trozo completo.
+### Formato de `student_text` (cómo escribir el texto de la diapositiva)
+La diapositiva es **solo el contenido**: un texto normal con su formato. **NO** añadas
+por diapositiva rótulos tipo `**Idea clave:**`, `**Claves:**`, `Resumen`, `Objetivo:`
+ni cajitas de «lo importante»: eso ensucia y repite. Solo el contenido.
+- **Nunca truncar con «…» o «...».** El `student_text` lleva el texto **completo** del
+  trozo, no una vista previa recortada. Si es largo, **más pantallas**, no puntos
+  suspensivos.
+- **Listas**: cada elemento en **su propia línea**, empezando por `- ` (guion +
+  espacio). No pongas la lista en una sola línea (`a • b • c`) ni con viñeta `•`: el
+  editor la mostraría como un párrafo corrido. Numeradas: `1. `, `2. `…
+- **Encabezados**: el título de un apartado va con `## ` o `### ` en su línea. **No**
+  metas el título dentro del párrafo («TítuloTexto que sigue…») ni como una línea
+  suelta en negrita: iría como texto normal.
+- **Negrita** `**así**`, **cursiva** `*así*`, enlaces `[texto](url)`.
 
-### Cadencia de interactividades aplicadas
-Cada **4-8 pantallas** de contenido (según lo pida el material), intercala **una
-pantalla de checkpoint** con una interactividad **aplicada y evaluable**:
-`scenario_decision`, `classification`, `single_choice` o `case_practice`. Recuerda:
-**una sola interacción por pantalla** (contrato), así que el checkpoint es su propia
-pantalla; no mezcles la informativa y la aplicada en la misma.
+### Presentar el texto de forma amena (interactividades informativas)
+Cuando un trozo sea denso, **repártelo en una interactividad informativa que lo
+contiene** (no lo resume), como **alternativa** a un bloque largo — no en todas las
+pantallas, solo cuando ayude:
+- **`accordion`**: sub-apartados o lista de puntos con desarrollo → cada `item` = un
+  apartado con su texto original.
+- **`tabs`**: 2-4 bloques paralelos (tipos, fases, enfoques) → una pestaña por bloque.
+- **`flip_cards`**: pares término→definición, concepto→ejemplo → `front`/`back`.
+El texto de cada `item`/`tab`/`card` es el **texto fuente** de esa parte. En
+`transcript` va igualmente el trozo completo.
+
+### Cadencia de interactividades
+No metas una interacción en cada pantalla. La mayoría son **solo texto**. Usa:
+- **Informativas** (accordion/tabs/flip_cards) **solo** cuando el trozo sea denso y se
+  presente mejor así.
+- **Aplicadas y evaluables** (`scenario_decision`, `classification`, `single_choice`,
+  `case_practice`) **cada 4-8 pantallas**, donde tengan más sentido (tras un bloque de
+  contenido que se pueda aplicar/decidir).
+- **Una sola interacción por pantalla** (contrato): el checkpoint es su propia
+  pantalla. Y si una interacción **repite conceptos** ya vistos, llévala a la
+  **siguiente** pantalla o suprímela; no dupliques.
 
 ### Evitar el truncado por límite de respuesta (clave)
 Un `course.json` con transcripts completos pesa mucho (cientos de KB). **No lo

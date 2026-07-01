@@ -189,6 +189,16 @@ el editor pone icono y título automáticamente):
 - El contenido de un callout va **escapado** por el runtime: escribe texto plano,
   nunca HTML.
 
+Reglas de formato (para que el editor lo renderice bien):
+- **Una lista = un elemento por línea** empezando por `- ` (o `1. `). NO la pongas en
+  una sola línea (`a • b • c`) ni con viñeta `•`/`*` embebida: saldría como párrafo.
+- **Encabezados con `## `/`### `** en su propia línea; NO metas un título dentro del
+  párrafo ni como línea suelta en negrita.
+- **Nunca truncar con «…»/«...».** `student_text` lleva el texto completo del trozo
+  (regla 9.11); si es largo, más pantallas.
+- **Sin rótulos por diapositiva** (`Idea clave:`, `Claves:`, `Objetivo:`, `Resumen:`):
+  la diapositiva es solo el contenido.
+
 ---
 
 ## 5. `visual_resource`
