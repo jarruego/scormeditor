@@ -192,12 +192,26 @@ el editor pone icono y título automáticamente):
 Reglas de formato (para que el editor lo renderice bien):
 - **Una lista = un elemento por línea** empezando por `- ` (o `1. `). NO la pongas en
   una sola línea (`a • b • c`) ni con viñeta `•`/`*` embebida: saldría como párrafo.
-- **Encabezados con `## `/`### `** en su propia línea; NO metas un título dentro del
-  párrafo ni como línea suelta en negrita.
+- **Encabezados con `## `/`### `** en una línea con SOLO el título (el cuerpo, en la
+  línea siguiente); NO metas el título dentro del párrafo, ni el cuerpo en la misma
+  línea del `##`, ni como línea suelta en negrita.
 - **Nunca truncar con «…»/«...».** `student_text` lleva el texto completo del trozo
   (regla 9.11); si es largo, más pantallas.
 - **Sin rótulos por diapositiva** (`Idea clave:`, `Claves:`, `Objetivo:`, `Resumen:`):
   la diapositiva es solo el contenido.
+- **`title` corto y descriptivo** (2-6 palabras), NO un fragmento del contenido cortado
+  a mitad de frase, y **no repetido como primera línea del `student_text`** (el `title`
+  ya es la cabecera). Si un apartado se parte en varias pantallas, todas mantienen el
+  mismo `title` (continuación).
+- **Ninguna pantalla vacía** (solo título sin cuerpo). Un encabezado + su subtítulo + su
+  cuerpo van en **una** pantalla, no en tres; no aísles el encabezado del texto que
+  introduce. La granularidad viene de partir cuerpos largos, no de aislar títulos.
+- **Conserva las negritas del documento fuente** (`**...**`) y los **bloques marcados**
+  (Importante, ¿Sabías que?, Consejo…) como callouts (§4.1). Extrae con formato, no en
+  plano: el texto plano pierde negritas y cajas.
+- **Enlaces externos**: presérvalos como `[texto](url)` (http/https/mailto); las URLs
+  sueltas, envuélvelas igual. El runtime los abre en otra pestaña (`target="_blank"
+  rel="noopener"`) automáticamente; no pongas HTML.
 
 ---
 

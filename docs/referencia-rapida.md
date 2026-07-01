@@ -1,0 +1,76 @@
+# Referencia rápida (SCORMEditor)
+
+Material de consulta que **complementa** las Instructions del GPT (que solo llevan los
+guardarraíles). Léelo cuando trabajes: modos de respuesta, valores por defecto,
+accesibilidad, normativa SEPE, evaluación y checklist de validación. Ante conflicto,
+manda `contrato-course-json.md`.
+
+## Modos de trabajo
+- **Análisis** (sin petición de material): diagnóstico y dudas Moodle/SCORM/SEPE. Si
+  hay ambigüedades o mejoras pedagógicas relevantes, pregunta antes de generar.
+- **Generación** («JSON», «course.json», «archivo para SCORMEditor»…): produce el
+  `.scormproj` conforme al contrato. En una pasada no preguntas; en modo factoría sí
+  preguntas entre temas.
+
+### Respuesta al recibir un documento (modo Análisis)
+Estructura la respuesta en: 1) Diagnóstico 2) Preguntas necesarias 3) Propuesta de
+transformación 4) Riesgos 5) Siguiente paso recomendado. Analiza: título, unidad/tema,
+objetivos, conceptos clave, actividades, interacciones posibles, casos, glosario,
+bibliografía, carencias, duración y pantallas estimadas.
+
+## Estructura didáctica de un tema
+Portada → objetivos → ruta → desarrollo (tantas pantallas como ideas tenga el
+documento) → checkpoints intercalados → casos → resumen → autoevaluación. Todo en
+`modules[].units[].screens[]`; glosario y bibliografía en sus arrays raíz.
+
+## Valores de producción por defecto
+- SCORM `1.2`; navegación `mixed`; nota mínima `70`; `2` intentos; `allow_resume true`;
+  `min_required_screens_pct 100`; `require_interactions true`; `score_source final_test`.
+- Si no indican otra entidad: `authoring_entity` y `shell.brand` = **«MECOHISA S.L.»**.
+- Unidad completa → modo factoría → un único `.scormproj` (o un SCORM por tema si lo
+  piden expresamente).
+- Test de unidad en el documento: conserva las preguntas como base, reformulando solo
+  si mejora la comprensión sin alterar el sentido. Evita preguntas memorísticas.
+- Foro/debate en el documento: incluye una pantalla `forum_prompt` (no calificable) y
+  anota en `editor_notes` que el foro va como actividad Moodle externa si se desea
+  participación trazable.
+
+## Evaluación
+Test calificable en `assessments.final_test` (`single_choice`/`true_false`). Cada
+pregunta: respuesta correcta, feedback de acierto y error, explicación, objetivo
+vinculado, puntuación y `source_refs`. Prioriza comprensión, aplicación y análisis de
+casos sobre preguntas memorísticas. Cubre todos los objetivos del tema.
+
+## Accesibilidad y trazabilidad
+- `alt` en toda imagen; `transcript` y subtítulos (`tracks` VTT) en audio/vídeo;
+  feedback textual; lenguaje claro; sin depender solo del color.
+- `source_refs` en pantallas, interacciones, glosario y preguntas; lo derivado del
+  documento se marca con `transform`. No inventes contenido normativo.
+
+## Normativa SEPE
+Nunca afirmes homologación oficial ni acreditación garantizada. Usa: «preparado para
+revisión por la entidad», «pendiente de validación normativa», «compatible con Moodle
+mediante SCORM», «alineado con los criterios aportados». Si falta ficha oficial,
+continúa con la propuesta técnico-pedagógica e indica que queda pendiente de validación.
+Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
+`description`, `editor_notes`), nunca en la vista del estudiante.
+
+## Checklist de validación antes de entregar
+- JSON válido, sin `screens` en la raíz; tipos de pantalla e interacción permitidos;
+  `id` únicos.
+- Cada interacción con `learning_objective`; preguntas evaluables con respuesta
+  correcta, feedback y `source_refs`.
+- `final_test` presente si `score_source=final_test`; `glossary`/`bibliography` no
+  vacíos; `quality_checklist` es objeto de booleanos.
+- Imágenes con `alt`; audio/vídeo con `transcript` y subtítulos; `scorm.identifier` no
+  vacío.
+- **Formato**: sin rótulos por diapositiva (`Idea clave:`, `Claves:`, `Objetivo:`,
+  `Resumen:`); sin `…`/`...` de truncado; listas con `- ` (un ítem por línea);
+  encabezados `## `/`### ` con solo el título en su línea.
+- **Contenido íntegro (Regla Nº1)**: texto conservado ~100% (ratio ≥0.95);
+  `quality_checklist`: `"Contenido del documento trazado sin pérdidas": true`.
+- **Interacciones** repartidas cada 4-8 pantallas (no acumuladas al final).
+- Notas internas fuera de los campos del estudiante; sin afirmaciones de homologación
+  SEPE.
+- Del `.scormproj`: `course.json` en la raíz; cada ruta `assets/…` con su fichero real;
+  nombre `<course.id>.scormproj`.

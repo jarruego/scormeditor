@@ -16,10 +16,20 @@ coherentes (partir una frase larga, añadir un titular o una frase puente, resol
 «como se vio antes»). Ante la duda, **más pantallas** antes que recortar.
 
 **Método obligatorio (con Code Interpreter):**
-1. **Extrae el texto** de la unidad del PDF/DOC (texto real extraído, no de memoria).
-2. **Segméntalo por epígrafes/ideas** en orden, en trozos **pequeños y coherentes**.
-   Cada trozo → **una pantalla**. Un tema denso puede necesitar **20-40+ pantallas**;
-   es correcto, no un problema.
+1. **Extrae el texto CON su formato**, no en plano: el texto plano pierde negritas y
+   cajas destacadas. Con PyMuPDF usa `page.get_text("dict")` y, por cada `span`, mira
+   `flags` (bit `16` = negrita) y el nombre de la fuente (contiene «Bold»/«Semibold»)
+   para **conservar las negritas como `**...**`**; usa tamaño/color/recuadro para
+   detectar **encabezados** (→ `## `/`### `) y **cajas destacadas** (→ callouts, ver
+   abajo). Trabaja sobre lo extraído, no de memoria.
+2. **Segméntalo en bloques de contenido autónomos**, en orden. Un **encabezado va
+   SIEMPRE junto al texto que introduce**: título + subtítulo + su cuerpo son **una
+   sola pantalla**, no tres. La granularidad (más pantallas) viene de **partir cuerpos
+   largos**, NO de aislar encabezados. Un tema denso puede necesitar **20-40+
+   pantallas**; es correcto, pero cada una debe llevar **cuerpo real**.
+   - **Nunca una pantalla vacía** (solo un título/encabezado sin texto). Si un
+     encabezado no tiene cuerpo propio, va con el contenido que encabeza.
+   - **Nunca partas un título/subtítulo de su contenido** en pantallas distintas.
 3. Cada pantalla lleva su trozo del texto **casi literal**, **visible** en
    `student_text` y/o dentro de una interactividad informativa (ver «Presentar el
    texto…» más abajo), y **además duplicado íntegro en `transcript`** (accesibilidad/
@@ -45,10 +55,33 @@ ni cajitas de «lo importante»: eso ensucia y repite. Solo el contenido.
 - **Listas**: cada elemento en **su propia línea**, empezando por `- ` (guion +
   espacio). No pongas la lista en una sola línea (`a • b • c`) ni con viñeta `•`: el
   editor la mostraría como un párrafo corrido. Numeradas: `1. `, `2. `…
-- **Encabezados**: el título de un apartado va con `## ` o `### ` en su línea. **No**
-  metas el título dentro del párrafo («TítuloTexto que sigue…») ni como una línea
-  suelta en negrita: iría como texto normal.
-- **Negrita** `**así**`, **cursiva** `*así*`, enlaces `[texto](url)`.
+- **Encabezados**: el título de un apartado va con `## ` o `### ` en una línea con
+  **solo el título** (el cuerpo, en la línea siguiente). **No** metas el título dentro
+  del párrafo («TítuloTexto que sigue…»), ni el cuerpo en la misma línea del `##`
+  (`### Título ¿…? El texto sigue aquí…` → saldría todo como un encabezado gigante),
+  ni como una línea suelta en negrita.
+- **Negrita** `**así**`, **cursiva** `*así*`. **Conserva las negritas del documento
+  fuente**: si una palabra o frase va en negrita en el original, mantenla en negrita
+  (`**...**`). No inventes negritas donde no las hay.
+- **Enlaces externos**: detéctalos en el origen y **presérvalos** como `[texto](url)`
+  (http/https o mailto). Una **URL suelta** del documento (`https://…`) envuélvela
+  también como `[texto](url)`, si no, no se renderiza como enlace. El editor los abre
+  **en otra pestaña** automáticamente (`target="_blank"`); no añadas tú ese atributo,
+  es texto plano.
+
+### El `title` de la pantalla (cabecera): corto y descriptivo
+El campo `title` se muestra como cabecera (`<h1>`) de la diapositiva. Es un **rótulo
+corto** (2-6 palabras) de lo que trata la pantalla: `"Qué información recoger"`,
+`"Áreas clave de la historia de vida"`. **NO** un fragmento del contenido cortado a
+mitad de frase (errores reales: `title = "Se va elaborando:"`, `title = "Pero para
+poder diseñar apoyos realmente pers…"`, `title = "- Religión"`).
+- **No dupliques el `title` en el contenido.** El `title` ya sale como cabecera; el
+  `student_text` **empieza por el cuerpo**, NO por un `## `/`### ` que repita el título.
+  Usa `### ` dentro del contenido **solo** para sub-secciones reales distintas del
+  título (y con solo el título en su línea; el cuerpo, en la siguiente).
+- **Continuación**: si un apartado/subtema se parte en **varias pantallas**, todas
+  **mantienen el mismo `title`** (la diapositiva es continuación de la anterior); no
+  pongas de título el primer ítem de la lista que continúa.
 
 ### Presentar el texto de forma amena (interactividades informativas)
 Cuando un trozo sea denso, **repártelo en una interactividad informativa que lo
@@ -66,8 +99,12 @@ No metas una interacción en cada pantalla. La mayoría son **solo texto**. Usa:
 - **Informativas** (accordion/tabs/flip_cards) **solo** cuando el trozo sea denso y se
   presente mejor así.
 - **Aplicadas y evaluables** (`scenario_decision`, `classification`, `single_choice`,
-  `case_practice`) **cada 4-8 pantallas**, donde tengan más sentido (tras un bloque de
-  contenido que se pueda aplicar/decidir).
+  `case_practice`) como **checkpoints repartidos a lo largo del tema, uno cada 4-8
+  pantallas** de contenido. Es **obligatorio el reparto**: **NO las acumules al final**.
+  Regla práctica: un tema de N pantallas lleva **al menos ⌈N/8⌉ checkpoints**
+  intercalados (un tema de 30 → ~4-6, hacia las pantallas 6, 12, 18, 24, 30), no dos
+  seguidas en la 28-29. **Si con las que salen no llegas a esa densidad, añade más**
+  donde el contenido se pueda aplicar/decidir. Cada checkpoint, tras un bloque aplicable.
 - **Una sola interacción por pantalla** (contrato): el checkpoint es su propia
   pantalla. Y si una interacción **repite conceptos** ya vistos, llévala a la
   **siguiente** pantalla o suprímela; no dupliques.
@@ -93,10 +130,13 @@ casos → resumen → autoevaluación → glosario/bibliografía (van en sus arr
 como pantallas). No hay tope: lo manda la cantidad de contenido del documento.
 
 ## Detectar bloques destacados (callouts) en el documento de origen
-Los documentos suelen traer ya «cajas» o frases con intención de aviso, consejo,
-dato curioso, caso o reflexión. **Reconócelas y vuélcalas como callout** en
-`student_text` (sintaxis `::: tipo … :::`, ver §4.1 del contrato), para que lleguen
-ya formateadas a SCORMEditor en vez de como texto plano. Heurística de mapeo:
+Los documentos suelen traer ya «cajas», recuadros de color o frases con intención de
+aviso, consejo, dato curioso, caso o reflexión. **Es obligatorio reconocerlas y
+volcarlas como callout** en `student_text` (sintaxis `::: tipo … :::`, ver §4.1 del
+contrato) en vez de perderlas como texto plano. Detéctalas por su **etiqueta**
+(«Importante», «¿Sabías que?»…) y, cuando extraigas con formato (ver Regla Nº1, paso 1),
+también por su **recuadro/color de fondo** aunque no lleven etiqueta. Heurística de
+mapeo:
 
 | Señal en el origen | Callout |
 |---|---|
@@ -117,7 +157,8 @@ Pautas:
   trocear la pantalla.
 
 ## Elegir la interacción adecuada
-Cada pantalla de desarrollo debería tener su práctica. Criterio rápido:
+Cuando toque una interacción (no en cada pantalla; ver «Cadencia»), este es el criterio
+rápido para elegir el tipo:
 
 | Objetivo cognitivo | Interacción sugerida | Evalúa |
 |---|---|---|
@@ -179,3 +220,10 @@ Convierte «reflexiona sobre…» en algo accionable siempre que puedas:
   `reflection`; `*_acknowledgement` → omitir.
 - Notas internas («este SCO», «esta pantalla») dentro de `student_text`/`transcript`.
 - Dejar un `visual_resource.src` apuntando a una imagen que **no** está en el ZIP.
+- **Fallos de análisis estructural** (frecuentes, evítalos):
+  - Pantalla **vacía**: solo un título/encabezado sin cuerpo. Toda pantalla lleva
+    contenido real.
+  - **Aislar un encabezado** en su propia pantalla y el cuerpo en otra: van juntos.
+  - **Partir título + subtítulo + contenido en 3 pantallas**: son **una** pantalla.
+  - **`title` = fragmento del texto** (mitad de frase) o repetido como primera línea
+    del `student_text`: el `title` es un rótulo corto y el cuerpo NO lo repite.

@@ -39,7 +39,10 @@ se vuelca a un parcial descargable). El usuario recibe **archivos**, no JSON gig
 
 ## Fase 1 — Producción tema a tema
 Para **cada** tema, y **solo** ese tema (ver Regla Nº1 de la guía):
-1. **Extrae el texto completo** del tema desde la fuente (texto real extraído).
+1. **Extrae el texto completo CON su formato** (no en plano): con PyMuPDF
+   `get_text("dict")`, conserva las **negritas** del original (`flags`/fuente «Bold» →
+   `**...**`), detecta **encabezados** (tamaño/estilo → `## `/`### `) y **cajas
+   destacadas** (etiqueta o recuadro/color → callouts `::: tipo`).
 2. **Segmenta** por epígrafe/idea en trozos **pequeños y coherentes**, en orden.
 3. **Una pantalla por trozo** (o más si mezcla ideas). Sin tope: 20-40+ pantallas por
    tema es normal.
