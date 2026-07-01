@@ -27,6 +27,13 @@
     return out;
   }
 
+  // Markdown de bloque (párrafos, listas, encabezados) para cuerpos largos de
+  // interacciones (accordion/tabs). Reusa el renderer si ya está cargado; si no,
+  // cae a inline. Así las listas dentro de un accordion salen como <ul>, no en línea.
+  function block(s) {
+    return (global.Renderer && global.Renderer.mdToHtml) ? global.Renderer.mdToHtml(s) : '<p>' + rich(s) + '</p>';
+  }
+
   // Versión en texto plano (para atributos: aria-label, <option>, etc.).
   function stripTags(s) {
     return String(s == null ? '' : s)
@@ -98,7 +105,7 @@
       var id = 'acc-' + i;
       html += '<div class="me-acc-item">' +
         '<button class="me-acc-head" aria-expanded="false" aria-controls="' + id + '">' + rich(it.title) + '</button>' +
-        '<div class="me-acc-body" id="' + id + '" role="region" hidden>' + rich(it.body) + '</div></div>';
+        '<div class="me-acc-body" id="' + id + '" role="region" hidden>' + block(it.body) + '</div></div>';
     });
     html += '</div>';
     el.innerHTML = html;
@@ -121,7 +128,7 @@
     items.forEach(function (it, i) {
       var sel = i === 0;
       tablist += '<button role="tab" id="tab-' + i + '" aria-controls="panel-' + i + '" aria-selected="' + sel + '" tabindex="' + (sel ? '0' : '-1') + '">' + rich(it.title) + '</button>';
-      panels += '<div role="tabpanel" id="panel-' + i + '" aria-labelledby="tab-' + i + '" ' + (sel ? '' : 'hidden') + '>' + rich(it.body) + '</div>';
+      panels += '<div role="tabpanel" id="panel-' + i + '" aria-labelledby="tab-' + i + '" ' + (sel ? '' : 'hidden') + '>' + block(it.body) + '</div>';
     });
     tablist += '</div>';
     el.innerHTML = header(data) + tablist + panels;

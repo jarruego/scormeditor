@@ -148,7 +148,11 @@ Reglas que NO se pueden romper:
   micro‑objetivos por id, **vuelca aquí el texto del objetivo**.
 - `min_time_seconds`: control de permanencia mínima (no antifraude duro).
 - `interaction`: un objeto (ver §6) **o `null`**. Máximo **una interacción por
-  pantalla**.
+  pantalla**, y **entera en una sola pantalla** (no partas un accordion/tabs ni una
+  actividad en varias).
+- `interaction_layout`: `"top"` | `"bottom"` (def. `"bottom"`). Posición de la
+  interacción respecto al texto: encima o debajo. Las listas dentro de un `item`/`tab`
+  se renderizan como lista si cada elemento va en su línea con `- `.
 - `source_refs[]` (trazabilidad, recomendado en cada pantalla):
   `{ "doc": "...", "locator": "p.8" , "quote": "...", "transform": "resumen|reescritura|..." }`
   (solo `doc` es obligatorio).

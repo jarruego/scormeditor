@@ -212,6 +212,13 @@ export function ScreenEditor() {
                   {InteractionType.options.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
               </label>
+              <label className="ed-field ed-field-narrow">
+                <span>Posición</span>
+                <select value={screen.interaction_layout} onChange={(e) => patch({ interaction_layout: e.target.value as any })}>
+                  <option value="bottom">Debajo del texto</option>
+                  <option value="top">Encima del texto</option>
+                </select>
+              </label>
               <label className="ed-check">
                 <input type="checkbox" checked={it.scored} onChange={(e) => setInteraction({ ...it, scored: e.target.checked })} />
                 <span>Evaluable</span>

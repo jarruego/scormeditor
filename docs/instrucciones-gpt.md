@@ -60,9 +60,13 @@ La diapositiva es **solo el contenido** (párrafos, listas, negritas). Reglas:
   al menos ⌈N/8⌉ por tema de N pantallas; NO acumulados al final). **Si no llegas a esa
   densidad, añade más** donde el contenido se pueda aplicar. Si una repite conceptos ya
   vistos, pásala a la siguiente pantalla o suprímela.
-- **Una sola interacción por pantalla.** Cada interacción: `prompt`, `instructions`,
-  `learning_objective`, `feedback`, `source_refs`, `scored`, `points`, `retries`.
-  Debate humano → `forum_prompt` (nota en `editor_notes`).
+- **Una sola interacción por pantalla, y ENTERA en una pantalla**: no partas un
+  accordion/tabs («(1)»/«(2)») ni una actividad (`case_practice`/`reflection`/
+  `forum_prompt`) en varias pantallas; toda la actividad (tareas + cómo realizarla +
+  preguntas) va junta aunque sea larga. Dentro de un `item`/`tab`, las listas con `- `
+  una por línea. Posición: `interaction_layout` `"top"`/`"bottom"` (def. debajo).
+- Cada interacción: `prompt`, `instructions`, `learning_objective`, `feedback`,
+  `source_refs`, `scored`, `points`, `retries`. Debate humano → `forum_prompt`.
 
 ## Entrega (con Code Interpreter)
 Al pedir material («JSON», «course.json», «archivo para SCORMEditor»…):

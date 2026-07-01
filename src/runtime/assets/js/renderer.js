@@ -205,6 +205,12 @@
     var controller = null;
     if (screen.interaction) {
       var mount = container.querySelector('.me-interaction');
+      // Posición de la interacción respecto al texto: 'top' la sube justo debajo del
+      // título (encima del texto); por defecto queda debajo ('bottom').
+      if (screen.interaction_layout === 'top') {
+        var h1 = container.querySelector('.me-screen > h1');
+        if (h1) h1.insertAdjacentElement('afterend', mount);
+      }
       controller = global.Interactions.render(mount, screen.interaction, ctx);
     }
     return { interaction: controller };

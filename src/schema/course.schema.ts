@@ -165,6 +165,10 @@ export const Screen = z.object({
   source_refs: z.array(SourceRef).default([]),
   visual_resource: VisualResource.default({}),
   interaction: Interaction.nullable().default(null),
+  interaction_layout: z
+    .enum(['top', 'bottom'])
+    .default('bottom')
+    .describe('Posición de la interacción respecto al texto: encima (top) o debajo (bottom)'),
   required: z.boolean().default(true),
   min_time_seconds: z.number().int().min(0).default(0),
   audio_src: z

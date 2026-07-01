@@ -94,6 +94,17 @@ pantallas, solo cuando ayude:
 El texto de cada `item`/`tab`/`card` es el **texto fuente** de esa parte. En
 `transcript` va igualmente el trozo completo.
 
+**Una interacción = UNA pantalla, con TODOS sus ítems.** No la partas en varias
+pantallas: un accordion «Áreas clave» con 8 apartados es **un** accordion en **una**
+pantalla, no «Áreas clave (1)» / «(2)». Lo mismo con `tabs`/`flip_cards`. Dentro de un
+`item`/`tab`/`card`, si hay una lista, cada elemento en **su propia línea** con `- `
+(el editor la renderiza como lista dentro del bloque).
+
+**Posición respecto al texto (`interaction_layout`):** por defecto la interacción va
+**debajo** del texto (`"bottom"`); pon `"interaction_layout": "top"` en la pantalla
+para colocarla **encima** del texto, cuando el manual fuente presente antes la actividad
+y luego el desarrollo (también ajustable en el editor).
+
 ### Cadencia de interactividades
 No metas una interacción en cada pantalla. La mayoría son **solo texto**. Usa:
 - **Informativas** (accordion/tabs/flip_cards) **solo** cuando el trozo sea denso y se
@@ -227,3 +238,8 @@ Convierte «reflexiona sobre…» en algo accionable siempre que puedas:
   - **Partir título + subtítulo + contenido en 3 pantallas**: son **una** pantalla.
   - **`title` = fragmento del texto** (mitad de frase) o repetido como primera línea
     del `student_text`: el `title` es un rótulo corto y el cuerpo NO lo repite.
+  - **Partir una interacción en dos pantallas** (un accordion/tabs «(1)»/«(2)»): una
+    interacción va entera en una pantalla, con todos sus ítems.
+  - **Partir una actividad/reflexión/caso** (`case_practice`, `reflection`,
+    `forum_prompt`) en varias pantallas: la actividad completa (tareas + cómo
+    realizarla + preguntas) es **una sola** pantalla, aunque sea larga.

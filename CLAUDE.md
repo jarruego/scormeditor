@@ -33,11 +33,19 @@ Editor: `src/components/RichTextArea.tsx` (barra de botones, sin dependencias).
 Render: `mdToHtml`/`blocksToHtml` en `src/runtime/assets/js/renderer.js`.
 
 Sintaxis soportada:
-- `## ` / `### ` encabezados (H1 reservado al título de pantalla)
-- `**negrita**`, `*cursiva*`, `[texto](url)` (http(s) o mailto)
-- `- ` listas con viñetas, `1. ` listas numeradas
+- `## ` / `### ` encabezados (H1 reservado al título de pantalla). Además, una línea
+  que es **solo negrita** (`**Título**`, con `:` opcional) se renderiza como `<h3>`
+  (para títulos que el origen trae en negrita en vez de con `##`).
+- `**negrita**`, `*cursiva*`, `[texto](url)` (http(s) o mailto). Los enlaces se abren
+  en otra pestaña (`target="_blank" rel="noopener noreferrer"`, ver `rich()`).
+- `- ` listas con viñetas (también acepta `*`, `•`, `·`, `–`, `—` al inicio de línea,
+  porque los PDF/DOC suelen usarlos); `1. ` / `1) ` listas numeradas
 - Bloques destacados (callouts): `::: tipo` … `:::`
 - Bloque personalizado: `::: custom | #color | icono | título` … `:::`
+
+La plantilla `content` (`renderer.js`) **no** muestra `objective` como banner en cada
+pantalla (queda como metadato de trazabilidad; el validador sigue exigiéndolo salvo en
+`cover`/`summary`); solo la pantalla `objectives` presenta los objetivos al alumno.
 
 ### Bloques destacados y paleta corporativa
 Los tipos viven en `CALLOUTS` (`renderer.js`) y su color en
@@ -217,18 +225,37 @@ editor **deben ir sincronizados**.
   `hotspots.image`, `tracks[].src`, `audio_src`). Es el mismo contrato que
   `loadProjectFromBlob()` espera (ver sección de Persistencia). Si una imagen no
   existe, el GPT pone `kind:"none"` + nota en `editor_notes`, nunca un `src` roto.
-- **Ficheros de conocimiento del GPT, en `docs/`** (mantenerlos al día si cambia el
-  formato `.scormproj`, el esquema de `course.json` o `autosave.ts`):
-  - `instrucciones-gpt.md`: el system prompt del GPT. **Límite duro 8000 caracteres**
-    (campo Instructions de un GPT); verificar con `wc -m` tras editar.
-  - `contrato-course-json.md`: referencia normativa del `course.json` + **§11
-    Empaquetado `.scormproj`** (incluye el builder Python `build_scormproj` /
-    `extract_pdf_images`). Manda en caso de conflicto.
+- **Arquitectura de los docs (jul 2026):** las Instructions llevan solo los
+  **guardarraíles siempre activos**; el detalle es **material de referencia** en los
+  archivos de Knowledge. Las Instructions ordenan al GPT **leer** esos docs con Code
+  Interpreter antes de generar (así el Knowledge se consulta de verdad, no solo por
+  RAG). Motivo: el campo Instructions tiene un **límite duro de 8000 caracteres**
+  (verificar con `wc -m` tras editar `instrucciones-gpt.md`).
+- **6 ficheros de conocimiento en `docs/`** (mantenerlos al día si cambia el formato
+  `.scormproj`, el esquema de `course.json`, `autosave.ts` o el `renderer.js`):
+  - `instrucciones-gpt.md`: system prompt (Instructions). Solo guardarraíles.
+  - `contrato-course-json.md`: referencia normativa del `course.json`; §4.1 markdown/
+    callouts/formato, **§11 Empaquetado `.scormproj`** (builder Python `build_scormproj`
+    / `extract_pdf_images`). **Manda en caso de conflicto.**
   - `ejemplo-course-json.md`: ejemplo dorado (few-shot) de un `course.json` válido.
-  - `guia-diseno-interacciones.md`: criterio pedagógico (troceo, elección de
-    interacción, evaluación, antipatrones).
+  - `guia-diseno-interacciones.md`: criterio pedagógico (segmentación, formato,
+    interacciones, callouts, antipatrones).
+  - `flujo-factoria-unidades.md`: procedimiento por fases para **unidades grandes**
+    (inventario → temas parciales auditables `.scormpart` → fusión), con control de
+    cobertura y helper `merge_unit`.
+  - `referencia-rapida.md`: modos, valores por defecto, accesibilidad, SEPE, evaluación
+    y checklist de validación.
+- **Criterios de contenido acordados (jul 2026), viven en esos docs:** (1) **Regla
+  Nº1** — conservar el texto de origen **casi al 100%** (ratio ≥0.95), sin resumir ni
+  reescribir; extraer **con formato** (negritas, cajas→callouts) vía PyMuPDF
+  `get_text("dict")`, no en plano. (2) **Modo factoría** para unidades: nunca en una
+  pasada (no cabe → resume), tema a tema con parciales. (3) Formato: `title` corto (no
+  fragmento del texto ni repetido en el cuerpo), sin pantallas vacías, listas con `- `
+  una por línea, encabezados solo-título, sin rótulos por diapositiva. (4) Interacciones
+  repartidas cada 4-8 pantallas (no al final).
 - El GPT también lee una copia del contrato en el `Downloads` del usuario; al tocar
-  el de `docs/` hay que recordar que la subida al GPT se hace desde estos ficheros.
+  el de `docs/` hay que **sincronizarla** (`cp`). La subida al GPT se hace desde estos
+  ficheros.
 
 ## Convenciones del repo
 - Idioma de UI, comentarios y commits: **español** (con acentos correctos).
