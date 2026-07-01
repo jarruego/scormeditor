@@ -189,13 +189,14 @@
     },
   };
 
-  // Reproductor compacto de la locución de la diapositiva (si la hay).
+  // Locución de la diapositiva (si la hay). El reproductor NO es visible: el
+  // audio se controla desde app.js (reproducción automática al entrar y botón de
+  // activar/desactivar en la barra superior). El elemento se mantiene en el DOM
+  // sin `controls` (invisible) para poder reproducirlo por código.
   function narrationBlock(s) {
     if (!s.audio_src) return '';
-    return '<div class="me-narration">' +
-      '<span class="me-narration-label" aria-hidden="true">🔊 Audio de la diapositiva</span>' +
-      '<audio class="me-narration-audio" controls preload="none" aria-label="Audio de locución de la diapositiva">' +
-      '<source src="' + esc(asset(s.audio_src)) + '"></audio></div>';
+    return '<audio class="me-narration-audio" preload="auto" aria-hidden="true">' +
+      '<source src="' + esc(asset(s.audio_src)) + '"></audio>';
   }
 
   function render(container, screen, ctx) {

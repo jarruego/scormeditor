@@ -17,6 +17,11 @@
 
   var STATE = { visited: {}, interactions: {}, results: {}, attempts: 0, finalScore: 0 };
 
+  // Locución: activada por defecto. La preferencia se recuerda entre sesiones si
+  // el navegador lo permite (localStorage puede fallar en algún LMS: try/catch).
+  var audioEnabled = true;
+  try { if (global.localStorage && localStorage.getItem('me-audio-enabled') === '0') audioEnabled = false; } catch (e) {}
+
   // Modo autor (previsualización del editor): navegación libre sin restricciones
   // de tiempo mínimo, interacciones obligatorias ni secuencia. En el SCORM real
   // (sin este flag) se aplican todas las reglas configuradas.
@@ -136,6 +141,8 @@
     document.getElementById('me-next').addEventListener('click', function () { goRelative(1); });
     document.getElementById('me-toggle-menu').addEventListener('click', toggleMenu);
     document.getElementById('me-btn-transcript').addEventListener('click', toggleTranscript);
+    document.getElementById('me-btn-audio').addEventListener('click', toggleAudio);
+    reflectAudioButton();
     document.getElementById('me-btn-print').addEventListener('click', function () { window.print(); });
     document.getElementById('me-btn-glossary').addEventListener('click', function () { openModal('glossary'); });
     document.getElementById('me-btn-resources').addEventListener('click', function () { openModal('resources'); });
@@ -252,6 +259,7 @@
     }
 
     markVisited(idx);
+    playCurrentNarration();
     updateProgress();
     refreshMenuChecks();
     refreshNavState();
@@ -397,6 +405,37 @@
     var t = entry && !entry.isFinalTest ? entry.screen.transcript : '';
     if (!t) { A11Y.announce('Esta pantalla no tiene transcripción.'); return; }
     openModalHtml('Transcripción', '<div class="me-prose">' + Renderer.mdToHtml(t) + '</div>');
+  }
+
+  // ---- Locución de la diapositiva ----------------------------------------
+  // Elemento <audio> oculto que el renderer inyecta en la pantalla actual.
+  function currentNarration() {
+    return document.querySelector('#me-content .me-narration-audio');
+  }
+  // Reproduce la locución de la pantalla actual desde el principio (si está
+  // activada). El navegador puede bloquear el autoplay hasta que haya una
+  // interacción del usuario: en ese caso se ignora el rechazo silenciosamente.
+  function playCurrentNarration() {
+    var a = currentNarration();
+    if (!a) return;
+    if (!audioEnabled) { a.pause(); return; }
+    try { a.currentTime = 0; } catch (e) {}
+    var p = a.play();
+    if (p && p.catch) p.catch(function () {});
+  }
+  function reflectAudioButton() {
+    var btn = document.getElementById('me-btn-audio');
+    if (!btn) return;
+    btn.setAttribute('aria-pressed', String(audioEnabled));
+    btn.classList.toggle('is-on', audioEnabled);
+    btn.textContent = (audioEnabled ? '🔊' : '🔇') + ' Audio';
+  }
+  function toggleAudio() {
+    audioEnabled = !audioEnabled;
+    try { if (global.localStorage) localStorage.setItem('me-audio-enabled', audioEnabled ? '1' : '0'); } catch (e) {}
+    reflectAudioButton();
+    if (audioEnabled) { playCurrentNarration(); A11Y.announce('Audio activado.'); }
+    else { var a = currentNarration(); if (a) a.pause(); A11Y.announce('Audio desactivado.'); }
   }
   function openModal(which) {
     if (which === 'glossary') {

@@ -107,9 +107,11 @@ body {
 .me-video { position: relative; aspect-ratio: 16/9; margin: 1rem 0; }
 .me-video iframe, .me-video { width: 100%; }
 video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
-.me-narration { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; background: color-mix(in srgb, var(--me-primary) 6%, white); border: 1px solid var(--me-border); border-radius: 8px; padding: .5rem .75rem; margin-bottom: 1rem; }
-.me-narration-label { font-weight: 600; font-size: .9rem; color: var(--me-muted); }
-.me-narration-audio { flex: 1; min-width: 200px; height: 36px; }
+/* La locución es un <audio> oculto (se controla desde la barra: reproducción
+   automática al entrar y botón Audio). No debe ocupar espacio. */
+.me-narration-audio { display: none; }
+/* Botón de audio activo en la barra superior. */
+#me-btn-audio.is-on { color: var(--me-primary); font-weight: 600; }
 .me-transcript { margin: 1rem 0; border: 1px solid var(--me-border); border-radius: 6px; padding: .25rem .75rem; }
 .me-transcript summary { cursor: pointer; font-weight: 600; }
 .me-placeholder { border: 2px dashed #d09a00; background: #fff8e6; padding: 1rem; border-radius: 6px; }
