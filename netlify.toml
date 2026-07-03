@@ -1,0 +1,15 @@
+# Configuración de despliegue en Netlify.
+# SCORMEditor es una SPA estática (Vite + React), sin backend.
+
+[build]
+  command = "npm run build"   # tsc -b && vite build
+  publish = "dist"            # salida de Vite
+
+[build.environment]
+  NODE_VERSION = "20"         # Vite 5 requiere Node 18+
+
+# La app es de una sola página: sirve index.html para cualquier ruta.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
