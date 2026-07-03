@@ -1,5 +1,8 @@
 # SCORMEditor
 
+**App en producción: <https://scormeditor.netlify.app/>** (Netlify, despliegue continuo
+desde `main`).
+
 Editor y generador de paquetes **SCORM 1.2** para Moodle a partir de un curso
 estructurado (`course.json`). Sin dependencias de Articulate/Captivate: el SCORM
 exportado es HTML/CSS/JS plano, autocontenido y compatible con Moodle.
@@ -36,6 +39,15 @@ npm run build       # build de producción del editor (tsc -b + vite build)
 npm run typecheck   # verificación de tipos
 npm run scorm:build # empaqueta el curso de ejemplo a SCORM por CLI (scripts/build-scorm.mjs)
 ```
+
+## Despliegue (Netlify)
+
+Publicado en **<https://scormeditor.netlify.app/>** con **despliegue continuo**: cada
+`push` a `main` dispara `npm run build` y publica `dist/`; cada Pull Request genera un
+Deploy Preview. La configuración (comando, carpeta, Node y fallback SPA) está en
+**`netlify.toml`**, así que Netlify no necesita ajustes manuales. Si el build falla (p. ej.
+error de `tsc`), no se publica y la versión anterior sigue online. No hay backend ni
+secretos en el build; las claves de la narración TTS son de cada usuario (localStorage).
 
 ## Guardar y abrir proyectos
 
