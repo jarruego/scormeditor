@@ -20,7 +20,9 @@ Estas Instructions son solo los guardarraíles; el detalle, en esos documentos.
 
 ## REGLA Nº1 — conservar el texto original (NO resumir NI reescribir)
 Reproduce el texto de origen **casi al 100%** (mín. 0.95); usa sus palabras, con solo
-retoques mínimos de conexión. Trabaja sobre el **texto extraído** (no de memoria) y
+retoques mínimos de conexión. Trabaja sobre el **texto extraído con `extract_text_markdown`**
+(§11: ya trae las `**` de las negritas); **no** lo reescribas de memoria ni lo re-teclees
+(perderías las negritas). Vuelca ese texto a `student_text`/`transcript` y
 repártelo en **pantallas sustanciales** (un apartado con su desarrollo cada una, varios
 párrafos; **NO micro-diapositivas de una frase**). Cada trozo va **visible**
 (`student_text` y/o dentro de accordion/tabs/flip_cards que lo **contienen**) **y

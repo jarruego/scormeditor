@@ -69,6 +69,12 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   encabezados `## `/`### ` con solo el título en su línea.
 - **Contenido íntegro (Regla Nº1)**: texto conservado ~100% (ratio ≥0.95);
   `quality_checklist`: `"Contenido del documento trazado sin pérdidas": true`.
+- **Negritas (check automático, OBLIGATORIO)**: si el PDF fuente tiene texto en negrita
+  (fuente con `Bold`/`Black`/`Semibold` o `span.flags & 16`), el `course.json` **debe**
+  contener `**...**`. Cuéntalo en Python antes de entregar:
+  `assert json.dumps(course).count('**') > 0`. Si sale **0**, has extraído en plano o
+  redactado de memoria → **reextrae con `extract_text_markdown` (contrato §11)** y vuelca
+  ese texto (que ya trae las `**`) a `student_text`; **no** reescribas el texto tú.
 - **Interacciones** repartidas cada 4-8 pantallas (no acumuladas al final).
 - **Objetivos**: conjunto reducido derivado del contenido, de la petición del usuario
   y de la normativa facilitada (no uno distinto por pantalla); texto **idéntico**
