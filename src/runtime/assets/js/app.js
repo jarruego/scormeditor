@@ -61,6 +61,13 @@
     if (COURSE.assessments && COURSE.assessments.final_test && (COURSE.assessments.final_test.questions || []).length) {
       SCREENS.push({ unit: null, module: null, screen: { id: '__final__', type: 'final_test', title: COURSE.assessments.final_test.title || 'Test final', required: true }, isFinalTest: true });
     }
+    // Pantalla de resultados al final, si hay algo que calificar (test final o
+    // interacciones evaluables). Muestra la nota, APTO/NO APTO y el desglose.
+    var hasFinal = COURSE.assessments && COURSE.assessments.final_test && (COURSE.assessments.final_test.questions || []).length;
+    var hasScoredInter = SCREENS.some(function (e) { return !e.isFinalTest && e.screen.interaction && e.screen.interaction.scored; });
+    if (hasFinal || hasScoredInter) {
+      SCREENS.push({ unit: null, module: null, screen: { id: '__results__', type: 'results', title: 'Resultados', required: false }, isResults: true });
+    }
   }
 
   // ---- Setup UI ----------------------------------------------------------
@@ -123,9 +130,11 @@
       });
       html += '</div>';
     });
-    if (SCREENS.length && SCREENS[SCREENS.length - 1].isFinalTest) {
-      html += '<div class="me-menu-unit"><ul><li><button class="me-menu-link" data-idx="' + (SCREENS.length - 1) + '">' +
-        esc(SCREENS[SCREENS.length - 1].screen.title) + '<span class="me-menu-check" aria-hidden="true"></span></button></li></ul></div>';
+    // Pantallas sintéticas finales (test final y/o resultados), que van tras los
+    // módulos en SCREENS a partir del índice acumulado.
+    for (var k = idx; k < SCREENS.length; k++) {
+      html += '<div class="me-menu-unit"><ul><li><button class="me-menu-link" data-idx="' + k + '">' +
+        esc(SCREENS[k].screen.title) + '<span class="me-menu-check" aria-hidden="true"></span></button></li></ul></div>';
     }
     nav.innerHTML = html;
     nav.addEventListener('click', function (e) {
@@ -225,12 +234,14 @@
     var entry = SCREENS[idx];
     // En modo autor avisa al editor de la pantalla actual, para que al volver a
     // la pestaña «Editar» se sitúe en la misma diapositiva (test final excluido).
-    if (AUTHOR && entry.screen && !entry.isFinalTest && global.parent && global.parent !== global) {
+    if (AUTHOR && entry.screen && !entry.isFinalTest && !entry.isResults && global.parent && global.parent !== global) {
       try { global.parent.postMessage({ type: 'me-screen-change', screenId: entry.screen.id }, '*'); } catch (e) {}
     }
     var content = document.getElementById('me-content');
 
-    if (entry.isFinalTest) {
+    if (entry.isResults) {
+      renderResults(content);
+    } else if (entry.isFinalTest) {
       renderFinalTest(content, entry.screen);
     } else {
       var sc = entry.screen;
@@ -346,9 +357,22 @@
       if (fr) { got = fr.score; max = fr.maxScore; }
     } else if (src === 'unit_tests') {
       SCREENS.forEach(function (e) { if (!e.isFinalTest && e.screen.interaction) addResult(STATE.results[e.screen.interaction.id]); });
-    } else { // mixed
-      SCREENS.forEach(function (e) { if (!e.isFinalTest && e.screen.interaction) addResult(STATE.results[e.screen.interaction.id]); });
-      var f = STATE.results.__final__; if (f) { got += f.score; max += f.maxScore; }
+    } else { // mixed: media PONDERADA entre práctica y test final (no por puntos).
+      // Cada bloque se normaliza a su propio % y se combinan con `mixed_final_weight`.
+      var pg = 0, pm = 0;
+      SCREENS.forEach(function (e) {
+        if (e.isFinalTest || !e.screen.interaction) return;
+        var r = STATE.results[e.screen.interaction.id];
+        if (r && r.scored) { pg += r.score || 0; pm += r.maxScore || 0; }
+      });
+      var f = STATE.results.__final__;
+      var practicePct = pm > 0 ? (pg / pm) * 100 : null;
+      var finalPct = (f && f.maxScore > 0) ? (f.score / f.maxScore) * 100 : null;
+      var w = Math.min(100, Math.max(0, rules.mixed_final_weight == null ? 70 : rules.mixed_final_weight)) / 100;
+      if (practicePct != null && finalPct != null) return Math.round(finalPct * w + practicePct * (1 - w));
+      if (finalPct != null) return Math.round(finalPct);
+      if (practicePct != null) return Math.round(practicePct);
+      return 0;
     }
     return max > 0 ? Math.round((got / max) * 100) : 0;
   }
@@ -566,6 +590,55 @@
       refreshMenuChecks();
       refreshNavState();
     });
+  }
+
+  // Pantalla final de resultados: nota, APTO/NO APTO y desglose de calificaciones.
+  function renderResults(content) {
+    var rules = COURSE.scorm.rules || {};
+    var status = evaluateCompletion();      // actualiza SCORM + STATE.finalScore
+    var score = STATE.finalScore;
+    var src = rules.score_source || 'final_test';
+    var ft = COURSE.assessments && COURSE.assessments.final_test;
+    var min = rules.min_score || (ft && ft.pass_score) || 0;
+    var incomplete = status === 'incomplete';
+    var pass = status === 'passed';
+    function pct(g, m) { return m ? Math.round((g / m) * 100) : 0; }
+
+    var rows = [];
+    if (ft && (ft.questions || []).length && (src === 'final_test' || src === 'mixed')) {
+      var fr = STATE.results.__final__;
+      rows.push({ label: ft.title || 'Test final',
+        detail: fr ? (fr.score + '/' + fr.maxScore + ' (' + pct(fr.score, fr.maxScore) + '%)') : 'Sin realizar' });
+    }
+    if (src === 'unit_tests' || src === 'mixed') {
+      SCREENS.forEach(function (e) {
+        if (e.isFinalTest || e.isResults) return;
+        var it = e.screen.interaction;
+        if (it && it.scored) {
+          var r = STATE.results[it.id];
+          rows.push({ label: e.screen.title || 'Actividad',
+            detail: r ? (r.correct ? '✔ Correcta' : '✖ Incorrecta') : 'Sin responder' });
+        }
+      });
+    }
+
+    var cls = incomplete ? 'is-warn' : (pass ? 'is-ok' : 'is-error');
+    var estado = incomplete ? '⚠ Curso incompleto' : (pass ? '✔ APTO' : '✖ NO APTO');
+    var html = '<article class="me-screen me-screen-results"><h1>Resultados</h1>' +
+      '<div class="me-result-hero ' + cls + '">' +
+      '<div class="me-result-score">' + score + '%</div>' +
+      '<div class="me-result-state">' + estado + '</div>' +
+      '<div class="me-result-min">Nota mínima para aprobar: ' + min + '%</div></div>';
+    if (rows.length) {
+      html += '<table class="me-result-table"><caption>Desglose de calificaciones</caption><tbody>';
+      rows.forEach(function (r) {
+        html += '<tr><th scope="row">' + esc(r.label) + '</th><td>' + esc(r.detail) + '</td></tr>';
+      });
+      html += '</tbody></table>';
+    }
+    if (incomplete) html += '<p class="me-instructions">Completa todas las pantallas y actividades requeridas para obtener la calificación final.</p>';
+    html += '</article>';
+    content.innerHTML = html;
   }
 
   // ---- Tiempo / cierre ---------------------------------------------------

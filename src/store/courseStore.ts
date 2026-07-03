@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Course, Screen, ScreenType } from '../schema/course.schema'
+import type { Course, Screen, ScreenType, UnitTest, ScormConfig } from '../schema/course.schema'
 import { Course as CourseSchema, Screen as ScreenSchema } from '../schema/course.schema'
 import { migrate } from '../schema/migrations'
 import { sampleCourse } from '../schema/sample-course'
@@ -57,6 +57,10 @@ interface CourseState {
   deleteScreen: (id: string) => void
   /** Reordena dentro de la unidad o mueve entre unidades. */
   moveScreen: (id: string, toUnitId: string, toIndex: number) => void
+  /** Reemplaza el test final (`assessments.final_test`); `null` lo elimina. */
+  setFinalTest: (test: UnitTest | null) => void
+  /** Actualiza la config SCORM (nota mínima, reglas de finalización, etc.). */
+  updateScorm: (patch: Partial<ScormConfig>) => void
 
   addAsset: (path: string, blob: Blob) => void
 
@@ -176,6 +180,20 @@ export const useCourseStore = create<CourseState>((set, get) => {
 
   changeScreenType: (id, type) => {
     get().updateScreen(id, { type })
+  },
+
+  setFinalTest: (test) => {
+    snapshot()
+    const course = clone(get().course)
+    course.assessments = { ...course.assessments, final_test: test }
+    set({ course })
+  },
+
+  updateScorm: (patch) => {
+    snapshot()
+    const course = clone(get().course)
+    course.scorm = { ...course.scorm, ...patch }
+    set({ course })
   },
 
   addScreen: (unitId, afterId) => {

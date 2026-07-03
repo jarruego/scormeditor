@@ -123,6 +123,12 @@ solo habla con ese contrato; no conoce el tipo concreto.
   `.me-dnd`). Las informativas (`accordion`, `tabs`, `flip_cards`, `video`,
   `hotspots`, `case_practice`) **no** fijan `STATE.results`; su avance se captura al
   entrar (ver sync más abajo) para no bloquear «Siguiente».
+- **Cuerpos de `accordion`/`tabs` en bloque**: usan `block()` (→ `Renderer.mdToHtml`,
+  no `rich()`), así una lista `- ` dentro de un `item` sale como `<ul>`, no en línea.
+  El resto de textos cortos (títulos, opciones, cards) siguen con `rich()` (inline).
+- **Posición de la interacción respecto al texto**: `screen.interaction_layout`
+  (`top`/`bottom`, def. `bottom`). `render()` mueve `.me-interaction` tras el `<h1>`
+  cuando es `top`. Editable en `ScreenEditor`.
 
 ## Recursos visuales, narración y transcripción
 - `visual_resource` admite `layout` (`top`/`bottom`/`left`/`right`, def. `top`) y
@@ -142,11 +148,36 @@ solo habla con ese contrato; no conoce el tipo concreto.
 - **Modo autor** (`window.__AUTHOR_MODE__`): navegación **libre y sin gating** para
   poder probar sin completar cada pantalla. En modo alumno, «Siguiente» exige
   `screenSatisfied(current)` (pantalla requerida vista / interacción respondida).
-- **Evaluación**: el SCORM «escupe» una nota final a partir de los test/
-  interacciones evaluables acertados. `score_source` por defecto `mixed`. En Moodle
-  la finalización puede marcarse por nota mínima, ver todas las pantallas o solo
-  entrar (`rules` en `course.json`; `mastery_score`/`masteryscore` en el manifiesto).
-- El test final usa el id reservado `__final__` (excluido del postMessage de sync).
+- **Evaluación** (`computeScore()` en `app.js`): la nota depende de `score_source`:
+  - `final_test`: nota **solo** del test final (`__final__`). Las interacciones
+    evaluables de contenido NO puntúan (son práctica + requisito de finalización).
+  - `unit_tests`: nota **solo** de las interacciones evaluables.
+  - `mixed`: **media ponderada** de práctica y test final por
+    `rules.mixed_final_weight` (% del test final, def. 70; cada bloque se normaliza a
+    su propio %, **no** por suma de puntos). Añadido jul 2026 (antes era proporcional
+    a los `points`, que diluía el test final).
+- Una interacción evaluable se marca `completed` cuando se **resuelve** (acierto o
+  intentos agotados); con `require_interactions` cuenta para la finalización (hay que
+  **responderla**, no acertarla, salvo intentos ilimitados → hay que acertar).
+- **Pantallas sintéticas** al final de `SCREENS` (no están en `course.json`, las añade
+  `flatten()`): el **test final** (`__final__`, si hay `assessments.final_test` con
+  preguntas) y una **pantalla de Resultados** (`__results__`, si hay algo que calificar)
+  con nota, APTO/NO APTO y desglose (`renderResults()`). Ambas excluidas del
+  postMessage de sync con el editor.
+- `mastery_score`/`masteryscore` van al manifiesto; `rules.min_score` es el umbral
+  APTO en el runtime.
+
+## Superficies de edición del editor (no todo es «pantalla»)
+El panel central (`App.tsx`) muestra `ScreenEditor` salvo cuando el nodo seleccionado
+es un **id sintético**:
+- **`__final__`** (nodo «Evaluación → Test final» del `CourseTree`) → `FinalTestEditor`:
+  edita `assessments.final_test` (título, `pass_score`, preguntas/opciones/feedback)
+  vía `setFinalTest` del store.
+- **Ajustes del curso** (`CourseSettingsEditor`) NO es un nodo del árbol: es un **modal**
+  que se abre con el botón **⚙ Ajustes** de la `Toolbar` (junto a «Archivo ▾»). Edita
+  `scorm.rules` + `mastery_score` (nota mínima, `score_source`, `mixed_final_weight`,
+  % pantallas, `require_interactions`, intentos, navegación) vía `updateScorm`.
+  Decisión (jul 2026): los ajustes son config del curso, no una «diapositiva» del árbol.
 
 ## Persistencia y modelo de documento (`src/store/persistence.ts`, `autosave.ts`)
 

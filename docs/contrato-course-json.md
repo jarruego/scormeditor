@@ -77,6 +77,9 @@ Reglas que NO se pueden romper:
 ```
 
 - `score_source`: `"final_test"` | `"unit_tests"` | `"mixed"`.
+- `mixed_final_weight` (opcional, def. `70`): solo con `score_source:"mixed"`, peso (%)
+  del test final en la nota; la práctica pesa el resto. Cada bloque se calcula sobre su
+  propio total (no por suma de puntos). También editable en «Ajustes del curso».
 - `navigation`: `"free"` | `"sequential"` | `"mixed"` (usa el nombre en inglés).
 - `attempts_allowed`: `0` = ilimitados.
 
@@ -384,6 +387,12 @@ con `correct` y `feedback` por opción:
 El **test calificable** va aquí, NO como interacción de una pantalla.
 Si `scorm.rules.score_source = "final_test"`, **debe** existir `final_test` con
 preguntas.
+
+> **NO crees una pantalla `unit_quiz`** (ni ninguna pantalla) con el test escrito como
+> texto: duplicaría el test (una versión en texto + la interactiva). El test vive
+> **solo** en `assessments.final_test`; el runtime ya añade automáticamente la pantalla
+> interactiva del test **y una pantalla final de Resultados** (nota + APTO/NO APTO).
+> Tampoco crees una pantalla de «Resultados»/«Calificaciones»: la pone la app sola.
 
 ```json
 "assessments": {

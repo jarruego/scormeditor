@@ -25,6 +25,7 @@ export const sampleCourse: Course = {
       min_score: 60,
       attempts_allowed: 0,
       score_source: 'final_test',
+      mixed_final_weight: 70,
       navigation: 'mixed',
       allow_resume: true,
     },

@@ -74,6 +74,7 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
 .ed-row { display: flex; gap: .75rem; align-items: end; flex-wrap: wrap; }
 .ed-row .ed-field { flex: 1; min-width: 140px; }
 .ed-field-narrow { max-width: 130px; }
+.ed-grow { flex: 1; min-width: 140px; }
 .ed-check { display: flex; gap: .4rem; align-items: center; }
 .ed-check input { width: auto; }
 .ed-group { border: 1px solid var(--c-border); border-radius: 8px; padding: .75rem; display: grid; gap: .6rem; }

@@ -51,6 +51,8 @@ export function CourseTree() {
   const moveScreen = useCourseStore((s) => s.moveScreen)
   const addScreen = useCourseStore((s) => s.addScreen)
   const locate = useCourseStore((s) => s.locate)
+  const select = useCourseStore((s) => s.selectScreen)
+  const finalSelected = useCourseStore((s) => s.selectedScreenId === '__final__')
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -89,6 +91,24 @@ export function CourseTree() {
           </div>
         ))}
       </DndContext>
+
+      <div className="ed-module">
+        <p className="ed-module-title">Evaluación</p>
+        <div className="ed-unit">
+          <ul className="ed-screens">
+            <li className={`ed-screen ${finalSelected ? 'is-selected' : ''}`}>
+              <button className="ed-screen-label" onClick={() => select('__final__')}>
+                <span className="ed-screen-type">test</span>
+                <span className="ed-screen-title">
+                  {course.assessments.final_test
+                    ? course.assessments.final_test.title || 'Test final'
+                    : 'Test final (vacío)'}
+                </span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   )
 }

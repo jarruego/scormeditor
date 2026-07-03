@@ -223,6 +223,8 @@ export const QuizQuestion = z.object({
   source_refs: z.array(SourceRef).default([]),
 })
 
+export type QuizQuestion = z.infer<typeof QuizQuestion>
+
 export const UnitTest = z.object({
   id: z.string(),
   unit_id: z.string(),
@@ -230,6 +232,7 @@ export const UnitTest = z.object({
   questions: z.array(QuizQuestion).default([]),
   pass_score: z.number().min(0).max(100).default(60),
 })
+export type UnitTest = z.infer<typeof UnitTest>
 
 export const GlossaryTerm = z.object({
   term: z.string(),
@@ -257,6 +260,12 @@ export const ScormConfig = z.object({
     min_score: z.number().min(0).max(100).default(60),
     attempts_allowed: z.number().int().min(0).default(0).describe('0 = ilimitados'),
     score_source: z.enum(['final_test', 'unit_tests', 'mixed']).default('mixed'),
+    mixed_final_weight: z
+      .number()
+      .min(0)
+      .max(100)
+      .default(70)
+      .describe('En score_source="mixed", peso (%) del test final; la práctica pesa el resto'),
     navigation: NavigationMode.default('mixed'),
     allow_resume: z.boolean().default(true),
   }).default({}),

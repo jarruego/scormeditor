@@ -5,6 +5,7 @@ import type { Tab } from './store/courseStore'
 import { Toolbar } from './components/Toolbar'
 import { CourseTree } from './components/CourseTree'
 import { ScreenEditor } from './components/ScreenEditor'
+import { FinalTestEditor } from './components/FinalTestEditor'
 import { ValidationPanel } from './components/ValidationPanel'
 import { StudentPreview } from './components/StudentPreview'
 import { ReportPanel } from './components/ReportPanel'
@@ -12,6 +13,7 @@ import { ReportPanel } from './components/ReportPanel'
 export function App() {
   const tab = useCourseStore((s) => s.activeTab)
   const setTab = useCourseStore((s) => s.setActiveTab)
+  const selectedFinal = useCourseStore((s) => s.selectedScreenId === '__final__')
 
   useEffect(() => {
     initAutoSave()
@@ -66,7 +68,7 @@ export function App() {
           </aside>
         )}
         <section className="ed-content">
-          {tab === 'editor' && <ScreenEditor />}
+          {tab === 'editor' && (selectedFinal ? <FinalTestEditor /> : <ScreenEditor />)}
           {tab === 'preview' && <StudentPreview />}
           {tab === 'validation' && <ValidationPanel />}
           {tab === 'report' && <ReportPanel />}

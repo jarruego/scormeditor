@@ -109,8 +109,12 @@ soporta; al extraer del PDF conoces `width`/`height`, calcula el ratio):
   debajo del texto, a lo ancho.
 - **Cuadrada o vertical** (alto ≥ ancho) → `"layout": "right"` con `"media_width": "50"`
   (o `"33"` si es muy vertical): la imagen al lado y el texto a su izquierda.
-Recuerda (regla estructural): una pantalla con imagen es de **desarrollo**; no metas
-además una interacción evaluable en ella.
+**Regla estructural (imagen + texto + interacción):** si una pantalla ya lleva **imagen
++ texto de desarrollo**, NO añadas **ninguna** interacción en ella. Pasa la interacción
+a una **pantalla nueva a continuación**, con el **MISMO `title`** y **sin `student_text`**
+(solo la interacción). Así lo hacemos con «Entrevista y conversación», «¿Cuándo recoger
+la información?», «Adaptación a necesidades específicas»… (texto+imagen en una; la
+actividad en la siguiente, mismo título).
 
 ### Presentar el texto de forma amena (interactividades informativas)
 **Úsalas de forma habitual** para el contenido denso o estructurado: son la forma de
@@ -119,8 +123,11 @@ formato ameno (**lo contienen**, no lo resumen). Un tema suele llevar **varias**
 referencia, el resultado que buscamos tenía ~6 informativas + ~15 aplicadas en la
 unidad). **No las elimines convirtiéndolas en pantallas de texto pequeñas.** Cuándo:
 - **`accordion`**: sub-apartados o lista de puntos con desarrollo → cada `item` = un
-  apartado con su texto original.
-- **`tabs`**: 2-4 bloques paralelos (tipos, fases, enfoques) → una pestaña por bloque.
+  apartado con su texto original. **Es la opción por defecto cuando hay muchos ítems**
+  (5+) o textos largos: crece hacia abajo y siempre cabe.
+- **`tabs`**: **solo para 2-4** bloques paralelos y **cortos** (tipos, fases, enfoques)
+  → una pestaña por bloque. Con **más de 4 ítems o textos largos, NO uses tabs** (no
+  caben en horizontal): usa `accordion`.
 - **`flip_cards`**: pares término→definición, concepto→ejemplo → `front`/`back`.
 El texto de cada `item`/`tab`/`card` es el **texto fuente** de esa parte. En
 `transcript` va igualmente el trozo completo.
@@ -253,6 +260,10 @@ Convierte «reflexiona sobre…» en algo accionable siempre que puedas:
 - Cubre los objetivos del tema: si un objetivo no tiene pregunta que lo mida, falta
   una pregunta.
 - Distractores plausibles (errores típicos reales), no opciones absurdas de relleno.
+- **El test va SOLO en `assessments.final_test`.** NO crees una pantalla `unit_quiz`
+  (ni otra) con el test como texto: saldría duplicado (texto + interactivo). El runtime
+  añade solo la pantalla interactiva del test **y** una **pantalla de Resultados**
+  (nota + APTO/NO APTO); **no** crees tú una pantalla de resultados/calificaciones.
 
 ## Accesibilidad (no negociable)
 - Toda imagen con `alt` descriptivo (no «imagen» ni el nombre del fichero).

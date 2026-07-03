@@ -10,6 +10,7 @@ import {
   saveProjectAs,
 } from '../store/autosave'
 import { TtsPanel } from './TtsPanel'
+import { CourseSettingsEditor } from './CourseSettingsEditor'
 
 const DISCARD_MSG =
   'Esto reemplazará el curso que tienes abierto. Los cambios que no hayas guardado en el archivo de proyecto se perderán. ¿Continuar?'
@@ -32,6 +33,7 @@ export function Toolbar() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [ttsOpen, setTtsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const fsOk = isFsSupported()
@@ -143,6 +145,10 @@ export function Toolbar() {
           )}
         </div>
 
+        <button onClick={() => setSettingsOpen(true)} title="Ajustes del curso: nota mínima, finalización, peso de la nota…">
+          ⚙ Ajustes
+        </button>
+
         <button
           className={`ed-status ${val.ok ? 'ok' : 'err'}`}
           onClick={() => setActiveTab('validation')}
@@ -155,6 +161,7 @@ export function Toolbar() {
       {importError && <div className="ed-import-error">⛔ {importError}</div>}
 
       {ttsOpen && <TtsPanel onClose={() => setTtsOpen(false)} />}
+      {settingsOpen && <CourseSettingsEditor onClose={() => setSettingsOpen(false)} />}
     </header>
   )
 }

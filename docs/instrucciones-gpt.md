@@ -24,9 +24,8 @@ retoques mínimos de conexión. Trabaja sobre el **texto extraído** (no de memo
 repártelo en **pantallas sustanciales** (un apartado con su desarrollo cada una, varios
 párrafos; **NO micro-diapositivas de una frase**). Cada trozo va **visible**
 (`student_text` y/o dentro de accordion/tabs/flip_cards que lo **contienen**) **y
-duplicado en `transcript`**. Nunca comprimas ni truncues. Conservar el 100% se logra
-con pantallas **densas** + interactividades **informativas**, NO con muchas pantallas
-diminutas (referencia: ~80 pantallas/unidad, no ~160).
+duplicado en `transcript`**. Nunca comprimas ni truncues. El 100% se logra con
+pantallas **densas** + interactividades, no con micro-pantallas (~80/unidad, no ~160).
 
 ## Formato de `student_text` y `title`
 La diapositiva es **solo el contenido** (párrafos, listas, negritas). Reglas:
@@ -36,12 +35,12 @@ La diapositiva es **solo el contenido** (párrafos, listas, negritas). Reglas:
   pantallas, todas mantienen **el mismo `title`**. Interacción: `title` = **el del tema**
   (nunca `"Checkpoint…"`; la app rotula sola el tipo).
   Numeración de epígrafes en los `title`: **todo o nada**, por defecto **quítala**.
-- **Análisis estructural**: encabezado + subtítulo + su cuerpo = **una** pantalla (no
-  tres); **ninguna pantalla vacía ni diminuta**; no aísles un encabezado de su
-  contenido. **No elimines interactividades** informativas troceándolas en pantallas de
-  texto: **unifica** el contenido denso en un `accordion`/`tabs`. Dos sub-epígrafes con
-  desarrollo (`3.8` y `3.9`) → **una pantalla cada uno**. **No juntes texto+imagen+
-  interacción** en una pantalla: separa desarrollo-con-imagen / interacción.
+- **Análisis estructural**: encabezado + subtítulo + su cuerpo = **una** pantalla;
+  **ninguna pantalla vacía ni diminuta**. **No elimines interactividades** informativas
+  troceándolas en texto: **unifica** el contenido denso en un `accordion`/`tabs`. Dos
+  sub-epígrafes con desarrollo → una pantalla cada uno. **Si una pantalla lleva
+  imagen+texto, NO añadas interacción**: pásala a la pantalla siguiente, **mismo
+  `title`, sin `student_text`** (solo la interacción).
 - **Imágenes** (`visual_resource.layout`): apaisada → `"top"`/`"bottom"`; cuadrada o
   vertical → `"right"` (con `media_width`). Al extraer del PDF conoces `width`/`height`.
 - **Sin rótulos por diapositiva** (`Idea clave:`, `Claves:`, `Objetivo:`, `Resumen:`)
@@ -53,28 +52,26 @@ La diapositiva es **solo el contenido** (párrafos, listas, negritas). Reglas:
   línea siguiente); no metas el título dentro del párrafo ni como negrita suelta.
 - **Conserva las negritas del original** (`**...**`): si va en negrita en el documento,
   mantenla; no inventes negritas nuevas.
-- **Enlaces externos**: presérvalos como `[texto](url)` (http/https/mailto); las URLs
-  sueltas, envuélvelas igual. El runtime los abre en otra pestaña; no pongas HTML.
-- **Callouts obligatorios cuando el original marca algo**: cajas/etiquetas de
-  «Importante», «¿Sabías que?», «Consejo», «Atención», «Caso»… → `::: tipo` … `:::`
-  (tipos en §4.1); no las pierdas como texto plano.
+- **Enlaces externos**: presérvalos como `[texto](url)` (http/https/mailto), también
+  URLs sueltas. El runtime los abre en otra pestaña; no pongas HTML.
+- **Callouts obligatorios cuando el original marca algo** (cajas/etiquetas de
+  «Importante», «¿Sabías que?», «Consejo», «Caso»…) → `::: tipo` … `:::` (tipos en §4.1).
 
 ## Interactividad
 No en cada pantalla, pero **sí con frecuencia** (referencia: ~6 informativas + ~15
 aplicadas por unidad).
 - **Informativas** (`accordion`/`tabs`/`flip_cards`) para contenido denso/estructurado:
-  **contienen** el texto (no lo resumen). **Úsalas habitualmente**; no las suprimas
-  convirtiéndolas en micro-pantallas de texto.
+  **contienen** el texto (no lo resumen). **Úsalas habitualmente**; no las suprimas.
+  `tabs` **solo 2-4 ítems cortos**; con más ítems o textos largos usa `accordion`
+  (crece hacia abajo y cabe).
 - **Aplicadas** (`scenario_decision`/`classification`/`single_choice`/`case_practice`)
   como checkpoints **repartidos cada 4-8 pantallas a lo largo del tema** (obligatorio:
-  al menos ⌈N/8⌉ por tema de N pantallas; NO acumulados al final). **Si no llegas a esa
-  densidad, añade más** donde el contenido se pueda aplicar. Si una repite conceptos ya
-  vistos, pásala a la siguiente pantalla o suprímela.
-- **Una sola interacción por pantalla, y ENTERA en una pantalla**: no partas un
-  accordion/tabs («(1)»/«(2)») ni una actividad (`case_practice`/`reflection`/
-  `forum_prompt`) en varias pantallas; toda la actividad (tareas + cómo realizarla +
-  preguntas) va junta aunque sea larga. Dentro de un `item`/`tab`, las listas con `- `
-  una por línea. Posición: `interaction_layout` `"top"`/`"bottom"` (def. debajo).
+  al menos ⌈N/8⌉ por tema de N pantallas; NO acumulados al final). **Si faltan, añade
+  más.** Si una repite conceptos ya vistos, pásala a la siguiente o suprímela.
+- **Una sola interacción por pantalla, ENTERA**: no partas un accordion/tabs
+  («(1)»/«(2)») ni una actividad (`case_practice`/`reflection`) en varias pantallas;
+  va junta aunque sea larga. Listas dentro de un `item`/`tab`: `- ` una por línea.
+  Posición: `interaction_layout` `"top"`/`"bottom"` (def. debajo).
 - Cada interacción: `prompt`, `instructions`, `learning_objective`, `feedback`,
   `source_refs`, `scored`, `points`, `retries`. Debate humano → `forum_prompt`.
 
@@ -99,9 +96,11 @@ antes/después, sin Markdown ni fences).
 ## Contrato (esencial; detalle en `contrato-course-json.md`)
 - Entrega = **`.scormproj`** (ZIP con `course.json` en la raíz + `assets/`).
   `course.json` válido, `schema_version "1.0.0"`, todo el contenido en
-  `modules[].units[].screens[]` (nunca en raíz). Solo tipos permitidos; test en
-  `assessments.final_test`; `quality_checklist` objeto de booleanos;
-  `glossary`/`bibliography` no vacíos; `id` únicos.
+  `modules[].units[].screens[]` (nunca en raíz). Solo tipos permitidos; test **solo**
+  en `assessments.final_test` (NO una pantalla `unit_quiz` con el test como texto, ni
+  pantalla de «Resultados»: la app añade sola el test interactivo y la nota final);
+  `quality_checklist` objeto de booleanos; `glossary`/`bibliography` no vacíos; `id`
+  únicos.
 - **Toda ruta `assets/…` tiene su binario en el ZIP.** Sin imagen → `kind:"none"` +
   nota en `editor_notes`; nunca un `src` roto.
 - No inventes claves. Usa solo: `description`, `subtitle`, `editor_notes`,

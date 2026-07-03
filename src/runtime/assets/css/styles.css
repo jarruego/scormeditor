@@ -158,7 +158,21 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-feedback { margin-top: .75rem; padding: .6rem .8rem; border-radius: 6px; }
 .me-feedback.is-ok { background: #e7f6ec; border: 1px solid var(--me-ok); color: #0c5a26; }
 .me-feedback.is-error { background: #fdecea; border: 1px solid var(--me-error); color: #7a1a14; }
+.me-feedback.is-warn { background: #fff7e0; border: 1px solid var(--me-warn, #F4C910); color: #6a4b00; }
 .me-expl { margin: .4rem 0 0; font-size: .9rem; }
+
+/* Pantalla de resultados */
+.me-result-hero { margin: 1rem 0; padding: 1.25rem; border-radius: 10px; text-align: center; }
+.me-result-hero.is-ok { background: #e7f6ec; border: 1px solid var(--me-ok); color: #0c5a26; }
+.me-result-hero.is-error { background: #fdecea; border: 1px solid var(--me-error); color: #7a1a14; }
+.me-result-hero.is-warn { background: #fff7e0; border: 1px solid var(--me-warn, #F4C910); color: #6a4b00; }
+.me-result-score { font-size: 2.6rem; font-weight: 800; line-height: 1; }
+.me-result-state { font-size: 1.2rem; font-weight: 700; margin-top: .3rem; }
+.me-result-min { font-size: .9rem; opacity: .8; margin-top: .3rem; }
+.me-result-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.me-result-table caption { text-align: left; font-weight: 600; margin-bottom: .4rem; }
+.me-result-table th, .me-result-table td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--me-border); }
+.me-result-table td { text-align: right; white-space: nowrap; }
 .me-accordion { display: grid; gap: .4rem; }
 .me-acc-head { width: 100%; text-align: left; padding: .6rem .8rem; background: var(--me-bg); border: 1px solid var(--me-border); border-radius: 6px; font: inherit; font-weight: 600; cursor: pointer; }
 .me-acc-head[aria-expanded="true"] { background: color-mix(in srgb, var(--me-primary) 12%, white); }
