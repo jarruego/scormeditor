@@ -380,4 +380,48 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 /* Evita desbordes horizontales en cualquier viewport */
 .me-content img, .me-content video, .me-content iframe, .me-prose { max-width: 100%; }
 .me-prose { overflow-wrap: anywhere; }
+/* ---- Niveles de animación (shell.motion) ---------------------------------- */
+/* 'none': apaga todas las animaciones y transiciones de la carcasa. */
+body.me-motion-none *, body.me-motion-none *::before, body.me-motion-none *::after {
+  animation: none !important; transition: none !important;
+}
+
+/* Revelado progresivo (solo con shell.motion = 'rich'; clases desde app.js).
+   Solo opacity/transform: el contenido siempre está en el DOM. */
+.me-rv { animation: me-rv-in .32s ease-out both; }
+.me-rv-wait { opacity: 0; }
+@keyframes me-rv-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* Extras de 'rich': los callouts entran deslizando desde su borde de color y
+   los ítems de las interactividades (acordeón, tarjetas, hitos) caen en cascada
+   SOLO en la primera visita (cuando su contenedor lleva .me-rv). */
+body.me-motion-rich .me-callout.me-rv { animation-name: me-rv-callout; }
+@keyframes me-rv-callout { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+body.me-motion-rich .me-interaction.me-rv .me-acc-item,
+body.me-motion-rich .me-interaction.me-rv .me-card,
+body.me-motion-rich .me-interaction.me-rv .me-tl-item,
+body.me-motion-rich .me-interaction.me-rv .me-chip {
+  animation: me-rv-in .3s ease-out both;
+}
+body.me-motion-rich .me-interaction.me-rv .me-acc-item:nth-child(2),
+body.me-motion-rich .me-interaction.me-rv .me-card:nth-child(2),
+body.me-motion-rich .me-interaction.me-rv .me-tl-item:nth-child(2),
+body.me-motion-rich .me-interaction.me-rv .me-chip:nth-child(2) { animation-delay: 60ms; }
+body.me-motion-rich .me-interaction.me-rv .me-acc-item:nth-child(3),
+body.me-motion-rich .me-interaction.me-rv .me-card:nth-child(3),
+body.me-motion-rich .me-interaction.me-rv .me-tl-item:nth-child(3),
+body.me-motion-rich .me-interaction.me-rv .me-chip:nth-child(3) { animation-delay: 120ms; }
+body.me-motion-rich .me-interaction.me-rv .me-acc-item:nth-child(4),
+body.me-motion-rich .me-interaction.me-rv .me-card:nth-child(4),
+body.me-motion-rich .me-interaction.me-rv .me-tl-item:nth-child(4),
+body.me-motion-rich .me-interaction.me-rv .me-chip:nth-child(4) { animation-delay: 180ms; }
+body.me-motion-rich .me-interaction.me-rv .me-acc-item:nth-child(5),
+body.me-motion-rich .me-interaction.me-rv .me-card:nth-child(5),
+body.me-motion-rich .me-interaction.me-rv .me-tl-item:nth-child(5),
+body.me-motion-rich .me-interaction.me-rv .me-chip:nth-child(5) { animation-delay: 240ms; }
+body.me-motion-rich .me-interaction.me-rv .me-acc-item:nth-child(n+6),
+body.me-motion-rich .me-interaction.me-rv .me-card:nth-child(n+6),
+body.me-motion-rich .me-interaction.me-rv .me-tl-item:nth-child(n+6),
+body.me-motion-rich .me-interaction.me-rv .me-chip:nth-child(n+6) { animation-delay: 300ms; }
+
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

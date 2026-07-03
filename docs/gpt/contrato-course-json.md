@@ -89,9 +89,15 @@ Reglas que NO se pueden romper:
   "primary_color": "#0b5fff",
   "show_sidebar": true,
   "show_progress": true,
-  "language": "es"
+  "language": "es",
+  "motion": "subtle"
 }
 ```
+
+- `motion` (opcional; def. `"subtle"`): animaciones de la carcasa. `"none"` (sin),
+  `"subtle"` (transiciones básicas) o `"rich"` (revelado progresivo del contenido
+  al entrar/hacer scroll y microanimaciones). Es una preferencia de presentación:
+  déjalo en `"subtle"` salvo que se pida otra cosa.
 
 ---
 

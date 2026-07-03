@@ -8,7 +8,9 @@ import type { ScormConfig } from '../schema/course.schema'
  */
 export function CourseSettingsSection() {
   const scorm = useCourseStore((s) => s.course.scorm)
+  const shell = useCourseStore((s) => s.course.shell)
   const updateScorm = useCourseStore((s) => s.updateScorm)
+  const updateShell = useCourseStore((s) => s.updateShell)
   const hasFinal = useCourseStore((s) => !!s.course.assessments.final_test)
 
   const setRule = (p: Partial<ScormConfig['rules']>) => updateScorm({ rules: { ...scorm.rules, ...p } })
@@ -82,6 +84,25 @@ export function CourseSettingsSection() {
             <span>Permitir reanudar donde lo dejó</span>
           </label>
         </div>
+      </fieldset>
+
+      <fieldset className="ed-group">
+        <legend>Apariencia (carcasa)</legend>
+        <div className="ed-row">
+          <label className="ed-field">
+            <span>Animaciones</span>
+            <select value={shell.motion} onChange={(e) => updateShell({ motion: e.target.value as any })}>
+              <option value="subtle">Sutiles (por defecto) — transiciones básicas</option>
+              <option value="rich">Llamativas — revelado progresivo del contenido y microanimaciones</option>
+              <option value="none">Sin animaciones</option>
+            </select>
+          </label>
+        </div>
+        <p style={{ margin: 0, fontSize: '.85rem', color: 'var(--c-muted)' }}>
+          En «Llamativas», el contenido de cada pantalla aparece en cascada la primera vez y el
+          resto se revela al hacer scroll; las pantallas ya vistas no se re-animan. Si el
+          alumno tiene activada la reducción de movimiento en su equipo, no se anima nada.
+        </p>
       </fieldset>
 
       <fieldset className="ed-group">

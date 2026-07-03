@@ -103,6 +103,26 @@ CSS); icono y título se escapan con `esc()`.
   `data-start`/`data-count`; `refreshMenuChecks` rellena el contador «hechas/total»
   (`.me-menu-count`) y la mini-barra (`.me-menu-uprog`).
 
+### Niveles de animación (`shell.motion`, jul 2026)
+`shell.motion` (`none`/`subtle` def./`rich`; editable en ⚙ Ajustes → Curso → Apariencia)
+pone `body.me-motion-<nivel>` en `applyShell`:
+- **`none`**: mata toda animación/transición por CSS (y `celebrate()` no lanza confeti).
+- **`subtle`** (defecto): el comportamiento de fases 1-2 tal cual.
+- **`rich`**: además, **revelado progresivo** (`applyReveal` en app.js): en la **primera
+  visita** de cada pantalla los bloques visibles (`.me-prose > *`, `.me-media`,
+  `.me-interaction`, `.me-transcript`) entran en cascada (70 ms/bloque, tope 560 ms) y
+  los que quedan bajo el pliegue esperan (`.me-rv-wait`, `opacity:0`) hasta entrar en el
+  viewport (`IntersectionObserver` con `root` = `#me-content`) → clase `.me-rv`. Extras
+  CSS bajo `body.me-motion-rich`: callouts deslizan desde su borde, ítems de
+  accordion/cards/timeline/chips en cascada `nth-child` **solo** si su `.me-interaction`
+  lleva `.me-rv` (primera visita).
+Decisiones deliberadas: **nunca temporizar por tiempo de lectura** (el ritmo lo pone el
+alumno con el scroll); `REVEALED` (por sesión) evita re-animar pantallas ya vistas; sin
+`IntersectionObserver` o con `prefers-reduced-motion` todo se muestra al instante; solo
+`opacity`/`transform` (contenido siempre en el DOM → lectores de pantalla OK) y
+`print.css` fuerza todo visible en papel. Compatible con cualquier navegador que use
+Moodle (IO es 2019+; hay degradación).
+
 ## Impresión
 El botón **Imprimir** llama a `window.print()`. `src/runtime/print/print.css` reduce la
 salida a **solo la pantalla actual**: oculta topbar (transcripción/audio/glosario/recursos/

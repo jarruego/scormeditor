@@ -8,6 +8,8 @@
   .me-transcript[open], .me-transcript { display: block; }
   .me-transcript summary { display: none; }
   body { background: #fff; color: #000; }
+  /* Revelado progresivo (shell.motion 'rich'): en papel todo visible y quieto. */
+  .me-rv, .me-rv-wait { opacity: 1 !important; transform: none !important; animation: none !important; }
   a[href]::after { content: " (" attr(href) ")"; font-size: .8em; color: #555; }
   .me-feedback { border: 1px solid #999 !important; }
 

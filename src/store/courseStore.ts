@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Course, Screen, ScreenType, UnitTest, ScormConfig } from '../schema/course.schema'
+import type { Course, Screen, ScreenType, UnitTest, ScormConfig, ShellConfig } from '../schema/course.schema'
 import { Course as CourseSchema, Screen as ScreenSchema } from '../schema/course.schema'
 import { migrate } from '../schema/migrations'
 import { sampleCourse } from '../schema/sample-course'
@@ -71,6 +71,8 @@ interface CourseState {
   setFinalTest: (test: UnitTest | null) => void
   /** Actualiza la config SCORM (nota mínima, reglas de finalización, etc.). */
   updateScorm: (patch: Partial<ScormConfig>) => void
+  /** Actualiza la config de la carcasa (marca, color, animaciones…). */
+  updateShell: (patch: Partial<ShellConfig>) => void
 
   addAsset: (path: string, blob: Blob) => void
   /** Borra un binario del mapa de assets (irreversible: no entra en el historial). */
@@ -208,6 +210,13 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot()
     const course = clone(get().course)
     course.scorm = { ...course.scorm, ...patch }
+    set({ course })
+  },
+
+  updateShell: (patch) => {
+    snapshot()
+    const course = clone(get().course)
+    course.shell = { ...course.shell, ...patch }
     set({ course })
   },
 

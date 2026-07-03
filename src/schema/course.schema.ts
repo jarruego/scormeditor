@@ -298,6 +298,10 @@ export const ShellConfig = z.object({
   show_sidebar: z.boolean().default(true),
   show_progress: z.boolean().default(true),
   language: LanguageCode,
+  motion: z
+    .enum(['none', 'subtle', 'rich'])
+    .default('subtle')
+    .describe('Animaciones de la carcasa: none (sin), subtle (básicas), rich (revelado progresivo y microanimaciones)'),
 }).default({})
 export type ShellConfig = z.infer<typeof ShellConfig>
 

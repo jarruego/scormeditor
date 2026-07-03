@@ -35,6 +35,7 @@ export const sampleCourse: Course = {
     primary_color: '#0b5fff',
     show_sidebar: true,
     show_progress: true,
+    motion: 'subtle',
     language: 'es',
   },
   modules: [

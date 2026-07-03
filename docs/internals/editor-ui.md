@@ -37,7 +37,8 @@ desplegable sigue mandando.
   - **Curso (SCORM y finalización)…** → `CourseSettingsModal` con `CourseSettingsSection`
     (antes `CourseSettingsEditor`): `scorm.rules` + `mastery_score` (nota mínima,
     `score_source`, `mixed_final_weight`, % pantallas, `require_interactions`, intentos,
-    navegación) vía `updateScorm`.
+    navegación) vía `updateScorm`; y fieldset **Apariencia** → `shell.motion`
+    (animaciones none/subtle/rich) vía `updateShell` (ver `arquitectura-runtime.md`).
   - **Narración por voz…** → `NarrationModal` con `NarrationSection` (antes `TtsPanel`):
     config TTS (localStorage) y generación masiva de audio; ver `tts-narracion.md`.
   Ambas ventanas comparten el marco genérico `SettingsWindow` (`SettingsModal.tsx`): cabecera,

@@ -107,6 +107,9 @@
   function applyBranding() {
     var shell = COURSE.shell || {};
     if (shell.primary_color) document.documentElement.style.setProperty('--me-primary', shell.primary_color);
+    // Nivel de animación de la carcasa (shell.motion): none | subtle | rich.
+    MOTION = shell.motion === 'none' || shell.motion === 'rich' ? shell.motion : 'subtle';
+    document.body.classList.add('me-motion-' + MOTION);
     document.getElementById('me-brand').textContent = shell.brand || COURSE.course.title || 'Curso';
     document.getElementById('me-course-title').textContent = COURSE.course.title || '';
     document.title = COURSE.course.title || 'Curso SCORM';
@@ -317,6 +320,7 @@
       };
       var rendered = Renderer.render(content, sc, ctx);
       activeController = rendered.interaction;
+      applyReveal(sc.id, content);
       // Captura el estado inicial: las interacciones informativas (accordion,
       // tabs, flip_cards, video, case_practice...) se consideran completadas al
       // renderizarse y nunca llaman a ctx.save. Las evaluables devuelven
@@ -723,6 +727,50 @@
     return !!(global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
+  // ---- Revelado progresivo del contenido (shell.motion = 'rich') -----------
+  // Primera visita a una pantalla: los bloques visibles entran en cascada
+  // (delays cortos, con tope) y los que quedan bajo el pliegue aparecen al
+  // hacer scroll (IntersectionObserver). El alumno marca el ritmo con su
+  // scroll: NUNCA se retiene contenido por temporizador. Pantallas ya vistas
+  // en la sesión no se re-animan. Sin IntersectionObserver (navegador muy
+  // antiguo) todo se muestra al instante. El contenido siempre está en el DOM
+  // (solo opacity/transform): lectores de pantalla e impresión intactos.
+  var MOTION = 'subtle';
+  var REVEALED = {};
+  var revealObserver = null;
+
+  function applyReveal(screenId, content) {
+    if (revealObserver) { revealObserver.disconnect(); revealObserver = null; }
+    if (MOTION !== 'rich' || prefersReducedMotion() || REVEALED[screenId]) return;
+    REVEALED[screenId] = true;
+    var blocks = [].slice.call(content.querySelectorAll(
+      '.me-prose > *, .me-media, .me-interaction, .me-transcript'));
+    if (!blocks.length) return;
+    var fold = content.getBoundingClientRect().bottom;
+    var delay = 0;
+    var below = [];
+    blocks.forEach(function (b) {
+      if (b.getBoundingClientRect().top < fold) {
+        b.classList.add('me-rv');
+        b.style.animationDelay = Math.min(delay, 560) + 'ms'; // tope de cascada
+        delay += 70;
+      } else {
+        below.push(b);
+      }
+    });
+    if (!below.length || !('IntersectionObserver' in global)) return;
+    below.forEach(function (b) { b.classList.add('me-rv-wait'); });
+    revealObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        en.target.classList.remove('me-rv-wait');
+        en.target.classList.add('me-rv');
+        revealObserver.unobserve(en.target);
+      });
+    }, { root: content, rootMargin: '0px 0px -8% 0px' });
+    below.forEach(function (b) { revealObserver.observe(b); });
+  }
+
   // Cuenta de 0 al valor final con easing (para la nota de Resultados).
   function animateNumber(el, target, suffix) {
     if (prefersReducedMotion()) { el.textContent = target + suffix; return; }
@@ -740,7 +788,7 @@
   // Confeti ligero propio (canvas efímero, paleta corporativa, sin dependencias).
   var celebrated = false;
   function celebrate() {
-    if (celebrated || prefersReducedMotion()) return;
+    if (celebrated || prefersReducedMotion() || MOTION === 'none') return;
     celebrated = true;
     var canvas = document.createElement('canvas');
     canvas.className = 'me-confetti';
