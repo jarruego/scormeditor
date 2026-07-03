@@ -207,6 +207,12 @@ el editor pone icono y título automáticamente):
   `::: custom | #7787BF | 📖 | Glosario`). Úsalo con moderación.
 - Dentro de un callout vale markdown ligero (viñetas, negrita…). **No** anides un
   callout dentro de otro.
+- **El cuerpo del callout es contenido real** (la frase destacada del original), **nunca
+  la etiqueta ni el keyword**: `::: important\nImportante\n:::` está **mal** (callout
+  vacío; el editor ya pone el título «📌 Importante» solo).
+- **No pongas dos callouts del mismo tipo en una misma pantalla.** Si un apartado tiene
+  varios destacados iguales, cada uno acompaña a su párrafo → **repártelos entre las
+  pantallas** correspondientes, uno por pantalla.
 - El contenido de un callout va **escapado** por el runtime: escribe texto plano,
   nunca HTML.
 
@@ -222,8 +228,14 @@ Reglas de formato (para que el editor lo renderice bien):
   la diapositiva es solo el contenido.
 - **`title` corto y descriptivo** (2-6 palabras), NO un fragmento del contenido cortado
   a mitad de frase, y **no repetido como primera línea del `student_text`** (el `title`
-  ya es la cabecera). Si un apartado se parte en varias pantallas, todas mantienen el
-  mismo `title` (continuación).
+  ya es la cabecera; si el original repite el epígrafe al abrir el cuerpo, elimínalo).
+  Si un apartado se parte en varias pantallas, todas mantienen el mismo `title`
+  (continuación).
+- **Quita la numeración de epígrafes del PDF** (`1.3`, `1.3.1`, `1.4.2`…) en **todo el
+  texto**, no solo en el `title`: también en encabezados `##`/`###`, en los **títulos de
+  los ítems** de `accordion`/`tabs`/`flip_cards` y en la primera línea del cuerpo. Es
+  rótulo de maquetación del documento, no contenido. (Criterio «todo o nada»; por
+  defecto, **fuera**.)
 - **Pantallas sustanciales, ninguna vacía ni diminuta.** Cada pantalla = un apartado
   con su desarrollo (varios párrafos), no una frase. Un encabezado + su subtítulo + su
   cuerpo van en **una** pantalla, no en tres. **Evita micro-diapositivas** y **no
@@ -264,6 +276,14 @@ Reglas de formato (para que el editor lo renderice bien):
     `"media_width": "50"` (o `"33"` si es muy vertical), para que el texto quede al lado.
   - Al extraer del PDF ya conoces las dimensiones (`extract_image` da `width`/`height`);
     calcula el ratio y fija `layout` en consecuencia.
+- **Texto + imagen = UNA pantalla.** Un párrafo o apartado acompañado de una figura se
+  entrega como **una sola pantalla de contenido** con `student_text` visible **y** su
+  `visual_resource`. **No** conviertas ese texto expositivo en un `accordion`/`tabs`, ni
+  pongas cada imagen en una pantalla suelta con un pie de foto: eso fragmenta el
+  contenido y lo empobrece. Reserva `accordion`/`tabs` para conjuntos de **ítems
+  paralelos** (lista de herramientas, categorías…), no para prosa corrida. Si varias
+  figuras ilustran sub-puntos distintos, empareja **cada figura con su texto** en su
+  pantalla (mismo `title`), en vez de una ristra de imágenes sin texto.
 - Si `kind="video_youtube"` → `src` = **ID de YouTube** (no la URL completa).
 - Si `kind="video_file"`/`"audio"` y hay voz → `has_voice: true` **y** `tracks` con
   subtítulos VTT:
@@ -636,6 +656,35 @@ def extract_pdf_images(pdf_path):
             base = doc.extract_image(img[0])
             out.append((pno + 1, base["ext"], base["image"]))
     return out
+
+
+def extract_text_markdown(pdf_path, pages=None):
+    """Extrae el texto de un PDF CONSERVANDO la negrita como markdown `**...**`.
+    NO uses get_text('text'): pierde la negrita. Aquí se usa get_text('dict'), donde
+    cada 'span' trae 'flags' y 'font': el bit 4 (16) de flags y/o un nombre de fuente
+    con 'Bold'/'Black'/'Semibold' indican negrita. Devuelve texto plano con markdown
+    ligero, listo para segmentar en pantallas (Regla Nº1). Requiere PyMuPDF."""
+    import fitz
+    doc = fitz.open(pdf_path)
+    nums = range(len(doc)) if pages is None else pages
+    out = []
+    for pno in nums:
+        for block in doc[pno].get_text("dict")["blocks"]:
+            for line in block.get("lines", []):
+                buf, open_b = "", False
+                for span in line["spans"]:
+                    t = span["text"]
+                    bold = bool(span["flags"] & 16) or any(
+                        k in span["font"] for k in ("Bold", "Black", "Semibold"))
+                    if t.strip() and bold != open_b:   # abre/cierra ** en la transición
+                        buf += "**"
+                        open_b = bold
+                    buf += t
+                if open_b:
+                    buf += "**"
+                out.append(buf)
+            out.append("")                              # línea en blanco entre bloques
+    return "\n".join(out)
 ```
 
 Uso típico:

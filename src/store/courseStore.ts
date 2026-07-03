@@ -24,7 +24,7 @@ interface Located { mi: number; ui: number; si: number }
 export type Tab = 'editor' | 'preview' | 'validation' | 'report'
 
 /** Ventana de ajustes abierta (vive en el store para poder abrirla desde Validación). */
-export type SettingsModalKind = 'course' | 'narration'
+export type SettingsModalKind = 'course' | 'narration' | 'appearance'
 
 /** Instantánea para el historial de deshacer/rehacer. */
 type CourseSnapshot = { course: Course; selectedScreenId: string | null }

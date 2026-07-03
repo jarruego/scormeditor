@@ -44,9 +44,18 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   a tema con parciales. (3) Formato: `title` corto (no fragmento del texto ni repetido en
   el cuerpo), sin pantallas vacías/diminutas, listas con `- ` una por línea, encabezados
   solo-título, sin rótulos por diapositiva, negritas/enlaces del original conservados,
-  imágenes colocadas por proporción (`layout`). (4) Interacciones repartidas cada 4-8
-  pantallas (no al final); una interacción entera en una pantalla (no partir accordion/
-  actividad); no juntar imagen+texto+interacción en una pantalla; el test calificable solo
+  imágenes colocadas por proporción (`layout`). **Quitar la numeración de epígrafes del
+  PDF** (`1.3`, `1.3.1`…) en TODO el texto (title, encabezados, títulos de ítems de
+  accordion/tabs, 1ª línea del cuerpo): es maquetación, no contenido. **Negritas**: la
+  extracción con `get_text("dict")` debe detectar la negrita por `span.flags & 16` o
+  fuente con `Bold`/`Black`/`Semibold` y re-emitirla como `**...**` (helper
+  `extract_text_markdown` en el contrato §11); el texto plano las pierde. (4) Interacciones
+  repartidas cada 4-8 pantallas (no al final); una interacción entera en una pantalla (no
+  partir accordion/actividad); **`accordion`/`tabs` solo para ítems paralelos, NUNCA para
+  prosa corrida ni para texto que acompaña a una imagen**; **texto + imagen = UNA pantalla**
+  (`student_text` visible + `visual_resource`), sin fragmentar cada imagen en su propia
+  pantalla; no juntar imagen+texto+interacción en una pantalla; **callout con cuerpo real
+  (no la etiqueta) y no dos del mismo tipo en la misma pantalla**; el test calificable solo
   en `assessments.final_test` (no una pantalla `unit_quiz` con el test en texto).
   (5) **Objetivos** (jul 2026): conjunto reducido derivado del contenido + petición del
   usuario + normativa facilitada (NO un micro-objetivo por pantalla, sin cuota fija);

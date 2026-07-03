@@ -6,11 +6,72 @@ import type { ScormConfig } from '../schema/course.schema'
  * (`scorm.rules` + `mastery_score`). Se muestra como una pestaña dentro del
  * modal unificado de Ajustes (`SettingsModal`).
  */
+/**
+ * Sección «Interfaz (Apariencia)»: preferencias de presentación de la carcasa
+ * (`shell`), separadas de las reglas de finalización. Ventana propia en el menú
+ * ⚙ Ajustes.
+ */
+export function AppearanceSection() {
+  const shell = useCourseStore((s) => s.course.shell)
+  const updateShell = useCourseStore((s) => s.updateShell)
+
+  return (
+    <>
+      <p style={{ margin: '0 0 .75rem', color: 'var(--c-muted)', fontSize: '.9rem' }}>
+        Preferencias de presentación de la carcasa del curso (Vista estudiante y SCORM exportado).
+      </p>
+
+      <fieldset className="ed-group">
+        <legend>Marca y color</legend>
+        <div className="ed-row">
+          <label className="ed-field">
+            <span>Marca (texto de la esquina superior izquierda)</span>
+            <input value={shell.brand} placeholder="p. ej. Mecohisa Formación"
+              onChange={(e) => updateShell({ brand: e.target.value })} />
+          </label>
+          <label className="ed-field ed-field-narrow">
+            <span>Color corporativo</span>
+            <div className="ed-color-row">
+              <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(shell.primary_color) ? shell.primary_color : '#0b5fff'}
+                aria-label="Elegir color corporativo"
+                onChange={(e) => updateShell({ primary_color: e.target.value })} />
+              <input value={shell.primary_color} placeholder="#0b5fff" style={{ maxWidth: 110 }}
+                aria-label="Color corporativo en hexadecimal"
+                onChange={(e) => updateShell({ primary_color: e.target.value })} />
+            </div>
+          </label>
+        </div>
+        <p style={{ margin: 0, fontSize: '.85rem', color: 'var(--c-muted)' }}>
+          El color se aplica a botones, enlaces y elementos de acción de la carcasa; la marca
+          aparece en la barra superior del curso.
+        </p>
+      </fieldset>
+
+      <fieldset className="ed-group">
+        <legend>Animaciones</legend>
+        <div className="ed-row">
+          <label className="ed-field">
+            <span>Nivel de animación</span>
+            <select value={shell.motion} onChange={(e) => updateShell({ motion: e.target.value as any })}>
+              <option value="subtle">Sutiles (por defecto) — transiciones básicas</option>
+              <option value="rich">Llamativas — revelado progresivo del contenido y microanimaciones</option>
+              <option value="none">Sin animaciones</option>
+            </select>
+          </label>
+        </div>
+        <p style={{ margin: 0, fontSize: '.85rem', color: 'var(--c-muted)' }}>
+          En «Llamativas», el contenido de cada pantalla aparece en cascada la primera vez y el
+          resto se revela al hacer scroll; las pantallas ya vistas no se re-animan. Si el
+          alumno tiene activada la reducción de movimiento en su equipo, no se anima nada.
+        </p>
+      </fieldset>
+    </>
+  )
+}
+
 export function CourseSettingsSection() {
   const scorm = useCourseStore((s) => s.course.scorm)
-  const shell = useCourseStore((s) => s.course.shell)
   const updateScorm = useCourseStore((s) => s.updateScorm)
-  const updateShell = useCourseStore((s) => s.updateShell)
   const hasFinal = useCourseStore((s) => !!s.course.assessments.final_test)
 
   const setRule = (p: Partial<ScormConfig['rules']>) => updateScorm({ rules: { ...scorm.rules, ...p } })
@@ -84,25 +145,6 @@ export function CourseSettingsSection() {
             <span>Permitir reanudar donde lo dejó</span>
           </label>
         </div>
-      </fieldset>
-
-      <fieldset className="ed-group">
-        <legend>Apariencia (carcasa)</legend>
-        <div className="ed-row">
-          <label className="ed-field">
-            <span>Animaciones</span>
-            <select value={shell.motion} onChange={(e) => updateShell({ motion: e.target.value as any })}>
-              <option value="subtle">Sutiles (por defecto) — transiciones básicas</option>
-              <option value="rich">Llamativas — revelado progresivo del contenido y microanimaciones</option>
-              <option value="none">Sin animaciones</option>
-            </select>
-          </label>
-        </div>
-        <p style={{ margin: 0, fontSize: '.85rem', color: 'var(--c-muted)' }}>
-          En «Llamativas», el contenido de cada pantalla aparece en cascada la primera vez y el
-          resto se revela al hacer scroll; las pantallas ya vistas no se re-animan. Si el
-          alumno tiene activada la reducción de movimiento en su equipo, no se anima nada.
-        </p>
       </fieldset>
 
       <fieldset className="ed-group">

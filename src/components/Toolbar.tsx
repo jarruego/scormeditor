@@ -9,7 +9,7 @@ import {
   saveProject,
   saveProjectAs,
 } from '../store/autosave'
-import { CourseSettingsModal, NarrationModal } from './SettingsModal'
+import { CourseSettingsModal, AppearanceModal, NarrationModal } from './SettingsModal'
 
 const DISCARD_MSG =
   'Esto reemplazará el curso que tienes abierto. Los cambios que no hayas guardado en el archivo de proyecto se perderán. ¿Continuar?'
@@ -165,6 +165,10 @@ export function Toolbar() {
                 title="Nota mínima, finalización, peso de la nota, navegación…">
                 Curso (Finalización)
               </button>
+              <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('appearance') }}
+                title="Presentación de la carcasa: animaciones…">
+                Interfaz (Apariencia)
+              </button>
               <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('narration') }}
                 title="Proveedor/clave de API, voz y generación de audio">
                 Narración (Audio IA)
@@ -185,6 +189,7 @@ export function Toolbar() {
       {importError && <div className="ed-import-error">⛔ {importError}</div>}
 
       {settingsModal === 'course' && <CourseSettingsModal onClose={() => setSettingsModal(null)} />}
+      {settingsModal === 'appearance' && <AppearanceModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'narration' && <NarrationModal onClose={() => setSettingsModal(null)} />}
     </header>
   )

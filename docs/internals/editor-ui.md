@@ -31,15 +31,21 @@ ya declarados pero admite escribir uno nuevo. Ambos comparten `useDeclaredObject
 objetivos pendientes. Son valores iniciales editables, no un vínculo automático: el
 desplegable sigue mandando.
 - **Ajustes** **no** es un nodo del árbol: es un **menú desplegable ⚙ Ajustes** en la
-  `Toolbar` (junto a «Archivo ▾») con dos opciones **independientes**, cada una abre **su
+  `Toolbar` (junto a «Archivo ▾») con tres opciones **independientes**, cada una abre **su
   propia ventana** (decisión jul 2026: menú de Ajustes con ventanas separadas, ya no un modal
-  con pestañas; y ya no hay botón «🔊 Narración» suelto en la barra):
-  - **Curso (SCORM y finalización)…** → `CourseSettingsModal` con `CourseSettingsSection`
+  con pestañas; y ya no hay botón «🔊 Narración» suelto en la barra). El estado de qué
+  ventana está abierta vive en el store (`settingsModal: SettingsModalKind`):
+  - **Curso (Finalización)** → `CourseSettingsModal` con `CourseSettingsSection`
     (antes `CourseSettingsEditor`): `scorm.rules` + `mastery_score` (nota mínima,
     `score_source`, `mixed_final_weight`, % pantallas, `require_interactions`, intentos,
-    navegación) vía `updateScorm`; y fieldset **Apariencia** → `shell.motion`
-    (animaciones none/subtle/rich) vía `updateShell` (ver `arquitectura-runtime.md`).
-  - **Narración por voz…** → `NarrationModal` con `NarrationSection` (antes `TtsPanel`):
+    navegación) vía `updateScorm`.
+  - **Interfaz (Apariencia)** → `AppearanceModal` con `AppearanceSection`: preferencias de
+    presentación de la carcasa (`shell`) vía `updateShell` — **Marca y color**
+    (`shell.brand`, `shell.primary_color` con picker `input[type=color]` + campo hex
+    `.ed-color-row`; el runtime ya los aplicaba en `applyShell`) y **Animaciones**
+    (`shell.motion`, none/subtle/rich; ver `arquitectura-runtime.md`). Decisión: la
+    apariencia NO va con finalización — es config de interfaz, con ventana propia.
+  - **Narración (Audio IA)** → `NarrationModal` con `NarrationSection` (antes `TtsPanel`):
     config TTS (localStorage) y generación masiva de audio; ver `tts-narracion.md`.
   Ambas ventanas comparten el marco genérico `SettingsWindow` (`SettingsModal.tsx`): cabecera,
   Escape/clic-fuera/✕, y `busy` opcional que bloquea el cierre (la narración lo reporta con

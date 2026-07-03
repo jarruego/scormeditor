@@ -28,42 +28,35 @@ duplicado en `transcript`**. Nunca comprimas ni truncues. El 100% se logra con
 pantallas **densas** + interactividades, no con micro-pantallas (~80/unidad, no ~160).
 
 ## Formato de `student_text` y `title`
-La diapositiva es **solo el contenido** (párrafos, listas, negritas). Reglas:
-- **`title` corto y descriptivo** (2-6 palabras), **NO** un fragmento del contenido a
-  mitad de frase **ni repetido como primera línea del `student_text`** (el `title` ya es
-  la cabecera; el cuerpo no lo repite). Continuación: si un apartado se parte en varias
-  pantallas, todas mantienen **el mismo `title`**. Interacción: `title` = **el del tema**
-  (nunca `"Checkpoint…"`; la app rotula sola el tipo).
-  Numeración de epígrafes en los `title`: **todo o nada**, por defecto **quítala**.
-- **Análisis estructural**: encabezado + subtítulo + su cuerpo = **una** pantalla;
-  **ninguna pantalla vacía ni diminuta**. **No elimines interactividades** informativas
-  troceándolas en texto: **unifica** el contenido denso en un `accordion`/`tabs`. Dos
-  sub-epígrafes con desarrollo → una pantalla cada uno. **Si una pantalla lleva
-  imagen+texto, NO añadas interacción**: pásala a la pantalla siguiente, **mismo
-  `title`, sin `student_text`** (solo la interacción).
-- **Imágenes** (`visual_resource.layout`): apaisada → `"top"`/`"bottom"`; cuadrada o
-  vertical → `"right"` (con `media_width`). Al extraer del PDF conoces `width`/`height`.
-- **Sin rótulos por diapositiva** (`Idea clave:`, `Claves:`, `Objetivo:`, `Resumen:`)
-  ni cajitas de «lo importante».
-- **Nunca truncar con «…»/«...»**: texto completo; si es largo, más pantallas.
-- **Listas**: un elemento por línea con `- ` (o `1. `); nunca en una sola línea ni con
-  viñeta `•`.
-- **Encabezados** `## `/`### ` en una línea con **solo el título** (el cuerpo, en la
-  línea siguiente); no metas el título dentro del párrafo ni como negrita suelta.
-- **Conserva las negritas del original** (`**...**`): si va en negrita en el documento,
-  mantenla; no inventes negritas nuevas.
-- **Enlaces externos**: presérvalos como `[texto](url)` (http/https/mailto), también
-  URLs sueltas. El runtime los abre en otra pestaña; no pongas HTML.
-- **Callouts obligatorios cuando el original marca algo** (cajas/etiquetas de
-  «Importante», «¿Sabías que?», «Consejo», «Caso»…) → `::: tipo` … `:::` (tipos en §4.1).
+La diapositiva es **solo el contenido** (párrafos, listas, negritas). Detalle en §4.1.
+- **`title` corto** (2-6 palabras), **NO** un fragmento a mitad de frase **ni repetido
+  como primera línea del `student_text`**. Continuación de un apartado partido → **mismo
+  `title`**. Interacción: `title` = el del tema (la app rotula el tipo sola).
+- **Quita la numeración de epígrafes** (`1.3`, `1.3.1`…) en **TODO**: `title`,
+  encabezados `##`/`###`, títulos de ítems de accordion/tabs y 1ª línea del cuerpo. Es
+  maquetación, no contenido.
+- **Análisis estructural**: encabezado + subtítulo + cuerpo = **una** pantalla; ninguna
+  vacía ni diminuta. **Texto + imagen = UNA pantalla** (`student_text` visible +
+  `visual_resource`): **NO** envuelvas prosa corrida en `accordion`/`tabs`, **NO** pongas
+  cada imagen en su propia pantalla con pie de foto (fragmenta). `accordion`/`tabs` solo
+  para **ítems paralelos** (listas). Si además hay interacción, va en la pantalla
+  siguiente (mismo `title`, sin `student_text`).
+- **Imágenes** (`visual_resource.layout`): apaisada → `top`/`bottom`; cuadrada/vertical
+  → `right` (con `media_width`).
+- **Conserva las negritas** (`**...**`) del original; no inventes. Extrae **con formato**
+  (§11 `extract_text_markdown`), nunca en plano. **Enlaces** como `[texto](url)`.
+- **Callouts** cuando el original marca algo (§4.1): `::: tipo` … `:::`. Cuerpo = la
+  frase real, **no** la etiqueta; **no** dos del mismo tipo en una pantalla.
+- **Sin rótulos** (`Idea clave:`, `Objetivo:`…), **sin truncar** con «…».
 
 ## Interactividad
 No en cada pantalla, pero **sí con frecuencia** (~6 informativas + ~15 aplicadas
 por unidad).
-- **Informativas** (`accordion`/`tabs`/`flip_cards`/`timeline`) para contenido
-  denso: **contienen** el texto (no lo resumen). Úsalas a menudo; no las suprimas.
-  `tabs` **solo 2-4 ítems cortos**; con más ítems o textos largos usa `accordion`.
-  Cronología → `timeline`; cierre de tema → `flashcards` (no puntúa).
+- **Informativas** (`accordion`/`tabs`/`flip_cards`/`timeline`) solo para conjuntos de
+  **ítems paralelos** (herramientas, categorías, pasos): **contienen** el texto (no lo
+  resumen). **NO** para prosa corrida ni para texto que acompaña a una imagen (eso es
+  pantalla de texto+imagen, §5). `tabs` **solo 2-4 ítems cortos**; con más ítems o textos
+  largos usa `accordion`. Cronología → `timeline`; cierre de tema → `flashcards`.
 - **Aplicadas** (`scenario_decision`/`classification`/`single_choice`/`fill_blanks`/
   `case_practice`) como checkpoints **repartidos cada 4-8 pantallas del tema**
   (mínimo ⌈N/8⌉ por tema de N pantallas; NO acumulados al final). **Si faltan,
@@ -78,7 +71,8 @@ por unidad).
 ## Entrega (con Code Interpreter)
 Al pedir material («JSON», «course.json», «archivo para SCORMEditor»…):
 - **Un tema / documento corto** → una pasada: extrae el texto **con formato** (negritas
-  y cajas destacadas: PyMuPDF `get_text("dict")`), segméntalo (Regla Nº1),
+  y cajas destacadas) con `extract_text_markdown` (§11, usa `get_text("dict")`; **nunca**
+  texto plano, que pierde negritas), segméntalo (Regla Nº1),
   construye el `course.json` **en Python** (NO lo teclees en el chat: resumirías),
   extrae figuras a `assets/img/` con `alt`, empaqueta en **`.scormproj`**
   con `build_scormproj` (§11) sin rutas rotas y da el enlace.

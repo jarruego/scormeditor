@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CourseSettingsSection } from './CourseSettingsEditor'
+import { CourseSettingsSection, AppearanceSection } from './CourseSettingsEditor'
 import { NarrationSection } from './TtsPanel'
 
 /**
@@ -45,6 +45,15 @@ export function CourseSettingsModal({ onClose }: { onClose: () => void }) {
   return (
     <SettingsWindow title="Ajustes del curso (SCORM y finalización)" onClose={onClose}>
       <CourseSettingsSection />
+    </SettingsWindow>
+  )
+}
+
+/** Ventana «Interfaz (Apariencia)»: presentación de la carcasa (animaciones…). */
+export function AppearanceModal({ onClose }: { onClose: () => void }) {
+  return (
+    <SettingsWindow title="Interfaz (Apariencia)" onClose={onClose}>
+      <AppearanceSection />
     </SettingsWindow>
   )
 }
