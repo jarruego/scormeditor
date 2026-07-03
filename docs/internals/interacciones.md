@@ -40,6 +40,24 @@ ese contrato; no conoce el tipo concreto.
   el elemento elegido con `.is-right`/`.is-wrong` (color + icono ✔/✖), también al
   restaurar; `replay()` reinicia las animaciones (shake/pop) entre intentos.
 
+## Tipos añadidos en fase 4 (jul 2026)
+Tres tipos nuevos en el enum (`course.schema.ts`), con etiqueta (`labels.ts`), coletilla
+(`TYPE_LABELS`), editor de config (`InteractionConfigEditor`), validación y contrato GPT
+(`docs/gpt/contrato-course-json.md`) sincronizados:
+- **`fill_blanks`** (evaluable): `config.text` con huecos `[[respuesta]]` +
+  `config.distractors` opcional. Cada hueco → `<select>` con pool barajado (determinista,
+  `shuffle` por id). Comprobar marca cada select `.is-right`/`.is-wrong`; intentos y
+  restauración como `choiceFactory` (`{values, correct, attempts}`). Validador:
+  `FB_NO_BLANKS` (sin huecos) y feedback obligatorio. Campo Intentos visible en el editor.
+- **`timeline`** (informativa): `config.milestones` `[{label, title, body}]` → `<ol
+  class="me-tl">` con línea/puntos de acento; cada hito se despliega como accordion
+  (mismo patrón `aria-expanded`+`hidden` → `setupPrint` los expande al imprimir y
+  `print.css` muestra `.me-tl-body[hidden]`). Validador: `TL_EMPTY`.
+- **`flashcards`** (autoevaluación, **no puntúa**): `config.cards` `{front, back}` (mismo
+  shape que `flip_cards`). Flujo una carta cada vez: «Mostrar respuesta» → «¿La sabías?»
+  → resumen «X de N» + repetir. Estado `{idx, known[]}` restaurable. Validador: `FC_EMPTY`
+  y `FC_SCORED` (warning si `scored: true`). `completed: true` siempre (no bloquea).
+
 ## Roadmap (acordado, no implementado)
 - **Animación secuencial** del contenido: revelar bloques en cascada. Encaja porque cada
   bloque (`<p>`, `<li>`, callout) ya sale como elemento independiente; se marcarían con

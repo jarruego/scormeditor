@@ -129,7 +129,10 @@ unidad). **No las elimines convirtiéndolas en pantallas de texto pequeñas.** C
   → una pestaña por bloque. Con **más de 4 ítems o textos largos, NO uses tabs** (no
   caben en horizontal): usa `accordion`.
 - **`flip_cards`**: pares término→definición, concepto→ejemplo → `front`/`back`.
-El texto de cada `item`/`tab`/`card` es el **texto fuente** de esa parte. En
+- **`timeline`**: evolución histórica, fases de un proceso con fechas/etapas →
+  `milestones` en orden con `label` (fecha/fase), `title` y `body`. Ideal cuando el
+  fuente narra cronología o secuencia de hitos.
+El texto de cada `item`/`tab`/`card`/hito es el **texto fuente** de esa parte. En
 `transcript` va igualmente el trozo completo.
 
 **Una interacción = UNA pantalla, con TODOS sus ítems.** No la partas en varias
@@ -249,17 +252,20 @@ rápido para elegir el tipo:
 | Objetivo cognitivo | Interacción sugerida | Evalúa |
 |---|---|---|
 | Recordar/identificar | `single_choice`, `true_false` | Sí |
+| Recordar terminología en contexto | `fill_blanks` (huecos `[[...]]`) | Sí |
 | Comprender relaciones | `match_pairs`, `classification` | Sí |
 | Ordenar un proceso | `sort_steps` | Sí |
+| Cronología / evolución por fases | `timeline` | No |
 | Aplicar a un caso / decidir | `scenario_decision`, `case_practice` | Sí / abierta |
 | Explorar información densa | `accordion`, `tabs`, `flip_cards` | No |
+| Repasar al cierre del tema | `flashcards` (autoevaluación «¿la sabías?») | No |
 | Localizar en una imagen | `hotspots` | Sí |
 | Ver y comprender un vídeo | `video` | No |
 
 Reglas de oro:
 - **Máximo una interacción por pantalla.**
-- Las informativas (`accordion`, `tabs`, `flip_cards`, `video`, `case_practice`)
-  llevan `scored: false`.
+- Las informativas (`accordion`, `tabs`, `flip_cards`, `timeline`, `video`,
+  `case_practice`) y las `flashcards` llevan `scored: false`.
 - Las evaluables llevan respuesta correcta + `feedback` (acierto/error) +
   `explanation`. Siempre `learning_objective` y `source_refs`.
 - No abuses de `single_choice`: si puedes pedir **clasificar, ordenar o decidir**,

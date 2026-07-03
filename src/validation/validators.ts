@@ -60,6 +60,21 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
       if (!it.feedback.correct.trim() && !it.feedback.incorrect.trim())
         add('Q_NO_FEEDBACK', 'error', 'Pregunta sin feedback de acierto/error.')
     }
+    if (it.type === 'fill_blanks') {
+      const blanks = String((it.config as any)?.text || '').match(/\[\[.+?\]\]/g) || []
+      if (blanks.length === 0)
+        add('FB_NO_BLANKS', 'error', 'Rellenar huecos sin ningún hueco [[respuesta]] en el texto.')
+      if (!it.feedback.correct.trim() && !it.feedback.incorrect.trim())
+        add('Q_NO_FEEDBACK', 'error', 'Pregunta sin feedback de acierto/error.')
+    }
+    if (it.type === 'timeline' && ((it.config as any)?.milestones || []).length === 0)
+      add('TL_EMPTY', 'error', 'Línea de tiempo sin hitos.')
+    if (it.type === 'flashcards') {
+      if (((it.config as any)?.cards || []).length === 0)
+        add('FC_EMPTY', 'error', 'Tarjetas de repaso sin tarjetas.')
+      if (it.scored)
+        add('FC_SCORED', 'warning', 'Las tarjetas de repaso son autoevaluación: no deberían puntuar (scored: false).')
+    }
   }
 }
 

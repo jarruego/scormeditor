@@ -40,6 +40,9 @@ export const InteractionType = z.enum([
   'case_practice',
   'hotspots',
   'video',
+  'fill_blanks',
+  'timeline',
+  'flashcards',
 ])
 export type InteractionType = z.infer<typeof InteractionType>
 

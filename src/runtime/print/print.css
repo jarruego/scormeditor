@@ -13,8 +13,8 @@
 
   /* Interactividades informativas expandidas al imprimir (ver setupPrint en
      app.js): mostrar todo el contenido oculto y evitar cortes entre páginas. */
-  .me-acc-body[hidden], [role=tabpanel][hidden] { display: block !important; }
-  .me-acc-item, .me-card { break-inside: avoid; page-break-inside: avoid; }
+  .me-acc-body[hidden], [role=tabpanel][hidden], .me-tl-body[hidden] { display: block !important; }
+  .me-acc-item, .me-card, .me-tl-item { break-inside: avoid; page-break-inside: avoid; }
   .me-acc-head { cursor: auto; }
   /* Las pestañas se rotulan con .me-print-tablabel sobre cada panel, así que la
      barra de pestañas sobra en papel. */

@@ -1,6 +1,46 @@
-import { useMemo } from 'react'
+import { useId, useMemo } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { normalizeObjective } from '../validation/objectives'
+
+/** Objetivos declarados en las pantallas del curso: clave normalizada → texto canónico. */
+export function useDeclaredObjectives(): Map<string, string> {
+  const course = useCourseStore((s) => s.course)
+  return useMemo(() => {
+    const byKey = new Map<string, string>()
+    course.modules.forEach((m) => m.units.forEach((u) => u.screens.forEach((s) => {
+      const obj = s.objective.trim()
+      const key = normalizeObjective(obj)
+      if (key && !byKey.has(key)) byKey.set(key, obj)
+    })))
+    return byKey
+  }, [course])
+}
+
+/**
+ * Campo de objetivo de la PANTALLA: texto libre con sugerencias (datalist) de
+ * los objetivos ya declarados. Aquí nacen los objetivos nuevos, así que no puede
+ * ser un desplegable cerrado como `ObjectiveSelect`; las sugerencias fomentan
+ * reutilizar el mismo texto entre pantallas del mismo tema.
+ */
+export function ObjectiveInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const declared = useDeclaredObjectives()
+  const listId = useId()
+  return (
+    <>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        list={listId}
+        placeholder="Elige un objetivo ya declarado o escribe uno nuevo"
+      />
+      <datalist id={listId}>
+        {[...declared.values()].map((o) => (
+          <option key={o} value={o} />
+        ))}
+      </datalist>
+    </>
+  )
+}
 
 /**
  * Selector de objetivo de aprendizaje vinculado. Lista los objetivos declarados
@@ -12,16 +52,7 @@ import { normalizeObjective } from '../validation/objectives'
  * extra marcada «(no declarado en pantallas)».
  */
 export function ObjectiveSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const course = useCourseStore((s) => s.course)
-  const declared = useMemo(() => {
-    const byKey = new Map<string, string>()
-    course.modules.forEach((m) => m.units.forEach((u) => u.screens.forEach((s) => {
-      const obj = s.objective.trim()
-      const key = normalizeObjective(obj)
-      if (key && !byKey.has(key)) byKey.set(key, obj)
-    })))
-    return byKey
-  }, [course])
+  const declared = useDeclaredObjectives()
 
   // Valor a mostrar: el objetivo declarado equivalente si lo hay (casado con
   // tolerancia), o el texto guardado tal cual si no casa con ninguno.

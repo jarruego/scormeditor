@@ -589,6 +589,196 @@
     return { result: function () { return { completed: true, scored: false }; } };
   });
 
+  // --- 13. Rellenar huecos (fill_blanks) --------------------------------------
+  // config.text contiene huecos [[respuesta correcta]]; cada hueco se renderiza
+  // como <select> cuyo pool de opciones son todas las respuestas + distractores
+  // (config.distractors), barajadas de forma determinista.
+  register('fill_blanks', function (el, data, ctx) {
+    var text = String((data.config || {}).text || '');
+    var answers = [];
+    // Trocea el texto: parte fija escapada + un select por hueco.
+    var body = '';
+    var re = /\[\[(.+?)\]\]/g;
+    var last = 0, m2;
+    while ((m2 = re.exec(text)) !== null) {
+      body += rich(text.slice(last, m2.index)).replace(/\n/g, '<br>');
+      answers.push(m2[1].trim());
+      body += '@@BLANK' + (answers.length - 1) + '@@';
+      last = re.lastIndex;
+    }
+    body += rich(text.slice(last)).replace(/\n/g, '<br>');
+
+    // Pool: respuestas + distractores, sin duplicados, orden determinista.
+    var pool = [];
+    answers.concat((data.config || {}).distractors || []).forEach(function (t) {
+      t = String(t).trim();
+      if (t && pool.indexOf(t) === -1) pool.push(t);
+    });
+    pool = shuffle(pool.map(function (t) { return { id: t }; }), data.id).map(function (x) { return x.id; });
+
+    var optionsHtml = pool.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + '</option>'; }).join('');
+    answers.forEach(function (_, i) {
+      body = body.replace('@@BLANK' + i + '@@',
+        '<select class="me-blank" data-i="' + i + '" aria-label="Hueco ' + (i + 1) + '">' +
+        '<option value="">…</option>' + optionsHtml + '</select>');
+    });
+
+    var maxAtt = attemptsOf(data);
+    el.innerHTML = header(data) + '<p class="me-blanks">' + body + '</p>' +
+      '<button class="me-btn me-check">Comprobar</button>' + feedbackBox(data);
+
+    var selects = [].slice.call(el.querySelectorAll('.me-blank'));
+    var attempts = 0, done = false, correct = false;
+
+    function lock() {
+      selects.forEach(function (s) { s.disabled = true; });
+      var cb = el.querySelector('.me-check'); if (cb) cb.disabled = true;
+    }
+    function markBlanks() {
+      selects.forEach(function (s, i) {
+        var ok = s.value === answers[i];
+        s.classList.remove('is-right', 'is-wrong');
+        s.classList.add(ok ? 'is-right' : 'is-wrong');
+        replay(s);
+      });
+    }
+    function hasAnswer() {
+      return selects.some(function (s) { return !!s.value; });
+    }
+    function check() {
+      if (done) return { resolved: true, correct: correct };
+      if (selects.some(function (s) { return !s.value; })) {
+        ctx.announce('Completa todos los huecos.');
+        return { resolved: false, correct: false };
+      }
+      attempts++;
+      correct = selects.every(function (s, i) { return s.value === answers[i]; });
+      showFeedback(el, correct, data);
+      markBlanks();
+      done = correct || (maxAtt > 0 && attempts >= maxAtt);
+      if (done) lock();
+      ctx.save({ values: selects.map(function (s) { return s.value; }), correct: correct, attempts: attempts });
+      ctx.announce(correct ? 'Todos los huecos correctos.' : (done ? 'Hay huecos incorrectos. Sin más intentos.' : 'Hay huecos incorrectos. Inténtalo de nuevo.'));
+      return { resolved: done, correct: correct };
+    }
+    el.querySelector('.me-check').addEventListener('click', check);
+
+    if (ctx.state && ctx.state.values) {
+      ctx.state.values.forEach(function (v, i) { if (selects[i]) selects[i].value = v; });
+      attempts = ctx.state.attempts || 0;
+      if (typeof ctx.state.correct === 'boolean') {
+        correct = ctx.state.correct;
+        showFeedback(el, correct, data);
+        markBlanks();
+        if (correct || (maxAtt > 0 && attempts >= maxAtt)) { done = true; lock(); }
+      }
+    }
+
+    return {
+      result: function () {
+        return { completed: done, scored: !!data.scored, correct: correct, score: correct ? (data.points || 1) : 0, maxScore: data.points || 1 };
+      },
+      check: check,
+      hasAnswer: hasAnswer,
+    };
+  });
+
+  // --- 14. Línea de tiempo (timeline) -----------------------------------------
+  // config.milestones: [{ label (fecha/fase), title, body }]. Informativa: hitos
+  // sobre una línea vertical; cada uno se despliega como un accordion.
+  register('timeline', function (el, data, ctx) {
+    var miles = (data.config || {}).milestones || [];
+    var html = header(data) + '<ol class="me-tl">';
+    miles.forEach(function (mi, i) {
+      var id = 'tl-' + i;
+      html += '<li class="me-tl-item">' +
+        '<button class="me-tl-head" aria-expanded="false" aria-controls="' + id + '">' +
+        (mi.label ? '<span class="me-tl-label">' + rich(mi.label) + '</span>' : '') +
+        '<span class="me-tl-title">' + rich(mi.title || '') + '</span></button>' +
+        '<div class="me-tl-body" id="' + id + '" role="region" hidden>' + block(mi.body || '') + '</div></li>';
+    });
+    html += '</ol>';
+    el.innerHTML = html;
+    el.querySelectorAll('.me-tl-head').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var open = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!open));
+        document.getElementById(btn.getAttribute('aria-controls')).hidden = open;
+      });
+    });
+    return { result: function () { return { completed: true, scored: false }; } };
+  });
+
+  // --- 15. Tarjetas de repaso (flashcards) -------------------------------------
+  // config.cards: [{ front, back }] (mismo shape que flip_cards). Autoevaluación:
+  // una carta cada vez → «Mostrar respuesta» → «¿La sabías?» Sí/No → resumen.
+  // No puntúa (scored: false recomendado); guarda el repaso en el estado.
+  register('flashcards', function (el, data, ctx) {
+    var cards = (data.config || {}).cards || [];
+    if (!cards.length) {
+      el.innerHTML = header(data);
+      return { result: function () { return { completed: true, scored: false }; } };
+    }
+    var st = ctx.state || {};
+    var idx = st.idx || 0;
+    var known = st.known || []; // true/false por carta respondida
+    if (idx > cards.length) idx = 0;
+
+    var html = header(data) + '<div class="me-fc">' +
+      '<p class="me-fc-progress" aria-live="polite"></p>' +
+      '<div class="me-fc-stage"></div>' +
+      '<div class="me-fc-controls"></div></div>';
+    el.innerHTML = html;
+    var stage = el.querySelector('.me-fc-stage');
+    var controls = el.querySelector('.me-fc-controls');
+    var progress = el.querySelector('.me-fc-progress');
+
+    function save() { ctx.save({ idx: idx, known: known }); }
+
+    function renderSummary() {
+      var yes = known.filter(function (k) { return k; }).length;
+      progress.textContent = '';
+      stage.innerHTML = '<div class="me-fc-summary"><p><strong>' + yes + ' de ' + cards.length +
+        '</strong> tarjetas sabidas.</p>' +
+        (yes < cards.length ? '<p>Repite el repaso para afianzar las que fallaste.</p>' : '<p>¡Repaso completo!</p>') + '</div>';
+      controls.innerHTML = '<button class="me-btn" type="button">↻ Repetir repaso</button>';
+      controls.querySelector('button').addEventListener('click', function () {
+        idx = 0; known = []; save(); renderCard(false);
+      });
+    }
+
+    function renderCard(revealed) {
+      if (idx >= cards.length) { renderSummary(); return; }
+      var c = cards[idx];
+      progress.textContent = 'Tarjeta ' + (idx + 1) + ' de ' + cards.length;
+      stage.innerHTML = '<div class="me-fc-card' + (revealed ? ' is-revealed' : '') + '">' +
+        '<div class="me-fc-front">' + rich(c.front) + '</div>' +
+        (revealed ? '<div class="me-fc-back">' + rich(c.back) + '</div>' : '') + '</div>';
+      if (!revealed) {
+        controls.innerHTML = '<button class="me-btn me-primary" type="button">Mostrar respuesta</button>';
+        controls.querySelector('button').addEventListener('click', function () { renderCard(true); });
+      } else {
+        controls.innerHTML = '<span class="me-fc-ask">¿La sabías?</span>' +
+          '<button class="me-btn me-fc-yes" type="button">✔ Sí</button>' +
+          '<button class="me-btn me-fc-no" type="button">✖ Aún no</button>';
+        controls.querySelector('.me-fc-yes').addEventListener('click', function () { answer(true); });
+        controls.querySelector('.me-fc-no').addEventListener('click', function () { answer(false); });
+      }
+    }
+    function answer(knew) {
+      known[idx] = knew;
+      idx++;
+      save();
+      if (idx >= cards.length) renderSummary();
+      else renderCard(false);
+    }
+
+    if (idx >= cards.length && known.length >= cards.length) renderSummary();
+    else renderCard(false);
+
+    return { result: function () { return { completed: true, scored: false }; } };
+  });
+
   // Etiqueta/coletilla que indica el TIPO de ejercicio. Así el título de la
   // pantalla puede ser el del tema (no "Checkpoint…") y la app señala por sí
   // misma qué clase de actividad es. Evaluable ⇒ "Actividad"; informativa ⇒
@@ -603,7 +793,10 @@
     true_false:     { kind: 'Actividad',   text: 'Verdadero o falso' },
     sort_steps:     { kind: 'Actividad',   text: 'Ordena los pasos' },
     match_pairs:    { kind: 'Actividad',   text: 'Relaciona los pares' },
-    classification: { kind: 'Actividad',   text: 'Clasifica los elementos' }
+    classification: { kind: 'Actividad',   text: 'Clasifica los elementos' },
+    fill_blanks:    { kind: 'Actividad',   text: 'Completa los huecos' },
+    timeline:       { kind: 'Interactivo', text: 'Recorre la línea de tiempo' },
+    flashcards:     { kind: 'Actividad',   text: 'Repasa con las tarjetas' }
   };
   function typeTag(type) {
     var t = TYPE_LABELS[type];

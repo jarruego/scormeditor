@@ -1,5 +1,7 @@
+import { useMemo } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import type { UnitTest, QuizQuestion, InteractionOption } from '../schema/course.schema'
+import { uncoveredObjectives } from '../validation/objectives'
 import { ObjectiveSelect } from './ObjectiveSelect'
 
 function newId(prefix: string) {
@@ -10,7 +12,9 @@ function blankOption(correct = false): InteractionOption {
   return { id: newId('o'), text: '', correct }
 }
 
-function blankQuestion(): QuizQuestion {
+// `objective`: prerrelleno con el primer objetivo del curso aún sin evaluación
+// (se puede cambiar en el desplegable de la pregunta).
+function blankQuestion(objective = ''): QuizQuestion {
   return {
     id: newId('q'),
     prompt: '',
@@ -18,25 +22,29 @@ function blankQuestion(): QuizQuestion {
     options: [blankOption(true), blankOption(false)],
     feedback: { correct: 'Correcto.', incorrect: 'Revisa tu respuesta.', explanation: '' },
     points: 1,
-    learning_objective: '',
+    learning_objective: objective,
     source_refs: [],
   }
 }
 
-function blankTest(): UnitTest {
-  return { id: 'final', unit_id: '', title: 'Test final', pass_score: 70, questions: [blankQuestion()] }
+function blankTest(objective = ''): UnitTest {
+  return { id: 'final', unit_id: '', title: 'Test final', pass_score: 70, questions: [blankQuestion(objective)] }
 }
 
 export function FinalTestEditor() {
   const test = useCourseStore((s) => s.course.assessments.final_test)
   const setFinalTest = useCourseStore((s) => s.setFinalTest)
+  const course = useCourseStore((s) => s.course)
+  // Primer objetivo declarado que ninguna evaluación cubre: al añadir preguntas
+  // se va avanzando solo por los objetivos pendientes.
+  const nextObjective = useMemo(() => uncoveredObjectives(course)[0] ?? '', [course])
 
   if (!test) {
     return (
       <div className="ed-form">
         <h2>Test final</h2>
         <p className="ed-empty">Este curso no tiene test final. El test calificable se muestra al estudiante y genera la nota final.</p>
-        <button className="ed-primary" onClick={() => setFinalTest(blankTest())}>+ Crear test final</button>
+        <button className="ed-primary" onClick={() => setFinalTest(blankTest(nextObjective))}>+ Crear test final</button>
       </div>
     )
   }
@@ -118,7 +126,7 @@ export function FinalTestEditor() {
       ))}
 
       <div className="ed-row">
-        <button className="ed-primary" onClick={() => setQuestions([...test.questions, blankQuestion()])}>+ Añadir pregunta</button>
+        <button className="ed-primary" onClick={() => setQuestions([...test.questions, blankQuestion(nextObjective)])}>+ Añadir pregunta</button>
         <button className="ed-danger" onClick={() => setFinalTest(null)}>Eliminar test final</button>
       </div>
     </div>

@@ -213,6 +213,73 @@ export function InteractionConfigEditor({
       )
     }
 
+    // ---- Rellenar huecos ---------------------------------------------------
+    case 'fill_blanks': {
+      const distractors: string[] = cfg.distractors || []
+      return (
+        <>
+          <label className="ed-field">
+            <span>Texto con huecos — escribe la respuesta correcta entre dobles corchetes: [[respuesta]]</span>
+            <textarea rows={4} value={cfg.text || ''}
+              placeholder="El SCORM exportado se sube a [[Moodle]] como paquete [[ZIP]]."
+              onChange={(e) => setConfig({ text: e.target.value })} />
+          </label>
+          <ListEditor
+            title="Distractores (opciones falsas añadidas a los desplegables; opcional)"
+            items={distractors.map((t) => ({ text: t }))}
+            onChange={(next) => setConfig({ distractors: next.map((d) => d.text) })}
+            create={() => ({ text: '' })}
+            render={(d, update) => (
+              <input value={d.text} placeholder="Opción falsa" onChange={(e) => update({ text: e.target.value })} />
+            )}
+          />
+        </>
+      )
+    }
+
+    // ---- Línea de tiempo ---------------------------------------------------
+    case 'timeline': {
+      const milestones: { label: string; title: string; body: string }[] = cfg.milestones || []
+      return (
+        <ListEditor
+          title="Hitos de la línea de tiempo (en orden)"
+          items={milestones}
+          onChange={(next) => setConfig({ milestones: next })}
+          reorder
+          create={() => ({ label: '', title: '', body: '' })}
+          render={(mi, update) => (
+            <div className="ed-stack">
+              <div className="ed-row">
+                <input style={{ maxWidth: 160 }} value={mi.label} placeholder="Fecha / fase (p. ej. 1995)"
+                  onChange={(e) => update({ ...mi, label: e.target.value })} />
+                <input value={mi.title} placeholder="Título del hito" onChange={(e) => update({ ...mi, title: e.target.value })} />
+              </div>
+              <RichTextArea rows={2} value={mi.body} onChange={(v) => update({ ...mi, body: v })} />
+            </div>
+          )}
+        />
+      )
+    }
+
+    // ---- Tarjetas de repaso (flashcards) ------------------------------------
+    case 'flashcards': {
+      const cards: { front: string; back: string }[] = cfg.cards || []
+      return (
+        <ListEditor
+          title="Tarjetas de repaso (pregunta / respuesta)"
+          items={cards}
+          onChange={(next) => setConfig({ cards: next })}
+          create={() => ({ front: '', back: '' })}
+          render={(c, update) => (
+            <>
+              <input value={c.front} placeholder="Pregunta / concepto" onChange={(e) => update({ ...c, front: e.target.value })} />
+              <input value={c.back} placeholder="Respuesta / definición" onChange={(e) => update({ ...c, back: e.target.value })} />
+            </>
+          )}
+        />
+      )
+    }
+
     default:
       return null
   }

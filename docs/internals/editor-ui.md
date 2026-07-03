@@ -20,6 +20,16 @@ con ningún objetivo declarado (curso importado), se conserva como opción extra
 (`normalizeObjective`, ver `informes-validacion.md`): un valor «casi igual» se muestra como
 el objetivo declarado y, al elegir en el desplegable, se guarda el texto canónico. No
 volver a texto libre.
+En cambio, el campo **«Objetivo de aprendizaje» de la pantalla** (donde *nacen* los
+objetivos, incluidas las pantallas sin interacción) no puede ser un desplegable cerrado:
+es `ObjectiveInput` (mismo fichero), un input **con `datalist`** que sugiere los objetivos
+ya declarados pero admite escribir uno nuevo. Ambos comparten `useDeclaredObjectives()`.
+**Prerrelleno** (para no escribir dos veces lo mismo): una interacción nueva hereda el
+`objective` de su pantalla, y una pregunta nueva del test final se prerrellena con el
+**primer objetivo aún sin evaluación** (`uncoveredObjectives()` en
+`src/validation/objectives.ts`) — así «+ Añadir pregunta» va recorriendo solo los
+objetivos pendientes. Son valores iniciales editables, no un vínculo automático: el
+desplegable sigue mandando.
 - **Ajustes** **no** es un nodo del árbol: es un **menú desplegable ⚙ Ajustes** en la
   `Toolbar` (junto a «Archivo ▾») con dos opciones **independientes**, cada una abre **su
   propia ventana** (decisión jul 2026: menú de Ajustes con ventanas separadas, ya no un modal

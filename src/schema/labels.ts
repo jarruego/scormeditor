@@ -32,6 +32,9 @@ export const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
   case_practice: 'Caso práctico (respuesta abierta)',
   hotspots: 'Zonas interactivas (imagen)',
   video: 'Vídeo interactivo',
+  fill_blanks: 'Rellenar huecos',
+  timeline: 'Línea de tiempo',
+  flashcards: 'Tarjetas de repaso',
 }
 
 /** Icono compacto por tipo de pantalla (árbol del editor). */

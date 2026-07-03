@@ -291,6 +291,37 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-hotspot { position: absolute; border: 2px solid var(--me-primary); background: rgba(11,95,255,.15); border-radius: 4px; cursor: pointer; }
 .me-hotspot-list { list-style: none; padding: 0; display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .6rem; }
 .me-warn { color: var(--me-error); font-weight: 600; }
+
+/* Rellenar huecos (fill_blanks) */
+.me-blanks { line-height: 2.1; }
+.me-blank { font: inherit; padding: .25rem .4rem; margin: 0 .15rem; border: 1px solid var(--me-border); border-radius: 6px; background: var(--me-surface); max-width: 100%; }
+.me-blank:hover:not(:disabled) { border-color: var(--me-primary); }
+.me-blank.is-right { border-color: var(--me-ok); background: #e7f6ec; }
+.me-blank.is-wrong { border-color: var(--me-error); background: #fdecea; animation: me-shake .3s ease; }
+
+/* Línea de tiempo (timeline) */
+.me-tl { list-style: none; margin: .75rem 0 0; padding: 0 0 0 1.1rem; border-left: 3px solid color-mix(in srgb, var(--me-accent) 55%, white); display: grid; gap: .5rem; }
+.me-tl-item { position: relative; }
+.me-tl-item::before { content: ''; position: absolute; left: calc(-1.1rem - 3px - 5px + 1.5px); top: .85rem; width: 13px; height: 13px; border-radius: 50%; background: var(--me-accent); border: 3px solid var(--me-surface); box-shadow: 0 0 0 1px color-mix(in srgb, var(--me-accent) 55%, white); }
+.me-tl-head { width: 100%; text-align: left; padding: .55rem .7rem; background: var(--me-bg); border: 1px solid var(--me-border); border-radius: 6px; font: inherit; cursor: pointer; display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; transition: background .15s ease, border-color .15s ease; }
+.me-tl-head:hover { border-color: var(--me-accent); }
+.me-tl-head[aria-expanded="true"] { background: color-mix(in srgb, var(--me-accent) 18%, white); border-color: color-mix(in srgb, var(--me-accent) 55%, white); }
+.me-tl-label { font-size: .8rem; font-weight: 700; color: color-mix(in srgb, var(--me-accent) 60%, black); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
+.me-tl-title { font-weight: 600; }
+.me-tl-body { padding: .5rem .7rem; animation: me-reveal .2s ease-out; }
+
+/* Tarjetas de repaso (flashcards) */
+.me-fc { display: grid; gap: .6rem; justify-items: center; }
+.me-fc-progress { margin: 0; font-size: .85rem; color: var(--me-muted); }
+.me-fc-stage { width: 100%; max-width: 460px; }
+.me-fc-card { border: 1px solid var(--me-border); border-radius: 10px; background: var(--me-surface); box-shadow: var(--me-shadow-1); padding: 1.25rem 1rem; text-align: center; display: grid; gap: .75rem; animation: me-reveal .2s ease-out; }
+.me-fc-front { font-weight: 600; font-size: 1.05rem; }
+.me-fc-back { border-top: 1px dashed var(--me-border); padding-top: .75rem; animation: me-reveal .2s ease-out; }
+.me-fc-controls { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+.me-fc-ask { font-weight: 600; }
+.me-fc-yes { border-color: var(--me-ok); color: var(--me-ok); font-weight: 600; }
+.me-fc-no { border-color: var(--me-error); color: var(--me-error); font-weight: 600; }
+.me-fc-summary { text-align: center; padding: 1rem; background: color-mix(in srgb, var(--me-accent) 12%, white); border-radius: 10px; }
 .me-q { border: 1px solid var(--me-border); border-radius: 6px; padding: .75rem; margin-bottom: .75rem; }
 .me-q legend { font-weight: 600; padding: 0 .25rem; }
 

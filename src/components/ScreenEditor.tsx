@@ -5,7 +5,7 @@ import { ScreenType, InteractionType, type Interaction } from '../schema/course.
 import { screenTypeLabel, interactionTypeLabel } from '../schema/labels'
 import { RichTextArea } from './RichTextArea'
 import { InteractionConfigEditor } from './InteractionConfigEditor'
-import { ObjectiveSelect } from './ObjectiveSelect'
+import { ObjectiveInput, ObjectiveSelect } from './ObjectiveSelect'
 import { FileButton } from './FileButton'
 import { generateForScreen, hasApiKey } from '../tts/tts'
 import { confirmDialog } from '../store/confirm'
@@ -182,7 +182,9 @@ export function ScreenEditor() {
       points: 1,
       attempts: 1,
       retries: 0,
-      learning_objective: '',
+      // Prerrelleno: casi siempre la interacción evalúa el objetivo de su
+      // propia pantalla (se puede cambiar en el desplegable si no es el caso).
+      learning_objective: screen?.objective.trim() ?? '',
       source_refs: [],
     }
   }
@@ -226,7 +228,7 @@ export function ScreenEditor() {
 
       <label className="ed-field">
         <span>Objetivo de aprendizaje</span>
-        <input value={screen.objective} onChange={(e) => patch({ objective: e.target.value })} />
+        <ObjectiveInput value={screen.objective} onChange={(v) => patch({ objective: v })} />
       </label>
 
       <label className="ed-field">
@@ -394,7 +396,7 @@ export function ScreenEditor() {
                 <span>Puntos</span>
                 <input type="number" min={0} value={it.points} onChange={(e) => setInteraction({ ...it, points: Number(e.target.value) })} />
               </label>
-              {['single_choice', 'true_false', 'sort_steps', 'match_pairs', 'classification'].includes(it.type) && (
+              {['single_choice', 'true_false', 'sort_steps', 'match_pairs', 'classification', 'fill_blanks'].includes(it.type) && (
                 <label className="ed-field ed-field-narrow">
                   <span>Intentos (0=∞)</span>
                   <input type="number" min={0} value={it.attempts}

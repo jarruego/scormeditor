@@ -181,8 +181,8 @@
       var content = document.getElementById('me-content');
       if (!content) return;
 
-      // Desplegables (accordion): abrir todos los apartados.
-      content.querySelectorAll('.me-acc-head[aria-expanded="false"]').forEach(function (head) {
+      // Desplegables (accordion y línea de tiempo): abrir todos los apartados.
+      content.querySelectorAll('.me-acc-head[aria-expanded="false"], .me-tl-head[aria-expanded="false"]').forEach(function (head) {
         head.setAttribute('aria-expanded', 'true');
         var body = document.getElementById(head.getAttribute('aria-controls'));
         if (body) body.hidden = false;

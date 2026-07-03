@@ -293,7 +293,8 @@ Estructura común a TODAS:
 
 - `type` (enum cerrado): `accordion`, `tabs`, `flip_cards`, `match_pairs`,
   `sort_steps`, `single_choice`, `true_false`, `classification`,
-  `scenario_decision`, `case_practice`, `hotspots`, `video`.
+  `scenario_decision`, `case_practice`, `hotspots`, `video`, `fill_blanks`,
+  `timeline`, `flashcards`.
 - `retries`: `0` = ilimitados.
 - `learning_objective`: rellénalo siempre (el validador lo pide).
 - Reglas del validador para preguntas evaluables: deben tener **respuesta
@@ -368,6 +369,36 @@ con `correct` y `feedback` por opción:
 }
 ```
 (`x,y,w,h` en % sobre la imagen.)
+
+**`fill_blanks`** — completar huecos (evaluable). `config.text` con cada respuesta
+correcta entre dobles corchetes `[[...]]`; el runtime convierte cada hueco en un
+desplegable cuyas opciones son todas las respuestas + `config.distractors`
+(opcional). El validador exige al menos un hueco y feedback:
+```json
+"config": {
+  "text": "El paquete SCORM se sube a [[Moodle]] en formato [[ZIP]].",
+  "distractors": ["PDF", "Wordpress"]
+}
+```
+
+**`timeline`** — línea de tiempo (informativa; `scored: false`). `config.milestones`
+en orden, cada hito con `label` (fecha/fase, opcional), `title` y `body` (admite
+markdown ligero). El alumno despliega cada hito:
+```json
+"config": { "milestones": [
+  { "label": "1995", "title": "Primer estándar", "body": "Texto del hito..." },
+  { "label": "2004", "title": "SCORM 2004", "body": "..." }
+] }
+```
+
+**`flashcards`** — tarjetas de repaso con autoevaluación (`scored: false`
+obligatorio; el validador avisa si puntúa). Mismo shape que `flip_cards`
+(`config.cards` con `front`/`back`), pero el flujo es una tarjeta cada vez:
+«Mostrar respuesta» → «¿La sabías?» → resumen final «X de N». Úsalo para repaso
+al cierre de un tema; `flip_cards` para explorar contenido:
+```json
+"config": { "cards": [ { "front": "¿Qué es cmi.core.lesson_status?", "back": "El estado del alumno..." } ] }
+```
 
 **`video`** (interacción con transcripción/subtítulos):
 ```json

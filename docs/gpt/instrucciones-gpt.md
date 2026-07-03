@@ -58,16 +58,16 @@ La diapositiva es **solo el contenido** (párrafos, listas, negritas). Reglas:
   «Importante», «¿Sabías que?», «Consejo», «Caso»…) → `::: tipo` … `:::` (tipos en §4.1).
 
 ## Interactividad
-No en cada pantalla, pero **sí con frecuencia** (referencia: ~6 informativas + ~15
-aplicadas por unidad).
-- **Informativas** (`accordion`/`tabs`/`flip_cards`) para contenido denso/estructurado:
-  **contienen** el texto (no lo resumen). **Úsalas habitualmente**; no las suprimas.
-  `tabs` **solo 2-4 ítems cortos**; con más ítems o textos largos usa `accordion`
-  (crece hacia abajo y cabe).
-- **Aplicadas** (`scenario_decision`/`classification`/`single_choice`/`case_practice`)
-  como checkpoints **repartidos cada 4-8 pantallas a lo largo del tema** (obligatorio:
-  al menos ⌈N/8⌉ por tema de N pantallas; NO acumulados al final). **Si faltan, añade
-  más.** Si una repite conceptos ya vistos, pásala a la siguiente o suprímela.
+No en cada pantalla, pero **sí con frecuencia** (~6 informativas + ~15 aplicadas
+por unidad).
+- **Informativas** (`accordion`/`tabs`/`flip_cards`/`timeline`) para contenido
+  denso: **contienen** el texto (no lo resumen). Úsalas a menudo; no las suprimas.
+  `tabs` **solo 2-4 ítems cortos**; con más ítems o textos largos usa `accordion`.
+  Cronología → `timeline`; cierre de tema → `flashcards` (no puntúa).
+- **Aplicadas** (`scenario_decision`/`classification`/`single_choice`/`fill_blanks`/
+  `case_practice`) como checkpoints **repartidos cada 4-8 pantallas del tema**
+  (mínimo ⌈N/8⌉ por tema de N pantallas; NO acumulados al final). **Si faltan,
+  añade más.** Si una repite conceptos ya vistos, muévela o suprímela.
 - **Una sola interacción por pantalla, ENTERA**: no partas un accordion/tabs
   («(1)»/«(2)») ni una actividad (`case_practice`/`reflection`) en varias pantallas;
   va junta aunque sea larga. Listas dentro de un `item`/`tab`: `- ` una por línea.
