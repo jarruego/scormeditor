@@ -120,7 +120,13 @@
     (COURSE.modules || []).forEach(function (m) {
       html += '<div class="me-menu-module"><p class="me-menu-mtitle">' + esc(m.title) + '</p>';
       (m.units || []).forEach(function (u) {
-        html += '<div class="me-menu-unit"><p class="me-menu-utitle">' + esc(u.title) + '</p><ul>';
+        // data-start/data-count delimitan las pantallas de la unidad para el
+        // contador y la mini-barra de progreso (refreshMenuChecks los rellena).
+        var count = (u.screens || []).length;
+        html += '<div class="me-menu-unit" data-start="' + idx + '" data-count="' + count + '">' +
+          '<p class="me-menu-utitle"><span>' + esc(u.title) + '</span>' +
+          '<span class="me-menu-count"></span></p>' +
+          '<div class="me-menu-uprog" aria-hidden="true"><div class="me-menu-uprog-fill"></div></div><ul>';
         (u.screens || []).forEach(function (sc) {
           html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(sc.title || sc.type) +
             '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
@@ -205,11 +211,8 @@
         });
       });
 
-      // Tarjetas (flip cards): mostrar anverso y reverso a la vez.
-      content.querySelectorAll('.me-card-back[hidden]').forEach(function (back) {
-        back.hidden = false;
-        undo.push(function () { back.hidden = true; });
-      });
+      // Tarjetas (flip cards): con el volteo 3D ambas caras están siempre en el
+      // DOM; el aplanado (anverso y reverso a la vez) lo hace print.css.
     });
     global.addEventListener('afterprint', function () {
       undo.forEach(function (fn) { fn(); });
@@ -569,6 +572,20 @@
       var chk = b.querySelector('.me-menu-check');
       if (chk) chk.textContent = done ? '✓' : '';
     });
+    // Contador «hechas/total» y mini-barra de progreso de cada unidad.
+    document.querySelectorAll('.me-menu-unit[data-count]').forEach(function (unit) {
+      var start = parseInt(unit.getAttribute('data-start'), 10);
+      var count = parseInt(unit.getAttribute('data-count'), 10);
+      var done = 0;
+      for (var i = start; i < start + count; i++) {
+        var e = SCREENS[i];
+        if (e && STATE.visited[e.screen.id] && screenSatisfied(i)) done++;
+      }
+      var c = unit.querySelector('.me-menu-count');
+      if (c) c.textContent = done + '/' + count;
+      var f = unit.querySelector('.me-menu-uprog-fill');
+      if (f) f.style.width = (count ? Math.round((done / count) * 100) : 0) + '%';
+    });
   }
 
   // ---- Test final --------------------------------------------------------
@@ -681,7 +698,7 @@
     var estado = incomplete ? '⚠ Curso incompleto' : (pass ? '✔ APTO' : '✖ NO APTO');
     var html = '<article class="me-screen me-screen-results"><h1>Resultados</h1>' +
       '<div class="me-result-hero ' + cls + '">' +
-      '<div class="me-result-score">' + score + '%</div>' +
+      '<div class="me-result-score" aria-label="' + score + '%">' + score + '%</div>' +
       '<div class="me-result-state">' + estado + '</div>' +
       '<div class="me-result-min">Nota mínima para aprobar: ' + min + '%</div></div>';
     if (rows.length) {
@@ -694,6 +711,75 @@
     if (incomplete) html += '<p class="me-instructions">Completa todas las pantallas y actividades requeridas para obtener la calificación final.</p>';
     html += '</article>';
     content.innerHTML = html;
+
+    // Refuerzo del logro: la nota sube animada y, si está APTO, confeti (una
+    // vez por sesión). Con prefers-reduced-motion no se anima nada.
+    var scoreEl = content.querySelector('.me-result-score');
+    if (scoreEl) animateNumber(scoreEl, score, '%');
+    if (pass && !incomplete) celebrate();
+  }
+
+  function prefersReducedMotion() {
+    return !!(global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  // Cuenta de 0 al valor final con easing (para la nota de Resultados).
+  function animateNumber(el, target, suffix) {
+    if (prefersReducedMotion()) { el.textContent = target + suffix; return; }
+    var t0 = null, dur = 900;
+    function step(ts) {
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur);
+      var eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(target * eased) + suffix;
+      if (p < 1) global.requestAnimationFrame(step);
+    }
+    global.requestAnimationFrame(step);
+  }
+
+  // Confeti ligero propio (canvas efímero, paleta corporativa, sin dependencias).
+  var celebrated = false;
+  function celebrate() {
+    if (celebrated || prefersReducedMotion()) return;
+    celebrated = true;
+    var canvas = document.createElement('canvas');
+    canvas.className = 'me-confetti';
+    canvas.setAttribute('aria-hidden', 'true');
+    canvas.width = global.innerWidth;
+    canvas.height = global.innerHeight;
+    document.body.appendChild(canvas);
+    var c2d = canvas.getContext('2d');
+    if (!c2d) { canvas.remove(); return; }
+    var colors = ['#6DC3C0', '#F4C910', '#7787BF', '#F4D6D2'];
+    var parts = [];
+    for (var i = 0; i < 120; i++) {
+      parts.push({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * canvas.height * 0.5,
+        w: 6 + Math.random() * 5, h: 8 + Math.random() * 6,
+        vx: -1.2 + Math.random() * 2.4, vy: 2 + Math.random() * 3,
+        rot: Math.random() * Math.PI, vr: -0.12 + Math.random() * 0.24,
+        color: colors[i % colors.length],
+      });
+    }
+    var t0 = Date.now(), DURATION = 2400;
+    function frame() {
+      var elapsed = Date.now() - t0;
+      c2d.clearRect(0, 0, canvas.width, canvas.height);
+      c2d.globalAlpha = elapsed > DURATION - 500 ? Math.max(0, (DURATION - elapsed) / 500) : 1;
+      parts.forEach(function (p) {
+        p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        c2d.save();
+        c2d.translate(p.x, p.y);
+        c2d.rotate(p.rot);
+        c2d.fillStyle = p.color;
+        c2d.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        c2d.restore();
+      });
+      if (elapsed < DURATION) global.requestAnimationFrame(frame);
+      else canvas.remove();
+    }
+    global.requestAnimationFrame(frame);
   }
 
   // ---- Tiempo / cierre ---------------------------------------------------

@@ -1,4 +1,5 @@
 import type { Course, QuizQuestion, Screen, Unit } from '../schema/course.schema'
+import { normalizeObjective } from './objectives'
 
 export type Severity = 'error' | 'warning' | 'info'
 
@@ -140,20 +141,23 @@ function checkGlobal(ctx: Ctx) {
     checkQuizQuestions(ctx, t.questions, `Test de unidad «${t.title || t.id}»`, { unitId: t.unit_id }))
 
   // Riesgo normativo: cobertura de objetivos sin evaluación. Un issue por
-  // objetivo, enlazado a la primera pantalla que lo declara.
-  const declaredBy = new Map<string, { screen: Screen; loc: string }>()
+  // objetivo, enlazado a la primera pantalla que lo declara. La comparación es
+  // NORMALIZADA (normalizeObjective): la vinculación histórica era texto libre
+  // y abundan pares «casi iguales» que no deben contar como desvinculados.
+  const declaredBy = new Map<string, { obj: string; screen: Screen; loc: string }>()
   const evaluatedObjectives = new Set<string>()
   c.modules.forEach((m) => m.units.forEach((u) => u.screens.forEach((s) => {
     const obj = s.objective.trim()
-    if (obj && !declaredBy.has(obj))
-      declaredBy.set(obj, { screen: s, loc: screenLoc(m.title || m.id, u.title || u.id, s) })
+    const key = normalizeObjective(obj)
+    if (key && !declaredBy.has(key))
+      declaredBy.set(key, { obj, screen: s, loc: screenLoc(m.title || m.id, u.title || u.id, s) })
     if (s.interaction?.scored && s.interaction.learning_objective)
-      evaluatedObjectives.add(s.interaction.learning_objective.trim())
+      evaluatedObjectives.add(normalizeObjective(s.interaction.learning_objective))
   })))
-  c.assessments.final_test?.questions.forEach((q) => q.learning_objective && evaluatedObjectives.add(q.learning_objective.trim()))
-  c.assessments.unit_tests.forEach((t) => t.questions.forEach((q) => q.learning_objective && evaluatedObjectives.add(q.learning_objective.trim())))
-  declaredBy.forEach(({ screen, loc }, obj) => {
-    if (!evaluatedObjectives.has(obj))
+  c.assessments.final_test?.questions.forEach((q) => q.learning_objective && evaluatedObjectives.add(normalizeObjective(q.learning_objective)))
+  c.assessments.unit_tests.forEach((t) => t.questions.forEach((q) => q.learning_objective && evaluatedObjectives.add(normalizeObjective(q.learning_objective))))
+  declaredBy.forEach(({ obj, screen, loc }, key) => {
+    if (!evaluatedObjectives.has(key))
       ctx.push({
         code: 'OBJ_NOT_EVALUATED', severity: 'info',
         message: `Objetivo sin evaluación asociada: «${obj}» (riesgo para revisión normativa).`,

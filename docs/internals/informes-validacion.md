@@ -15,7 +15,11 @@ Reglas por pantalla / unidad / curso, p. ej.:
   final llevan `screenId: '__final__'`; las de tests de unidad llevan `unitId`.
 - **Cobertura de objetivos**: un issue `OBJ_NOT_EVALUATED` **por objetivo** no evaluado,
   enlazado (`screenId`) a la primera pantalla que lo declara. Cuentan como evaluación las
-  interacciones `scored`, el test final y los tests de unidad.
+  interacciones `scored`, el test final y los tests de unidad. La comparación es
+  **normalizada** (`normalizeObjective` en `src/validation/objectives.ts`: sin acentos,
+  minúsculas, espacios colapsados, sin puntuación final) porque la vinculación histórica
+  era texto libre y abundan pares «casi iguales»; `ObjectiveSelect` usa el mismo
+  normalizador. No endurecer a comparación exacta.
 - **Origen de la nota** (`score_source`): ojo a la semántica real del runtime
   (`computeScore` en `app.js`): `'unit_tests'` = **actividades evaluables** (interacciones
   de pantalla con `scored`), no `assessments.unit_tests`. Reglas: `SCORM_NO_FINAL`

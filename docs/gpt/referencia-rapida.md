@@ -70,6 +70,10 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
 - **Contenido íntegro (Regla Nº1)**: texto conservado ~100% (ratio ≥0.95);
   `quality_checklist`: `"Contenido del documento trazado sin pérdidas": true`.
 - **Interacciones** repartidas cada 4-8 pantallas (no acumuladas al final).
+- **Objetivos**: conjunto reducido derivado del contenido, de la petición del usuario
+  y de la normativa facilitada (no uno distinto por pantalla); texto **idéntico**
+  reutilizado entre pantallas, interacciones y preguntas del test; cada objetivo con
+  al menos una evaluación que lo mida.
 - Notas internas fuera de los campos del estudiante; sin afirmaciones de homologación
   SEPE.
 - Del `.scormproj`: `course.json` en la raíz; cada ruta `assets/…` con su fichero real;

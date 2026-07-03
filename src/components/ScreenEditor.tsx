@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useCourseStore } from '../store/courseStore'
+import { validateCourse } from '../validation/validators'
 import { ScreenType, InteractionType, type Interaction } from '../schema/course.schema'
+import { screenTypeLabel, interactionTypeLabel } from '../schema/labels'
 import { RichTextArea } from './RichTextArea'
 import { InteractionConfigEditor } from './InteractionConfigEditor'
+import { ObjectiveSelect } from './ObjectiveSelect'
 import { FileButton } from './FileButton'
 import { generateForScreen, hasApiKey } from '../tts/tts'
 import { confirmDialog } from '../store/confirm'
@@ -103,8 +106,16 @@ export function ScreenEditor() {
   const update = useCourseStore((s) => s.updateScreen)
   const assets = useCourseStore((s) => s.assets)
   const removeAsset = useCourseStore((s) => s.removeAsset)
+  const course = useCourseStore((s) => s.course)
   const [ttsBusy, setTtsBusy] = useState(false)
   const [ttsMsg, setTtsMsg] = useState<string | null>(null)
+
+  // Issues de validación de ESTA pantalla (validación en contexto, no solo en
+  // la pestaña Validación).
+  const screenIssues = useMemo(
+    () => (id ? validateCourse(course).issues.filter((i) => i.screenId === id && i.severity !== 'info') : []),
+    [course, id],
+  )
 
   if (!id || !screen) return <div className="ed-empty">Selecciona una pantalla en el árbol para editarla.</div>
 
@@ -180,6 +191,16 @@ export function ScreenEditor() {
     <div className="ed-form">
       <h2>Editar pantalla</h2>
 
+      {screenIssues.length > 0 && (
+        <ul className="ed-inline-issues" aria-label="Avisos de validación de esta pantalla">
+          {screenIssues.map((i, n) => (
+            <li key={n} className={i.severity === 'error' ? 'is-err' : 'is-warn'}>
+              {i.severity === 'error' ? '⛔' : '⚠'} {i.message}
+            </li>
+          ))}
+        </ul>
+      )}
+
       <label className="ed-field">
         <span>Título</span>
         <input value={screen.title} onChange={(e) => patch({ title: e.target.value })} />
@@ -189,7 +210,7 @@ export function ScreenEditor() {
         <label className="ed-field">
           <span>Tipo de pantalla</span>
           <select value={screen.type} onChange={(e) => patch({ type: e.target.value as any })}>
-            {ScreenType.options.map((t) => <option key={t} value={t}>{t}</option>)}
+            {ScreenType.options.map((t) => <option key={t} value={t}>{screenTypeLabel(t)}</option>)}
           </select>
         </label>
         <label className="ed-field ed-field-narrow">
@@ -355,7 +376,7 @@ export function ScreenEditor() {
               <label className="ed-field">
                 <span>Tipo</span>
                 <select value={it.type} onChange={(e) => setInteraction({ ...it, type: e.target.value as any })}>
-                  {InteractionType.options.map((t) => <option key={t} value={t}>{t}</option>)}
+                  {InteractionType.options.map((t) => <option key={t} value={t}>{interactionTypeLabel(t)}</option>)}
                 </select>
               </label>
               <label className="ed-field ed-field-narrow">
@@ -386,7 +407,7 @@ export function ScreenEditor() {
             <label className="ed-field"><span>Instrucciones</span>
               <input value={it.instructions} onChange={(e) => setInteraction({ ...it, instructions: e.target.value })} /></label>
             <label className="ed-field"><span>Objetivo vinculado</span>
-              <input value={it.learning_objective} onChange={(e) => setInteraction({ ...it, learning_objective: e.target.value })} /></label>
+              <ObjectiveSelect value={it.learning_objective} onChange={(v) => setInteraction({ ...it, learning_objective: v })} /></label>
 
             <InteractionConfigEditor it={it} onChange={setInteraction} />
 

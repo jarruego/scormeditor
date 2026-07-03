@@ -82,6 +82,13 @@
   function feedbackBox(data) {
     return '<div class="me-feedback" role="status" aria-live="polite" hidden></div>';
   }
+  // Reinicia la animación CSS de un nodo que persiste (reflow para replay).
+  function replay(node) {
+    node.style.animation = 'none';
+    void node.offsetWidth;
+    node.style.animation = '';
+  }
+
   function showFeedback(el, ok, data) {
     var box = el.querySelector('.me-feedback');
     if (!box) return;
@@ -90,6 +97,7 @@
     box.className = 'me-feedback ' + (ok ? 'is-ok' : 'is-error');
     box.innerHTML = '<strong>' + (ok ? '✔ ' : '✖ ') + rich(msg) + '</strong>' + expl;
     box.hidden = false;
+    replay(box);
   }
 
   function header(data) {
@@ -154,20 +162,24 @@
 
   // --- 3. Flip cards ---------------------------------------------------------
   register('flip_cards', function (el, data, ctx) {
+    // Volteo 3D real (CSS rotateY): ambas caras viven en el DOM apiladas; la
+    // visibilidad la resuelve backface-visibility y el lector de pantalla usa
+    // aria-hidden. La impresión aplana las dos caras vía print.css.
     var cards = (data.config.cards || []);
     var html = header(data) + '<div class="me-cards">';
     cards.forEach(function (c, i) {
-      html += '<button class="me-card" aria-pressed="false" data-i="' + i + '">' +
+      html += '<button class="me-card" aria-pressed="false" data-i="' + i + '" title="Pulsa para girar la tarjeta">' +
+        '<span class="me-flip-inner">' +
         '<span class="me-card-front">' + rich(c.front) + '</span>' +
-        '<span class="me-card-back" hidden>' + rich(c.back) + '</span></button>';
+        '<span class="me-card-back" aria-hidden="true">' + rich(c.back) + '</span></span></button>';
     });
     el.innerHTML = html + '</div>';
     el.querySelectorAll('.me-card').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var flipped = btn.getAttribute('aria-pressed') === 'true';
         btn.setAttribute('aria-pressed', String(!flipped));
-        btn.querySelector('.me-card-front').hidden = !flipped;
-        btn.querySelector('.me-card-back').hidden = flipped;
+        btn.querySelector('.me-card-front').setAttribute('aria-hidden', String(!flipped));
+        btn.querySelector('.me-card-back').setAttribute('aria-hidden', String(flipped));
       });
     });
     return { result: function () { return { completed: true, scored: false }; } };
@@ -191,6 +203,13 @@
       var cb = el.querySelector('.me-check'); if (cb) cb.disabled = true;
     }
 
+    // Marca visual (color + icono) de la opción elegida al comprobar.
+    function markChoice(input, ok) {
+      el.querySelectorAll('.me-choice').forEach(function (l) { l.classList.remove('is-right', 'is-wrong'); });
+      var lbl = input && input.closest('.me-choice');
+      if (lbl) { lbl.classList.add(ok ? 'is-right' : 'is-wrong'); replay(lbl); }
+    }
+
     if (ctx.state && ctx.state.value) {
       var pre = el.querySelector('input[value="' + ctx.state.value + '"]');
       if (pre) pre.checked = true;
@@ -198,6 +217,7 @@
       if (typeof ctx.state.correct === 'boolean') {
         correct = ctx.state.correct;
         showFeedback(el, correct, data);
+        markChoice(pre, correct);
         if (correct || (maxAtt > 0 && attempts >= maxAtt)) { done = true; lock(); }
       }
     }
@@ -211,6 +231,7 @@
       var opt = opts.filter(function (o) { return o.id === sel.value; })[0];
       correct = !!(opt && opt.correct);
       showFeedback(el, correct, data);
+      markChoice(sel, correct);
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
       if (done) lock();
       ctx.save({ value: sel.value, correct: correct, attempts: attempts });
@@ -454,10 +475,16 @@
     });
     el.innerHTML = html + '</div>' + feedbackBox(data);
     var correct = false, done = false;
+    function markOption(id, ok) {
+      el.querySelectorAll('.me-option').forEach(function (x) { x.classList.remove('is-right', 'is-wrong'); });
+      var btn = el.querySelector('.me-option[data-id="' + id + '"]');
+      if (btn) btn.classList.add(ok ? 'is-right' : 'is-wrong');
+    }
     el.querySelectorAll('.me-option').forEach(function (b) {
       b.addEventListener('click', function () {
         var o = (data.options || []).filter(function (x) { return x.id === b.dataset.id; })[0];
         correct = !!o.correct; done = true;
+        markOption(o.id, correct);
         var box = el.querySelector('.me-feedback');
         box.className = 'me-feedback ' + (correct ? 'is-ok' : 'is-error');
         box.innerHTML = '<strong>' + (correct ? '✔ ' : '✖ ') + rich(o.feedback || (correct ? data.feedback.correct : data.feedback.incorrect)) + '</strong>' +
@@ -471,6 +498,7 @@
       var so = (data.options || []).filter(function (x) { return x.id === ctx.state.choice; })[0];
       if (so) {
         correct = !!so.correct; done = true;
+        markOption(so.id, correct);
         var sb = el.querySelector('.me-feedback');
         sb.className = 'me-feedback ' + (correct ? 'is-ok' : 'is-error');
         sb.innerHTML = '<strong>' + (correct ? '✔ ' : '✖ ') + rich(so.feedback || (correct ? data.feedback.correct : data.feedback.incorrect)) + '</strong>' +

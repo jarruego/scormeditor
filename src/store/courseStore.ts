@@ -14,8 +14,9 @@ function newId(prefix: string): string {
 }
 
 /** Crea una pantalla vacía válida según el schema. */
-function blankScreen(type: ScreenType = 'content'): Screen {
-  return ScreenSchema.parse({ id: newId('s'), type, title: 'Nueva pantalla' })
+function blankScreen(preset?: Partial<Screen>): Screen {
+  // El parse rellena los defaults del esquema sobre lo que traiga el preset.
+  return ScreenSchema.parse({ id: newId('s'), type: 'content', title: 'Nueva pantalla', ...(preset || {}) })
 }
 
 interface Located { mi: number; ui: number; si: number }
@@ -60,7 +61,8 @@ interface CourseState {
   getScreen: (id: string) => Screen | null
   updateScreen: (id: string, patch: Partial<Screen>) => void
   changeScreenType: (id: string, type: ScreenType) => void
-  addScreen: (unitId: string, afterId?: string) => void
+  /** Añade una pantalla; `preset` permite plantillas (texto+imagen, actividad…). */
+  addScreen: (unitId: string, afterId?: string, preset?: Partial<Screen>) => void
   duplicateScreen: (id: string) => void
   deleteScreen: (id: string) => void
   /** Reordena dentro de la unidad o mueve entre unidades. */
@@ -209,13 +211,13 @@ export const useCourseStore = create<CourseState>((set, get) => {
     set({ course })
   },
 
-  addScreen: (unitId, afterId) => {
+  addScreen: (unitId, afterId, preset) => {
     snapshot()
     const course = clone(get().course)
     outer: for (const m of course.modules)
       for (const u of m.units)
         if (u.id === unitId) {
-          const s = blankScreen()
+          const s = blankScreen(preset)
           const idx = afterId ? u.screens.findIndex((x) => x.id === afterId) + 1 : u.screens.length
           u.screens.splice(idx, 0, s)
           set({ course, selectedScreenId: s.id })

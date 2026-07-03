@@ -13,15 +13,23 @@
 
   /* Interactividades informativas expandidas al imprimir (ver setupPrint en
      app.js): mostrar todo el contenido oculto y evitar cortes entre páginas. */
-  .me-acc-body[hidden], [role=tabpanel][hidden], .me-card-back[hidden] { display: block !important; }
+  .me-acc-body[hidden], [role=tabpanel][hidden] { display: block !important; }
   .me-acc-item, .me-card { break-inside: avoid; page-break-inside: avoid; }
   .me-acc-head { cursor: auto; }
   /* Las pestañas se rotulan con .me-print-tablabel sobre cada panel, así que la
      barra de pestañas sobra en papel. */
   .me-tabs { display: none; }
   .me-print-tablabel { font-weight: 600; margin: .6rem 0 .2rem; }
-  /* Tarjetas: anverso y reverso apilados y legibles (sin efecto de volteo). */
+  /* Tarjetas con volteo 3D: aplanar el giro y apilar anverso y reverso legibles.
+     `.me-flip-inner` pasa a bloque (anula el grid apilado) y las caras dejan de
+     ocultar su reverso. */
   .me-card { min-height: 0 !important; text-align: left; }
+  .me-flip-inner { display: block !important; transform: none !important; min-height: 0 !important; }
+  .me-card-front, .me-card-back {
+    display: block !important; transform: none !important;
+    backface-visibility: visible !important; -webkit-backface-visibility: visible !important;
+    box-shadow: none !important; text-align: left;
+  }
   .me-card-front { font-weight: 600; }
-  .me-card-back { display: block; margin-top: .3rem; }
+  .me-card-back { margin-top: .3rem; }
 }

@@ -1,5 +1,6 @@
 import { useCourseStore } from '../store/courseStore'
 import type { UnitTest, QuizQuestion, InteractionOption } from '../schema/course.schema'
+import { ObjectiveSelect } from './ObjectiveSelect'
 
 function newId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 7)}`
@@ -85,6 +86,9 @@ export function FinalTestEditor() {
 
           <label className="ed-field"><span>Enunciado</span>
             <input value={q.prompt} onChange={(e) => updateQuestion(qi, { prompt: e.target.value })} /></label>
+
+          <label className="ed-field"><span>Objetivo vinculado</span>
+            <ObjectiveSelect value={q.learning_objective} onChange={(v) => updateQuestion(qi, { learning_objective: v })} /></label>
 
           <div className="ed-field">
             <span>Opciones (marca la correcta)</span>

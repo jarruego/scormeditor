@@ -6,6 +6,11 @@ plantilla de la **forma exacta** (claves, anidación, shape de cada interacción
 `.scormproj` (ver §11 del contrato); las imágenes referenciadas (`assets/img/…`)
 deben existir como ficheros reales en el ZIP.
 
+Fíjate en los **objetivos**: son un conjunto pequeño y su texto se repite **idéntico**
+allí donde aparece (en `objective` de las pantallas que lo desarrollan, en el
+`learning_objective` de las interacciones y en las preguntas del test). En un curso
+real, varias pantallas de desarrollo compartirán el mismo `objective`.
+
 ```json
 {
   "schema_version": "1.0.0",
@@ -64,7 +69,7 @@ deben existir como ficheros reales en el ZIP.
               "id": "s02",
               "type": "objectives",
               "title": "Objetivos del tema",
-              "objective": "Definir la atención centrada en la persona y reconocer sus principios.",
+              "objective": "Definir la atención centrada en la persona.",
               "student_text": "Al terminar serás capaz de:\n- Definir la atención centrada en la persona (ACP).\n- Reconocer sus principios.\n- Aplicarlos a una situación práctica.",
               "required": true,
               "status": "ok"
@@ -73,7 +78,7 @@ deben existir como ficheros reales en el ZIP.
               "id": "s03",
               "type": "route",
               "title": "Cómo vamos a trabajar",
-              "objective": "Presentar el recorrido del tema.",
+              "objective": "Definir la atención centrada en la persona.",
               "student_text": "Recorreremos la definición, los principios y un caso práctico, y cerraremos con una autoevaluación.",
               "required": true,
               "status": "ok"

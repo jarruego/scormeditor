@@ -148,7 +148,15 @@ Reglas que NO se pueden romper:
 - `type` (enum cerrado): `cover`, `objectives`, `route`, `content`, `summary`,
   `video`, `reflection`, `forum_prompt`, `unit_quiz`, `content_placeholder`.
 - `objective`: texto libre (NO `objective_id`). Si tu herramienta maneja
-  micro‑objetivos por id, **vuelca aquí el texto del objetivo**.
+  micro‑objetivos por id, **vuelca aquí el texto del objetivo**. Los objetivos del
+  curso forman un **conjunto reducido y controlado**: derívalos del contenido real, de
+  los objetivos que el usuario indique en su petición y de la normativa/ficha
+  facilitada; su número lo manda el contenido (tantos como aprendizajes evaluables
+  distintos haya), **no una cuota fija ni uno por pantalla**. Todas las pantallas que
+  desarrollan el mismo objetivo **repiten su texto EXACTO, carácter a carácter** (cada
+  pantalla declara solo su objetivo principal). Los `learning_objective` de
+  interacciones y preguntas del test se **copian literalmente** de ese conjunto: así el
+  editor traza objetivo ↔ pantalla ↔ evaluación.
 - `min_time_seconds`: control de permanencia mínima (no antifraude duro).
 - `interaction`: un objeto (ver §6) **o `null`**. Máximo **una interacción por
   pantalla**, y **entera en una sola pantalla** (no partas un accordion/tabs ni una
@@ -454,11 +462,16 @@ preguntas.
 
 1. Toda pantalla con `title` no vacío.
 2. Pantallas `content`/`objectives`/`route` con `objective` (las `cover` y `summary`
-   están exentas).
+   están exentas). Los objetivos son un **conjunto reducido reutilizado** entre
+   pantallas (texto idéntico), no uno distinto por pantalla; en `objectives`/`route`
+   usa el objetivo principal del tema (no meta-objetivos tipo «Presentar el
+   recorrido»).
 3. Toda imagen (`kind="image"`) con `alt`.
 4. Todo vídeo con `transcript`; medios con voz (`has_voice:true`) con `tracks` VTT.
 5. Toda pregunta evaluable con **respuesta correcta** y **feedback**.
-6. Toda interacción con `learning_objective`.
+6. Toda interacción con `learning_objective` **copiado literalmente** de un
+   `objective` declarado en pantallas; cada objetivo declarado con al menos una
+   evaluación (interacción `scored` o pregunta del test) que lo mida.
 7. Cada unidad con `summary` (o pantalla `summary`) y al menos una actividad/test.
 8. `glossary` y `bibliography` no vacíos.
 9. Si `score_source="final_test"` → `assessments.final_test` con preguntas.

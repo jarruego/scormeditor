@@ -73,6 +73,36 @@ CSS); icono y título se escapan con `esc()`.
 - **Assets en preview**: blobs vía `window.__ASSETS__` (mapa id→blobURL);
   `assetUrl()`/`asset` resuelve. En export, los ficheros van al ZIP y al manifiesto.
 
+## Lenguaje visual de la carcasa (fase 1, jul 2026)
+- **Acento corporativo** `--me-accent` (turquesa `#6DC3C0`) para **estructura**: filo
+  superior de la tarjeta `.me-screen`, pantalla actual del menú (fondo + barra izquierda),
+  pestaña activa, accordion abierto, flip-card pulsada, `.me-objective`. El azul
+  `--me-primary` queda para **acciones** (botones, focus, hover de opciones).
+- **Elevación** con sombras (`--me-shadow-1`/`-2`) en vez de solo bordes: tarjeta de
+  pantalla, cards (hover se eleva), botones (hover sombra, active se hunde 1px).
+- **Tipografía**: H1 1.9rem/800/track -.015em; H2 1.35; body line-height 1.6.
+- **Transición de pantalla**: `.me-screen` entra con fade+slide (`me-screen-in`, 220 ms);
+  funciona sola porque `renderScreen` recrea el nodo. `prefers-reduced-motion` desactiva
+  `transition` **y** `animation`.
+- **Feedback de interacciones**: la opción elegida se marca en el propio elemento
+  (`.is-right`/`.is-wrong`: color + icono ✔/✖, no solo color) en `choiceFactory`
+  (single_choice/true_false) y `scenario_decision`, también al **restaurar**. Error hace
+  `me-shake`; la caja `.me-feedback` aparece con `me-pop`. Como los nodos persisten entre
+  intentos, `replay()` (interactions.js) reinicia la animación forzando reflow.
+
+### Fase 2 (jul 2026): percepción
+- **Portada hero**: la plantilla `cover` (`.me-cover`) se estiliza como hero — título
+  grande centrado sobre banda degradada del acento; prose centrada a 560 px.
+- **Accordion/tabs animados**: chevron `▸` rotatorio en `.me-acc-head::before`; cuerpos y
+  paneles aparecen con `me-reveal` (corre al pasar de `display:none` a visible).
+- **Flip 3D**: ver `interacciones.md` (afecta también a `print.css`).
+- **Resultados**: la nota sube animada (`animateNumber`, rAF + easing) y al quedar APTO
+  suena **confeti propio** (`celebrate()` en app.js: canvas efímero `.me-confetti`, paleta
+  corporativa, ~2,4 s, una vez por sesión). Todo respeta `prefers-reduced-motion`.
+- **Menú con progreso por unidad**: `buildMenu` marca cada unidad con
+  `data-start`/`data-count`; `refreshMenuChecks` rellena el contador «hechas/total»
+  (`.me-menu-count`) y la mini-barra (`.me-menu-uprog`).
+
 ## Impresión
 El botón **Imprimir** llama a `window.print()`. `src/runtime/print/print.css` reduce la
 salida a **solo la pantalla actual**: oculta topbar (transcripción/audio/glosario/recursos/

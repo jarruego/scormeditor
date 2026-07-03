@@ -194,6 +194,27 @@ autoevaluación → glosario/bibliografía (en sus arrays raíz). Las pantallas 
 contenido, pero **densas**: como referencia, el resultado buscado tenía ~80 pantallas
 en una unidad, no ~160.
 
+## Objetivos de aprendizaje: pocos, derivados y compartidos
+Define los objetivos **antes** de trocear en pantallas, a partir de tres fuentes:
+(1) el **contenido real** del documento, (2) los **objetivos que el usuario indique**
+en su petición y (3) la **normativa o ficha facilitada** (certificado de
+profesionalidad, programa formativo…). Su número lo manda el contenido: tantos como
+aprendizajes evaluables distintos haya — **ni una cuota fija ni uno por diapositiva**.
+
+- **Redacción**: verbo de acción + contenido (definir, reconocer, aplicar, analizar…),
+  formulado de modo que se pueda evaluar.
+- **Reutiliza el texto EXACTO**: todas las pantallas que desarrollan un objetivo
+  repiten su texto idéntico en `objective`. Cada pantalla declara **solo su objetivo
+  principal** (aunque de paso toque otros). Para el editor, un texto distinto = un
+  objetivo distinto.
+- Pantallas `objectives`/`route`: usa el objetivo principal del tema; **no** inventes
+  meta-objetivos tipo «Presentar el recorrido del tema» (nunca tendrían evaluación y
+  ensucian la trazabilidad).
+- **Cobertura**: cada objetivo declarado debe tener al menos una evaluación —
+  interacción `scored` o pregunta del test — cuyo `learning_objective` copie su texto
+  literal. Si un objetivo se queda sin pregunta, falta una pregunta (o sobra el
+  objetivo).
+
 ## Detectar bloques destacados (callouts) en el documento de origen
 Los documentos suelen traer ya «cajas», recuadros de color o frases con intención de
 aviso, consejo, dato curioso, caso o reflexión. **Es obligatorio reconocerlas y

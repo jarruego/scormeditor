@@ -48,6 +48,14 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   pantallas (no al final); una interacción entera en una pantalla (no partir accordion/
   actividad); no juntar imagen+texto+interacción en una pantalla; el test calificable solo
   en `assessments.final_test` (no una pantalla `unit_quiz` con el test en texto).
+  (5) **Objetivos** (jul 2026): conjunto reducido derivado del contenido + petición del
+  usuario + normativa facilitada (NO un micro-objetivo por pantalla, sin cuota fija);
+  texto **exacto** reutilizado entre las pantallas del mismo objetivo (`objective` = solo
+  el principal de cada pantalla) y copiado literal en cada `learning_objective`
+  (interacciones y test); cada objetivo con al menos una evaluación; en `objectives`/
+  `route` el objetivo principal del tema, no meta-objetivos («Presentar el recorrido»).
+  Casa con la cobertura normalizada `OBJ_NOT_EVALUATED` del editor
+  (`informes-validacion.md`).
 - El GPT también lee una copia del contrato en el `Downloads` del usuario; al tocar el de
   `docs/gpt/` hay que **sincronizarla** (`cp`). La subida al GPT se hace desde estos
   ficheros. Dentro de las Instructions, los docs se referencian por **nombre de fichero

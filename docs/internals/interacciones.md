@@ -31,6 +31,14 @@ ese contrato; no conoce el tipo concreto.
 - **Posición respecto al texto**: `screen.interaction_layout` (`top`/`bottom`, def.
   `bottom`). `render()` (renderer.js) mueve `.me-interaction` tras el `<h1>` cuando es
   `top`. Editable en `ScreenEditor`.
+- **`flip_cards` con volteo 3D** (jul 2026): ambas caras viven **siempre en el DOM**
+  (`.me-flip-inner` gira con `rotateY`; caras apiladas en la misma celda de grid para que
+  la altura sea la del contenido mayor; `backface-visibility` oculta el reverso). El lector
+  de pantalla usa `aria-hidden` alternado, **no** el atributo `hidden`. La impresión ya no
+  las expande por JS (`setupPrint`): `print.css` aplana el giro y muestra las dos caras.
+- **Feedback marcado en la opción** (fase 1): `choiceFactory` y `scenario_decision` marcan
+  el elemento elegido con `.is-right`/`.is-wrong` (color + icono ✔/✖), también al
+  restaurar; `replay()` reinicia las animaciones (shake/pop) entre intentos.
 
 ## Roadmap (acordado, no implementado)
 - **Animación secuencial** del contenido: revelar bloques en cascada. Encaja porque cada

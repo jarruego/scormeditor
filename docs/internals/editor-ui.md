@@ -6,8 +6,20 @@
 El panel central (`App.tsx`) muestra `ScreenEditor` salvo cuando el nodo seleccionado en
 `CourseTree` es un **id sintético**:
 - **`__final__`** (nodo «Evaluación → Test final») → `FinalTestEditor`: edita
-  `assessments.final_test` (título, `pass_score`, preguntas/opciones/feedback) vía
-  `setFinalTest` del store.
+  `assessments.final_test` (título, `pass_score`, preguntas/opciones/feedback y
+  `learning_objective` por pregunta) vía `setFinalTest` del store.
+
+### Objetivo vinculado = desplegable, no texto libre
+El campo «Objetivo vinculado» (interacción del `ScreenEditor` y pregunta del
+`FinalTestEditor`) es `ObjectiveSelect` (`src/components/ObjectiveSelect.tsx`): un `<select>`
+con los objetivos **declarados en las pantallas** del curso. Motivo: la cobertura
+`OBJ_NOT_EVALUATED` (ver `informes-validacion.md`) casa por **texto exacto**, y el texto
+libre producía objetivos «casi iguales» que nunca casaban. Si el valor guardado no coincide
+con ningún objetivo declarado (curso importado), se conserva como opción extra marcada
+«(no declarado en pantallas)». El casado valor↔objetivo declarado es **tolerante**
+(`normalizeObjective`, ver `informes-validacion.md`): un valor «casi igual» se muestra como
+el objetivo declarado y, al elegir en el desplegable, se guarda el texto canónico. No
+volver a texto libre.
 - **Ajustes** **no** es un nodo del árbol: es un **menú desplegable ⚙ Ajustes** en la
   `Toolbar` (junto a «Archivo ▾») con dos opciones **independientes**, cada una abre **su
   propia ventana** (decisión jul 2026: menú de Ajustes con ventanas separadas, ya no un modal
@@ -45,6 +57,33 @@ subido, muestra un aviso en vez de romper.
 `CourseTree` (`src/components/CourseTree.tsx`): módulos → unidades → pantallas
 (reordenables con dnd-kit) + una sección «Evaluación» con el nodo del test final. Añadir
 pantalla por unidad; duplicar/eliminar por pantalla.
+
+### Árbol: plegado, filtro, iconos y plantillas (fase 3, jul 2026)
+- **Unidades plegables**: cada unidad es un `<details className="ed-tree-unit" open>` con
+  chevron rotatorio y **contador** de pantallas (con filtro activo, «visibles/total»). La
+  `key` incluye el estado del filtro para remontarse abierta al (des)activarlo.
+- **Filtro** (`.ed-tree-filter`): por título o etiqueta de tipo; oculta unidades sin
+  coincidencias y las secciones Evaluación/añadir mientras está activo. El dnd sigue
+  funcionando (mueve por id, no por índice visible).
+- **Iconos por tipo** en cada pantalla (`screenTypeIcon` en `labels.ts`) + marca de
+  interacción: «· 🧩» informativa (no puntúa) o «· ⭐ evaluable» (`.ed-eval`, en ámbar) si
+  `interaction.scored`.
+- **Validación en contexto**: el árbol calcula `validateCourse` (memoizado por curso) y
+  muestra badge ⛔/⚠ por pantalla (`IssueBadge`); el `ScreenEditor` muestra la lista de
+  issues de la pantalla abierta (`.ed-inline-issues`) encima del formulario. Los `info` no
+  se muestran en contexto (solo en la pestaña Validación).
+- **Plantillas**: «+ Añadir pantalla…» abre un menú (`AddScreenMenu`) con presets — Texto,
+  Texto + imagen (imagen a la derecha 50%), Actividad (interacción `single_choice` en
+  blanco) y Vídeo (YouTube). `addScreen(unitId, afterId?, preset?)` acepta un
+  `Partial<Screen>` que `blankScreen` funde y pasa por `ScreenSchema.parse` (defaults).
+
+### Etiquetas en español (no exponer identificadores del esquema)
+La UI del editor **nunca muestra los valores internos en crudo** (`content_placeholder`,
+`single_choice`…): pasa por `src/schema/labels.ts` (`screenTypeLabel`/
+`interactionTypeLabel`, con fallback al valor crudo si aparece un tipo nuevo sin etiqueta).
+Se aplica en los selects del `ScreenEditor` y en el tipo de pantalla del árbol. Los valores
+internos del `course.json` no cambian (contrato). Al añadir un tipo al esquema, añade su
+etiqueta aquí.
 
 ## Confirmaciones (modal propio, no `window.confirm`)
 Diálogo de confirmación promisificado: `confirmDialog({ title, message, confirmLabel,
