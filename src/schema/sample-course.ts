@@ -55,7 +55,7 @@ export const sampleCourse: Course = {
               objective: '',
               student_text: 'Bienvenido/a al curso. Pulsa **Siguiente** para comenzar.',
               source_refs: [],
-              visual_resource: { kind: 'none', src: '', alt: '', tracks: [], has_voice: false, layout: 'top', media_width: '50' },
+              visual_resource: { kind: 'none', src: '', alt: '', tracks: [], has_voice: false, layout: 'top', media_width: '50', media_align: 'left', media_full: false },
               interaction: null,
               required: false,
               min_time_seconds: 0,
@@ -75,7 +75,7 @@ export const sampleCourse: Course = {
               student_text:
                 'Al finalizar serás capaz de:\n- Identificar la normativa básica.\n- Reconocer derechos y deberes.',
               source_refs: [{ doc: 'manual_prl_basico.pdf', locator: 'p.12' }],
-              visual_resource: { kind: 'none', src: '', alt: '', tracks: [], has_voice: false, layout: 'top', media_width: '50' },
+              visual_resource: { kind: 'none', src: '', alt: '', tracks: [], has_voice: false, layout: 'top', media_width: '50', media_align: 'left', media_full: false },
               interaction: null,
               required: true,
               min_time_seconds: 10,
@@ -95,7 +95,7 @@ export const sampleCourse: Course = {
               student_text:
                 'La Ley de Prevención de Riesgos Laborales establece el marco para proteger la seguridad y salud de los trabajadores.',
               source_refs: [{ doc: 'manual_prl_basico.pdf', locator: 'p.14', transform: 'resumen' }],
-              visual_resource: { kind: 'none', src: '', alt: '', tracks: [], has_voice: false, layout: 'top', media_width: '50' },
+              visual_resource: { kind: 'none', src: '', alt: '', tracks: [], has_voice: false, layout: 'top', media_width: '50', media_align: 'left', media_full: false },
               interaction: {
                 id: 'i-acc-1',
                 type: 'accordion',
@@ -133,7 +133,7 @@ export const sampleCourse: Course = {
               objective: 'Autoevaluación de la unidad.',
               student_text: 'Responde para verificar tu comprensión.',
               source_refs: [],
-              visual_resource: { kind: 'none', src: '', alt: '', tracks: [], has_voice: false, layout: 'top', media_width: '50' },
+              visual_resource: { kind: 'none', src: '', alt: '', tracks: [], has_voice: false, layout: 'top', media_width: '50', media_align: 'left', media_full: false },
               interaction: {
                 id: 'i-sc-1',
                 type: 'single_choice',
@@ -174,7 +174,7 @@ export const sampleCourse: Course = {
               objective: '',
               student_text: 'Has repasado el marco normativo básico de la PRL.',
               source_refs: [],
-              visual_resource: { kind: 'none', src: '', alt: '', tracks: [], has_voice: false, layout: 'top', media_width: '50' },
+              visual_resource: { kind: 'none', src: '', alt: '', tracks: [], has_voice: false, layout: 'top', media_width: '50', media_align: 'left', media_full: false },
               interaction: null,
               required: true,
               min_time_seconds: 10,

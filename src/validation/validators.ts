@@ -1,4 +1,4 @@
-import type { Course, Screen, Unit } from '../schema/course.schema'
+import type { Course, QuizQuestion, Screen, Unit } from '../schema/course.schema'
 
 export type Severity = 'error' | 'warning' | 'info'
 
@@ -62,6 +62,26 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
   }
 }
 
+// --- Reglas por pregunta de test (final o de unidad) -------------------------
+function checkQuizQuestions(
+  ctx: Ctx,
+  questions: QuizQuestion[],
+  locBase: string,
+  link: { screenId?: string; unitId?: string },
+) {
+  questions.forEach((q, n) => {
+    const short = q.prompt.trim() ? `«${q.prompt.trim().slice(0, 60)}${q.prompt.trim().length > 60 ? '…' : ''}»` : `pregunta ${n + 1}`
+    const loc = `${locBase} › ${short}`
+    const add = (code: string, severity: Severity, message: string) =>
+      ctx.push({ code, severity, message, location: loc, ...link })
+    if (!q.prompt.trim()) add('Q_NO_PROMPT', 'error', 'Pregunta sin enunciado.')
+    if (!(q.options || []).some((o) => o.correct))
+      add('Q_NO_CORRECT', 'error', 'Pregunta sin respuesta correcta definida.')
+    if (!q.feedback.correct.trim() && !q.feedback.incorrect.trim())
+      add('Q_NO_FEEDBACK', 'error', 'Pregunta sin feedback de acierto/error.')
+  })
+}
+
 // --- Reglas por unidad -------------------------------------------------------
 function checkUnit(ctx: Ctx, u: Unit, mTitle: string) {
   const loc = `${mTitle} › ${u.title || u.id}`
@@ -90,26 +110,56 @@ function checkGlobal(ctx: Ctx) {
   if (c.bibliography.length === 0)
     ctx.push({ code: 'BIBLIO_EMPTY', severity: 'warning', message: 'Bibliografía vacía.', location: 'Curso' })
 
+  // Origen de la nota. Ojo a la semántica real del runtime (`computeScore` en
+  // app.js): 'unit_tests' significa «actividades evaluables» (interacciones de
+  // pantalla con scored), NO los objetos assessments.unit_tests.
   const rules = c.scorm.rules
-  if (rules.score_source === 'final_test' && (!c.assessments.final_test || c.assessments.final_test.questions.length === 0))
-    ctx.push({ code: 'SCORM_NO_FINAL', severity: 'error', message: 'La nota sale del test final pero no hay preguntas en el test final.', location: 'SCORM' })
-  if (rules.score_source === 'unit_tests' && c.assessments.unit_tests.length === 0)
-    ctx.push({ code: 'SCORM_NO_UNIT_TESTS', severity: 'error', message: 'La nota sale de tests por unidad pero no hay tests de unidad.', location: 'SCORM' })
+  const finalQuestions = c.assessments.final_test?.questions.length ?? 0
+  const scoredActivities = c.modules.reduce(
+    (a, m) => a + m.units.reduce((b, u) => b + u.screens.filter((s) => s.interaction?.scored).length, 0), 0)
+  if (rules.score_source === 'final_test' && finalQuestions === 0)
+    ctx.push({ code: 'SCORM_NO_FINAL', severity: 'error', message: 'La nota sale del test final pero no hay preguntas en el test final.', location: 'SCORM', screenId: '__final__' })
+  if (rules.score_source === 'unit_tests' && scoredActivities === 0)
+    ctx.push({ code: 'SCORM_NO_ACTIVITIES', severity: 'error', message: 'La nota sale de las actividades evaluables pero ninguna interacción puntúa.', location: 'SCORM' })
+  if (rules.score_source === 'mixed') {
+    if (finalQuestions === 0 && scoredActivities === 0)
+      ctx.push({ code: 'SCORM_MIXED_EMPTY', severity: 'error', message: 'La nota es mixta pero no hay ni test final ni actividades evaluables.', location: 'SCORM' })
+    else if (finalQuestions === 0)
+      ctx.push({ code: 'SCORM_MIXED_NO_FINAL', severity: 'warning', message: 'La nota es mixta pero no hay test final: el peso del test no se aplicará.', location: 'SCORM', screenId: '__final__' })
+    else if (scoredActivities === 0)
+      ctx.push({ code: 'SCORM_MIXED_NO_ACTIVITIES', severity: 'warning', message: 'La nota es mixta pero no hay actividades evaluables: solo contará el test final.', location: 'SCORM' })
+  }
   if (!c.scorm.identifier.trim())
     ctx.push({ code: 'SCORM_NO_ID', severity: 'error', message: 'Falta el identificador SCORM.', location: 'SCORM' })
 
-  // Riesgo normativo: cobertura de objetivos sin evaluación
-  const objectives = new Set<string>()
+  // Preguntas de los tests (final y por unidad): mismas exigencias que las
+  // interacciones de pantalla (respuesta correcta y feedback).
+  if (c.assessments.final_test)
+    checkQuizQuestions(ctx, c.assessments.final_test.questions, 'Test final', { screenId: '__final__' })
+  c.assessments.unit_tests.forEach((t) =>
+    checkQuizQuestions(ctx, t.questions, `Test de unidad «${t.title || t.id}»`, { unitId: t.unit_id }))
+
+  // Riesgo normativo: cobertura de objetivos sin evaluación. Un issue por
+  // objetivo, enlazado a la primera pantalla que lo declara.
+  const declaredBy = new Map<string, { screen: Screen; loc: string }>()
   const evaluatedObjectives = new Set<string>()
   c.modules.forEach((m) => m.units.forEach((u) => u.screens.forEach((s) => {
-    if (s.objective.trim()) objectives.add(s.objective.trim())
+    const obj = s.objective.trim()
+    if (obj && !declaredBy.has(obj))
+      declaredBy.set(obj, { screen: s, loc: screenLoc(m.title || m.id, u.title || u.id, s) })
     if (s.interaction?.scored && s.interaction.learning_objective)
       evaluatedObjectives.add(s.interaction.learning_objective.trim())
   })))
   c.assessments.final_test?.questions.forEach((q) => q.learning_objective && evaluatedObjectives.add(q.learning_objective.trim()))
-  const uncovered = [...objectives].filter((o) => !evaluatedObjectives.has(o))
-  if (uncovered.length > 0)
-    ctx.push({ code: 'OBJ_NOT_EVALUATED', severity: 'info', message: `${uncovered.length} objetivo(s) sin evaluación asociada (riesgo para revisión normativa).`, location: 'Trazabilidad' })
+  c.assessments.unit_tests.forEach((t) => t.questions.forEach((q) => q.learning_objective && evaluatedObjectives.add(q.learning_objective.trim())))
+  declaredBy.forEach(({ screen, loc }, obj) => {
+    if (!evaluatedObjectives.has(obj))
+      ctx.push({
+        code: 'OBJ_NOT_EVALUATED', severity: 'info',
+        message: `Objetivo sin evaluación asociada: «${obj}» (riesgo para revisión normativa).`,
+        location: loc, screenId: screen.id,
+      })
+  })
 }
 
 export interface ValidationResult {

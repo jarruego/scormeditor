@@ -12,6 +12,28 @@ export interface ExportOptions {
 }
 
 /**
+ * Recorre el curso y devuelve el conjunto de rutas `assets/…` realmente
+ * referenciadas (recurso visual, póster, pistas VTT, audio, imágenes de
+ * interacciones, etc.). Se usa para no empaquetar assets huérfanos que
+ * engordarían el ZIP inútilmente.
+ */
+export function collectAssetPaths(course: Course): Set<string> {
+  const out = new Set<string>()
+  const visit = (v: unknown) => {
+    if (typeof v === 'string') {
+      if (v.startsWith('assets/')) out.add(v)
+      return
+    }
+    if (Array.isArray(v)) { v.forEach(visit); return }
+    if (v && typeof v === 'object') {
+      for (const key of Object.keys(v as Record<string, unknown>)) visit((v as Record<string, unknown>)[key])
+    }
+  }
+  visit(course)
+  return out
+}
+
+/**
  * Construye el ZIP SCORM 1.2 en memoria y devuelve un Blob.
  * Estructura: imsmanifest.xml + index.html + assets/** + data/course.json
  */
@@ -26,9 +48,13 @@ export async function buildScormZip({ course, assets = {} }: ExportOptions): Pro
   // 2) Datos del curso
   zip.file('data/course.json', JSON.stringify(course, null, 2))
 
-  // 3) Assets de media (imágenes, vídeos, audios, VTT...)
+  // 3) Assets de media (imágenes, vídeos, audios, VTT...). Solo los REFERENCIADOS
+  //    por el curso: así los huérfanos (versiones antiguas, pantallas borradas…)
+  //    no engordan el ZIP.
+  const referenced = collectAssetPaths(course)
   const assetPaths: string[] = []
   for (const [path, content] of Object.entries(assets)) {
+    if (!referenced.has(path)) continue
     zip.file(path, content as any)
     assetPaths.push(path)
   }

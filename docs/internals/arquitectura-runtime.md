@@ -61,10 +61,32 @@ CSS); icono y título se escapan con `esc()`.
   `media_width` (`33`/`50`/`66`, def. `50`). La maquetación texto+media
   (`.me-layout`/`.me-media`/`.me-mw-*`) aplica en **todas** las plantillas, no solo en
   content/route/video (un fallo histórico fue limitarlo).
+- Solo en `top`/`bottom`: `media_align` (`left`/`center`, def. `left`) y `media_full`
+  (bool, def. `false`) → clases `.me-media-center` / `.me-media-full` que centran o estiran
+  el recurso al 100% del ancho. Defaults = comportamiento previo (izquierda, tamaño
+  intrínseco hasta el 100%). En el editor es un **único control segmentado «Ajuste»**
+  (iconos ◧/▣/⬛ = Izquierda/Centrada/Ancho 100%, estados excluyentes) que solo aparece con
+  disposición arriba/abajo y mapea a esos dos campos (iconos ◧/▣/▬, glifos de texto para
+  alinear en altura con Disposición/Proporción; `.ed-seg button` tiene tamaño fijo).
 - **Lightbox**: imágenes ampliables al 100% al hacer clic (`setupLightbox()`,
   `.me-lightbox`/`.me-zoomable`).
 - **Assets en preview**: blobs vía `window.__ASSETS__` (mapa id→blobURL);
   `assetUrl()`/`asset` resuelve. En export, los ficheros van al ZIP y al manifiesto.
+
+## Impresión
+El botón **Imprimir** llama a `window.print()`. `src/runtime/print/print.css` reduce la
+salida a **solo la pantalla actual**: oculta topbar (transcripción/audio/glosario/recursos/
+imprimir), menú lateral, toolbar (anterior/siguiente), modales y botones «Comprobar». En el
+ZIP se enlaza con `media="print"` (`index.html`); en **Vista estudiante** `buildPreview.ts`
+lo inyecta como `<style>` en el `srcdoc` del iframe (ya viene envuelto en `@media print`),
+porque si no el preview imprimía toda la interfaz. Las interactividades **informativas** ocultan
+contenido tras un clic; para que el papel sea completo, `setupPrint()` (`app.js`) se
+engancha a `beforeprint`/`afterprint` (así vale igual con el botón y con Ctrl+P) y, solo
+durante la impresión, **expande** desplegables (`accordion`), pestañas (`tabs`) y tarjetas
+(`flip_cards`), restaurando el estado al terminar. En pestañas, como el DOM lista primero
+todos los botones y luego los paneles, se **oculta la barra de pestañas** y se inyecta un
+rótulo (`.me-print-tablabel`) con el título de cada pestaña sobre su panel. Las
+interactividades **evaluables** no se expanden (no se imprimen respuestas correctas).
 
 ## Responsive / móvil
 La carcasa es 100% responsive. En `max-width:760px` el menú lateral pasa a **slide-over**

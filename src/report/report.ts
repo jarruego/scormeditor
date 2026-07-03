@@ -1,7 +1,7 @@
 import type { Course } from '../schema/course.schema'
-import { validateCourse, type Issue } from '../validation/validators'
+import { validateCourse, type Issue, type ValidationResult } from '../validation/validators'
 
-interface Counts {
+export interface Counts {
   modules: number
   units: number
   screens: number
@@ -21,43 +21,76 @@ function counts(course: Course): Counts {
   return { modules: course.modules.length, units, screens, interactions, questions }
 }
 
-interface MatrixRow {
+export interface MatrixRow {
   objective: string
+  /** Ubicación módulo › unidad ('—' para el test final). */
+  path: string
   screen: string
   interaction: string
   evaluation: string
+  /** Pantalla enlazable en el editor ('__final__' para el test final). */
+  screenId?: string
 }
 
 function traceabilityMatrix(course: Course): MatrixRow[] {
   const rows: MatrixRow[] = []
-  course.modules.forEach((m) => m.units.forEach((u) => u.screens.forEach((s) => {
-    if (!s.objective && !s.interaction) return
-    rows.push({
-      objective: s.objective || s.interaction?.learning_objective || '—',
-      screen: `${s.title || s.id} (${s.type})`,
-      interaction: s.interaction ? s.interaction.type : '—',
-      evaluation: s.interaction?.scored ? `Sí (${s.interaction.points} pts)` : 'No',
+  course.modules.forEach((m) => m.units.forEach((u) => {
+    const path = `${m.title || m.id} › ${u.title || u.id}`
+    u.screens.forEach((s) => {
+      if (!s.objective && !s.interaction) return
+      rows.push({
+        objective: s.objective || s.interaction?.learning_objective || '—',
+        path,
+        screen: `${s.title || s.id} (${s.type})`,
+        interaction: s.interaction ? s.interaction.type : '—',
+        evaluation: s.interaction?.scored ? `Sí (${s.interaction.points} pts)` : 'No',
+        screenId: s.id,
+      })
     })
-  })))
+    // Tests de unidad: se enlazan a la primera pantalla de su unidad.
+    course.assessments.unit_tests.filter((t) => t.unit_id === u.id).forEach((t) =>
+      t.questions.forEach((q) => rows.push({
+        objective: q.learning_objective || '—',
+        path,
+        screen: `Test de unidad «${t.title || t.id}»`,
+        interaction: q.type,
+        evaluation: `Sí (${q.points} pts)`,
+        screenId: u.screens[0]?.id,
+      })))
+  }))
   course.assessments.final_test?.questions.forEach((q) => {
-    rows.push({ objective: q.learning_objective || '—', screen: 'Test final', interaction: q.type, evaluation: `Sí (${q.points} pts)` })
+    rows.push({ objective: q.learning_objective || '—', path: '—', screen: 'Test final', interaction: q.type, evaluation: `Sí (${q.points} pts)`, screenId: '__final__' })
   })
   return rows
 }
 
-interface QARow { question: string; correct: string; objective: string }
+export interface QARow {
+  question: string
+  correct: string
+  objective: string
+  /** De dónde sale la pregunta (pantalla, test de unidad o test final). */
+  origin: string
+  screenId?: string
+}
+
 function qaTable(course: Course): QARow[] {
   const rows: QARow[] = []
-  const collect = (prompt: string, options: { text: string; correct?: boolean }[], obj: string) => {
+  const collect = (prompt: string, options: { text: string; correct?: boolean }[], obj: string, origin: string, screenId?: string) => {
     const correct = options.filter((o) => o.correct).map((o) => o.text).join(', ') || '—'
-    rows.push({ question: prompt, correct, objective: obj || '—' })
+    rows.push({ question: prompt, correct, objective: obj || '—', origin, screenId })
   }
-  course.modules.forEach((m) => m.units.forEach((u) => u.screens.forEach((s) => {
-    const it = s.interaction
-    if (it && (it.options || []).some((o) => o.correct))
-      collect(it.prompt, it.options, it.learning_objective)
-  })))
-  course.assessments.final_test?.questions.forEach((q) => collect(q.prompt, q.options, q.learning_objective))
+  course.modules.forEach((m) => m.units.forEach((u) => {
+    u.screens.forEach((s) => {
+      const it = s.interaction
+      if (it && (it.options || []).some((o) => o.correct))
+        collect(it.prompt, it.options, it.learning_objective, s.title || s.id, s.id)
+    })
+    course.assessments.unit_tests.filter((t) => t.unit_id === u.id).forEach((t) =>
+      t.questions.forEach((q) =>
+        collect(q.prompt, q.options, q.learning_objective, `Test de unidad «${t.title || t.id}»`, u.screens[0]?.id)))
+  }))
+  course.assessments.final_test?.questions.forEach((q) =>
+    collect(q.prompt, q.options, q.learning_objective, 'Test final', '__final__'))
   return rows
 }
 
@@ -77,22 +110,64 @@ const SCORM_CHECKS = [
   { code: 'Q_NO_CORRECT', label: 'Todas las preguntas tienen respuesta correcta' },
 ]
 
-function checklist(label: string, defs: { code: string; label: string }[], issues: Issue[]): string {
-  const rows = defs.map((d) => {
-    const failed = issues.some((i) => i.code === d.code)
-    return `| ${failed ? '❌' : '✅'} | ${d.label} |`
-  }).join('\n')
-  return `### ${label}\n\n| Estado | Criterio |\n|:---:|---|\n${rows}\n`
+export interface ChecklistItem { code: string; label: string; failed: boolean }
+export interface Checklist { label: string; items: ChecklistItem[] }
+
+function buildChecklists(issues: Issue[]): Checklist[] {
+  const build = (label: string, defs: { code: string; label: string }[]): Checklist => ({
+    label,
+    items: defs.map((d) => ({ ...d, failed: issues.some((i) => i.code === d.code) })),
+  })
+  return [
+    build('Accesibilidad', ACCESSIBILITY_CHECKS),
+    build('Interactividad', INTERACTIVITY_CHECKS),
+    build('SCORM / Moodle', SCORM_CHECKS),
+  ]
+}
+
+/**
+ * Modelo estructurado del informe: única fuente para el render interactivo de
+ * `ReportPanel` (con enlaces al editor vía `screenId`) y para las exportaciones
+ * Markdown/HTML/PDF.
+ */
+export interface ReportData {
+  counts: Counts
+  validation: ValidationResult
+  matrix: MatrixRow[]
+  qa: QARow[]
+  checklists: Checklist[]
+  /** Errores (riesgos bloqueantes). */
+  risks: Issue[]
+  /** Avisos (pendientes de validación por la entidad). */
+  pending: Issue[]
+}
+
+export function buildReport(course: Course): ReportData {
+  const validation = validateCourse(course)
+  return {
+    counts: counts(course),
+    validation,
+    matrix: traceabilityMatrix(course),
+    qa: qaTable(course),
+    checklists: buildChecklists(validation.issues),
+    risks: validation.issues.filter((i) => i.severity === 'error'),
+    pending: validation.issues.filter((i) => i.severity === 'warning'),
+  }
+}
+
+/** Neutraliza caracteres que romperían una celda de tabla Markdown. */
+function mdCell(s: string): string {
+  return String(s ?? '').replace(/\|/g, '¦').replace(/\s*\n\s*/g, ' ')
+}
+
+function checklistMd(list: Checklist): string {
+  const rows = list.items.map((d) => `| ${d.failed ? '❌' : '✅'} | ${mdCell(d.label)} |`).join('\n')
+  return `### ${list.label}\n\n| Estado | Criterio |\n|:---:|---|\n${rows}\n`
 }
 
 /** Genera el informe de revisión en Markdown. */
 export function generateReportMarkdown(course: Course): string {
-  const c = counts(course)
-  const val = validateCourse(course)
-  const matrix = traceabilityMatrix(course)
-  const qa = qaTable(course)
-  const risks = val.issues.filter((i) => i.severity === 'error')
-  const pending = val.issues.filter((i) => i.severity === 'warning')
+  const { counts: c, matrix, qa, checklists, risks, pending } = buildReport(course)
 
   const md: string[] = []
   md.push(`# Informe de revisión — ${course.course.title || 'Curso'}\n`)
@@ -112,21 +187,19 @@ export function generateReportMarkdown(course: Course): string {
   md.push(`| ${c.modules} | ${c.units} | ${c.screens} | ${c.interactions} | ${c.questions} |\n`)
 
   md.push(`## 3. Matriz de trazabilidad (objetivo ↔ pantalla ↔ interacción ↔ evaluación)\n`)
-  md.push(`| Objetivo | Pantalla | Interacción | Evaluado |`)
-  md.push(`|---|---|---|---|`)
-  matrix.forEach((r) => md.push(`| ${r.objective} | ${r.screen} | ${r.interaction} | ${r.evaluation} |`))
+  md.push(`| Objetivo | Ubicación | Pantalla | Interacción | Evaluado |`)
+  md.push(`|---|---|---|---|---|`)
+  matrix.forEach((r) => md.push(`| ${mdCell(r.objective)} | ${mdCell(r.path)} | ${mdCell(r.screen)} | ${mdCell(r.interaction)} | ${mdCell(r.evaluation)} |`))
   md.push('')
 
   md.push(`## 4. Preguntas y respuestas correctas\n`)
-  md.push(`| Pregunta | Respuesta correcta | Objetivo |`)
-  md.push(`|---|---|---|`)
-  qa.forEach((r) => md.push(`| ${r.question} | ${r.correct} | ${r.objective} |`))
+  md.push(`| Pregunta | Origen | Respuesta correcta | Objetivo |`)
+  md.push(`|---|---|---|---|`)
+  qa.forEach((r) => md.push(`| ${mdCell(r.question)} | ${mdCell(r.origin)} | ${mdCell(r.correct)} | ${mdCell(r.objective)} |`))
   md.push('')
 
   md.push(`## 5. Checklists\n`)
-  md.push(checklist('Accesibilidad', ACCESSIBILITY_CHECKS, val.issues))
-  md.push(checklist('Interactividad', INTERACTIVITY_CHECKS, val.issues))
-  md.push(checklist('SCORM / Moodle', SCORM_CHECKS, val.issues))
+  checklists.forEach((list) => md.push(checklistMd(list)))
 
   md.push(`## 6. Riesgos detectados (errores)\n`)
   if (risks.length === 0) md.push(`_Sin errores bloqueantes._`)

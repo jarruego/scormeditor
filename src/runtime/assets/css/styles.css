@@ -103,6 +103,10 @@ body {
   .me-layout-left > .me-media, .me-layout-right > .me-media { max-width: 100% !important; flex-basis: auto !important; }
 }
 .me-figure { margin: 1rem 0; } .me-figure img { max-width: 100%; height: auto; border-radius: 6px; }
+/* Imagen/recurso arriba o abajo: centrado y/o ancho completo (opcionales) */
+.me-media-center { text-align: center; }
+.me-media-center > .me-figure { text-align: center; }
+.me-media-full > .me-figure img, .me-media-full > .me-video, .me-media-full > video { width: 100%; }
 .me-figure figcaption { color: var(--me-muted); font-size: .85rem; }
 .me-video { position: relative; aspect-ratio: 16/9; margin: 1rem 0; }
 .me-video iframe, .me-video { width: 100%; }

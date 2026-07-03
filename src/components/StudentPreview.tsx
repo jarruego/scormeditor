@@ -27,8 +27,11 @@ export function StudentPreview() {
   // Reconstruye la previsualización al cambiar el curso o las URLs de assets
   // La vista informa por postMessage de la diapositiva en la que se navega; así
   // al volver a la pestaña «Editar» el editor se sitúa en esa misma pantalla.
+  const frameRef = useRef<HTMLIFrameElement>(null)
   useEffect(() => {
     function onMessage(e: MessageEvent) {
+      // Solo se aceptan mensajes del propio iframe de la vista previa.
+      if (e.source !== frameRef.current?.contentWindow) return
       const d = e.data
       if (d && d.type === 'me-screen-change' && typeof d.screenId === 'string') {
         selectScreen(d.screenId)
@@ -56,7 +59,7 @@ export function StudentPreview() {
         <strong> subidos </strong>(audio, imágenes, vídeo, subtítulos) se reproducen aquí; los que solo
         tengan una ruta escrita sin archivo cargado, no.
       </p>
-      <iframe className="ed-preview-frame" title="Vista estudiante" srcDoc={srcDoc} />
+      <iframe ref={frameRef} className="ed-preview-frame" title="Vista estudiante" srcDoc={srcDoc} />
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { downloadScorm } from '../export/exportScorm'
 import { validateCourse } from '../validation/validators'
@@ -9,8 +9,7 @@ import {
   saveProject,
   saveProjectAs,
 } from '../store/autosave'
-import { TtsPanel } from './TtsPanel'
-import { CourseSettingsEditor } from './CourseSettingsEditor'
+import { CourseSettingsModal, NarrationModal } from './SettingsModal'
 
 const DISCARD_MSG =
   'Esto reemplazará el curso que tienes abierto. Los cambios que no hayas guardado en el archivo de proyecto se perderán. ¿Continuar?'
@@ -32,30 +31,39 @@ export function Toolbar() {
   const setActiveTab = useCourseStore((s) => s.setActiveTab)
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
-  const [ttsOpen, setTtsOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  // Qué ventana de ajustes está abierta. Vive en el store para que Validación
+  // pueda abrirla desde sus enlaces («abrir ajustes»).
+  const settingsModal = useCourseStore((s) => s.settingsModal)
+  const setSettingsModal = useCourseStore((s) => s.setSettingsModal)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const settingsMenuRef = useRef<HTMLDivElement>(null)
   const fsOk = isFsSupported()
 
-  // Cierra el menú al hacer clic fuera o pulsar Escape.
-  useEffect(() => {
-    if (!menuOpen) return
-    function onDown(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [menuOpen])
+  // Cierra un menú desplegable al hacer clic fuera o pulsar Escape.
+  function useMenuDismiss(open: boolean, ref: React.RefObject<HTMLDivElement>, close: () => void) {
+    useEffect(() => {
+      if (!open) return
+      function onDown(e: MouseEvent) {
+        if (ref.current && !ref.current.contains(e.target as Node)) close()
+      }
+      function onKey(e: KeyboardEvent) {
+        if (e.key === 'Escape') close()
+      }
+      document.addEventListener('mousedown', onDown)
+      document.addEventListener('keydown', onKey)
+      return () => {
+        document.removeEventListener('mousedown', onDown)
+        document.removeEventListener('keydown', onKey)
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open])
+  }
+  useMenuDismiss(menuOpen, menuRef, () => setMenuOpen(false))
+  useMenuDismiss(settingsMenuOpen, settingsMenuRef, () => setSettingsMenuOpen(false))
 
-  const val = validateCourse(course)
+  const val = useMemo(() => validateCourse(course), [course])
   const isSaved = !!linkedFileName && !projectDirty
 
   function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -109,10 +117,6 @@ export function Toolbar() {
         <button onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)" aria-label="Deshacer">↶ Deshacer</button>
         <button onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Mayús+Z)" aria-label="Rehacer">↷ Rehacer</button>
 
-        <button onClick={() => setTtsOpen(true)} title="Generar la narración de las diapositivas a partir de la transcripción">
-          🔊 Narración
-        </button>
-
         <input ref={fileRef} type="file" accept=".scormproj,application/zip" hidden onChange={onImportFile} />
         <div className="ed-menu" ref={menuRef}>
           <button
@@ -145,9 +149,29 @@ export function Toolbar() {
           )}
         </div>
 
-        <button onClick={() => setSettingsOpen(true)} title="Ajustes del curso: nota mínima, finalización, peso de la nota…">
-          ⚙ Ajustes
-        </button>
+        <div className="ed-menu" ref={settingsMenuRef}>
+          <button
+            className="ed-menu-trigger"
+            aria-haspopup="menu"
+            aria-expanded={settingsMenuOpen}
+            onClick={() => setSettingsMenuOpen((o) => !o)}
+            title="Ajustes del curso y de narración"
+          >
+            ⚙ Ajustes ▾
+          </button>
+          {settingsMenuOpen && (
+            <div className="ed-menu-list" role="menu">
+              <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('course') }}
+                title="Nota mínima, finalización, peso de la nota, navegación…">
+                Curso (Finalización)
+              </button>
+              <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('narration') }}
+                title="Proveedor/clave de API, voz y generación de audio">
+                Narración (Audio IA)
+              </button>
+            </div>
+          )}
+        </div>
 
         <button
           className={`ed-status ${val.ok ? 'ok' : 'err'}`}
@@ -160,8 +184,8 @@ export function Toolbar() {
 
       {importError && <div className="ed-import-error">⛔ {importError}</div>}
 
-      {ttsOpen && <TtsPanel onClose={() => setTtsOpen(false)} />}
-      {settingsOpen && <CourseSettingsEditor onClose={() => setSettingsOpen(false)} />}
+      {settingsModal === 'course' && <CourseSettingsModal onClose={() => setSettingsModal(null)} />}
+      {settingsModal === 'narration' && <NarrationModal onClose={() => setSettingsModal(null)} />}
     </header>
   )
 }

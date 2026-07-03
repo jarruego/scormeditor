@@ -138,8 +138,15 @@
     var pc = 'me-prose' + (proseClass ? ' ' + proseClass : '');
     var prose = '<div class="' + pc + '">' + proseHtml + '</div>';
     if (!mediaHtml) return prose;
-    var layout = (s.visual_resource && s.visual_resource.layout) || 'top';
-    var media = '<div class="me-media">' + mediaHtml + '</div>';
+    var vr = s.visual_resource || {};
+    var layout = vr.layout || 'top';
+    var mediaCls = 'me-media';
+    // En top/bottom, opciones de centrado y ancho completo del recurso.
+    if (layout === 'top' || layout === 'bottom') {
+      if (vr.media_align === 'center') mediaCls += ' me-media-center';
+      if (vr.media_full) mediaCls += ' me-media-full';
+    }
+    var media = '<div class="' + mediaCls + '">' + mediaHtml + '</div>';
     var inner = (layout === 'bottom' || layout === 'right') ? (prose + media) : (media + prose);
     var mw = (s.visual_resource && s.visual_resource.media_width) || '50';
     return '<div class="me-layout me-layout-' + layout + ' me-mw-' + mw + '">' + inner + '</div>';

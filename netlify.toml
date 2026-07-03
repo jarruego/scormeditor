@@ -4,12 +4,34 @@
 [build]
   command = "npm run build"   # tsc -b && vite build
   publish = "dist"            # salida de Vite
+  # Ahorra build minutes: si desde el último deploy SOLO cambiaron .md o docs/,
+  # no reconstruye (exit 0 = saltar; exit 1 = construir). El código sí dispara build.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':(exclude)*.md' ':(exclude)docs/'"
 
 [build.environment]
-  NODE_VERSION = "20"         # Vite 5 requiere Node 18+
+  NODE_VERSION = "22"         # Vite 7 requiere Node ^20.19 o >=22.12
 
 # La app es de una sola página: sirve index.html para cualquier ruta.
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Cabeceras de seguridad. Restricciones que la app necesita y por qué:
+# - script-src/style-src con 'unsafe-inline': la Vista estudiante inyecta la
+#   carcasa como <script>/<style> inline en un iframe srcdoc, que HEREDA esta
+#   CSP; sin 'unsafe-inline' la previsualización quedaría en blanco. Aun así,
+#   'self' bloquea cargar scripts de dominios externos.
+# - Sin default-src ni frame-src: los navegadores difieren al casar frame-src
+#   contra about:srcdoc; restringirlo podría romper el iframe de la vista.
+# - img/media con blob: y data:: los assets subidos se sirven como blob URLs.
+# - connect-src https:: la narración TTS llama directo a OpenAI/Gemini y a
+#   endpoints compatibles configurables por el usuario (solo https).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https:; media-src 'self' blob: data: https:; font-src 'self' data:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"

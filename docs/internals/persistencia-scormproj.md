@@ -24,6 +24,27 @@ guardar → Ctrl+S → Guardado».
 > La invariante de que las claves `assets/…` del ZIP coincidan literalmente con las rutas
 > del `course.json` la comparte el GPT generador (ver `ingesta-gpt.md`).
 
+### Ciclo de vida de los assets (limpieza / peso)
+El `AssetMap` del store puede acumular **huérfanos**: `addAsset` indexa por ruta, así que
+reemplazar en el mismo hueco con **otra extensión**, cambiar el **tipo** de recurso o
+**borrar** una pantalla deja el binario anterior sin referencia. Dos capas de defensa:
+
+1. **Borrado explícito con aviso** (`removeAsset` en el store; irreversible, **no** entra en
+   el historial). Lo disparan, tras `window.confirm`:
+   - **Sustituir un recurso** (`FileButton` con `currentPath`): avisa antes de subir y borra
+     el binario anterior si su ruta cambia (misma ruta = ya se sobrescribió). Se pasa
+     `currentPath` en imagen/vídeo/audio, póster, VTT y audio de locución.
+   - **Tipo «Sin recurso»** (`changeKind` en `ScreenEditor`): borra `src`/`poster`/tracks
+     asociados y pone `kind:'none'`, previo aviso.
+2. **Red de seguridad en el export**: `buildScormZip` empaqueta **solo lo referenciado**
+   (`collectAssetPaths(course)`, recorrido profundo recogiendo strings `assets/…`). Cubre
+   los huérfanos que no pasaron por (1) (p. ej. pantalla borrada o cambio a otro tipo de
+   media). → El ZIP entregado **nunca** lleva basura.
+
+Al **subir imágenes** se optimizan antes de guardar (`optimizeImage` en `FileButton`): lado
+máx. 1600 px, recompresión (PNG opaco→JPEG q0.85, PNG con alfa se mantiene, SVG/GIF
+intactos); solo se usa el resultado si pesa menos, y se avisa «Imagen reducida de X a Y».
+
 ## Recuperación automática (IndexedDB) — invisible, NO es «el guardado»
 Copia interna continua en IndexedDB (`DB_NAME = 'scormeditor'`, store `kv`, clave
 `project`) con `{ course, assets, dirty }` vía structured clone; debounce 800 ms

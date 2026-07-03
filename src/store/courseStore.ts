@@ -22,6 +22,9 @@ interface Located { mi: number; ui: number; si: number }
 
 export type Tab = 'editor' | 'preview' | 'validation' | 'report'
 
+/** Ventana de ajustes abierta (vive en el store para poder abrirla desde Validación). */
+export type SettingsModalKind = 'course' | 'narration'
+
 /** Instantánea para el historial de deshacer/rehacer. */
 type CourseSnapshot = { course: Course; selectedScreenId: string | null }
 
@@ -34,6 +37,11 @@ interface CourseState {
   // Pestaña activa de la interfaz
   activeTab: Tab
   setActiveTab: (tab: Tab) => void
+  /** Selecciona la pantalla Y cambia a la pestaña Editor (enlaces desde Validación/Informe). */
+  goToScreen: (id: string) => void
+  /** Modal de Ajustes abierto (null = cerrado). */
+  settingsModal: SettingsModalKind | null
+  setSettingsModal: (m: SettingsModalKind | null) => void
 
   // Persistencia / autoguardado
   linkedFileName: string | null // archivo de proyecto vinculado, si lo hay
@@ -63,6 +71,8 @@ interface CourseState {
   updateScorm: (patch: Partial<ScormConfig>) => void
 
   addAsset: (path: string, blob: Blob) => void
+  /** Borra un binario del mapa de assets (irreversible: no entra en el historial). */
+  removeAsset: (path: string) => void
 
   // Historial de cambios (deshacer / rehacer)
   past: CourseSnapshot[]
@@ -109,6 +119,9 @@ export const useCourseStore = create<CourseState>((set, get) => {
 
   activeTab: 'editor',
   setActiveTab: (tab) => set({ activeTab: tab }),
+  goToScreen: (id) => set({ selectedScreenId: id, activeTab: 'editor' }),
+  settingsModal: null,
+  setSettingsModal: (m) => set({ settingsModal: m }),
 
   past: [],
   future: [],
@@ -248,6 +261,14 @@ export const useCourseStore = create<CourseState>((set, get) => {
   },
 
   addAsset: (path, blob) => set({ assets: { ...get().assets, [path]: blob } }),
+
+  removeAsset: (path) => {
+    const assets = { ...get().assets }
+    if (path in assets) {
+      delete assets[path]
+      set({ assets })
+    }
+  },
 
   undo: () => {
     const { past, future, course, selectedScreenId } = get()

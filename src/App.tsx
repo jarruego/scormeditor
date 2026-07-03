@@ -9,6 +9,7 @@ import { FinalTestEditor } from './components/FinalTestEditor'
 import { ValidationPanel } from './components/ValidationPanel'
 import { StudentPreview } from './components/StudentPreview'
 import { ReportPanel } from './components/ReportPanel'
+import { ConfirmModal } from './components/ConfirmModal'
 
 export function App() {
   const tab = useCourseStore((s) => s.activeTab)
@@ -74,6 +75,7 @@ export function App() {
           {tab === 'report' && <ReportPanel />}
         </section>
       </div>
+      <ConfirmModal />
     </div>
   )
 }

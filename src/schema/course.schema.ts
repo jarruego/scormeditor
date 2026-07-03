@@ -100,6 +100,14 @@ export const VisualResource = z.object({
     .enum(['33', '50', '66'])
     .default('50')
     .describe('Ancho del recurso (% ) en disposiciones laterales left/right'),
+  media_align: z
+    .enum(['left', 'center'])
+    .default('left')
+    .describe('Alineación horizontal del recurso en disposiciones top/bottom'),
+  media_full: z
+    .boolean()
+    .default(false)
+    .describe('Estira el recurso al 100% del ancho en disposiciones top/bottom'),
 })
 export type VisualResource = z.infer<typeof VisualResource>
 
@@ -272,13 +280,21 @@ export const ScormConfig = z.object({
 })
 export type ScormConfig = z.infer<typeof ScormConfig>
 
+// Código de idioma tipo BCP-47 («es», «es-ES», «en»). Se valida porque se
+// interpola en atributos HTML (lang=…) de la carcasa y la previsualización;
+// un valor inválido (proyecto antiguo o manipulado) cae a «es» sin romper la carga.
+const LanguageCode = z.string()
+  .regex(/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/)
+  .default('es')
+  .catch('es')
+
 export const ShellConfig = z.object({
   brand: z.string().default('SCORMEditor'),
   logo: z.string().optional(),
   primary_color: z.string().default('#0b5fff'),
   show_sidebar: z.boolean().default(true),
   show_progress: z.boolean().default(true),
-  language: z.string().default('es'),
+  language: LanguageCode,
 }).default({})
 export type ShellConfig = z.infer<typeof ShellConfig>
 
@@ -296,7 +312,7 @@ export const Course = z.object({
     authoring_entity: z.string().default(''),
     source_document: z.string().default('').describe('Documento origen (PDF/Word)'),
     estimated_hours: z.number().default(0),
-    language: z.string().default('es'),
+    language: LanguageCode,
   }).default({}),
   scorm: ScormConfig.default({}),
   shell: ShellConfig,

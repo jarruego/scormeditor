@@ -8,15 +8,51 @@ El panel central (`App.tsx`) muestra `ScreenEditor` salvo cuando el nodo selecci
 - **`__final__`** (nodo «Evaluación → Test final») → `FinalTestEditor`: edita
   `assessments.final_test` (título, `pass_score`, preguntas/opciones/feedback) vía
   `setFinalTest` del store.
-- **Ajustes del curso** (`CourseSettingsEditor`) **no** es un nodo del árbol: es un
-  **modal** que abre el botón **⚙ Ajustes** de la `Toolbar` (junto a «Archivo ▾»). Edita
-  `scorm.rules` + `mastery_score` (nota mínima, `score_source`, `mixed_final_weight`,
-  % pantallas, `require_interactions`, intentos, navegación) vía `updateScorm`.
-  Decisión (jul 2026): los ajustes son config del curso, no una «diapositiva» del árbol.
+- **Ajustes** **no** es un nodo del árbol: es un **menú desplegable ⚙ Ajustes** en la
+  `Toolbar` (junto a «Archivo ▾») con dos opciones **independientes**, cada una abre **su
+  propia ventana** (decisión jul 2026: menú de Ajustes con ventanas separadas, ya no un modal
+  con pestañas; y ya no hay botón «🔊 Narración» suelto en la barra):
+  - **Curso (SCORM y finalización)…** → `CourseSettingsModal` con `CourseSettingsSection`
+    (antes `CourseSettingsEditor`): `scorm.rules` + `mastery_score` (nota mínima,
+    `score_source`, `mixed_final_weight`, % pantallas, `require_interactions`, intentos,
+    navegación) vía `updateScorm`.
+  - **Narración por voz…** → `NarrationModal` con `NarrationSection` (antes `TtsPanel`):
+    config TTS (localStorage) y generación masiva de audio; ver `tts-narracion.md`.
+  Ambas ventanas comparten el marco genérico `SettingsWindow` (`SettingsModal.tsx`): cabecera,
+  Escape/clic-fuera/✕, y `busy` opcional que bloquea el cierre (la narración lo reporta con
+  `onBusyChange` mientras genera). La generación por pantalla del `ScreenEditor` sigue
+  existiendo y su aviso remite a «⚙ Ajustes → Narración».
+
+### Layout y jerarquía del `ScreenEditor` (jul 2026)
+El formulario (`.ed-form`) ocupa **el 100%** del panel central (`max-width: none`),
+pensado para escritorio. Lo primario va siempre visible: título, tipo/tiempo/obligatoria,
+objetivo y la **caja de texto principal** (`RichTextArea` de `student_text` a `rows={16}`,
+por ser el contenido principal). Las secciones secundarias — **Recurso visual**, **Audio
+de locución y transcripción** e **Interacción** — son `<details className="ed-fold">`:
+**Recurso visual** va `open` (abierto), los otros dos colapsados por defecto. Se despliegan
+al pulsarlos (nativo, sin JS ni estado). No usar la `<fieldset className="ed-group">` para
+estas tres (esa sigue en Ajustes/Test final/TTS).
+
+Dentro de **Recurso visual**: Tipo de recurso / Disposición / Proporción van juntos como
+**controles segmentados de iconos** (`SegIcons` → `.ed-seg`, `role="group"`), con
+`title`+`aria-label` que describen cada opción (no `<select>`); Disposición/Proporción solo
+aparecen cuando aplican (recurso visual no-audio; proporción solo con layout left/right).
+Debajo, una **vista previa** del recurso (`MediaPreview`): imagen/vídeo-archivo/audio se
+resuelven a object URL desde `assets` (hook `useObjectUrl`, que libera con
+`revokeObjectURL`); YouTube se incrusta por ID (`/embed/`). Si la ruta aún no tiene binario
+subido, muestra un aviso en vez de romper.
 
 `CourseTree` (`src/components/CourseTree.tsx`): módulos → unidades → pantallas
 (reordenables con dnd-kit) + una sección «Evaluación» con el nodo del test final. Añadir
 pantalla por unidad; duplicar/eliminar por pantalla.
+
+## Confirmaciones (modal propio, no `window.confirm`)
+Diálogo de confirmación promisificado: `confirmDialog({ title, message, confirmLabel,
+cancelLabel, danger })` (`src/store/confirm.ts`, store zustand) devuelve `Promise<boolean>`
+para usar con `await` desde código imperativo. El modal (`ConfirmModal`, montado una vez en
+`App`) se centra, tiene Aceptar/Cancelar, Enter=aceptar/Esc=cancelar y variante `danger`
+(icono ⚠️, botón rojo). Lo usan los borrados irreversibles de assets (sustituir recurso en
+`FileButton`, «Sin recurso» en `ScreenEditor`). Preferir esto a `window.confirm`.
 
 ## Sincronización Editor ↔ Vista estudiante (bidireccional)
 - **Editor → Vista:** al abrir la pestaña, la vista arranca en la pantalla seleccionada.
@@ -27,6 +63,15 @@ pantalla por unidad; duplicar/eliminar por pantalla.
   `goTo` (modo autor; excluye el test final `__final__` y la pantalla de resultados
   `__results__`); `StudentPreview` escucha y llama a `selectScreen(id)`. Al volver a
   Editar, se sitúa donde quedaste.
+- **Endurecimiento de la vista previa:** el iframe `srcDoc` comparte origen con el editor
+  (no lleva `sandbox` porque rompería las blob URLs de los assets), así que cualquier dato
+  del curso interpolado en el HTML de `buildPreviewHtml` debe escaparse o validarse.
+  `language` se valida dos veces: en el schema (`LanguageCode`, regex tipo BCP-47 con
+  `catch('es')`) y de nuevo antes de interpolarlo en `lang=…`. El listener de `postMessage`
+  solo acepta mensajes cuyo `e.source` sea el `contentWindow` del propio iframe.
+  Ojo: la CSP desplegada (`netlify.toml`) la **hereda** el iframe `srcdoc`, por eso debe
+  mantener `'unsafe-inline'` en `script-src`/`style-src` y `blob:` en `img/media-src`;
+  endurecerla sin probar la Vista estudiante la deja en blanco.
 
 ## Historial deshacer/rehacer
 Implementado a mano en `src/store/courseStore.ts` (sin librerías). Pilas `past`/`future`

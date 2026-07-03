@@ -16,7 +16,9 @@ la reproducción automática al entrar en la pantalla (persistida en `localStora
 `me-audio-enabled`). El navegador puede bloquear el autoplay hasta la primera interacción.
 
 ## TTS (texto→voz): generación del audio
-Módulo `src/tts/tts.ts` + panel `src/components/TtsPanel.tsx`.
+Módulo `src/tts/tts.ts` + sección `NarrationSection` (`src/components/TtsPanel.tsx`),
+mostrada en su propia ventana `NarrationModal`, que abre la opción **Narración por voz…**
+del menú **⚙ Ajustes** (`SettingsModal.tsx` / `Toolbar`).
 - **Config compartida** (`getTtsConfig`/`setTtsConfig`, claves de API vía
   `setProviderKey`) en `localStorage`; varios `PROVIDERS` con sus `voicesFor`/`modelsFor`/
   `providerDefaults`.
@@ -24,9 +26,11 @@ Módulo `src/tts/tts.ts` + panel `src/components/TtsPanel.tsx`.
   `transcript`** y lo guarda en `audio_src`. Disparador en `ScreenEditor` (botón «Generar
   audio»); requiere clave de API configurada.
 - **Masivo**: `generateAll` (con `onlyMissing`) genera el audio de todas las pantallas con
-  transcripción de una vez. Vive en `TtsPanel`, que se abre con el botón **«🔊 Narración»**
-  de la `Toolbar`. La generación individual está en el editor de cada pantalla; el panel
-  tiene la config (compartida) y la generación en lote.
+  transcripción de una vez. Vive en `NarrationSection` (ventana `NarrationModal`), que abre la
+  opción **Narración por voz…** del menú **⚙ Ajustes** de la `Toolbar` (ya no hay botón
+  «🔊 Narración» suelto). La generación individual está en el editor de cada pantalla; la
+  sección tiene la config (compartida) y la generación en lote, e informa de `busy` para que
+  la ventana no cierre mientras genera.
 
 Consecuencia: un `transcript` completo (incluido el texto de las interacciones si así se
 decide) ⇒ una narración completa. Ver criterios de contenido en `ingesta-gpt.md`.

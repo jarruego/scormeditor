@@ -1,6 +1,8 @@
 node_modules
 dist-scorm
 dist
+# Configuración local de Claude Code (rutas y permisos de cada máquina)
+.claude/
 *.tsbuildinfo
 *.local
 .DS_Store

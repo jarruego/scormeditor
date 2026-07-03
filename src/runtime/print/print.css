@@ -10,4 +10,18 @@
   body { background: #fff; color: #000; }
   a[href]::after { content: " (" attr(href) ")"; font-size: .8em; color: #555; }
   .me-feedback { border: 1px solid #999 !important; }
+
+  /* Interactividades informativas expandidas al imprimir (ver setupPrint en
+     app.js): mostrar todo el contenido oculto y evitar cortes entre páginas. */
+  .me-acc-body[hidden], [role=tabpanel][hidden], .me-card-back[hidden] { display: block !important; }
+  .me-acc-item, .me-card { break-inside: avoid; page-break-inside: avoid; }
+  .me-acc-head { cursor: auto; }
+  /* Las pestañas se rotulan con .me-print-tablabel sobre cada panel, así que la
+     barra de pestañas sobra en papel. */
+  .me-tabs { display: none; }
+  .me-print-tablabel { font-weight: 600; margin: .6rem 0 .2rem; }
+  /* Tarjetas: anverso y reverso apilados y legibles (sin efecto de volteo). */
+  .me-card { min-height: 0 !important; text-align: left; }
+  .me-card-front { font-weight: 600; }
+  .me-card-back { display: block; margin-top: .3rem; }
 }

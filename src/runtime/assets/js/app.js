@@ -37,7 +37,7 @@
       .then(function (r) { return r.json(); })
       .then(function (data) { COURSE = data; setup(); })
       .catch(function (e) {
-        document.getElementById('me-content').innerHTML = '<p class="me-warn">No se pudo cargar el curso: ' + e + '</p>';
+        document.getElementById('me-content').innerHTML = '<p class="me-warn">No se pudo cargar el curso: ' + esc(e) + '</p>';
       });
   }
 
@@ -160,6 +160,61 @@
     A11Y.bindShortcuts({ next: function () { goRelative(1); }, prev: function () { goRelative(-1); }, menu: toggleMenu, transcript: toggleTranscript });
     global.addEventListener('beforeunload', function () { finishSession(); });
     setupLightbox();
+    setupPrint();
+  }
+
+  // Impresión: solo se imprime la pantalla actual (ver print/print.css). Las
+  // interactividades informativas (desplegables, pestañas, tarjetas) ocultan
+  // contenido tras un clic; al imprimir lo mostramos todo para que el papel sea
+  // completo, y lo restauramos al terminar. Se engancha a los eventos nativos
+  // beforeprint/afterprint, así funciona igual con el botón Imprimir y con Ctrl+P.
+  function setupPrint() {
+    var undo = [];
+    global.addEventListener('beforeprint', function () {
+      undo = [];
+      var content = document.getElementById('me-content');
+      if (!content) return;
+
+      // Desplegables (accordion): abrir todos los apartados.
+      content.querySelectorAll('.me-acc-head[aria-expanded="false"]').forEach(function (head) {
+        head.setAttribute('aria-expanded', 'true');
+        var body = document.getElementById(head.getAttribute('aria-controls'));
+        if (body) body.hidden = false;
+        undo.push(function () {
+          head.setAttribute('aria-expanded', 'false');
+          if (body) body.hidden = true;
+        });
+      });
+
+      // Pestañas (tabs): mostrar todos los paneles, cada uno rotulado con el
+      // título de su pestaña (el orden del DOM es tablist + paneles seguidos).
+      content.querySelectorAll('[role=tabpanel]').forEach(function (panel) {
+        var wasHidden = panel.hidden;
+        panel.hidden = false;
+        var tab = document.getElementById(panel.getAttribute('aria-labelledby') || '');
+        var label = null;
+        if (tab) {
+          label = document.createElement('p');
+          label.className = 'me-print-tablabel';
+          label.textContent = tab.textContent;
+          panel.parentNode.insertBefore(label, panel);
+        }
+        undo.push(function () {
+          panel.hidden = wasHidden;
+          if (label) label.remove();
+        });
+      });
+
+      // Tarjetas (flip cards): mostrar anverso y reverso a la vez.
+      content.querySelectorAll('.me-card-back[hidden]').forEach(function (back) {
+        back.hidden = false;
+        undo.push(function () { back.hidden = true; });
+      });
+    });
+    global.addEventListener('afterprint', function () {
+      undo.forEach(function (fn) { fn(); });
+      undo = [];
+    });
   }
 
   // Ampliación de imágenes (lightbox) accesible. Funciona por delegación, así

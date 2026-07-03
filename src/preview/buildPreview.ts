@@ -16,6 +16,9 @@ export function buildPreviewHtml(course: Course, assetUrls: Record<string, strin
   const get = (p: string) => files.find((f) => f.path === p)?.content ?? ''
 
   const css = get('assets/css/styles.css')
+  // print.css ya viene envuelto en @media print; se inyecta para que "Imprimir"
+  // en Vista estudiante limite la salida a la pantalla actual igual que el ZIP.
+  const printCss = get('print/print.css')
   // Orden de carga idéntico al index.html de la carcasa
   const jsOrder = [
     'assets/js/scorm_api.js',
@@ -37,9 +40,14 @@ export function buildPreviewHtml(course: Course, assetUrls: Record<string, strin
   const assetsJson = JSON.stringify(assetUrls).replace(/<\/script>/gi, '<\\/script>')
   const startJson = JSON.stringify(startScreenId || null)
 
-  return `<!doctype html><html lang="${course.shell.language || 'es'}"><head><meta charset="utf-8">
+  // Se interpola en un atributo HTML: solo se acepta un código de idioma válido
+  // (defensa en profundidad además de la validación del schema).
+  const lang = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/.test(course.shell.language) ? course.shell.language : 'es'
+
+  return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>${css}</style></head>
+<style>${css}</style>
+<style>${printCss}</style></head>
 <body>${body}
 <script>window.__COURSE_DATA__ = ${data}; window.__AUTHOR_MODE__ = true; window.__ASSETS__ = ${assetsJson}; window.__START_SCREEN_ID__ = ${startJson};</script>
 <script>${js}</script>

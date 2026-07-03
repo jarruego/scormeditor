@@ -17,12 +17,14 @@ import {
 } from '../tts/tts'
 
 /**
- * Panel «Narración por voz (TTS)»: configura la clave/voz/modelo de la API y
+ * Sección «Narración por voz (TTS)»: configura la clave/voz/modelo de la API y
  * genera el audio de todas las pantallas con transcripción de una vez. La
  * generación individual vive en el editor de cada pantalla; aquí está la config
- * (compartida vía localStorage) y la generación masiva.
+ * (compartida vía localStorage) y la generación masiva. Se muestra como pestaña
+ * del modal unificado de Ajustes (`SettingsModal`); informa de `busy` al padre
+ * para que no cierre mientras genera.
  */
-export function TtsPanel({ onClose }: { onClose: () => void }) {
+export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boolean) => void }) {
   // El curso cambia mientras se genera (audio_src): lo leemos para el recuento.
   const course = useCourseStore((s) => s.course)
   const [cfg, setCfg] = useState<TtsConfig>(() => getTtsConfig())
@@ -48,13 +50,10 @@ export function TtsPanel({ onClose }: { onClose: () => void }) {
 
   const willGenerate = onlyMissing ? stats.missingAudio : stats.withTranscript
 
+  // Informa al modal contenedor de si hay una generación en curso (bloquea cierre).
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape' && !busy) onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [busy, onClose])
+    onBusyChange?.(busy)
+  }, [busy, onBusyChange])
 
   function update(patch: Partial<TtsConfig>) {
     setCfg(setTtsConfig(patch)) // persiste al instante en localStorage
@@ -112,14 +111,7 @@ export function TtsPanel({ onClose }: { onClose: () => void }) {
   const showInstructions = isGemini || cfg.model === 'gpt-4o-mini-tts'
 
   return (
-    <div className="ed-modal-backdrop" onMouseDown={() => !busy && onClose()}>
-      <div className="ed-modal" role="dialog" aria-modal="true" aria-label="Narración por voz" onMouseDown={(e) => e.stopPropagation()}>
-        <header className="ed-modal-head">
-          <h2>🔊 Narración por voz (TTS)</h2>
-          <button className="ed-modal-x" onClick={onClose} disabled={busy} aria-label="Cerrar">✕</button>
-        </header>
-
-        <div className="ed-modal-body">
+    <>
           <fieldset className="ed-group">
             <legend>Conexión con la API</legend>
             <label className="ed-field">
@@ -242,8 +234,6 @@ export function TtsPanel({ onClose }: { onClose: () => void }) {
             El audio se guarda en cada pantalla (campo «Audio de la diapositiva») y viaja en el
             proyecto y en el SCORM exportado. La generación tiene coste según tu proveedor de API.
           </p>
-        </div>
-      </div>
-    </div>
+    </>
   )
 }
