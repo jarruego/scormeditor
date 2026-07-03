@@ -1,21 +1,40 @@
 # SCORMEditor
 
-Generador de paquetes **SCORM 1.2** reutilizables a partir de un `course.json`
-estructurado. Sin dependencias de Articulate/Captivate: el SCORM exportado es
-HTML/CSS/JS plano, autocontenido y compatible con Moodle.
+Editor y generador de paquetes **SCORM 1.2** para Moodle a partir de un curso
+estructurado (`course.json`). Sin dependencias de Articulate/Captivate: el SCORM
+exportado es HTML/CSS/JS plano, autocontenido y compatible con Moodle.
+
+El contenido **no se teclea a mano**: un **GPT de ChatGPT** (diseñador instruccional)
+convierte un PDF/Word en un proyecto `.scormproj` que SCORMEditor abre, editas y
+exportas a SCORM. Flujo típico:
+
+```
+PDF/Word ─▶ [GPT ChatGPT] ─▶ .scormproj ─▶ [SCORMEditor: editar] ─▶ Exportar SCORM ZIP ─▶ Moodle
+```
+
+Ese GPT es un paso **intermedio**: entrega el proyecto editable, no el SCORM final (lo
+genera SCORMEditor al exportar). Ver «Generación del contenido (GPT)».
 
 > ⚠️ Esta herramienta **no acredita homologación ni cumplimiento oficial** ante el
 > SEPE u otra administración. Genera contenido preparado para revisión por la
 > entidad y alineable con criterios oficiales; la conformidad normativa la
 > confirma la entidad responsable.
 
+## Documentación
+- **`CLAUDE.md`** — invariantes de diseño + índice de la doc interna.
+- **`docs/internals/`** — doc interna por área (runtime, editor, interacciones,
+  evaluación/finalización, persistencia, TTS, validación/informes, ingesta).
+- **`docs/gpt/`** — los 6 ficheros de conocimiento que se suben al GPT de ChatGPT
+  (contrato, ejemplo, guía, flujo por fases, referencia rápida, instrucciones).
+
 ## Arrancar
 
 ```bash
 npm install
-npm run dev        # editor en http://localhost:5173
-npm run build      # build de producción del editor
-npm run typecheck  # verificación de tipos
+npm run dev         # editor en http://localhost:5173
+npm run build       # build de producción del editor (tsc -b + vite build)
+npm run typecheck   # verificación de tipos
+npm run scorm:build # empaqueta el curso de ejemplo a SCORM por CLI (scripts/build-scorm.mjs)
 ```
 
 ## Guardar y abrir proyectos
@@ -39,6 +58,32 @@ o un `.fig`. El flujo es el estándar de cualquier app de documento:
 
 > El `.scormproj` es el **proyecto editable**; *Exportar SCORM ZIP* genera el
 > paquete final para subir al LMS. Son cosas distintas.
+
+## Generación del contenido (GPT)
+
+Un **GPT de ChatGPT** (con Code Interpreter) transforma un PDF/Word en el `.scormproj`
+que abre el editor: extrae el texto **con formato** (negritas, listas, cajas→callouts) y
+las imágenes, lo trocea en pantallas con interacciones y test final, y empaqueta
+`course.json` + `assets/` en el ZIP. Su comportamiento se define en los **6 ficheros de
+`docs/gpt/`** (que se suben a ChatGPT: instrucciones + conocimiento). Criterio central:
+**conservar el texto de origen casi al 100%** (sin resumir), repartir interacciones y
+respetar el formato. Para unidades grandes trabaja en **modo factoría** (tema a tema con
+parciales auditables). Detalle en `docs/internals/ingesta-gpt.md`.
+
+## Edición en SCORMEditor
+
+- **Pantallas**: árbol con reordenación (dnd-kit); editor de campos, recurso visual
+  (imagen/vídeo/audio con subida de archivos y disposición por proporción) e interacción.
+- **Test final**: editable desde el nodo «Evaluación → Test final» (preguntas, opciones,
+  feedback, nota de corte).
+- **Ajustes del curso** (botón **⚙ Ajustes**): reglas SCORM de finalización y aprobado
+  (nota mínima, `mastery_score`, origen de la nota, peso mixto, % de pantallas, intentos,
+  navegación).
+- **Narración por voz (TTS)**: genera el audio de las pantallas a partir de la
+  transcripción, individualmente o en lote (botón **🔊 Narración**).
+- **Vista estudiante**: la misma carcasa que se exporta, sincronizada con el editor.
+- **Validación e informe**: badge de errores/avisos + pestañas de validación y de informe
+  (recuentos y matriz de trazabilidad de objetivos).
 
 ## Arquitectura
 
@@ -78,9 +123,9 @@ src/
 │  ├─ assets/css/styles.css
 │  ├─ assets/js/scorm_api.js     # wrapper SCORM 1.2
 │  ├─ assets/js/accessibility.js # aria-live, atajos, foco
-│  ├─ assets/js/interactions.js  # motor de 12 interacciones
-│  ├─ assets/js/renderer.js      # render por tipo de pantalla
-│  ├─ assets/js/app.js           # orquestador + reglas SCORM
+│  ├─ assets/js/interactions.js  # motor de interacciones + esc()/rich() (anti-XSS)
+│  ├─ assets/js/renderer.js      # render por tipo de pantalla + markdown ligero
+│  ├─ assets/js/app.js           # orquestador, gating, nota, test final, resultados
 │  └─ print/print.css
 ├─ schema/                       # contrato de datos
 │  ├─ course.schema.ts           # Zod + tipos (versionado)
@@ -91,11 +136,22 @@ src/
 │  └─ runtimeAssets.ts           # carga la carcasa como strings
 ├─ export/exportScorm.ts         # JSZip → ZIP SCORM
 ├─ preview/buildPreview.ts       # srcDoc del iframe (misma carcasa)
-├─ validation/validators.ts      # panel de validadores
-├─ report/report.ts              # informe HTML/Markdown
-├─ store/courseStore.ts          # estado (Zustand) + CRUD pantallas
-├─ components/                    # Editor, árbol DnD, paneles
+├─ validation/validators.ts      # reglas de validación (errores/avisos)
+├─ report/report.ts              # informe (recuentos + matriz de trazabilidad)
+├─ tts/tts.ts                     # narración por voz (config + síntesis)
+├─ store/
+│  ├─ courseStore.ts             # estado (Zustand) + CRUD + undo/redo
+│  ├─ autosave.ts                # .scormproj (abrir/guardar) + recuperación
+│  ├─ persistence.ts             # IndexedDB (kv)
+│  └─ customBlocks.ts            # presets de bloque personalizado (localStorage)
+├─ components/                    # Toolbar, CourseTree, ScreenEditor, FinalTestEditor,
+│                                 # CourseSettingsEditor, TtsPanel, InteractionConfigEditor,
+│                                 # RichTextArea, FileButton, StudentPreview, Validation/Report
 ├─ App.tsx · main.tsx · editor.css
+
+docs/
+├─ gpt/         # EXTERNO: los 6 ficheros que se suben al GPT de ChatGPT
+└─ internals/   # INTERNO: doc del código por área
 ```
 
 ZIP exportado:
@@ -119,10 +175,12 @@ standalone** automático cuando no hay LMS (para la Vista estudiante). Registra:
 `cmi.core.lesson_status`, `cmi.core.score.raw`, `cmi.core.session_time`,
 `cmi.core.lesson_location`, `cmi.suspend_data`.
 
-Reglas configurables (`scorm.rules` en `course.json`): % de pantallas
-obligatorias vistas, interacciones obligatorias, nota mínima, intentos, origen de
-la nota (test final / tests de unidad / mixto), navegación (libre / secuencial /
-mixta) y reanudación de sesión.
+Reglas configurables (`scorm.rules` + `mastery_score`, editables en **⚙ Ajustes**):
+% de pantallas obligatorias vistas, interacciones obligatorias, nota mínima, nota de
+superación (`masteryscore`), intentos, origen de la nota (test final / tests de unidad /
+mixto, con **peso configurable** práctica↔test en modo mixto), navegación (libre /
+secuencial / mixta) y reanudación de sesión. Al final del curso, el runtime añade una
+**pantalla de Resultados** (nota, APTO/NO APTO y desglose).
 
 ## Schema versionado
 
@@ -133,23 +191,24 @@ entrada en `migrations.ts`.
 
 ## Plan MVP por fases
 
-| Fase | Alcance | Estado en este scaffold |
+| Fase | Alcance | Estado |
 |---|---|---|
-| **F1 · Núcleo** | Schema Zod, carcasa SCORM fija, wrapper 1.2, export ZIP, manifest, import/export JSON | ✅ Implementado |
-| **F2 · Editor** | Árbol DnD, CRUD pantallas, editor de campos e interacción, vista estudiante | ✅ Base funcional |
-| **F3 · Render & interacciones** | 10 tipos de pantalla + 12 interacciones, subtítulos VTT, transcripción | ✅ Implementado (refinable) |
-| **F4 · Calidad** | Validadores, informe de revisión, matriz de trazabilidad, checklists | ✅ Implementado |
-| **F5 · Gestión de assets** | Subida de imágenes/vídeo/audio/VTT a `assets/`, vinculación en pantallas | 🔜 `addAsset()` listo; falta UI de carga |
-| **F6 · Backend (opcional)** | Persistencia de cursos, assets y versiones; multiusuario; exportación servidor | 🔜 Pendiente |
+| **F1 · Núcleo** | Schema Zod, carcasa SCORM fija, wrapper 1.2, export ZIP, manifest | ✅ |
+| **F2 · Editor** | Árbol DnD, CRUD pantallas, editor de campos e interacción, vista estudiante, editor de test final, ajustes del curso, undo/redo | ✅ |
+| **F3 · Render & interacciones** | Tipos de pantalla + interacciones, subtítulos VTT, transcripción, markdown ligero + callouts, disposición de media | ✅ (refinable) |
+| **F4 · Calidad** | Validadores, informe, matriz de trazabilidad, pantalla de resultados | ✅ |
+| **F5 · Assets y proyecto** | Subida de imagen/vídeo/audio, proyecto `.scormproj` (abrir/guardar) + recuperación IndexedDB | ✅ (falta generar `.vtt`) |
+| **F6 · Ingesta GPT** | GPT que genera `.scormproj` desde PDF/Word (docs de `docs/gpt/`) | ✅ (iteración continua) |
+| **F7 · Narración TTS** | Audio por pantalla desde la transcripción (individual + lote) | ✅ |
+| **F8 · Backend (opcional)** | Persistencia servidor, versiones, multiusuario | 🔜 Pendiente |
 
 ### Próximos refinamientos sugeridos
-- UI de carga de media (drag&drop a `assets/img|media`, generación de `.vtt`).
-- DnD entre unidades distintas (hoy: reordenación intra-unidad + movimiento por
-  acción; el store ya soporta `moveScreen` cross-unit).
-- ✅ Persistencia en IndexedDB (recuperación automática) y proyecto completo
-  `.scormproj` (course.json + assets) con abrir/guardar. Ver «Guardar y abrir
-  proyectos».
-- Editores específicos por tipo de interacción (acordeón, tabs, sort, hotspots).
+- Generación de subtítulos `.vtt` desde el audio/transcripción.
+- Drag&drop de media a `assets/` (hoy: subida por botón `FileButton`).
+- DnD de pantallas entre unidades distintas (hoy: reordenación intra-unidad +
+  movimiento por acción; el store ya soporta `moveScreen` cross-unit).
+- **Animación secuencial** del contenido (revelar bloques en cascada; ver
+  `docs/internals/interacciones.md`).
 - Tests de empaquetado SCORM contra Moodle (SCORM Cloud / `scorm-again`).
 
 ## Tipos soportados
