@@ -362,28 +362,18 @@
     var assign = {};                          // itemId -> groupId ('' = sin asignar)
     if (ctx.state && ctx.state.answers) assign = Object.assign({}, ctx.state.answers);
 
-    function selectOptions(selected) {
-      var h = '<option value="">Sin asignar</option>';
-      groups.forEach(function (g) {
-        h += '<option value="' + esc(g.id) + '"' + (selected === g.id ? ' selected' : '') + '>' + esc(stripTags(g.label)) + '</option>';
-      });
-      return h;
-    }
     function chipHtml(o) {
-      return '<div class="me-chip" draggable="true" tabindex="0" data-id="' + esc(o.id) + '">' +
-        '<span class="me-chip-text">' + rich(o.text) + '</span>' +
-        '<label class="sr-only" for="sel-' + esc(o.id) + '">Asignar «' + esc(stripTags(o.text)) + '» a categoría</label>' +
-        '<select id="sel-' + esc(o.id) + '" class="me-chip-select" data-id="' + esc(o.id) + '">' + selectOptions(assign[o.id] || '') + '</select>' +
-        '</div>';
+      return '<div class="me-chip" role="button" draggable="true" tabindex="0" aria-pressed="false" data-id="' + esc(o.id) + '">' +
+        '<span class="me-chip-text">' + rich(o.text) + '</span></div>';
     }
 
     var html = header(data) +
-      '<p class="me-sort-hint">Arrastra cada elemento a su categoría. En móvil o con teclado, usa el desplegable «Asignar a».</p>' +
+      '<p class="me-sort-hint">Arrastra cada elemento a su categoría, o tócalo para seleccionarlo y después toca la categoría destino.</p>' +
       '<div class="me-dnd">' +
-      '<div class="me-dnd-pool me-dnd-zone" data-zone="" aria-label="Elementos sin asignar"><p class="me-dnd-title">Sin asignar</p><div class="me-dnd-list" data-zone-list=""></div></div>' +
+      '<div class="me-dnd-pool me-dnd-zone" data-zone="" tabindex="0" role="button" aria-label="Sin asignar"><p class="me-dnd-title">Sin asignar</p><div class="me-dnd-list" data-zone-list=""></div></div>' +
       '<div class="me-dnd-groups">';
     groups.forEach(function (g) {
-      html += '<div class="me-dnd-group me-dnd-zone" data-zone="' + esc(g.id) + '">' +
+      html += '<div class="me-dnd-group me-dnd-zone" data-zone="' + esc(g.id) + '" tabindex="0" role="button" aria-label="Categoría ' + esc(stripTags(g.label)) + '">' +
         '<p class="me-dnd-title">' + rich(g.label) + '</p>' +
         '<div class="me-dnd-list" data-zone-list="' + esc(g.id) + '"></div></div>';
     });
@@ -403,11 +393,42 @@
     function place(id) { (listFor(assign[id] || '') || listFor('')).appendChild(chips[id]); }
     opts.forEach(function (o) { place(o.id); });
 
-    // Desplegable (teclado / táctil)
-    el.addEventListener('change', function (e) {
-      var s = e.target.closest('.me-chip-select'); if (!s) return;
-      var id = s.getAttribute('data-id');
-      assign[id] = s.value; place(id); chips[id].focus();
+    // Tocar y colocar (táctil / teclado / ratón): se selecciona un chip y luego
+    // se toca la zona destino. Enter/Espacio equivalen al toque.
+    var pickedId = null, locked = false;
+    function setPicked(id) {
+      if (pickedId && chips[pickedId]) {
+        chips[pickedId].classList.remove('is-picked');
+        chips[pickedId].setAttribute('aria-pressed', 'false');
+      }
+      pickedId = id;
+      if (id) {
+        chips[id].classList.add('is-picked');
+        chips[id].setAttribute('aria-pressed', 'true');
+      }
+    }
+    el.addEventListener('click', function (e) {
+      if (locked) return;
+      var chip = e.target.closest('.me-chip');
+      if (chip) {
+        var id = chip.getAttribute('data-id');
+        setPicked(pickedId === id ? null : id);
+        if (pickedId) ctx.announce('Elemento seleccionado. Toca una categoría para colocarlo.');
+        return;
+      }
+      var zone = e.target.closest('.me-dnd-zone');
+      if (zone && pickedId) {
+        var picked = pickedId;
+        assign[picked] = zone.getAttribute('data-zone');
+        setPicked(null); place(picked); chips[picked].focus();
+        var title = zone.querySelector('.me-dnd-title');
+        ctx.announce('Colocado en «' + (title ? title.textContent : 'Sin asignar') + '».');
+      }
+    });
+    el.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var t = e.target.closest('.me-chip, .me-dnd-zone'); if (!t) return;
+      e.preventDefault(); t.click();
     });
 
     // Drag & drop (ratón)
@@ -429,17 +450,19 @@
       zone.addEventListener('drop', function (e) {
         e.preventDefault(); zone.classList.remove('is-over');
         if (draggingId == null) return;
-        var z = zone.getAttribute('data-zone');
-        assign[draggingId] = z;
-        var sel = chips[draggingId].querySelector('.me-chip-select'); if (sel) sel.value = z;
-        place(draggingId); draggingId = null;
+        assign[draggingId] = zone.getAttribute('data-zone');
+        setPicked(null); place(draggingId); draggingId = null;
       });
     });
 
     var correct = false, done = false;
     function lockAssign() {
-      el.querySelectorAll('.me-chip-select').forEach(function (s) { s.disabled = true; });
-      el.querySelectorAll('.me-chip').forEach(function (c) { c.setAttribute('draggable', 'false'); });
+      locked = true; setPicked(null);
+      el.querySelectorAll('.me-chip').forEach(function (c) {
+        c.setAttribute('draggable', 'false'); c.removeAttribute('role');
+        c.removeAttribute('aria-pressed'); c.tabIndex = -1;
+      });
+      el.querySelectorAll('.me-dnd-zone').forEach(function (z) { z.removeAttribute('role'); z.tabIndex = -1; });
       var cb = el.querySelector('.me-check'); if (cb) cb.disabled = true;
     }
     if (ctx.state && typeof ctx.state.correct === 'boolean') {

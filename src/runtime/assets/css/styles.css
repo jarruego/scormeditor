@@ -268,20 +268,25 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-assign-row { display: flex; gap: .75rem; align-items: center; justify-content: space-between; padding: .4rem 0; border-bottom: 1px solid var(--me-border); }
 .me-assign-row select { padding: .35rem; border-radius: 6px; border: 1px solid var(--me-border); }
 
-/* Arrastrar a categorías (match_pairs / classification) */
-.me-dnd { display: grid; gap: .75rem; margin-top: .5rem; }
-.me-dnd-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .6rem; }
+/* Arrastrar a categorías (match_pairs / classification): elementos a la
+   izquierda, cajas de categorías a la derecha; en pantallas estrechas se apilan */
+.me-dnd { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: .5rem; align-items: start; }
+.me-dnd-groups { display: grid; gap: .6rem; align-items: start; }
 .me-dnd-zone { border: 1px solid var(--me-border); border-radius: 8px; padding: .5rem; background: var(--me-bg); }
 .me-dnd-zone.is-over { border-color: var(--me-primary); background: color-mix(in srgb, var(--me-primary) 10%, white); }
+.me-dnd-zone:focus-visible { outline: 2px solid var(--me-primary); outline-offset: 2px; }
 .me-dnd-pool { background: var(--me-surface); }
-.me-dnd-pool .me-dnd-list { flex-direction: row; flex-wrap: wrap; }
 .me-dnd-title { margin: 0 0 .4rem; font-weight: 600; font-size: .9rem; }
 .me-dnd-list { display: flex; flex-direction: column; gap: .4rem; min-height: 40px; }
-.me-chip { display: flex; flex-direction: column; gap: .3rem; padding: .5rem .6rem; border: 1px solid var(--me-border); border-radius: 6px; background: var(--me-surface); cursor: grab; }
+.me-chip { display: flex; align-items: center; gap: .3rem; padding: .5rem .6rem; border: 1px solid var(--me-border); border-radius: 6px; background: var(--me-surface); cursor: grab; }
 .me-chip:active { cursor: grabbing; }
 .me-chip.is-dragging { opacity: .5; border-style: dashed; border-color: var(--me-primary); }
+.me-chip.is-picked { border-color: var(--me-primary); background: color-mix(in srgb, var(--me-primary) 10%, var(--me-surface)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--me-primary) 35%, transparent); }
 .me-chip-text a, .me-prose a, .me-acc-body a, [role=tabpanel] a { color: var(--me-primary); }
-.me-chip-select { font: inherit; padding: .25rem; border: 1px solid var(--me-border); border-radius: 4px; }
+@media (max-width: 640px) {
+  .me-dnd { grid-template-columns: 1fr; }
+  .me-dnd-pool .me-dnd-list { flex-direction: row; flex-wrap: wrap; }
+}
 .me-scenario { background: var(--me-bg); padding: .75rem; border-radius: 6px; margin-bottom: .75rem; }
 .me-option { display: block; width: 100%; text-align: left; margin-bottom: .4rem; }
 .me-textarea { width: 100%; padding: .6rem; border-radius: 6px; border: 1px solid var(--me-border); font: inherit; }

@@ -22,6 +22,13 @@ ese contrato; no conoce el tipo concreto.
   acertar). Cómo puntúa/finaliza: ver `evaluacion-finalizacion.md`.
 - **Drag&drop** (sin dnd-kit; el runtime es plano): `sort_steps` reordena; `match_pairs`
   y `classification` usan `dragAssignFactory` (chips `.me-chip` sobre zonas `.me-dnd`).
+- **Layout de `dragAssignFactory`** (jul 2026): pool «Sin asignar» a la **izquierda** y
+  categorías a la derecha, **apiladas en vertical** (grid 2 columnas al 50%; se apilan
+  a ≤640px). El `<select>` por chip se
+  **eliminó**: la alternativa al arrastre es **tocar y colocar** (clic/Enter en el chip lo
+  selecciona `.is-picked`/`aria-pressed`, clic/Enter en una zona lo coloca; las zonas son
+  focusables con `role=button` y todo se anuncia vía `ctx.announce`). Sirve igual para
+  táctil, teclado y ratón; `lockAssign` retira roles/tabindex al resolverse.
 - **Informativas** (`accordion`, `tabs`, `flip_cards`, `video`, `hotspots`,
   `case_practice`) **no** fijan `STATE.results`; su avance se captura al entrar (ver sync
   en `editor-ui.md`) para no bloquear «Siguiente».
