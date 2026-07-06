@@ -158,7 +158,11 @@ callouts con tarea (`::: case`, `::: reflect` que proponen un ejercicio al alumn
 se pegan al final de una pantalla de contenido: el contenido del tema va en su
 pantalla y el ejercicio en la **siguiente** (mismo `title` si continúa el apartado),
 con solo su enunciado/introducción. Una pantalla «lista de errores + caso práctico
-debajo» son **dos** pantallas.
+debajo» son **dos** pantallas. **La solución de la actividad nunca va visible**: la
+«Resolución propuesta» / «Clave de reflexión» / respuesta modelo del original se vuelca
+en el `feedback.explanation` de la interacción, no en `student_text` — si el alumno la
+ve junto al enunciado, la actividad pierde el sentido. El enunciado va limpio, sin
+rótulos («**Actividad práctica**», «**Resolución propuesta:**»…).
 
 ### Cadencia de interactividades
 No en cada pantalla, pero **sí con frecuencia**. Usa:

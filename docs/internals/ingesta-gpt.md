@@ -59,7 +59,13 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   antepuesto al título). **Ejercicios prácticos en pantalla propia**: `case_practice`/
   `reflection` y callouts con tarea (`::: case`/`::: reflect`) nunca pegados al final
   de una pantalla de contenido; el ejercicio va en la pantalla siguiente con solo su
-  enunciado. **Bibliografía solo en `bibliography[]`** (la carcasa la muestra en el
+  enunciado, y **la solución** («Resolución propuesta»/«Clave de reflexión») en el
+  `feedback.explanation` de la interacción, **nunca visible** en `student_text`.
+  **Limpieza de extracción** (jul 2026, del contraste OK/KO de dos generaciones del
+  mismo PDF): reagrupar las frases partidas por la maquetación del PDF, ítems de lista
+  en líneas consecutivas sin línea en blanco entre ellos, espacio tras cerrar negrita
+  (`**útil** y`), y dos callouts del mismo tipo en una pantalla = dos apartados
+  fusionados → dividir en dos pantallas. **Bibliografía solo en `bibliography[]`** (la carcasa la muestra en el
   modal «Recursos y bibliografía», `app.js`; nunca pantalla «Referencias»), una entrada
   limpia por referencia y **todas con formato homogéneo** (`Autor/Entidad (año).
   Título. Fuente.`), normalizando aunque el original sea desordenado. **Negritas**: la

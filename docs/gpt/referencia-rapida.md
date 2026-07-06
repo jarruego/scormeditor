@@ -71,14 +71,21 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
 - Imágenes con `alt`; audio/vídeo con `transcript` y subtítulos; `scorm.identifier` no
   vacío.
 - **Formato**: sin rótulos por diapositiva (`Idea clave:`, `Claves:`, `Objetivo:`,
-  `Resumen:`); sin `…`/`...` de truncado; listas con `- ` (un ítem por línea);
+  `Resumen:`, `Actividad práctica`, `Resolución propuesta:`); sin `…`/`...` de
+  truncado; listas con `- ` (un ítem por línea, **sin línea en blanco entre ítems**);
+  frases partidas por la maquetación del PDF **reagrupadas** en un párrafo; espacio
+  tras cerrar negrita (`**útil** y`, no `**útil**y`);
   encabezados `## `/`### ` con solo el título en su línea; sub-epígrafes hermanos con
   el **mismo nivel** de encabezado (ninguno degradado a `3. **…**`); ninguna pantalla
-  arranca con contenido residual del epígrafe anterior.
+  arranca con contenido residual del epígrafe anterior; **no dos callouts del mismo
+  tipo en una pantalla** (dos `::: important` juntos = dos pantallas fusionadas:
+  divide).
 - **Estructura**: `cover` solo portada, con el **número del tema visible** («Tema 1»,
   «Tema 2»… en `subtitle` o antepuesto al título) y sin párrafos de contenido;
   ejercicios prácticos (`case_practice`/`reflection`, `::: case`/`::: reflect`) en
-  **pantalla propia**, no pegados tras el contenido; bibliografía **solo** en
+  **pantalla propia**, no pegados tras el contenido, con la **solución en
+  `feedback.explanation`** (nunca «Resolución propuesta» visible en `student_text`);
+  bibliografía **solo** en
   `bibliography[]` (la carcasa la muestra sola; sin pantalla «Referencias»), una
   entrada por referencia con **formato homogéneo** (`Autor/Entidad (año). Título.
   Fuente.`); interacciones informativas **variadas** (no todo `accordion`;

@@ -163,7 +163,11 @@ Reglas que NO se pueden romper:
   pegan al final de una pantalla de contenido** (mal: «Errores y práctica» = lista de
   errores + caso en la misma pantalla). El contenido va en su pantalla y el ejercicio en
   la **siguiente**, cuyo `student_text` es solo el enunciado/introducción del propio
-  ejercicio.
+  ejercicio. **La solución, NUNCA visible**: si el original trae «Resolución propuesta»,
+  «Clave de reflexión» o una respuesta modelo, va en el `feedback.explanation` de la
+  interacción (`case_practice`/`reflection`), no en `student_text` (el alumno la vería
+  antes de hacer la tarea). Y sin rótulos de actividad («**Actividad práctica**»,
+  «**Resolución propuesta:**»…): el tipo de pantalla/interacción ya lo indica.
 - `objective`: texto libre (NO `objective_id`). Si tu herramienta maneja
   micro‑objetivos por id, **vuelca aquí el texto del objetivo**. Los objetivos del
   curso forman un **conjunto reducido y controlado**: derívalos del contenido real, de
@@ -223,20 +227,28 @@ el editor pone icono y título automáticamente):
   vacío; el editor ya pone el título «📌 Importante» solo).
 - **No pongas dos callouts del mismo tipo en una misma pantalla.** Si un apartado tiene
   varios destacados iguales, cada uno acompaña a su párrafo → **repártelos entre las
-  pantallas** correspondientes, uno por pantalla.
+  pantallas** correspondientes, uno por pantalla. Si al montar una pantalla te quedan
+  dos cajas iguales (p. ej. dos `::: important`), es señal de que has fusionado dos
+  apartados: **divide en dos pantallas**, no juntes las cajas ni suprimas ninguna.
 - El contenido de un callout va **escapado** por el runtime: escribe texto plano,
   nunca HTML.
 
 Reglas de formato (para que el editor lo renderice bien):
 - **Una lista = un elemento por línea** empezando por `- ` (o `1. `). NO la pongas en
   una sola línea (`a • b • c`) ni con viñeta `•`/`*` embebida: saldría como párrafo.
+  Los ítems van en **líneas consecutivas, sin línea en blanco entre ítem e ítem**
+  (también dentro de callouts): la línea en blanco entre cada ítem infla la pantalla.
+- **Une las frases partidas por la maquetación del PDF.** La extracción arrastra saltos
+  de línea a mitad de frase («…para diseñar\n\napoyos que respeten…»): reagrúpalos en
+  un solo párrafo; un párrafo solo termina donde termina la frase. Y tras cerrar una
+  negrita, deja el espacio si sigue palabra (`**útil** y`, no `**útil**y`).
 - **Encabezados con `## `/`### `** en una línea con SOLO el título (el cuerpo, en la
   línea siguiente); NO metas el título dentro del párrafo, ni el cuerpo en la misma
   línea del `##`, ni como línea suelta en negrita.
 - **Nunca truncar con «…»/«...».** `student_text` lleva el texto completo del trozo
   (regla 9.11); si es largo, más pantallas.
-- **Sin rótulos por diapositiva** (`Idea clave:`, `Claves:`, `Objetivo:`, `Resumen:`):
-  la diapositiva es solo el contenido.
+- **Sin rótulos por diapositiva** (`Idea clave:`, `Claves:`, `Objetivo:`, `Resumen:`,
+  `Actividad práctica`, `Resolución propuesta:`): la diapositiva es solo el contenido.
 - **`title` corto y descriptivo** (2-6 palabras), NO un fragmento del contenido cortado
   a mitad de frase, y **no repetido como primera línea del `student_text`** (el `title`
   ya es la cabecera; si el original repite el epígrafe al abrir el cuerpo, elimínalo).
