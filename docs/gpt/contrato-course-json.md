@@ -90,7 +90,8 @@ Reglas que NO se pueden romper:
   "show_sidebar": true,
   "show_progress": true,
   "language": "es",
-  "motion": "subtle"
+  "motion": "subtle",
+  "motion_speed": "normal"
 }
 ```
 
@@ -98,6 +99,8 @@ Reglas que NO se pueden romper:
   `"subtle"` (transiciones básicas) o `"rich"` (revelado progresivo del contenido
   al entrar/hacer scroll y microanimaciones). Es una preferencia de presentación:
   déjalo en `"subtle"` salvo que se pida otra cosa.
+- `motion_speed` (opcional; def. `"normal"`): velocidad de las animaciones de entrada.
+  `"fast"`, `"normal"` o `"slow"`. Déjalo en `"normal"` salvo que se pida otra cosa.
 
 ---
 
@@ -142,7 +145,7 @@ Reglas que NO se pueden romper:
   "visual_resource": { /* ver §5 */ },
   "interaction": null,
   "required": true,
-  "min_time_seconds": 25,
+  "min_time_seconds": 0,
   "transcript": "",
   "accessibility": { "alt_text_ok": true, "keyboard_ok": true, "contrast_ok": true },
   "scorm": { "counts_for_completion": true },
@@ -178,7 +181,9 @@ Reglas que NO se pueden romper:
   pantalla declara solo su objetivo principal). Los `learning_objective` de
   interacciones y preguntas del test se **copian literalmente** de ese conjunto: así el
   editor traza objetivo ↔ pantalla ↔ evaluación.
-- `min_time_seconds`: control de permanencia mínima (no antifraude duro).
+- `min_time_seconds`: control de permanencia mínima (no antifraude duro). **Pon
+  siempre `0`**: el tiempo mínimo por pantalla lo fija a mano el editor humano en
+  SCORMEditor después; el GPT no debe estimarlo ni inventarlo.
 - `interaction`: un objeto (ver §6) **o `null`**. Máximo **una interacción por
   pantalla**, y **entera en una sola pantalla** (no partas un accordion/tabs ni una
   actividad en varias).
@@ -413,8 +418,9 @@ con `correct` y `feedback` por opción:
 "config": { "cards": [ { "front": "Concepto", "back": "Definición" } ] }
 ```
 
-**`case_practice`** — respuesta abierta (no evaluable salvo rúbrica simple).
-`config.rubric` opcional:
+**`case_practice`** — reflexión guiada: el alumno piensa (o escribe en papel) su
+respuesta y se autoevalúa con la rúbrica; **no hay campo de texto en pantalla** y no
+puntúa. `config.rubric` opcional pero muy recomendada (sin ella solo queda el enunciado):
 ```json
 "config": { "rubric": [ { "label": "Menciona la preferencia de la persona" } ] }, "scored": false
 ```

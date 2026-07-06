@@ -8,7 +8,7 @@ import { InteractionConfigEditor } from './InteractionConfigEditor'
 import { ObjectiveInput, ObjectiveSelect } from './ObjectiveSelect'
 import { FileButton } from './FileButton'
 import { generateForScreen, hasApiKey } from '../tts/tts'
-import { buildTranscript } from '../tts/buildTranscript'
+import { buildTranscript, INFORMATIVE } from '../tts/buildTranscript'
 import { confirmDialog } from '../store/confirm'
 import type { AssetMap } from '../export/exportScorm'
 
@@ -60,6 +60,11 @@ function SegIcons({ label, value, options, onChange }: {
     </div>
   )
 }
+
+// Pantallas ya avisadas (en esta sesión) de que editar su contenido deja el
+// audio de locución desactualizado. Aviso único por pantalla; se re-arma al
+// regenerar el audio con TTS.
+const audioStaleWarned = new Set<string>()
 
 // Crea (y libera) un object URL para un asset, para la vista previa. Normaliza el
 // valor del AssetMap a Blob igual que StudentPreview (puede ser Blob/bytes/string).
@@ -130,6 +135,7 @@ export function ScreenEditor() {
     setTtsBusy(true)
     try {
       await generateForScreen(id)
+      audioStaleWarned.delete(id)
       setTtsMsg('✓ Audio generado desde la transcripción.')
     } catch (e) {
       setTtsMsg(`⛔ ${(e as Error).message}`)
@@ -141,6 +147,21 @@ export function ScreenEditor() {
   const patch = (p: Parameters<typeof update>[1]) => update(id, p)
   const vr = screen.visual_resource
   const it = screen.interaction
+
+  // Si la pantalla tiene audio de locución, avisa (una vez por pantalla) de que
+  // los cambios en el contenido no se aplican al audio ya generado: hay que
+  // regenerar la transcripción y después el audio.
+  function warnAudioStale(message?: string) {
+    if (!id || !screen?.audio_src || audioStaleWarned.has(id)) return
+    audioStaleWarned.add(id)
+    void confirmDialog({
+      title: 'Esta diapositiva tiene audio de locución',
+      message: message ??
+        'Los cambios en el contenido no se aplican al audio ya asociado: cuando termines de editar, regenera la transcripción y después el audio para que vuelvan a corresponderse.',
+      confirmLabel: 'Entendido',
+      hideCancel: true,
+    })
+  }
   const setVr = (p: Partial<typeof vr>) => patch({ visual_resource: { ...vr, ...p } })
   const setTracks = (tracks: typeof vr.tracks) => setVr({ tracks })
 
@@ -200,6 +221,9 @@ export function ScreenEditor() {
   }
 
   function setInteraction(next: Interaction | null) {
+    // Solo las interacciones informativas forman parte de la narración: editar
+    // (o quitar) una desincroniza el audio; las evaluables no se narran.
+    if (INFORMATIVE.has(it?.type ?? '') || INFORMATIVE.has(next?.type ?? '')) warnAudioStale()
     patch({ interaction: next })
   }
   function blankInteraction(): Interaction {
@@ -266,7 +290,8 @@ export function ScreenEditor() {
 
       <label className="ed-field">
         <span>Texto del estudiante (texto enriquecido: encabezados, negrita, cursiva, enlaces, listas y destacados)</span>
-        <RichTextArea rows={16} value={screen.student_text} onChange={(v) => patch({ student_text: v })} />
+        <RichTextArea rows={16} value={screen.student_text}
+          onChange={(v) => { warnAudioStale(); patch({ student_text: v }) }} />
       </label>
 
       <details className="ed-fold" open>
@@ -387,7 +412,11 @@ export function ScreenEditor() {
         </div>
         <label className="ed-field">
           <span>Transcripción (se muestra SOLO con el botón «Transcripción»; alternativa textual del audio)</span>
-          <textarea rows={3} value={screen.transcript} onChange={(e) => patch({ transcript: e.target.value })} />
+          <textarea rows={3} value={screen.transcript}
+            onChange={(e) => {
+              warnAudioStale('Los cambios en la transcripción no se aplican al audio ya asociado: cuando termines de editar, regenera el audio para que vuelvan a corresponderse.')
+              patch({ transcript: e.target.value })
+            }} />
         </label>
         <div className="ed-row">
           <button type="button" disabled={ttsBusy}

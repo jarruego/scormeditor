@@ -11,7 +11,8 @@ import type { Screen, Interaction } from '../schema/course.schema'
  * carcasa y como entrada del TTS (sin marcas ** * [], sin fences :::).
  */
 
-const INFORMATIVE = new Set(['accordion', 'tabs', 'flip_cards', 'timeline', 'flashcards'])
+/** Tipos de interacción cuyo contenido forma parte de la transcripción/narración. */
+export const INFORMATIVE = new Set(['accordion', 'tabs', 'flip_cards', 'timeline', 'flashcards'])
 
 // Etiquetas habladas de los callouts (mismas que renderer.js).
 const CALLOUT_LABELS: Record<string, string> = {

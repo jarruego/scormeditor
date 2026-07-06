@@ -11,6 +11,8 @@ export interface ConfirmOptions {
   confirmLabel?: string
   cancelLabel?: string
   danger?: boolean
+  /** Aviso solo-informativo: oculta el botón Cancelar (queda solo «Aceptar»). */
+  hideCancel?: boolean
 }
 
 interface ConfirmStore {

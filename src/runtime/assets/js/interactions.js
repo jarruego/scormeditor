@@ -105,28 +105,50 @@
            (data.instructions ? '<p class="me-instructions">' + rich(data.instructions) + '</p>' : '');
   }
 
+  // Botón Comprobar: nace desactivado; cuando `ready()` (respuesta completa) se cumple,
+  // se activa y, si el cambio viene del usuario (`pulse`), late para invitar a comprobar.
+  // El pulso se apaga al clicar y vuelve si se cambia la respuesta.
+  function wireCheck(el, ready) {
+    var btn = el.querySelector('.me-check');
+    if (!btn) return function () {};
+    btn.disabled = true;
+    btn.addEventListener('click', function () { btn.classList.remove('me-pulse'); });
+    return function (pulse) {
+      var ok = ready();
+      btn.disabled = !ok;
+      btn.classList.toggle('me-pulse', !!(ok && pulse));
+    };
+  }
+
   // --- 1. Accordion ----------------------------------------------------------
   register('accordion', function (el, data, ctx) {
     var items = (data.config.items || []);
+    var seen = (ctx.state && ctx.state.seen) || {}; // índice -> true (persistido)
     var html = header(data) + '<div class="me-accordion">';
     items.forEach(function (it, i) {
       var id = 'acc-' + i;
       html += '<div class="me-acc-item">' +
-        '<button class="me-acc-head" aria-expanded="false" aria-controls="' + id + '">' + rich(it.title) + '</button>' +
+        '<button class="me-acc-head' + (seen[i] ? ' is-seen' : '') + '" aria-expanded="false" aria-controls="' + id + '">' +
+        '<span class="me-acc-title">' + rich(it.title) + '</span>' +
+        '<span class="me-seen-check" aria-hidden="true">✓</span></button>' +
         '<div class="me-acc-body" id="' + id + '" role="region" hidden>' + block(it.body) + '</div></div>';
     });
     html += '</div>';
     el.innerHTML = html;
     var heads = [].slice.call(el.querySelectorAll('.me-acc-head'));
-    heads.forEach(function (btn) {
+    // Pulso en el primero para invitar al clic, solo si aún no se ha abierto ninguno
+    if (!Object.keys(seen).length && heads[0]) heads[0].classList.add('me-pulse');
+    heads.forEach(function (btn, i) {
       btn.addEventListener('click', function () {
         var open = btn.getAttribute('aria-expanded') === 'true';
         // Exclusivo: al abrir uno se cierran los demás
         heads.forEach(function (other) {
           var on = other === btn && !open;
+          other.classList.remove('me-pulse');
           other.setAttribute('aria-expanded', String(on));
           document.getElementById(other.getAttribute('aria-controls')).hidden = !on;
         });
+        if (!open && !seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
       });
     });
     return { result: function () { return { completed: true, scored: false }; } };
@@ -135,24 +157,32 @@
   // --- 2. Tabs ---------------------------------------------------------------
   register('tabs', function (el, data, ctx) {
     var items = (data.config.items || []);
+    var seen = (ctx.state && ctx.state.seen) || {}; // índice -> true (persistido)
+    seen[0] = true; // la primera pestaña está visible desde el principio
     var tablist = '<div class="me-tabs" role="tablist">';
     var panels = '';
     items.forEach(function (it, i) {
       var sel = i === 0;
-      tablist += '<button role="tab" id="tab-' + i + '" aria-controls="panel-' + i + '" aria-selected="' + sel + '" tabindex="' + (sel ? '0' : '-1') + '">' + rich(it.title) + '</button>';
+      tablist += '<button role="tab" id="tab-' + i + '" aria-controls="panel-' + i + '" aria-selected="' + sel + '" tabindex="' + (sel ? '0' : '-1') + '"' +
+        (seen[i] ? ' class="is-seen"' : '') + '>' + rich(it.title) +
+        '<span class="me-seen-check" aria-hidden="true">✓</span></button>';
       panels += '<div role="tabpanel" id="panel-' + i + '" aria-labelledby="tab-' + i + '" ' + (sel ? '' : 'hidden') + '>' + block(it.body) + '</div>';
     });
     tablist += '</div>';
-    el.innerHTML = header(data) + tablist + panels;
+    el.innerHTML = header(data) + '<div class="me-tabs-box">' + tablist + panels + '</div>';
     var tabs = [].slice.call(el.querySelectorAll('[role=tab]'));
+    // Pulso en la segunda pestaña (la primera ya está activa) hasta que se cambie
+    if (Object.keys(seen).length <= 1 && tabs[1]) tabs[1].classList.add('me-pulse');
     function activate(i) {
       tabs.forEach(function (t, j) {
         var on = i === j;
+        t.classList.remove('me-pulse');
         t.setAttribute('aria-selected', String(on));
         t.tabIndex = on ? 0 : -1;
         el.querySelector('#panel-' + j).hidden = !on;
         if (on) t.focus();
       });
+      if (!seen[i]) { seen[i] = true; tabs[i].classList.add('is-seen'); ctx.save({ seen: seen }); }
     }
     tabs.forEach(function (t, i) {
       t.addEventListener('click', function () { activate(i); });
@@ -170,20 +200,32 @@
     // visibilidad la resuelve backface-visibility y el lector de pantalla usa
     // aria-hidden. La impresión aplana las dos caras vía print.css.
     var cards = (data.config.cards || []);
+    var seen = (ctx.state && ctx.state.seen) || {}; // índice -> true (persistido)
     var html = header(data) + '<div class="me-cards">';
     cards.forEach(function (c, i) {
-      html += '<button class="me-card" aria-pressed="false" data-i="' + i + '" title="Pulsa para girar la tarjeta">' +
+      html += '<button class="me-card' + (seen[i] ? ' is-seen' : '') + '" aria-pressed="false" data-i="' + i + '" title="Pulsa para girar la tarjeta">' +
         '<span class="me-flip-inner">' +
-        '<span class="me-card-front">' + rich(c.front) + '</span>' +
+        '<span class="me-card-front">' + rich(c.front) + '<span class="me-flip-tab" aria-hidden="true"></span></span>' +
         '<span class="me-card-back" aria-hidden="true">' + rich(c.back) + '</span></span></button>';
     });
     el.innerHTML = html + '</div>';
-    el.querySelectorAll('.me-card').forEach(function (btn) {
+    var btns = [].slice.call(el.querySelectorAll('.me-card'));
+    // Pulso en la primera para invitar al clic, solo si aún no se ha girado ninguna
+    if (!Object.keys(seen).length && btns[0]) btns[0].classList.add('me-pulse');
+    function setFlip(btn, on) {
+      btn.setAttribute('aria-pressed', String(on));
+      btn.querySelector('.me-card-front').setAttribute('aria-hidden', String(on));
+      btn.querySelector('.me-card-back').setAttribute('aria-hidden', String(!on));
+    }
+    btns.forEach(function (btn, i) {
       btn.addEventListener('click', function () {
         var flipped = btn.getAttribute('aria-pressed') === 'true';
-        btn.setAttribute('aria-pressed', String(!flipped));
-        btn.querySelector('.me-card-front').setAttribute('aria-hidden', String(!flipped));
-        btn.querySelector('.me-card-back').setAttribute('aria-hidden', String(flipped));
+        // Exclusivo: al girar una se devuelven las demás a su anverso
+        btns.forEach(function (b) {
+          b.classList.remove('me-pulse');
+          setFlip(b, b === btn && !flipped);
+        });
+        if (!flipped && !seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
       });
     });
     return { result: function () { return { completed: true, scored: false }; } };
@@ -201,6 +243,8 @@
     html += '</fieldset><button class="me-btn me-check">Comprobar</button>' + feedbackBox(data);
     el.innerHTML = html;
     var attempts = 0, done = false, correct = false;
+    var refreshCheck = wireCheck(el, hasAnswer);
+    el.querySelector('.me-choices').addEventListener('change', function () { if (!done) refreshCheck(true); });
 
     function lock() {
       el.querySelectorAll('input').forEach(function (i) { i.disabled = true; });
@@ -225,6 +269,7 @@
         if (correct || (maxAtt > 0 && attempts >= maxAtt)) { done = true; lock(); }
       }
     }
+    if (!done) refreshCheck(false); // respuesta restaurada sin resolver: activo sin pulso
 
     function hasAnswer() { return !!el.querySelector('input[name="' + name + '"]:checked'); }
     function check() {
@@ -274,10 +319,14 @@
     var list = el.querySelector('.me-sort');
     var attempts = (ctx.state && ctx.state.attempts) || 0;
     var maxAtt = attemptsOf(data);
+    // Aquí «responder» es reordenar: el botón se activa al primer movimiento
+    var refreshCheck = wireCheck(el, function () { return true; });
 
     function move(li, dir) {
+      if (done) return;
       if (dir < 0 && li.previousElementSibling) list.insertBefore(li, li.previousElementSibling);
       else if (dir > 0 && li.nextElementSibling) list.insertBefore(li.nextElementSibling, li);
+      refreshCheck(true);
     }
 
     // Botones ▲▼
@@ -313,6 +362,7 @@
     });
     list.addEventListener('dragend', function (e) {
       var li = e.target.closest('.me-sort-item'); if (li) li.classList.remove('is-dragging');
+      if (!done) refreshCheck(true);
     });
     list.addEventListener('dragover', function (e) {
       e.preventDefault();
@@ -381,6 +431,7 @@
     el.innerHTML = html;
     var attempts = (ctx.state && ctx.state.attempts) || 0;
     var maxAtt = attemptsOf(data);
+    var refreshCheck = wireCheck(el, allAssigned);
 
     // Construye los chips y los coloca en su zona inicial
     var chips = {};
@@ -421,6 +472,7 @@
         var picked = pickedId;
         assign[picked] = zone.getAttribute('data-zone');
         setPicked(null); place(picked); chips[picked].focus();
+        refreshCheck(true);
         var title = zone.querySelector('.me-dnd-title');
         ctx.announce('Colocado en «' + (title ? title.textContent : 'Sin asignar') + '».');
       }
@@ -452,6 +504,7 @@
         if (draggingId == null) return;
         assign[draggingId] = zone.getAttribute('data-zone');
         setPicked(null); place(draggingId); draggingId = null;
+        refreshCheck(true);
       });
     });
 
@@ -536,27 +589,49 @@
     return { result: function () { return { completed: done, scored: !!data.scored, correct: correct, score: correct ? (data.points || 1) : 0, maxScore: data.points || 1 }; } };
   });
 
-  // --- 10. Case practice (respuesta abierta, no evaluada o rúbrica simple) ----
+  // --- 10. Case practice (reflexión guiada + autoevaluación por rúbrica) ------
+  // Sin campo de texto a propósito: la respuesta se piensa o se escribe en papel
+  // (no gasta suspend_data); solo se persisten los criterios marcados.
   register('case_practice', function (el, data, ctx) {
     var rubric = data.config.rubric || []; // [{label}]
     var html = header(data) +
-      '<label class="me-field"><span class="sr-only">Tu respuesta</span>' +
-      '<textarea class="me-textarea" rows="6" placeholder="Escribe tu respuesta..."></textarea></label>';
+      '<p class="me-case-hint">Piensa tu respuesta con calma —o escríbela en un papel—' +
+      (rubric.length ? ' y, cuando la tengas, autoevalúate con la rúbrica.' : '.') + '</p>';
+    // La rúbrica es una card desplegable (mismo patrón/clases que el accordion:
+    // «+», glow y expansión automática al imprimir vienen heredados).
+    var rid = 'rubric-' + data.id;
     if (rubric.length) {
-      html += '<div class="me-rubric"><p>Autoevalúate según la rúbrica:</p><ul>';
+      html += '<div class="me-rubric">' +
+        '<button class="me-acc-head" type="button" aria-expanded="false" aria-controls="' + rid + '">' +
+        '<span class="me-acc-title">Autoevalúate según la rúbrica</span></button>' +
+        '<div class="me-acc-body" id="' + rid + '" role="region" hidden><ul>';
       rubric.forEach(function (r, i) { html += '<li><label><input type="checkbox" data-r="' + i + '"> ' + esc(r.label) + '</label></li>'; });
-      html += '</ul></div>';
+      html += '</ul></div></div>';
     }
     el.innerHTML = html;
-    var ta = el.querySelector('.me-textarea');
-    if (ctx.state && ctx.state.text) ta.value = ctx.state.text;
-    function save() {
-      var checks = [].slice.call(el.querySelectorAll('.me-rubric input:checked')).length;
-      ctx.save({ text: ta.value, rubric_checks: checks });
+    var boxes = [].slice.call(el.querySelectorAll('.me-rubric input'));
+    // rubric: índices de los criterios marcados (compacto para suspend_data)
+    var marked0 = (ctx.state && ctx.state.rubric) || [];
+    marked0.forEach(function (i) { if (boxes[i]) boxes[i].checked = true; });
+    var head = el.querySelector('.me-rubric .me-acc-head');
+    if (head) {
+      var body = document.getElementById(rid);
+      // Con autoevaluación empezada se muestra abierta; si no, late para invitar
+      if (marked0.length) { head.setAttribute('aria-expanded', 'true'); body.hidden = false; }
+      else head.classList.add('me-pulse');
+      head.addEventListener('click', function () {
+        var open = head.getAttribute('aria-expanded') === 'true';
+        head.classList.remove('me-pulse');
+        head.setAttribute('aria-expanded', String(!open));
+        body.hidden = open;
+      });
     }
-    // Reflexión abierta: se guarda sola (al salir del campo) y NO bloquea el avance.
-    ta.addEventListener('change', save);
-    el.addEventListener('change', function (e) { if (e.target.closest('.me-rubric')) save(); });
+    el.addEventListener('change', function (e) {
+      if (!e.target.closest('.me-rubric')) return;
+      var marked = [];
+      boxes.forEach(function (b, i) { if (b.checked) marked.push(i); });
+      ctx.save({ rubric: marked });
+    });
     return { result: function () { return { completed: true, scored: false }; } };
   });
 
@@ -574,7 +649,13 @@
     (c.spots || []).forEach(function (s) { html += '<li><button class="me-btn me-hs-alt" data-id="' + esc(s.id) + '">' + esc(s.label) + '</button></li>'; });
     el.innerHTML = html + '</ul>' + feedbackBox(data);
     var correct = false, done = false;
+    // Pulso en las zonas para invitar al clic (en todas: señalar solo una sesgaría
+    // la respuesta); se apaga al primer intento
+    if (!(ctx.state && ctx.state.choice)) {
+      el.querySelectorAll('.me-hotspot').forEach(function (b) { b.classList.add('me-pulse'); });
+    }
     function pick(id) {
+      el.querySelectorAll('.me-hotspot').forEach(function (b) { b.classList.remove('me-pulse'); });
       var s = (c.spots || []).filter(function (x) { return x.id === id; })[0];
       correct = !!s.correct; done = true;
       showFeedback(el, correct, { feedback: { correct: s.feedback || data.feedback.correct, incorrect: s.feedback || data.feedback.incorrect, explanation: data.feedback.explanation } });
@@ -656,6 +737,12 @@
 
     var selects = [].slice.call(el.querySelectorAll('.me-blank'));
     var attempts = 0, done = false, correct = false;
+    var refreshCheck = wireCheck(el, function () {
+      return selects.every(function (s) { return !!s.value; });
+    });
+    el.addEventListener('change', function (e) {
+      if (!done && e.target.closest('.me-blank')) refreshCheck(true);
+    });
 
     function lock() {
       selects.forEach(function (s) { s.disabled = true; });
@@ -700,6 +787,7 @@
         if (correct || (maxAtt > 0 && attempts >= maxAtt)) { done = true; lock(); }
       }
     }
+    if (!done) refreshCheck(false); // valores restaurados sin resolver: activo sin pulso
 
     return {
       result: function () {
@@ -715,27 +803,33 @@
   // sobre una línea vertical; cada uno se despliega como un accordion.
   register('timeline', function (el, data, ctx) {
     var miles = (data.config || {}).milestones || [];
+    var seen = (ctx.state && ctx.state.seen) || {}; // índice -> true (persistido)
     var html = header(data) + '<ol class="me-tl">';
     miles.forEach(function (mi, i) {
       var id = 'tl-' + i;
       html += '<li class="me-tl-item">' +
-        '<button class="me-tl-head" aria-expanded="false" aria-controls="' + id + '">' +
+        '<button class="me-tl-head' + (seen[i] ? ' is-seen' : '') + '" aria-expanded="false" aria-controls="' + id + '">' +
         (mi.label ? '<span class="me-tl-label">' + rich(mi.label) + '</span>' : '') +
-        '<span class="me-tl-title">' + rich(mi.title || '') + '</span></button>' +
+        '<span class="me-tl-title">' + rich(mi.title || '') + '</span>' +
+        '<span class="me-seen-check" aria-hidden="true">✓</span></button>' +
         '<div class="me-tl-body" id="' + id + '" role="region" hidden>' + block(mi.body || '') + '</div></li>';
     });
     html += '</ol>';
     el.innerHTML = html;
     var heads = [].slice.call(el.querySelectorAll('.me-tl-head'));
-    heads.forEach(function (btn) {
+    // Pulso en el primer hito para invitar al clic, solo si aún no se ha abierto ninguno
+    if (!Object.keys(seen).length && heads[0]) heads[0].classList.add('me-pulse');
+    heads.forEach(function (btn, i) {
       btn.addEventListener('click', function () {
         var open = btn.getAttribute('aria-expanded') === 'true';
         // Exclusivo: al abrir un hito se cierran los demás
         heads.forEach(function (other) {
           var on = other === btn && !open;
+          other.classList.remove('me-pulse');
           other.setAttribute('aria-expanded', String(on));
           document.getElementById(other.getAttribute('aria-controls')).hidden = !on;
         });
+        if (!open && !seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
       });
     });
     return { result: function () { return { completed: true, scored: false }; } };
@@ -779,16 +873,24 @@
       });
     }
 
+    // Pulso-glow solo la primera vez (repaso sin empezar); no vuelve al repetir
+    var pulseLeft = !st.idx && !(st.known || []).length;
+
     function renderCard(revealed) {
       if (idx >= cards.length) { renderSummary(); return; }
       var c = cards[idx];
       progress.textContent = 'Tarjeta ' + (idx + 1) + ' de ' + cards.length;
-      stage.innerHTML = '<div class="me-fc-card' + (revealed ? ' is-revealed' : '') + '">' +
+      stage.innerHTML = '<div class="me-fc-card' + (revealed ? ' is-revealed' : '') +
+        (!revealed && idx === 0 && pulseLeft ? ' me-pulse' : '') + '">' +
+        '<span class="me-flip-tab" aria-hidden="true"></span>' +
         '<div class="me-fc-front">' + rich(c.front) + '</div>' +
         (revealed ? '<div class="me-fc-back">' + rich(c.back) + '</div>' : '') + '</div>';
       if (!revealed) {
         controls.innerHTML = '<button class="me-btn me-primary" type="button">Mostrar respuesta</button>';
-        controls.querySelector('button').addEventListener('click', function () { renderCard(true); });
+        var show = function () { pulseLeft = false; renderCard(true); };
+        controls.querySelector('button').addEventListener('click', show);
+        // La lengüeta «+» invita a tocar la carta: el clic también revela
+        stage.querySelector('.me-fc-card').addEventListener('click', show);
       } else {
         controls.innerHTML = '<span class="me-fc-ask">¿La sabías?</span>' +
           '<button class="me-btn me-fc-yes" type="button">✔ Sí</button>' +

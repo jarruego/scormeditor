@@ -19,7 +19,8 @@ export function loadPresets(): CustomBlockPreset[] {
   try {
     const raw = localStorage.getItem(KEY)
     const arr = raw ? JSON.parse(raw) : []
-    return Array.isArray(arr) ? arr.filter((p) => p && p.title && p.color) : []
+    // Un preset vale si tiene color y algo que lo etiquete (título o icono).
+    return Array.isArray(arr) ? arr.filter((p) => p && p.color && (p.title || p.icon)) : []
   } catch {
     return []
   }

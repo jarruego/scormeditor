@@ -110,6 +110,11 @@
     // Nivel de animación de la carcasa (shell.motion): none | subtle | rich.
     MOTION = shell.motion === 'none' || shell.motion === 'rich' ? shell.motion : 'subtle';
     document.body.classList.add('me-motion-' + MOTION);
+    // Velocidad (shell.motion_speed): fast | normal | slow. La clase alimenta
+    // la variable CSS --me-speed; SPEED escala los delays de la cascada JS.
+    var spd = shell.motion_speed === 'fast' || shell.motion_speed === 'slow' ? shell.motion_speed : 'normal';
+    SPEED = spd === 'fast' ? 1 : spd === 'slow' ? 3 : 1.5;
+    document.body.classList.add('me-speed-' + spd);
     document.getElementById('me-brand').textContent = shell.brand || COURSE.course.title || 'Curso';
     document.getElementById('me-course-title').textContent = COURSE.course.title || '';
     document.title = COURSE.course.title || 'Curso SCORM';
@@ -736,6 +741,7 @@
   // antiguo) todo se muestra al instante. El contenido siempre está en el DOM
   // (solo opacity/transform): lectores de pantalla e impresión intactos.
   var MOTION = 'subtle';
+  var SPEED = 1.5; // multiplicador de shell.motion_speed (fast 1 / normal 1.5 / slow 3)
   var REVEALED = {};
   var revealObserver = null;
 
@@ -752,8 +758,8 @@
     blocks.forEach(function (b) {
       if (b.getBoundingClientRect().top < fold) {
         b.classList.add('me-rv');
-        b.style.animationDelay = Math.min(delay, 560) + 'ms'; // tope de cascada
-        delay += 70;
+        b.style.animationDelay = Math.round(Math.min(delay, 560 * SPEED)) + 'ms'; // tope de cascada
+        delay += 70 * SPEED;
       } else {
         below.push(b);
       }

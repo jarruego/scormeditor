@@ -241,6 +241,43 @@ preguntar entre temas**. Solo te detienes si:
 Al final entrega el enlace al `.scormproj` (o a los `.scormproj`, si son varios) +
 el informe global de cobertura y fidelidad.
 
+**Prompt reforzado (el recomendado; probado con buen resultado, jul 2026).** Versión
+de la petición directa que re-ancla en el mensaje las reglas que más se incumplen.
+Si el GPT recibe una orden con esta forma, debe tratar las reglas numeradas como
+**bloqueantes**: si alguna falla, corrige y regenera antes de entregar.
+
+> Adjunto el PDF. Genera el .scormproj COMPLETO de la Unidad 2 en modo factoría
+> autónomo: encadena inventario → temas parciales → fusión sin preguntarme nada
+> entre temas. Si te quedas sin espacio, guarda parciales y di solo «continúa».
+>
+> Antes de producir, abre y lee con Code Interpreter contrato-course-json.md,
+> guia-diseno-interacciones.md y referencia-rapida.md. No trabajes de memoria.
+>
+> Reglas INNEGOCIABLES (si alguna falla, corrige y regenera antes de entregarme nada):
+> 1. Texto extraído con extract_text_markdown (contrato §11), nunca en plano.
+>    Ratio de cobertura ≥0.95 por tema y negritas ** conservadas (assert en Python).
+> 2. Los ejercicios prácticos (case_practice, reflection, ::: case, ::: reflect)
+>    van en SU PROPIA pantalla, solo con el enunciado. La «Resolución propuesta» /
+>    «Clave de reflexión» va en feedback.explanation, NUNCA visible en student_text.
+> 3. Nunca dos callouts del mismo tipo en una pantalla: eso son dos pantallas.
+> 4. Sin rótulos («Actividad práctica», «Resolución propuesta:», «Idea clave:»…).
+> 5. Frases partidas por la maquetación del PDF reagrupadas en un párrafo; ítems de
+>    lista en líneas consecutivas SIN línea en blanco entre ellos; espacio tras
+>    cerrar negrita (**útil** y, no **útil**y).
+> 6. Cada cover con «Tema N» visible; bibliografía solo en bibliography[] con
+>    formato homogéneo (Autor/Entidad (año). Título. Fuente.); varía las
+>    interacciones informativas (tabs/flip_cards solo con ≤4 ítems).
+>
+> Antes de entregar: pasa el checklist de referencia-rapida.md y la revisión de
+> fidelidad contra el PDF (cada epígrafe con su pantalla, mismo orden y jerarquía).
+> En el informe final: % de cobertura por tema, nº de ** conservadas y resultado
+> del checklist punto por punto.
+
+(Adaptando «Unidad 2» a lo que se pida. El informe punto por punto del final no es
+decorativo: obliga a autoevaluarse contra la lista y mejora el cumplimiento. Si el
+usuario detecta un incumplimiento, la corrección más eficaz es en el mismo chat:
+«Incumples la regla N. Corrígelo y regenera el .scormproj».)
+
 **Análisis previo (sin generar nada):**
 > Analiza el documento: qué contenido hay, qué volumen tiene cada unidad/tema y cómo
 > conviene dividirlo en SCORMs para Moodle.

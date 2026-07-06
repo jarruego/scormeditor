@@ -32,6 +32,8 @@ documento) → checkpoints intercalados → casos → resumen → autoevaluació
 ## Valores de producción por defecto
 - SCORM `1.2`; navegación `mixed`; nota mínima `70`; `2` intentos; `allow_resume true`;
   `min_required_screens_pct 100`; `require_interactions true`; `score_source final_test`.
+- `min_time_seconds: 0` en **todas** las pantallas: el tiempo mínimo lo fija a mano
+  el editor humano en SCORMEditor; no lo estimes.
 - Si no indican otra entidad: `authoring_entity` y `shell.brand` = **«MECOHISA S.L.»**.
 - Unidad completa → modo factoría → un único `.scormproj` (o un SCORM por tema si lo
   piden expresamente).

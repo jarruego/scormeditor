@@ -69,6 +69,8 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
     }
     if (it.type === 'timeline' && ((it.config as any)?.milestones || []).length === 0)
       add('TL_EMPTY', 'error', 'Línea de tiempo sin hitos.')
+    if (it.type === 'case_practice' && ((it.config as any)?.rubric || []).length === 0)
+      add('CP_NO_RUBRIC', 'warning', 'Caso práctico sin rúbrica: sin criterios de autoevaluación queda solo el enunciado.')
     if (it.type === 'flashcards') {
       if (((it.config as any)?.cards || []).length === 0)
         add('FC_EMPTY', 'error', 'Tarjetas de repaso sin tarjetas.')

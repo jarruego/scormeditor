@@ -29,7 +29,7 @@ export const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
   true_false: 'Verdadero / Falso',
   classification: 'Clasificar en categorías',
   scenario_decision: 'Escenario con decisión',
-  case_practice: 'Caso práctico (respuesta abierta)',
+  case_practice: 'Caso práctico (reflexión + rúbrica)',
   hotspots: 'Zonas interactivas (imagen)',
   video: 'Vídeo interactivo',
   fill_blanks: 'Rellenar huecos',

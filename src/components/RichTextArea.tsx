@@ -1,5 +1,25 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { loadPresets, savePresets, PALETTE, type CustomBlockPreset } from '../store/customBlocks'
+
+// Iconos frecuentes en formación online para el bloque personalizado. Es una
+// lista curada (no un teclado emoji completo) para elegir con un clic sin pegar.
+const ICONS = [
+  // Avisos y destacados
+  '💡', 'ℹ️', '⚠️', '📌', '🧠', '💭', '🧪', '✅', '❗', '❓',
+  '⭐', '🌟', '🔥', '❤️', '🚩', '📢', '📣', '🔔', '‼️', '✔️',
+  // Objetivos, logros y evaluación
+  '🎯', '🏆', '🥇', '🎓', '📈', '📊', '📉', '🧮', '💯', '🏅',
+  '⏱️', '⏳', '📅', '🗓️', '🕐', '🔢', '➕', '➗', '📐', '📏',
+  // Documentos, lectura y notas
+  '📖', '📚', '📝', '📄', '📃', '📋', '🗒️', '📎', '🖇️', '📌',
+  '🔖', '🏷️', '✍️', '🖊️', '🖍️', '✏️', '📁', '📂', '🗂️', '🗃️',
+  // Ideas, comunicación y personas
+  '🔑', '🔍', '🔎', '💬', '🗨️', '🗯️', '👥', '👤', '🤝', '🙋',
+  '👍', '👏', '👀', '🙌', '💪', '🧭', '🗺️', '📍', '🧩', '🎲',
+  // Herramientas, tecnología y estado
+  '⚙️', '🛠️', '🔧', '🔨', '💻', '🖥️', '⌨️', '🖱️', '🌐', '🔗',
+  '🔒', '🔓', '🛡️', '⚡', '🔋', '💾', '📤', '📥', '🚀', '💼',
+]
 
 /**
  * Área de texto con barra de formato ligera. Inserta el mismo markdown que
@@ -19,9 +39,22 @@ export function RichTextArea({
   rows?: number
 }) {
   const ref = useRef<HTMLTextAreaElement>(null)
+  const iconRef = useRef<HTMLDivElement>(null)
   const [showCustom, setShowCustom] = useState(false)
+  const [showIcons, setShowIcons] = useState(false)
   const [presets, setPresets] = useState<CustomBlockPreset[]>(() => loadPresets())
-  const [draft, setDraft] = useState({ title: '', icon: '🎯', color: PALETTE[0].value })
+  // El bloque personalizado arranca vacío: sin icono ni título por defecto.
+  const [draft, setDraft] = useState({ title: '', icon: '', color: PALETTE[0].value })
+
+  // Cierra la rejilla de iconos al hacer clic fuera de ella.
+  useEffect(() => {
+    if (!showIcons) return
+    function onDown(e: MouseEvent) {
+      if (iconRef.current && !iconRef.current.contains(e.target as Node)) setShowIcons(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [showIcons])
 
   function surround(before: string, after: string, placeholder: string) {
     const ta = ref.current
@@ -89,15 +122,24 @@ export function RichTextArea({
   }
 
   function applyDraft(save: boolean) {
-    const title = draft.title.trim() || 'Bloque'
-    const clean = { ...draft, title }
-    if (save) {
+    // Icono y título son opcionales: se insertan tal cual (vacíos si el usuario
+    // no eligió nada) y el runtime omite la cabecera cuando ambos faltan.
+    const clean = { title: draft.title.trim(), icon: draft.icon.trim(), color: draft.color }
+    if (save && (clean.title || clean.icon)) {
       const next = [{ id: `c-${Date.now().toString(36)}`, ...clean }, ...presets].slice(0, 20)
       setPresets(next)
       savePresets(next)
     }
     insertCustom(clean)
+    closeCustom()
+  }
+
+  // Cierra el panel del bloque personalizado y deja el borrador limpio para la
+  // próxima vez (vuelve a arrancar sin icono ni título).
+  function closeCustom() {
+    setShowIcons(false)
     setShowCustom(false)
+    setDraft({ title: '', icon: '', color: PALETTE[0].value })
   }
 
   function deletePreset(id: string) {
@@ -126,7 +168,7 @@ export function RichTextArea({
         <button type="button" onClick={() => callout('reflect')} title="Bloque: reflexiona">💭 Reflexiona</button>
         <button type="button" onClick={() => callout('case')} title="Bloque: caso práctico">🧪 Caso práctico</button>
         <span className="ed-rta-sep" aria-hidden="true" />
-        <button type="button" onClick={() => setShowCustom((s) => !s)} title="Bloque personalizado (icono, color y título a elegir)">✚ Personalizado</button>
+        <button type="button" onClick={() => (showCustom ? closeCustom() : setShowCustom(true))} title="Bloque personalizado (icono, color y título a elegir)">✚ Personalizado</button>
         {presets.map((p) => (
           <span key={p.id} className="ed-rta-preset">
             <button type="button" onClick={() => insertCustom(p)} title={`Insertar «${p.title}»`}
@@ -141,15 +183,30 @@ export function RichTextArea({
       {showCustom && (
         <div className="ed-rta-custom">
           <div className="ed-rta-custom-row">
+            <div className="ed-rta-custom-icon">
+              <span className="ed-rta-custom-lbl">Icono</span>
+              <div className="ed-rta-iconpick" ref={iconRef}>
+                <button type="button" className={`ed-rta-icon-btn ${draft.icon ? 'has-icon' : ''}`}
+                  aria-label="Elegir icono" aria-expanded={showIcons}
+                  title="Elegir un icono" onClick={() => setShowIcons((s) => !s)}>
+                  {draft.icon || '＋'}
+                </button>
+                {showIcons && (
+                  <div className="ed-rta-icon-pop" role="menu" aria-label="Iconos">
+                    <button type="button" className="ed-rta-icon-cell ed-rta-icon-none"
+                      title="Sin icono" onClick={() => { setDraft({ ...draft, icon: '' }); setShowIcons(false) }}>∅</button>
+                    {ICONS.map((ic) => (
+                      <button key={ic} type="button" className="ed-rta-icon-cell"
+                        title={`Usar ${ic}`} onClick={() => { setDraft({ ...draft, icon: ic }); setShowIcons(false) }}>{ic}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
             <label>
               <span>Título</span>
               <input value={draft.title} placeholder="p. ej. Buenas prácticas"
                 onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-            </label>
-            <label className="ed-rta-custom-icon">
-              <span>Icono</span>
-              <input value={draft.icon} maxLength={4}
-                onChange={(e) => setDraft({ ...draft, icon: e.target.value })} />
             </label>
           </div>
           <div className="ed-rta-custom-row">
@@ -163,8 +220,10 @@ export function RichTextArea({
                 onChange={(e) => setDraft({ ...draft, color: e.target.value })} />
             </div>
             <div className="ed-rta-custom-actions">
+              <button type="button" onClick={closeCustom}>Cancelar</button>
               <button type="button" onClick={() => applyDraft(false)}>Insertar</button>
-              <button type="button" className="ed-primary" onClick={() => applyDraft(true)}>Guardar y usar</button>
+              <button type="button" className="ed-primary" disabled={!draft.title.trim() && !draft.icon.trim()}
+                title="Guarda el bloque como preset reutilizable" onClick={() => applyDraft(true)}>Guardar y usar</button>
             </div>
           </div>
         </div>

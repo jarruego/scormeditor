@@ -34,9 +34,11 @@ export function ConfirmModal() {
         </div>
         <p className="ed-confirm-msg" id="ed-confirm-msg">{current.message}</p>
         <div className="ed-confirm-actions">
-          <button type="button" className="ed-confirm-cancel" onClick={() => resolve(false)}>
-            {current.cancelLabel || 'Cancelar'}
-          </button>
+          {!current.hideCancel && (
+            <button type="button" className="ed-confirm-cancel" onClick={() => resolve(false)}>
+              {current.cancelLabel || 'Cancelar'}
+            </button>
+          )}
           <button type="button" ref={okRef} className={current.danger ? 'ed-danger' : 'ed-primary'}
             onClick={() => resolve(true)}>
             {current.confirmLabel || 'Aceptar'}

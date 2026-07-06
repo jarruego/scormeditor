@@ -20,6 +20,14 @@ Botón «↻ Regenerar transcripción desde el contenido» en `ScreenEditor`
 si la pantalla tiene `audio_src`, tras regenerar avisa de que **el audio ya no se
 corresponde** y ofrece regenerarlo con TTS en el momento (o mantenerlo, dejando un aviso).
 
+Además, al **editar el contenido** de una pantalla que ya tiene `audio_src` (texto del
+estudiante, una interacción informativa — `INFORMATIVE` exportado por
+`buildTranscript.ts` — o la propia transcripción a mano), salta un aviso informativo
+(modal `hideCancel`) de que los cambios no se aplican al audio hasta regenerar
+transcripción y audio (al editar la transcripción, solo el audio). Es **único por pantalla y
+sesión** (`audioStaleWarned`, `Set` a nivel de módulo en `ScreenEditor`) y se re-arma al
+regenerar el audio con TTS.
+
 ## Narración por diapositiva (`screen.audio_src`)
 Audio propio de la pantalla (ruta en `assets/media`), **separado del media visual**. El
 runtime lo inyecta con `narrationBlock()` (renderer.js) como `<audio class=

@@ -19,6 +19,7 @@ import { useCourseStore } from '../store/courseStore'
 import type { Screen } from '../schema/course.schema'
 import { screenTypeLabel, screenTypeIcon } from '../schema/labels'
 import { validateCourse, type Issue } from '../validation/validators'
+import { confirmDialog } from '../store/confirm'
 import { InlineRename } from './InlineRename'
 
 /** Peor severidad de los issues de una pantalla (para el badge del árbol). */
@@ -68,7 +69,17 @@ function ScreenItem({ screen, unitId, issues }: { screen: Screen; unitId: string
       <IssueBadge info={issues} />
       <span className="ed-screen-actions">
         <button onClick={() => duplicate(screen.id)} title="Duplicar">⧉</button>
-        <button onClick={() => remove(screen.id)} title="Eliminar">🗑</button>
+        <button
+          onClick={() => {
+            void confirmDialog({
+              title: 'Eliminar pantalla',
+              message: `Se eliminará la pantalla «${screen.title || '(sin título)'}» y no podrá recuperarse (salvo con Deshacer). ¿Deseas continuar?`,
+              confirmLabel: 'Eliminar',
+              danger: true,
+            }).then((ok) => { if (ok) remove(screen.id) })
+          }}
+          title="Eliminar"
+        >🗑</button>
       </span>
     </li>
   )

@@ -26,9 +26,10 @@ Sintaxis soportada:
 - Bloques destacados (callouts): `::: tipo` … `:::`
 - Bloque personalizado: `::: custom | #color | icono | título` … `:::`
 
-La plantilla `content` (`renderer.js`) **no** muestra `objective` como banner en cada
-pantalla (queda como metadato de trazabilidad; el validador sigue exigiéndolo salvo en
-`cover`/`summary`); solo la pantalla `objectives` presenta los objetivos al alumno.
+Ninguna plantilla de `renderer.js` muestra `objective` como banner — tampoco la pantalla
+`objectives` (jul 2026): su `student_text` ya presenta los objetivos al alumno y pintarlo
+duplicaba el contenido. `objective` queda como **metadato de trazabilidad** (el validador
+sigue exigiéndolo salvo en `cover`/`summary`).
 
 ### Bloques destacados y paleta corporativa
 Los tipos viven en `CALLOUTS` (`renderer.js`) y su color en
@@ -49,12 +50,28 @@ en la tabla original); **no** se añadieron como bloques fijos todos los element
 bloque personalizado.
 
 ### Bloque personalizado
-Botón **✚ Personalizado** en la barra: título, icono y color (muestras de la paleta +
-selector libre). "Insertar" lo mete una vez; "Guardar y usar" lo persiste como **preset
-reutilizable**. Presets en `localStorage` (`src/store/customBlocks.ts`, clave
-`scormeditor.customBlocks`), **no** en `course.json` (cada bloque se exporta ya resuelto
-en el texto). El color se valida como hex antes de inyectarlo en `style` (anti-inyección
-CSS); icono y título se escapan con `esc()`.
+Botón **✚ Personalizado** en la barra abre un panel con **icono, título y color**
+(el icono va a la izquierda del título). Acciones: **Cancelar** (cierra y limpia el
+borrador), **Insertar** (lo mete una vez) y **Guardar y usar** (lo persiste como **preset
+reutilizable**; deshabilitado si no hay ni título ni icono, porque un preset necesita algo
+que lo etiquete).
+
+- **Icono opcional, elegible con un clic**: no se pega texto; hay un botón tamaño-icono
+  (muestra el icono o `＋`) que abre una **rejilla de emojis** curada (`ICONS` en
+  `RichTextArea.tsx`, ~100 iconos de formación) más la opción **∅ Sin icono**. Se cierra al
+  elegir o al hacer clic fuera.
+- **Arranca vacío**: sin icono ni título por defecto. Si **ambos** quedan vacíos, el runtime
+  (`renderCustomCallout`) **no pinta cabecera**: solo el filete de color + el cuerpo. Si hay
+  solo uno, se muestra ese.
+- **Formato de la valla**: `::: custom | #color | icono | título`. Ojo: tras `::: custom` el
+  resto empieza por `|`, así que el primer segmento del `split('|')` llega vacío y
+  `renderCustomCallout` lo descarta (`parts.shift()`) para que color/icono/título caigan en
+  su sitio.
+- **Presets** en `localStorage` (`src/store/customBlocks.ts`, clave
+  `scormeditor.customBlocks`), **no** en `course.json` (cada bloque se exporta ya resuelto en
+  el texto). Un preset vale si tiene `color` y al menos `title` **o** `icon`.
+- **Seguridad**: el color se valida como hex antes de inyectarlo en `style` (anti-inyección
+  CSS); icono y título se escapan con `esc()`.
 
 ## Recursos visuales
 - `visual_resource` admite `layout` (`top`/`bottom`/`left`/`right`, def. `top`) y
@@ -76,7 +93,7 @@ CSS); icono y título se escapan con `esc()`.
 ## Lenguaje visual de la carcasa (fase 1, jul 2026)
 - **Acento corporativo** `--me-accent` (turquesa `#6DC3C0`) para **estructura**: filo
   superior de la tarjeta `.me-screen`, pantalla actual del menú (fondo + barra izquierda),
-  pestaña activa, accordion abierto, flip-card pulsada, `.me-objective`. El azul
+  pestaña activa, accordion abierto, flip-card pulsada. El azul
   `--me-primary` queda para **acciones** (botones, focus, hover de opciones).
 - **Elevación** con sombras (`--me-shadow-1`/`-2`) en vez de solo bordes: tarjeta de
   pantalla, cards (hover se eleva), botones (hover sombra, active se hunde 1px).
@@ -104,7 +121,7 @@ CSS); icono y título se escapan con `esc()`.
   (`.me-menu-count`) y la mini-barra (`.me-menu-uprog`).
 
 ### Niveles de animación (`shell.motion`, jul 2026)
-`shell.motion` (`none`/`subtle` def./`rich`; editable en ⚙ Ajustes → Curso → Apariencia)
+`shell.motion` (`none`/`subtle` def./`rich`; editable en ⚙ Ajustes → Interfaz (Apariencia))
 pone `body.me-motion-<nivel>` en `applyShell`:
 - **`none`**: mata toda animación/transición por CSS (y `celebrate()` no lanza confeti).
 - **`subtle`** (defecto): el comportamiento de fases 1-2 tal cual.
@@ -113,9 +130,24 @@ pone `body.me-motion-<nivel>` en `applyShell`:
   `.me-interaction`, `.me-transcript`) entran en cascada (70 ms/bloque, tope 560 ms) y
   los que quedan bajo el pliegue esperan (`.me-rv-wait`, `opacity:0`) hasta entrar en el
   viewport (`IntersectionObserver` con `root` = `#me-content`) → clase `.me-rv`. Extras
-  CSS bajo `body.me-motion-rich`: callouts deslizan desde su borde, ítems de
+  CSS bajo `body.me-motion-rich`: cada bloque entra con un **gesto propio** (fade +
+  transform, nunca solo fade): callouts deslizan desde su borde (`me-rv-callout`),
+  encabezados h2/h3 desde la izquierda (`me-rv-heading`), el media —imágenes/vídeo—
+  con zoom pronunciado (`me-rv-media`, scale .8), y los ítems de
   accordion/cards/timeline/chips en cascada `nth-child` **solo** si su `.me-interaction`
-  lleva `.me-rv` (primera visita).
+  lleva `.me-rv` (primera visita). En `rich` las entradas van **más lentas**: las
+  duraciones viven en dos variables CSS (`--me-anim-dur` entrada de pantalla,
+  `--me-rv-dur` revelado) que `body.me-motion-rich` sube a .45s/.55s (defecto
+  `subtle`: .22s/.32s); los retardos de la cascada `nth-child` van aparte (90 ms/ítem
+  en rich).
+
+**Velocidad** (`shell.motion_speed`, jul 2026): `fast`/`normal` def./`slow`, editable en
+⚙ Ajustes → Interfaz (Apariencia), deshabilitado con `motion: none`. `applyBranding` pone
+`body.me-speed-<v>` → variable `--me-speed` (fast 1 / normal 1.5 / slow 3, calibrado a
+ojo con el usuario) que **multiplica** con `calc()`
+todas las duraciones y retardos de entrada; los delays JS de `applyReveal` (70 ms/bloque,
+tope 560 ms) escalan con el mismo factor (`SPEED`). Afecta solo a las **entradas**
+(pantalla y revelado), no a hovers/feedback, que deben seguir siendo inmediatos.
 Decisiones deliberadas: **nunca temporizar por tiempo de lectura** (el ritmo lo pone el
 alumno con el scroll); `REVEALED` (por sesión) evita re-animar pantallas ya vistas; sin
 `IntersectionObserver` o con `prefers-reduced-motion` todo se muestra al instante; solo

@@ -304,6 +304,10 @@ export const ShellConfig = z.object({
     .enum(['none', 'subtle', 'rich'])
     .default('subtle')
     .describe('Animaciones de la carcasa: none (sin), subtle (básicas), rich (revelado progresivo y microanimaciones)'),
+  motion_speed: z
+    .enum(['fast', 'normal', 'slow'])
+    .default('normal')
+    .describe('Velocidad de las animaciones de entrada (multiplica la duración del nivel elegido)'),
 }).default({})
 export type ShellConfig = z.infer<typeof ShellConfig>
 

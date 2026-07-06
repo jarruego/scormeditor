@@ -35,18 +35,25 @@
   }
   // Bloque personalizado: "::: custom | #color | icono | título". El color se
   // valida (solo hex) para evitar inyección en el atributo style; icono y título
-  // se escapan como el resto del texto.
+  // se escapan como el resto del texto. Icono y título son OPCIONALES: si ambos
+  // están vacíos no se pinta cabecera (queda solo el filete de color + cuerpo).
   function renderCustomCallout(params, innerHtml) {
     var parts = String(params).split('|');
+    // Tras "::: custom" el resto empieza por "| ...", así que el primer segmento
+    // llega vacío; lo descartamos para que color/icono/título caigan en su sitio.
+    if (parts.length && parts[0].trim() === '') parts.shift();
     var color = (parts[0] || '').trim();
     var icon = (parts[1] || '').trim();
     var title = (parts[2] || '').trim();
     var safe = /^#[0-9a-fA-F]{3,8}$/.test(color) ? color : '#7787BF';
     var style = 'border-left-color:' + safe + ';background:color-mix(in srgb,' + safe + ' 18%,white);';
+    var titleHtml = (icon || title)
+      ? '<p class="me-callout-title">' +
+          (icon ? '<span class="me-callout-ico" aria-hidden="true">' + esc(icon) + '</span>' : '') +
+          esc(title) + '</p>'
+      : '';
     return '<aside class="me-callout me-callout-custom" role="note" style="' + style + '">' +
-      '<p class="me-callout-title">' +
-      (icon ? '<span class="me-callout-ico" aria-hidden="true">' + esc(icon) + '</span>' : '') +
-      esc(title) + '</p>' +
+      titleHtml +
       '<div class="me-callout-body">' + innerHtml + '</div></aside>';
   }
 
@@ -160,8 +167,9 @@
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
     },
     objectives: function (s) {
+      // El `objective` NO se pinta aquí: el `student_text` de esta pantalla ya
+      // presenta los objetivos al alumno y mostrarlo duplicaría el contenido.
       return '<h1>' + esc(s.title) + '</h1>' +
-        (s.objective ? '<p class="me-objective"><strong>Objetivo:</strong> ' + esc(s.objective) + '</p>' : '') +
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text));
     },
     route: function (s) { return templates.content(s); },

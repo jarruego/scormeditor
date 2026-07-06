@@ -80,7 +80,8 @@ subido, muestra un aviso en vez de romper.
 
 `CourseTree` (`src/components/CourseTree.tsx`): módulos → unidades → pantallas
 (reordenables con dnd-kit) + secciones «Evaluación» (test final) y «Materiales»
-(glosario/bibliografía). Añadir pantalla por unidad; duplicar/eliminar por pantalla.
+(glosario/bibliografía). Añadir pantalla por unidad; duplicar/eliminar por pantalla
+(eliminar pide confirmación con `confirmDialog`, nombrando la pantalla).
 
 ### Renombrado inline de títulos estructurales (jul 2026)
 Los títulos que no son de pantalla se editan **in situ** con `InlineRename`

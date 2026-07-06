@@ -38,6 +38,29 @@ ese contrato; no conoce el tipo concreto.
 - **Desplegables exclusivos** (jul 2026): en `accordion` y `timeline`, abrir un ítem
   cierra los demás de la misma interacción (el clic recorre los `heads` hermanos). No
   afecta a la impresión: `setupPrint` abre todos tocando atributos, sin disparar clics.
+- **`flip_cards` exclusivas** (jul 2026): girar una carta devuelve las demás a su anverso
+  (mismo criterio que los desplegables exclusivos).
+- **`case_practice` sin campo de texto** (jul 2026): decisión deliberada — el alumno
+  piensa/escribe su respuesta **en papel** (hint `.me-case-hint`) y se autoevalúa con la
+  rúbrica; así la respuesta no gasta `suspend_data` (límite 4096 en SCORM 1.2). El estado
+  guarda solo `{rubric: [índices marcados]}` y se restaura al volver. La rúbrica es una
+  **card desplegable** que reutiliza las clases del accordion (`me-acc-head`/`me-acc-body`:
+  «+», pulso-glow hasta el primer clic y expansión al imprimir heredados); con marcas
+  guardadas se restaura abierta. Tampoco se escribe
+  nada en `cmi.interactions` (write-only en 1.2, soporte irregular); si algún día se
+  quiere trazabilidad, esa es la vía. Validador: `CP_NO_RUBRIC` (warning sin rúbrica).
+- **Affordance «hay que clicar»** (jul 2026), en `accordion`, `flip_cards`, `tabs`,
+  `timeline`, `flashcards` (lengüeta «+» → «✓» verde al revelar, pulso solo con el repaso
+  sin empezar, y **la carta entera es clicable** para revelar además del botón) y
+  `hotspots` (marca «+» en disco blanco centrada en cada zona; el pulso va en **todas**
+  las zonas —señalar solo una sesgaría la respuesta— y se apaga al primer intento)
+  (en tabs: conjunto envuelto en bloque `.me-tabs-box`, check verde por pestaña — la
+  primera nace vista —, pulso en la **segunda** pestaña hasta cambiar): icono «+»
+  (rota a «×» al abrir en accordion; lengüeta `.me-flip-tab` en la esquina de la carta),
+  pulso-glow (`.me-pulse`, keyframes `me-pulse-glow`) en el **primer** ítem/carta mientras
+  no se haya abierto ninguno, y **check verde** al abrir (`.is-seen`; en la carta la
+  lengüeta pasa a «✓» verde). Lo visto se persiste como `{seen: {idx: true}}` vía
+  `ctx.save` (no fija results: estas interacciones siguen sin puntuar ni bloquear).
 - **Posición respecto al texto**: `screen.interaction_layout` (`top`/`bottom`, def.
   `bottom`). `render()` (renderer.js) mueve `.me-interaction` tras el `<h1>` cuando es
   `top`. Editable en `ScreenEditor`.
@@ -46,6 +69,12 @@ ese contrato; no conoce el tipo concreto.
   la altura sea la del contenido mayor; `backface-visibility` oculta el reverso). El lector
   de pantalla usa `aria-hidden` alternado, **no** el atributo `hidden`. La impresión ya no
   las expande por JS (`setupPrint`): `print.css` aplana el giro y muestra las dos caras.
+- **Botón Comprobar con affordance** (jul 2026): helper `wireCheck(el, ready)` compartido
+  por `choiceFactory`, `sort_steps`, `dragAssignFactory` y `fill_blanks`. El botón nace
+  **desactivado**; cuando `ready()` se cumple por acción del usuario se activa **con
+  pulso-glow** (en sort, «responder» = primer movimiento). El pulso se apaga al clicar y
+  vuelve si se cambia la respuesta; al restaurar respuesta sin resolver se activa sin
+  pulso. De paso, `move()` de sort ignora el teclado cuando la interacción está resuelta.
 - **Feedback marcado en la opción** (fase 1): `choiceFactory` y `scenario_decision` marcan
   el elemento elegido con `.is-right`/`.is-wrong` (color + icono ✔/✖), también al
   restaurar; `replay()` reinicia las animaciones (shake/pop) entre intentos.

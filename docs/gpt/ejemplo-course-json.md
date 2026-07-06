@@ -119,7 +119,7 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
                 "source_refs": [ { "doc": "Curso ACP T.1.pdf", "locator": "p.5" } ]
               },
               "required": true,
-              "min_time_seconds": 25,
+              "min_time_seconds": 0,
               "transcript": "La atención centrada en la persona es un enfoque que organiza los apoyos partiendo de la persona: sus preferencias, valores, historia y proyecto de vida. Frente a modelos centrados en el servicio, la ACP adapta el apoyo a la persona y no al revés.",
               "accessibility": { "alt_text_ok": true, "keyboard_ok": true, "contrast_ok": true },
               "scorm": { "counts_for_completion": true },

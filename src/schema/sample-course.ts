@@ -36,6 +36,7 @@ export const sampleCourse: Course = {
     show_sidebar: true,
     show_progress: true,
     motion: 'subtle',
+    motion_speed: 'normal',
     language: 'es',
   },
   modules: [

@@ -34,7 +34,9 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
     interacciones, callouts, antipatrones).
   - `flujo-factoria-unidades.md`: procedimiento por fases para **unidades grandes**
     (inventario → temas parciales auditables `.scormpart` → fusión), con control de
-    cobertura y helper `merge_unit`.
+    cobertura y helper `merge_unit`. Incluye el **prompt reforzado** recomendado para
+    el usuario (en «Órdenes de trabajo típicas»): re-ancla en el mensaje las reglas
+    más incumplidas como bloqueantes; probado con buen resultado (jul 2026).
   - `referencia-rapida.md`: modos, valores por defecto, accesibilidad, SEPE, evaluación y
     checklist de validación.
 - **Criterios de contenido acordados (jul 2026), viven en esos docs:** (1) **Regla Nº1**
@@ -65,7 +67,9 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   mismo PDF): reagrupar las frases partidas por la maquetación del PDF, ítems de lista
   en líneas consecutivas sin línea en blanco entre ellos, espacio tras cerrar negrita
   (`**útil** y`), y dos callouts del mismo tipo en una pantalla = dos apartados
-  fusionados → dividir en dos pantallas. **Bibliografía solo en `bibliography[]`** (la carcasa la muestra en el
+  fusionados → dividir en dos pantallas. **`min_time_seconds: 0` siempre** (jul 2026):
+  el tiempo mínimo por pantalla lo fija a mano el editor humano en SCORMEditor, el GPT
+  no lo estima. **Bibliografía solo en `bibliography[]`** (la carcasa la muestra en el
   modal «Recursos y bibliografía», `app.js`; nunca pantalla «Referencias»), una entrada
   limpia por referencia y **todas con formato homogéneo** (`Autor/Entidad (año).
   Título. Fuente.`), normalizando aunque el original sea desordenado. **Negritas**: la

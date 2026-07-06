@@ -58,11 +58,21 @@ export function AppearanceSection() {
               <option value="none">Sin animaciones</option>
             </select>
           </label>
+          <label className="ed-field ed-field-narrow">
+            <span>Velocidad</span>
+            <select value={shell.motion_speed} disabled={shell.motion === 'none'}
+              onChange={(e) => updateShell({ motion_speed: e.target.value as any })}>
+              <option value="fast">Rápida</option>
+              <option value="normal">Normal (por defecto)</option>
+              <option value="slow">Lenta</option>
+            </select>
+          </label>
         </div>
         <p style={{ margin: 0, fontSize: '.85rem', color: 'var(--c-muted)' }}>
           En «Llamativas», el contenido de cada pantalla aparece en cascada la primera vez y el
-          resto se revela al hacer scroll; las pantallas ya vistas no se re-animan. Si el
-          alumno tiene activada la reducción de movimiento en su equipo, no se anima nada.
+          resto se revela al hacer scroll; las pantallas ya vistas no se re-animan. La velocidad
+          alarga o acorta las entradas del nivel elegido. Si el alumno tiene activada la
+          reducción de movimiento en su equipo, no se anima nada.
         </p>
       </fieldset>
     </>
