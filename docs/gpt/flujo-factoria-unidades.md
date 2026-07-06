@@ -18,10 +18,13 @@ Data Analysis activo.
 chat. Constrúyelo **mediante archivos** con Code Interpreter (un `dict` por tema que
 se vuelca a un parcial descargable). El usuario recibe **archivos**, no JSON gigante.
 
-## Los tres modos
+## Las tres fases
 1. **Inventario** (Fase 0): planificar la unidad, sin generar nada final.
-2. **Tema parcial** (Fase 1–2): producir y auditar **un** tema, entregar su parcial.
+2. **Tema parcial** (Fase 1–2): producir y auditar **un** tema, guardar su parcial.
 3. **Fusión final** (Fase 3): unir los parciales aprobados en un único `.scormproj`.
+
+Por defecto (petición directa) las tres fases se **encadenan de forma autónoma**, sin
+preguntar entre temas; ver «Órdenes de trabajo típicas» al final.
 
 ---
 
@@ -32,8 +35,11 @@ se vuelca a un parcial descargable). El usuario recibe **archivos**, no JSON gig
 3. Estima el **nº de palabras fuente por tema**.
 4. Devuelve un **plan de producción**: lista de temas, palabras fuente estimadas por
    tema, nº de pantallas previsto, imágenes detectadas por tema.
-5. **No generes todavía** ningún `.scormproj` ni parcial. Espera la orden de trabajar
-   el primer tema.
+5. En una **petición directa** («genera el `.scormproj` de…»), el inventario es un
+   paso interno: muestra el plan brevemente y **continúa con el primer tema sin
+   esperar orden**. Solo te detienes aquí si la orden era un **análisis previo** (ver
+   «Órdenes de trabajo típicas»): entonces amplía el plan con la **propuesta de
+   empaquetado** en `.scormproj` y no generes nada.
 
 ---
 
@@ -109,15 +115,17 @@ Estructura del parcial (`*.partial.json`):
 ---
 
 ## Fase 2 — Validación por tema
-Al terminar cada tema, entrega:
-1. **Enlace** al parcial (`.json` o `.scormpart`).
+Al terminar cada tema, registra:
+1. El parcial guardado (`.json` o `.scormpart`).
 2. **Informe de cobertura** (los campos de `coverage`).
 3. **Lista de incidencias** (imágenes omitidas, epígrafes dudosos, contenido que
    requiere revisión humana).
-4. **Pregunta** al usuario si continúa con el siguiente tema.
 
-No avances al siguiente tema si el usuario pide revisar el actual. Si el ratio de un
-tema quedó `< 0.95`, avísalo explícitamente como incidencia bloqueante.
+En **petición directa** (el modo habitual): **continúa con el siguiente tema sin
+preguntar**; los informes por tema se acumulan y se entregan juntos al final. Solo en
+**modo paso a paso** (pedido expresamente) entregas el enlace al parcial y preguntas
+si sigues. En ambos modos, si el ratio de un tema quedó `< 0.95` tras reintentar,
+detente y avísalo como **incidencia bloqueante**.
 
 ---
 
@@ -133,6 +141,25 @@ Cuando **todos** los temas estén aprobados:
 6. Construye **un único `.scormproj`** con `build_scormproj` (contrato §11):
    `course.json` en la raíz + `assets/` con todos los binarios; **sin rutas rotas**.
 7. **Valida** el paquete antes de entregarlo.
+8. **Revisión de fidelidad** (obligatoria, ver abajo) antes de dar el enlace.
+
+### Revisión de fidelidad (obligatoria antes de entregar)
+El ratio de palabras (≥0.95) mide **cuánto** texto se conserva, no **si el mensaje
+didáctico sigue siendo el mismo**. Antes de entregar, compara el curso generado con la
+fuente (con Code Interpreter, releyendo el PDF, no de memoria):
+1. **Esquema**: reconstruye el índice de epígrafes del PDF y comprueba que **cada
+   epígrafe tiene su(s) pantalla(s)**, en el **mismo orden**, y que los sub-epígrafes
+   hermanos conservan la **misma jerarquía** entre sí (mismo nivel `###`; ninguno
+   degradado a línea numerada/negrita).
+2. **Fronteras**: ninguna pantalla arranca con contenido residual del epígrafe
+   anterior ni termina invadiendo el siguiente.
+3. **Formato fuente**: negritas (`**` presente si el PDF tiene bold), cajas destacadas
+   → callouts, y las imágenes junto a **su** texto.
+4. **Estructura de pantallas**: `cover` sin contenido didáctico; bibliografía solo en
+   `bibliography[]` (sin pantalla «Referencias»); variedad de interacciones
+   informativas (no todo `accordion`).
+5. Registra el resultado como parte del informe final (epígrafes verificados,
+   desajustes corregidos). Si algo falla, **corrige y repite** antes de entregar.
 
 ### Entrega final
 - Enlace al `.scormproj`.
@@ -192,18 +219,40 @@ def merge_unit(base_course, partials, score_source='final_test'):
 
 ## Órdenes de trabajo típicas (para el usuario)
 
-**Inventario:**
-> Haz el **inventario** de la Unidad 1 del PDF. Devuélveme el plan de producción por
-> temas (palabras fuente y pantallas estimadas). No generes aún el `.scormproj`.
+La orden habitual es **directa**: el usuario pide el `.scormproj` de un curso, una
+unidad o un tema. **La factoría se encarga sola de conseguirlo con este flujo**; las
+fases son el procedimiento interno, no órdenes que deba dar el usuario.
 
-**Tema a tema:**
-> Trabaja **solo el Tema 1** de la Unidad 1. No generes el `.scormproj` final.
-> Entrégame el **parcial del Tema 1** y el **informe de cobertura**.
+**Petición directa (la habitual):**
+> Genera el `.scormproj` de la Unidad 2.
 
-> Continúa con el **Tema 2** con el mismo criterio. Mantén compatibilidad con el
-> parcial del Tema 1 para fusionarlos después.
+> Genérame el curso completo (un `.scormproj` por unidad).
 
-**Fusión:**
-> **Fusiona** los parciales aprobados de los temas 1, 2 y 3 en un único `.scormproj`
-> de la Unidad 1. Valida rutas de assets, evaluación final, glosario, bibliografía y
-> el **porcentaje global de conservación**.
+> Hazme el Tema 3 de la Unidad 1 en un `.scormproj`.
+
+Comportamiento: ejecuta **todo el flujo de forma autónoma** — inventario interno →
+temas parciales con su control de cobertura → fusión → revisión de fidelidad — **sin
+preguntar entre temas**. Solo te detienes si:
+- (a) hay una **incidencia bloqueante** (ratio <0.95 irrecuperable, contenido
+  ilegible, ambigüedad que exige decisión del usuario), o
+- (b) vas a quedarte **sin espacio**: guarda los parciales en disco y di «continúa»
+  para seguir en la siguiente respuesta (**nunca** resumas para «caber»).
+
+Al final entrega el enlace al `.scormproj` (o a los `.scormproj`, si son varios) +
+el informe global de cobertura y fidelidad.
+
+**Análisis previo (sin generar nada):**
+> Analiza el documento: qué contenido hay, qué volumen tiene cada unidad/tema y cómo
+> conviene dividirlo en SCORMs para Moodle.
+
+Comportamiento: solo la Fase 0 ampliada — índice real del documento; palabras,
+páginas e imágenes por unidad y tema; pantallas estimadas; y una **propuesta de
+empaquetado** (qué `.scormproj` crear: normalmente uno por unidad —cada SCO de
+Moodle—, u otra división si el volumen lo aconseja). Termina preguntando qué opción
+produce. **No generes ningún parcial ni `.scormproj`.**
+
+**Paso a paso (solo si el usuario lo pide expresamente):**
+> Trabaja solo el Tema 1 y enséñame el parcial antes de seguir.
+
+Comportamiento: el flujo con parada y pregunta entre temas (Fase 2 con validación
+del usuario).

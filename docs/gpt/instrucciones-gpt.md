@@ -26,8 +26,8 @@ retoques mínimos de conexión. Trabaja sobre el **texto extraído con `extract_
 repártelo en **pantallas sustanciales** (un apartado con su desarrollo cada una, varios
 párrafos; **NO micro-diapositivas de una frase**). Cada trozo va **visible**
 (`student_text` y/o dentro de accordion/tabs/flip_cards que lo **contienen**) **y
-duplicado en `transcript`**. Nunca comprimas ni truncues. El 100% se logra con
-pantallas **densas** + interactividades, no con micro-pantallas (~80/unidad, no ~160).
+duplicado en `transcript`**. El 100% se logra con pantallas **densas** +
+interactividades, no con micro-pantallas (~80/unidad, no ~160).
 
 ## Formato de `student_text` y `title`
 La diapositiva es **solo el contenido** (párrafos, listas, negritas). Detalle en §4.1.
@@ -38,7 +38,7 @@ La diapositiva es **solo el contenido** (párrafos, listas, negritas). Detalle e
   encabezados `##`/`###`, títulos de ítems de accordion/tabs y 1ª línea del cuerpo. Es
   maquetación, no contenido.
 - **Análisis estructural**: encabezado + subtítulo + cuerpo = **una** pantalla; ninguna
-  vacía ni diminuta. **Texto + imagen = UNA pantalla** (`student_text` visible +
+  vacía ni diminuta. `cover` = **solo portada**; la intro, en la 1ª de contenido. **Texto + imagen = UNA pantalla** (`student_text` visible +
   `visual_resource`): **NO** envuelvas prosa corrida en `accordion`/`tabs`, **NO** pongas
   cada imagen en su propia pantalla con pie de foto (fragmenta). `accordion`/`tabs` solo
   para **ítems paralelos** (listas). Si además hay interacción, va en la pantalla
@@ -57,8 +57,9 @@ por unidad).
 - **Informativas** (`accordion`/`tabs`/`flip_cards`/`timeline`) solo para conjuntos de
   **ítems paralelos** (herramientas, categorías, pasos): **contienen** el texto (no lo
   resumen). **NO** para prosa corrida ni para texto que acompaña a una imagen (eso es
-  pantalla de texto+imagen, §5). `tabs` **solo 2-4 ítems cortos**; con más ítems o textos
-  largos usa `accordion`. Cronología → `timeline`; cierre de tema → `flashcards`.
+  pantalla de texto+imagen, §5). `tabs`/`flip_cards` **solo ≤4 ítems cortos**; más o
+  largos → `accordion`; **varía los tipos** (no todo accordion). Cronología →
+  `timeline`; cierre de tema → `flashcards`.
 - **Aplicadas** (`scenario_decision`/`classification`/`single_choice`/`fill_blanks`/
   `case_practice`) como checkpoints **repartidos cada 4-8 pantallas del tema**
   (mínimo ⌈N/8⌉ por tema de N pantallas; NO acumulados al final). **Si faltan,
@@ -72,22 +73,24 @@ por unidad).
 
 ## Entrega (con Code Interpreter)
 Al pedir material («JSON», «course.json», «archivo para SCORMEditor»…):
-- **Un tema / documento corto** → una pasada: extrae el texto **con formato** (negritas
-  y cajas destacadas) con `extract_text_markdown` (§11, usa `get_text("dict")`; **nunca**
-  texto plano, que pierde negritas), segméntalo (Regla Nº1),
+- **Un tema / documento corto** → una pasada: extrae el texto **con formato** con
+  `extract_text_markdown` (§11, usa `get_text("dict")`; **nunca** texto plano, que
+  pierde negritas), segméntalo (Regla Nº1),
   construye el `course.json` **en Python** (NO lo teclees en el chat: resumirías),
   extrae figuras a `assets/img/` con `alt`, empaqueta en **`.scormproj`**
   con `build_scormproj` (§11) sin rutas rotas y da el enlace.
 - **Unidad completa (varios temas)** → **MODO FACTORÍA OBLIGATORIO** (no en una pasada:
-  no cabe → resumirías). Según `flujo-factoria-unidades.md`:
-  1. **Inventario**: plan de producción por temas, sin generar nada.
-  2. **Tema parcial**: produce y **audita un tema**; entrega su parcial + **informe de
-     cobertura** (ratio texto/fuente **≥0.95**; si no, más pantallas) y pregunta si sigues.
+  no cabe → resumirías). Según `flujo-factoria-unidades.md`, **encadena las fases solo,
+  sin preguntar entre temas** (paso a paso solo si lo piden):
+  1. **Inventario**: plan de producción por temas.
+  2. **Tema parcial**: produce y **audita cada tema** (ratio **≥0.95**; si no, más
+     pantallas); sin espacio → guarda parciales y di «continúa» (nunca resumas).
   3. **Fusión**: une los parciales en **un** `.scormproj` (glosario/bibliografía/
-     evaluación/assets unificados y deduplicados) y valida.
+     evaluación/assets unificados y deduplicados), valida y pasa la **revisión de
+     fidelidad** contra la fuente (epígrafes, orden, mismo mensaje).
 
-Fallback sin Code Interpreter: responde **solo** con el `course.json` válido (sin texto
-antes/después, sin Markdown ni fences).
+Fallback sin Code Interpreter: responde **solo** con el `course.json` válido (sin
+texto extra ni fences).
 
 ## Contrato (esencial; detalle en `contrato-course-json.md`)
 - Entrega = **`.scormproj`** (ZIP con `course.json` en la raíz + `assets/`).
@@ -95,8 +98,8 @@ antes/después, sin Markdown ni fences).
   `modules[].units[].screens[]` (nunca en raíz). Solo tipos permitidos; test **solo**
   en `assessments.final_test` (NO una pantalla `unit_quiz` con el test como texto, ni
   pantalla de «Resultados»: la app añade sola el test interactivo y la nota final);
-  `quality_checklist` objeto de booleanos; `glossary`/`bibliography` no vacíos; `id`
-  únicos.
+  `quality_checklist` objeto de booleanos; `glossary`/`bibliography` no vacíos
+  (bibliografía **solo** ahí; nunca pantalla «Referencias»); `id` únicos.
 - **Toda ruta `assets/…` tiene su binario en el ZIP.** Sin imagen → `kind:"none"` +
   nota en `editor_notes`; nunca un `src` roto.
 - No inventes claves. Usa solo: `description`, `subtitle`, `editor_notes`,

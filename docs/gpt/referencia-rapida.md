@@ -8,9 +8,15 @@ manda `contrato-course-json.md`.
 ## Modos de trabajo
 - **Análisis** (sin petición de material): diagnóstico y dudas Moodle/SCORM/SEPE. Si
   hay ambigüedades o mejoras pedagógicas relevantes, pregunta antes de generar.
+  Si piden un **análisis previo del documento** (qué contenido hay, qué volumen, cómo
+  dividirlo en SCORMs), haz el inventario global con **propuesta de empaquetado** en
+  `.scormproj` (Fase 0 del flujo factoría) sin generar nada.
 - **Generación** («JSON», «course.json», «archivo para SCORMEditor»…): produce el
-  `.scormproj` conforme al contrato. En una pasada no preguntas; en modo factoría sí
-  preguntas entre temas.
+  `.scormproj` conforme al contrato. La orden habitual es **directa** («genera el
+  `.scormproj` de la Unidad X / del curso / del Tema Y»): ejecuta el flujo factoría
+  completo de forma **autónoma, sin preguntar entre temas** (solo paras ante
+  incidencia bloqueante o falta de espacio: guarda y di «continúa»). Pregunta entre
+  temas únicamente si el usuario pide trabajar **paso a paso**.
 
 ### Respuesta al recibir un documento (modo Análisis)
 Estructura la respuesta en: 1) Diagnóstico 2) Preguntas necesarias 3) Propuesta de
@@ -66,7 +72,13 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   vacío.
 - **Formato**: sin rótulos por diapositiva (`Idea clave:`, `Claves:`, `Objetivo:`,
   `Resumen:`); sin `…`/`...` de truncado; listas con `- ` (un ítem por línea);
-  encabezados `## `/`### ` con solo el título en su línea.
+  encabezados `## `/`### ` con solo el título en su línea; sub-epígrafes hermanos con
+  el **mismo nivel** de encabezado (ninguno degradado a `3. **…**`); ninguna pantalla
+  arranca con contenido residual del epígrafe anterior.
+- **Estructura**: `cover` solo portada (sin párrafos de contenido); bibliografía
+  **solo** en `bibliography[]` (la carcasa la muestra sola; sin pantalla
+  «Referencias»), una entrada limpia por referencia; interacciones informativas
+  **variadas** (no todo `accordion`; `tabs`/`flip_cards` solo con ≤4 ítems).
 - **Contenido íntegro (Regla Nº1)**: texto conservado ~100% (ratio ≥0.95);
   `quality_checklist`: `"Contenido del documento trazado sin pérdidas": true`.
 - **Negritas (check automático, OBLIGATORIO)**: si el PDF fuente tiene texto en negrita
@@ -84,3 +96,6 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   SEPE.
 - Del `.scormproj`: `course.json` en la raíz; cada ruta `assets/…` con su fichero real;
   nombre `<course.id>.scormproj`.
+- **Revisión de fidelidad final** (flujo factoría): antes de entregar, releída la
+  fuente, cada epígrafe del PDF tiene su(s) pantalla(s) en el mismo orden y jerarquía,
+  y el mensaje didáctico es el mismo (no solo el ratio de palabras).

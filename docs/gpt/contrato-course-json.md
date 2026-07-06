@@ -153,6 +153,9 @@ Reglas que NO se pueden romper:
 
 - `type` (enum cerrado): `cover`, `objectives`, `route`, `content`, `summary`,
   `video`, `reflection`, `forum_prompt`, `unit_quiz`, `content_placeholder`.
+- **`cover` = solo portada**: `title` + `subtitle` (y una imagen si procede), **sin
+  contenido didáctico**. Los párrafos de introducción («En la unidad anterior vimos…»)
+  van en la **primera pantalla `content`** del tema, nunca en la `cover`.
 - `objective`: texto libre (NO `objective_id`). Si tu herramienta maneja
   micro‑objetivos por id, **vuelca aquí el texto del objetivo**. Los objetivos del
   curso forman un **conjunto reducido y controlado**: derívalos del contenido real, de
@@ -236,6 +239,16 @@ Reglas de formato (para que el editor lo renderice bien):
   los ítems** de `accordion`/`tabs`/`flip_cards` y en la primera línea del cuerpo. Es
   rótulo de maquetación del documento, no contenido. (Criterio «todo o nada»; por
   defecto, **fuera**.)
+- **Epígrafes hermanos, mismo nivel de encabezado.** Si un apartado tiene una serie de
+  sub-epígrafes paralelos (p. ej. tres «momentos»: desde el ingreso / de forma
+  progresiva / en el día a día), **todos** llevan el mismo marcado (`###`). No dejes
+  uno como línea numerada en negrita (`3. **En el día a día**`) mientras sus hermanos
+  van con `###`: rompe la jerarquía y arrastra numeración residual.
+- **Cada pantalla empieza por su propio contenido.** Al segmentar por epígrafes, no
+  arrastres al inicio de una pantalla la lista o los párrafos finales del epígrafe
+  anterior (p. ej. una lista de «errores frecuentes» abriendo la pantalla «Evaluación
+  y ajuste»). Si ese contenido tiene entidad propia, dale **su propia pantalla previa**
+  con su `title`; si no, ciérralo en la pantalla a la que pertenece.
 - **Pantallas sustanciales, ninguna vacía ni diminuta.** Cada pantalla = un apartado
   con su desarrollo (varios párrafos), no una frase. Un encabezado + su subtítulo + su
   cuerpo van en **una** pantalla, no en tres. **Evita micro-diapositivas** y **no
@@ -511,6 +524,12 @@ preguntas.
 
 - `glossary[]`: `{ term, definition, source_refs[] }` (NO uses `id`/`source_ref`).
 - `bibliography[]`: `{ ref, url? }` (el campo es **`ref`**, NO `reference`).
+- **La bibliografía va SOLO en `bibliography[]`**: la carcasa ya la muestra al alumno
+  en el modal «Recursos y bibliografía» (una entrada por línea). **NO crees una
+  pantalla `content` «Referencias»** con las citas apelotonadas en un párrafo.
+- **Una entrada de `bibliography[]` por referencia** (nunca varias citas en un mismo
+  `ref`), con el texto limpio y los espacios correctos: `Autor, A. (año): Título.
+  Editorial/Revista.` — nada de `«(2010):La atención»` sin espacio ni citas pegadas.
 - `quality_checklist`: **objeto** `criterio → booleano`.
 
 ---

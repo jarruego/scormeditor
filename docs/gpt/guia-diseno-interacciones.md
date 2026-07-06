@@ -129,11 +129,18 @@ unidad). **No las elimines convirtiéndolas en pantallas de texto pequeñas.** C
   → una pestaña por bloque. Con **más de 4 ítems o textos largos, NO uses tabs** (no
   caben en horizontal): usa `accordion`.
 - **`flip_cards`**: pares término→definición, concepto→ejemplo → `front`/`back`.
+  Igual que `tabs`, **solo con 4 o menos elementos** y textos cortos.
 - **`timeline`**: evolución histórica, fases de un proceso con fechas/etapas →
   `milestones` en orden con `label` (fecha/fase), `title` y `body`. Ideal cuando el
   fuente narra cronología o secuencia de hitos.
 El texto de cada `item`/`tab`/`card`/hito es el **texto fuente** de esa parte. En
 `transcript` va igualmente el trozo completo.
+
+**Varía los tipos informativos.** No conviertas cada bloque estructurado en un
+`accordion` por inercia: si el contenido lo permite (2-4 ítems cortos → `tabs` o
+`flip_cards`; secuencia/fases → `timeline`), **alterna** para que la unidad no repita
+siempre el mismo patrón. El `accordion` es el comodín para ítems largos o numerosos
+(5+), no la única opción.
 
 **Una interacción = UNA pantalla, con TODOS sus ítems.** No la partas en varias
 pantallas: un accordion «Áreas clave» con 8 apartados es **un** accordion en **una**

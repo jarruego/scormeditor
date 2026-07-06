@@ -41,18 +41,30 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   — conservar el texto de origen **casi al 100%** (ratio ≥0.95), sin resumir ni reescribir;
   extraer **con formato** (negritas, cajas→callouts) vía PyMuPDF `get_text("dict")`, no en
   plano. (2) **Modo factoría** para unidades: nunca en una pasada (no cabe → resume), tema
-  a tema con parciales. (3) Formato: `title` corto (no fragmento del texto ni repetido en
+  a tema con parciales. **Autónomo por defecto** (jul 2026): la orden habitual del
+  usuario es directa («genera el `.scormproj` de X»); el GPT encadena las fases solo,
+  sin preguntar entre temas (para solo ante incidencia bloqueante o falta de espacio:
+  guarda parciales y pide «continúa»). Paso a paso solo si se pide expresamente.
+  Existe además el **análisis previo**: inventario global con volumen por unidad/tema
+  y propuesta de empaquetado en `.scormproj` (SCOs de Moodle), sin generar nada. (3) Formato: `title` corto (no fragmento del texto ni repetido en
   el cuerpo), sin pantallas vacías/diminutas, listas con `- ` una por línea, encabezados
   solo-título, sin rótulos por diapositiva, negritas/enlaces del original conservados,
   imágenes colocadas por proporción (`layout`). **Quitar la numeración de epígrafes del
   PDF** (`1.3`, `1.3.1`…) en TODO el texto (title, encabezados, títulos de ítems de
-  accordion/tabs, 1ª línea del cuerpo): es maquetación, no contenido. **Negritas**: la
+  accordion/tabs, 1ª línea del cuerpo): es maquetación, no contenido. **Jerarquía**:
+  sub-epígrafes hermanos con el mismo nivel `###` (ninguno degradado a línea numerada
+  en negrita) y ninguna pantalla arranca con contenido residual del epígrafe anterior.
+  **`cover` = solo portada** (título/subtítulo; la intro va en la 1ª de contenido).
+  **Bibliografía solo en `bibliography[]`** (la carcasa la muestra en el modal
+  «Recursos y bibliografía», `app.js`; nunca pantalla «Referencias»), una entrada
+  limpia por referencia. **Negritas**: la
   extracción con `get_text("dict")` debe detectar la negrita por `span.flags & 16` o
   fuente con `Bold`/`Black`/`Semibold` y re-emitirla como `**...**` (helper
   `extract_text_markdown` en el contrato §11); el texto plano las pierde. (4) Interacciones
   repartidas cada 4-8 pantallas (no al final); una interacción entera en una pantalla (no
   partir accordion/actividad); **`accordion`/`tabs` solo para ítems paralelos, NUNCA para
-  prosa corrida ni para texto que acompaña a una imagen**; **texto + imagen = UNA pantalla**
+  prosa corrida ni para texto que acompaña a una imagen**; **variar los tipos
+  informativos** (no todo accordion; `tabs`/`flip_cards` solo con ≤4 ítems cortos); **texto + imagen = UNA pantalla**
   (`student_text` visible + `visual_resource`), sin fragmentar cada imagen en su propia
   pantalla; no juntar imagen+texto+interacción en una pantalla; **callout con cuerpo real
   (no la etiqueta) y no dos del mismo tipo en la misma pantalla**; el test calificable solo
@@ -64,7 +76,10 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   (interacciones y test); cada objetivo con al menos una evaluación; en `objectives`/
   `route` el objetivo principal del tema, no meta-objetivos («Presentar el recorrido»).
   Casa con la cobertura normalizada `OBJ_NOT_EVALUATED` del editor
-  (`informes-validacion.md`).
+  (`informes-validacion.md`). (6) **Revisión de fidelidad** (jul 2026): el ratio de
+  palabras ≥0.95 mide cantidad, no fidelidad; el flujo factoría añade en la Fase 3 una
+  revisión final obligatoria contra la fuente (cada epígrafe con su pantalla, mismo
+  orden y jerarquía, fronteras limpias, mismo mensaje didáctico) antes de entregar.
 - El GPT también lee una copia del contrato en el `Downloads` del usuario; al tocar el de
   `docs/gpt/` hay que **sincronizarla** (`cp`). La subida al GPT se hace desde estos
   ficheros. Dentro de las Instructions, los docs se referencian por **nombre de fichero
