@@ -16,7 +16,10 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   (`visual_resource.src`, `hotspots.image`, `tracks[].src`, `audio_src`). Es el mismo
   contrato que `loadProjectFromBlob()` espera (ver `persistencia-scormproj.md`). Si una
   imagen no existe, el GPT pone `kind:"none"` + nota en `editor_notes`, nunca un `src`
-  roto.
+  roto. Los enums de presentación de `visual_resource` (`layout`, `media_width`,
+  `media_align`) **toleran `""`** en el esquema (jul 2026, `course.schema.ts`,
+  `z.preprocess` → default): los GPT a veces lo emiten y rompía la carga; aun así el
+  contrato les ordena **omitir la clave** en vez de emitir `""`.
 - **Arquitectura de los docs (jul 2026):** las Instructions llevan solo los
   **guardarraíles siempre activos**; el detalle es **material de referencia** en los
   ficheros de Knowledge. Las Instructions ordenan al GPT **leer** esos docs con Code

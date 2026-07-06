@@ -95,18 +95,28 @@ export const VisualResource = z.object({
     )
     .default([]),
   has_voice: z.boolean().default(false).describe('Si el medio contiene voz (exige subtítulos)'),
-  layout: z
-    .enum(['top', 'bottom', 'left', 'right'])
-    .default('top')
-    .describe('Posición del recurso respecto al texto en pantallas de contenido'),
-  media_width: z
-    .enum(['33', '50', '66'])
-    .default('50')
-    .describe('Ancho del recurso (% ) en disposiciones laterales left/right'),
-  media_align: z
-    .enum(['left', 'center'])
-    .default('left')
-    .describe('Alineación horizontal del recurso en disposiciones top/bottom'),
+  // Los enums de presentación toleran '' (los GPT a veces lo emiten) → cae al default
+  layout: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .enum(['top', 'bottom', 'left', 'right'])
+      .default('top')
+      .describe('Posición del recurso respecto al texto en pantallas de contenido'),
+  ),
+  media_width: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .enum(['33', '50', '66'])
+      .default('50')
+      .describe('Ancho del recurso (% ) en disposiciones laterales left/right'),
+  ),
+  media_align: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .enum(['left', 'center'])
+      .default('left')
+      .describe('Alineación horizontal del recurso en disposiciones top/bottom'),
+  ),
   media_full: z
     .boolean()
     .default(false)
