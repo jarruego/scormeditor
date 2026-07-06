@@ -8,6 +8,7 @@ import { InteractionConfigEditor } from './InteractionConfigEditor'
 import { ObjectiveInput, ObjectiveSelect } from './ObjectiveSelect'
 import { FileButton } from './FileButton'
 import { generateForScreen, hasApiKey } from '../tts/tts'
+import { buildTranscript } from '../tts/buildTranscript'
 import { confirmDialog } from '../store/confirm'
 import type { AssetMap } from '../export/exportScorm'
 
@@ -164,6 +165,38 @@ export function ScreenEditor() {
       return
     }
     setVr({ kind: next as any })
+  }
+
+  // Regenera la transcripción a partir del contenido de la pantalla. Si hay un
+  // audio de locución asociado, dejará de corresponderse con el texto: se avisa
+  // y se ofrece regenerarlo con TTS en el momento.
+  async function onRebuildTranscript() {
+    if (!screen) return
+    const next = buildTranscript(screen)
+    if (!next.trim()) {
+      setTtsMsg('⚠ La pantalla no tiene texto ni interacciones informativas de las que generar la transcripción.')
+      return
+    }
+    if (screen.transcript.trim() && screen.transcript.trim() !== next.trim()) {
+      const ok = await confirmDialog({
+        title: 'Regenerar transcripción',
+        message: 'Se sustituirá la transcripción actual por una generada a partir del texto del estudiante y las interacciones informativas de esta pantalla.',
+        confirmLabel: 'Regenerar',
+      })
+      if (!ok) return
+    }
+    patch({ transcript: next })
+    setTtsMsg('✓ Transcripción regenerada desde el contenido.')
+    if (screen.audio_src) {
+      const regen = await confirmDialog({
+        title: 'Audio desactualizado',
+        message: 'Esta diapositiva tiene un audio de locución que ya no se corresponde con la nueva transcripción. ¿Quieres regenerar el audio ahora con la voz IA?',
+        confirmLabel: 'Regenerar audio',
+        cancelLabel: 'Mantener el audio',
+      })
+      if (regen) await onGenerateAudio()
+      else setTtsMsg('⚠ El audio actual ya no se corresponde con la transcripción regenerada.')
+    }
   }
 
   function setInteraction(next: Interaction | null) {
@@ -357,6 +390,11 @@ export function ScreenEditor() {
           <textarea rows={3} value={screen.transcript} onChange={(e) => patch({ transcript: e.target.value })} />
         </label>
         <div className="ed-row">
+          <button type="button" disabled={ttsBusy}
+            onClick={() => void onRebuildTranscript()}
+            title="Genera la transcripción a partir del texto del estudiante y las interacciones informativas de la pantalla">
+            ↻ {screen.transcript.trim() ? 'Regenerar' : 'Generar'} transcripción desde el contenido
+          </button>
           <button type="button" className="ed-primary" disabled={ttsBusy || !screen.transcript.trim()}
             onClick={onGenerateAudio}
             title={screen.transcript.trim() ? 'Genera el audio con voz a partir de la transcripción' : 'Escribe primero una transcripción'}>

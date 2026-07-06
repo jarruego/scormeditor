@@ -19,6 +19,7 @@ import { useCourseStore } from '../store/courseStore'
 import type { Screen } from '../schema/course.schema'
 import { screenTypeLabel, screenTypeIcon } from '../schema/labels'
 import { validateCourse, type Issue } from '../validation/validators'
+import { InlineRename } from './InlineRename'
 
 /** Peor severidad de los issues de una pantalla (para el badge del árbol). */
 type ScreenIssues = { errors: number; warnings: number }
@@ -158,6 +159,10 @@ export function CourseTree() {
   const locate = useCourseStore((s) => s.locate)
   const select = useCourseStore((s) => s.selectScreen)
   const finalSelected = useCourseStore((s) => s.selectedScreenId === '__final__')
+  const glossarySelected = useCourseStore((s) => s.selectedScreenId === '__glossary__')
+  const biblioSelected = useCourseStore((s) => s.selectedScreenId === '__bibliography__')
+  const updateModule = useCourseStore((s) => s.updateModule)
+  const updateUnit = useCourseStore((s) => s.updateUnit)
   const [filter, setFilter] = useState('')
 
   // Issues de validación por pantalla (badges ⛔/⚠ en el árbol).
@@ -205,7 +210,10 @@ export function CourseTree() {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         {course.modules.map((m) => (
           <div key={m.id} className="ed-module">
-            <p className="ed-module-title">{m.title}</p>
+            <p className="ed-module-title">
+              <InlineRename value={m.title} title="Renombrar módulo"
+                onChange={(title) => updateModule(m.id, { title })} />
+            </p>
             {m.units.map((u) => {
               const visible = u.screens.filter(matches)
               if (q && visible.length === 0) return null
@@ -213,7 +221,10 @@ export function CourseTree() {
                 // key con el filtro: al (des)activar el filtro se remonta abierto.
                 <details key={`${u.id}-${q ? 'f' : 'n'}`} className="ed-tree-unit" open>
                   <summary className="ed-unit-title">
-                    <span className="ed-unit-name">{u.title}</span>
+                    <span className="ed-unit-name">
+                      <InlineRename value={u.title} title="Renombrar unidad"
+                        onChange={(title) => updateUnit(u.id, { title })} />
+                    </span>
                     <span className="ed-unit-count">{q ? `${visible.length}/${u.screens.length}` : u.screens.length}</span>
                   </summary>
                   <SortableContext items={u.screens.map((s) => s.id)} strategy={verticalListSortingStrategy}>
@@ -232,23 +243,53 @@ export function CourseTree() {
       </DndContext>
 
       {!q && (
-        <div className="ed-module">
-          <p className="ed-module-title">Evaluación</p>
-          <div className="ed-unit">
-            <ul className="ed-screens">
-              <li className={`ed-screen ${finalSelected ? 'is-selected' : ''}`}>
-                <button className="ed-screen-label" onClick={() => select('__final__')}>
-                  <span className="ed-screen-type"><span aria-hidden="true">📝</span> Test</span>
-                  <span className="ed-screen-title">
-                    {course.assessments.final_test
-                      ? course.assessments.final_test.title || 'Test final'
-                      : 'Test final (vacío)'}
-                  </span>
-                </button>
-              </li>
-            </ul>
+        <>
+          <div className="ed-module">
+            <p className="ed-module-title">Evaluación</p>
+            <div className="ed-unit">
+              <ul className="ed-screens">
+                <li className={`ed-screen ${finalSelected ? 'is-selected' : ''}`}>
+                  <button className="ed-screen-label" onClick={() => select('__final__')}>
+                    <span className="ed-screen-type"><span aria-hidden="true">📝</span> Test</span>
+                    <span className="ed-screen-title">
+                      {course.assessments.final_test
+                        ? course.assessments.final_test.title || 'Test final'
+                        : 'Test final (vacío)'}
+                    </span>
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
-        </div>
+
+          <div className="ed-module">
+            <p className="ed-module-title">Materiales</p>
+            <div className="ed-unit">
+              <ul className="ed-screens">
+                <li className={`ed-screen ${glossarySelected ? 'is-selected' : ''}`}>
+                  <button className="ed-screen-label" onClick={() => select('__glossary__')}>
+                    <span className="ed-screen-type"><span aria-hidden="true">📖</span> Glosario</span>
+                    <span className="ed-screen-title">
+                      {course.glossary.length
+                        ? `${course.glossary.length} término${course.glossary.length === 1 ? '' : 's'}`
+                        : 'Vacío'}
+                    </span>
+                  </button>
+                </li>
+                <li className={`ed-screen ${biblioSelected ? 'is-selected' : ''}`}>
+                  <button className="ed-screen-label" onClick={() => select('__bibliography__')}>
+                    <span className="ed-screen-type"><span aria-hidden="true">🔗</span> Recursos</span>
+                    <span className="ed-screen-title">
+                      {course.bibliography.length
+                        ? `${course.bibliography.length} referencia${course.bibliography.length === 1 ? '' : 's'}`
+                        : 'Sin referencias'}
+                    </span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

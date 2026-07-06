@@ -235,3 +235,15 @@ button.ed-pill { cursor: pointer; }
 .ed-report-body blockquote { background: #fff8e6; border-left: 4px solid #d09a00; margin: 1rem 0; padding: .5rem 1rem; }
 .ed-report-body code { background: #eef; padding: .1rem .3rem; border-radius: 4px; }
 .ed-report-body .ed-link { text-align: left; }
+
+/* Materiales del curso (Glosario / Recursos y bibliografía) */
+.ed-hint { margin: 0; font-size: .88rem; color: var(--c-muted); }
+.ed-term-row { display: flex; gap: .5rem; align-items: flex-start; padding: .6rem .7rem; border: 1px solid var(--c-border); border-radius: 8px; background: var(--c-surface); }
+.ed-term-fields { flex: 1; display: grid; gap: .5rem; }
+.ed-term-row > button { border: none; background: none; color: var(--c-muted); font-size: 1rem; padding: .2rem .4rem; cursor: pointer; }
+.ed-term-row > button:hover { color: #b3261e; }
+
+/* Renombrado inline (título del curso, módulos y unidades) */
+.ed-rename { border: none; background: none; padding: 0 .25rem; margin-left: .15rem; color: var(--c-muted); font-size: .85rem; cursor: pointer; opacity: .35; }
+.ed-rename:focus, .ed-module-title:hover .ed-rename, .ed-unit-title:hover .ed-rename, .ed-course-name:hover .ed-rename { opacity: 1; }
+.ed-rename-input { font: inherit; width: 100%; min-width: 8rem; padding: .1rem .3rem; border: 1px solid var(--c-primary); border-radius: 4px; }

@@ -38,6 +38,10 @@ export function useIssueTarget(): (i: Issue) => IssueTarget | null {
     }
     if (SETTINGS_CODES.has(i.code))
       return { label: 'Abrir ajustes', go: () => setSettingsModal('course') }
+    if (i.code === 'GLOSSARY_EMPTY')
+      return { label: 'Abrir glosario', go: () => goToScreen('__glossary__') }
+    if (i.code === 'BIBLIO_EMPTY')
+      return { label: 'Abrir bibliografía', go: () => goToScreen('__bibliography__') }
     return null
   }
 }

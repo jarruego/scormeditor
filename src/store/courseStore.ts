@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Course, Screen, ScreenType, UnitTest, ScormConfig, ShellConfig } from '../schema/course.schema'
+import type { Course, Screen, ScreenType, UnitTest, ScormConfig, ShellConfig, GlossaryTerm, BibliographyEntry } from '../schema/course.schema'
 import { Course as CourseSchema, Screen as ScreenSchema } from '../schema/course.schema'
 import { migrate } from '../schema/migrations'
 import { sampleCourse } from '../schema/sample-course'
@@ -73,6 +73,16 @@ interface CourseState {
   updateScorm: (patch: Partial<ScormConfig>) => void
   /** Actualiza la config de la carcasa (marca, color, animaciones…). */
   updateShell: (patch: Partial<ShellConfig>) => void
+  /** Actualiza los metadatos del curso (título principal, subtítulo, entidad…). */
+  updateCourseInfo: (patch: Partial<Course['course']>) => void
+  /** Renombra un módulo (título estructural del menú lateral). */
+  updateModule: (id: string, patch: { title?: string }) => void
+  /** Renombra una unidad (título estructural del menú lateral). */
+  updateUnit: (id: string, patch: { title?: string; summary?: string }) => void
+  /** Reemplaza el glosario completo (edición del panel Glosario). */
+  setGlossary: (terms: GlossaryTerm[]) => void
+  /** Reemplaza la bibliografía completa (panel Recursos y bibliografía). */
+  setBibliography: (entries: BibliographyEntry[]) => void
 
   addAsset: (path: string, blob: Blob) => void
   /** Borra un binario del mapa de assets (irreversible: no entra en el historial). */
@@ -217,6 +227,51 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot()
     const course = clone(get().course)
     course.shell = { ...course.shell, ...patch }
+    set({ course })
+  },
+
+  // Los renombrados y la edición de glosario/bibliografía se coalescen por clave
+  // (como updateScreen): teclear un título entero = un solo paso de deshacer.
+  updateCourseInfo: (patch) => {
+    snapshot('courseinfo')
+    const course = clone(get().course)
+    course.course = { ...course.course, ...patch }
+    set({ course })
+  },
+
+  updateModule: (id, patch) => {
+    if (!get().course.modules.some((x) => x.id === id)) return
+    snapshot(`module:${id}`)
+    const course = clone(get().course)
+    Object.assign(course.modules.find((x) => x.id === id)!, patch)
+    set({ course })
+  },
+
+  updateUnit: (id, patch) => {
+    if (!get().course.modules.some((m) => m.units.some((u) => u.id === id))) return
+    snapshot(`unit:${id}`)
+    const course = clone(get().course)
+    for (const m of course.modules) {
+      const u = m.units.find((x) => x.id === id)
+      if (u) {
+        Object.assign(u, patch)
+        break
+      }
+    }
+    set({ course })
+  },
+
+  setGlossary: (terms) => {
+    snapshot('glossary')
+    const course = clone(get().course)
+    course.glossary = terms
+    set({ course })
+  },
+
+  setBibliography: (entries) => {
+    snapshot('bibliography')
+    const course = clone(get().course)
+    course.bibliography = entries
     set({ course })
   },
 

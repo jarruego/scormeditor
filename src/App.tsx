@@ -6,6 +6,7 @@ import { Toolbar } from './components/Toolbar'
 import { CourseTree } from './components/CourseTree'
 import { ScreenEditor } from './components/ScreenEditor'
 import { FinalTestEditor } from './components/FinalTestEditor'
+import { GlossaryEditor, BibliographyEditor } from './components/MaterialsEditor'
 import { ValidationPanel } from './components/ValidationPanel'
 import { StudentPreview } from './components/StudentPreview'
 import { ReportPanel } from './components/ReportPanel'
@@ -14,7 +15,11 @@ import { ConfirmModal } from './components/ConfirmModal'
 export function App() {
   const tab = useCourseStore((s) => s.activeTab)
   const setTab = useCourseStore((s) => s.setActiveTab)
-  const selectedFinal = useCourseStore((s) => s.selectedScreenId === '__final__')
+  // Entradas sintéticas del árbol (no son pantallas): test final y materiales.
+  const selectedSynthetic = useCourseStore((s) =>
+    s.selectedScreenId === '__final__' || s.selectedScreenId === '__glossary__' || s.selectedScreenId === '__bibliography__'
+      ? s.selectedScreenId
+      : null)
 
   useEffect(() => {
     initAutoSave()
@@ -69,7 +74,12 @@ export function App() {
           </aside>
         )}
         <section className="ed-content">
-          {tab === 'editor' && (selectedFinal ? <FinalTestEditor /> : <ScreenEditor />)}
+          {tab === 'editor' && (
+            selectedSynthetic === '__final__' ? <FinalTestEditor />
+            : selectedSynthetic === '__glossary__' ? <GlossaryEditor />
+            : selectedSynthetic === '__bibliography__' ? <BibliographyEditor />
+            : <ScreenEditor />
+          )}
           {tab === 'preview' && <StudentPreview />}
           {tab === 'validation' && <ValidationPanel />}
           {tab === 'report' && <ReportPanel />}

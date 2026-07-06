@@ -8,6 +8,18 @@ la **base de la narración**. En el runtime se muestra como **botón fuera del c
 (`toggleTranscript` en `app.js`), nunca duplicado dentro del cuerpo. No se genera solo:
 lo que no esté en `transcript` no aparece ahí (regla de contenido del GPT).
 
+### Regenerar desde el contenido (jul 2026)
+`buildTranscript(screen)` (`src/tts/buildTranscript.ts`) reconstruye la transcripción a
+partir de `student_text` (markdown ligero → texto plano: quita `**`/`*`/enlaces, aplana
+listas, y sustituye los fences `:::` por la **etiqueta hablada** del callout — mismas
+etiquetas que `renderer.js`, mantener en sync) **más el contenido de la interacción si es
+informativa** (`accordion`/`tabs`/`flip_cards`/`timeline`/`flashcards`, que contienen
+texto del curso). Las evaluables se excluyen: no se leen opciones/respuestas.
+Botón «↻ Regenerar transcripción desde el contenido» en `ScreenEditor`
+(`onRebuildTranscript`): si hay transcripción distinta pide confirmación de sobrescritura;
+si la pantalla tiene `audio_src`, tras regenerar avisa de que **el audio ya no se
+corresponde** y ofrece regenerarlo con TTS en el momento (o mantenerlo, dejando un aviso).
+
 ## Narración por diapositiva (`screen.audio_src`)
 Audio propio de la pantalla (ruta en `assets/media`), **separado del media visual**. El
 runtime lo inyecta con `narrationBlock()` (renderer.js) como `<audio class=

@@ -8,6 +8,13 @@ El panel central (`App.tsx`) muestra `ScreenEditor` salvo cuando el nodo selecci
 - **`__final__`** (nodo «Evaluación → Test final») → `FinalTestEditor`: edita
   `assessments.final_test` (título, `pass_score`, preguntas/opciones/feedback y
   `learning_objective` por pregunta) vía `setFinalTest` del store.
+- **`__glossary__`** y **`__bibliography__`** (sección «Materiales» del árbol, jul 2026) →
+  `GlossaryEditor` / `BibliographyEditor` (`MaterialsEditor.tsx`): editan `course.glossary`
+  (término+definición, botón «A→Z» de orden alfabético) y `course.bibliography` (cita+URL
+  opcional) vía `setGlossary`/`setBibliography` (reemplazo completo, coalescido en el
+  historial). Eliminar una entrada con contenido pide confirmación (`confirmDialog`). Los
+  avisos `GLOSSARY_EMPTY`/`BIBLIO_EMPTY` de Validación enlazan a estos editores
+  (`useIssueTarget`). En la carcasa se ven en los modales «Glosario»/«Recursos».
 
 ### Objetivo vinculado = desplegable, no texto libre
 El campo «Objetivo vinculado» (interacción del `ScreenEditor` y pregunta del
@@ -72,8 +79,17 @@ resuelven a object URL desde `assets` (hook `useObjectUrl`, que libera con
 subido, muestra un aviso en vez de romper.
 
 `CourseTree` (`src/components/CourseTree.tsx`): módulos → unidades → pantallas
-(reordenables con dnd-kit) + una sección «Evaluación» con el nodo del test final. Añadir
-pantalla por unidad; duplicar/eliminar por pantalla.
+(reordenables con dnd-kit) + secciones «Evaluación» (test final) y «Materiales»
+(glosario/bibliografía). Añadir pantalla por unidad; duplicar/eliminar por pantalla.
+
+### Renombrado inline de títulos estructurales (jul 2026)
+Los títulos que no son de pantalla se editan **in situ** con `InlineRename`
+(`src/components/InlineRename.tsx`): lápiz ✏ → input; Enter/blur confirma, Escape
+restaura. Se usa en el **título del curso** (`.ed-course-name` de la `Toolbar` →
+`updateCourseInfo({title})`), en **módulos** (`updateModule`) y en **unidades**
+(`updateUnit`); las tres acciones coalescen el tecleo en el historial (claves
+`courseinfo`/`module:<id>`/`unit:<id>`). El componente detiene la propagación de los
+clics para poder vivir dentro del `<summary>` de la unidad sin plegarla.
 
 ### Árbol: plegado, filtro, iconos y plantillas (fase 3, jul 2026)
 - **Unidades plegables**: cada unidad es un `<details className="ed-tree-unit" open>` con

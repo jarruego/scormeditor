@@ -10,6 +10,7 @@ import {
   saveProjectAs,
 } from '../store/autosave'
 import { CourseSettingsModal, AppearanceModal, NarrationModal } from './SettingsModal'
+import { InlineRename } from './InlineRename'
 
 const DISCARD_MSG =
   'Esto reemplazará el curso que tienes abierto. Los cambios que no hayas guardado en el archivo de proyecto se perderán. ¿Continuar?'
@@ -29,6 +30,7 @@ export function Toolbar() {
   const canUndo = useCourseStore((s) => s.past.length > 0)
   const canRedo = useCourseStore((s) => s.future.length > 0)
   const setActiveTab = useCourseStore((s) => s.setActiveTab)
+  const updateCourseInfo = useCourseStore((s) => s.updateCourseInfo)
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   // Qué ventana de ajustes está abierta. Vive en el store para que Validación
@@ -98,7 +100,11 @@ export function Toolbar() {
   return (
     <header className="ed-toolbar">
       <strong className="ed-logo">SCORMEditor</strong>
-      <span className="ed-course-name">{course.course.title || 'Curso sin título'}</span>
+      <span className="ed-course-name">
+        <InlineRename value={course.course.title} placeholder="Curso sin título"
+          title="Renombrar el curso (título principal del SCORM)"
+          onChange={(title) => updateCourseInfo({ title })} />
+      </span>
 
       {/* Estado del documento: un único concepto de guardado = el archivo. */}
       <button

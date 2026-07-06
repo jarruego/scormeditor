@@ -250,11 +250,13 @@ export const GlossaryTerm = z.object({
   definition: z.string(),
   source_refs: z.array(SourceRef).default([]),
 })
+export type GlossaryTerm = z.infer<typeof GlossaryTerm>
 
 export const BibliographyEntry = z.object({
   ref: z.string(),
   url: z.string().optional(),
 })
+export type BibliographyEntry = z.infer<typeof BibliographyEntry>
 
 // ----------------------------------------------------------------------------
 // Configuración SCORM y carcasa
