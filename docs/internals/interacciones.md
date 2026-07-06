@@ -28,6 +28,9 @@ ese contrato; no conoce el tipo concreto.
 - **Cuerpos de `accordion`/`tabs` en bloque**: usan `block()` (→ `Renderer.mdToHtml`, no
   `rich()`), así una lista `- ` dentro de un `item` sale como `<ul>`, no en línea. El
   resto de textos cortos (títulos, opciones, cards) siguen con `rich()` (inline).
+- **Desplegables exclusivos** (jul 2026): en `accordion` y `timeline`, abrir un ítem
+  cierra los demás de la misma interacción (el clic recorre los `heads` hermanos). No
+  afecta a la impresión: `setupPrint` abre todos tocando atributos, sin disparar clics.
 - **Posición respecto al texto**: `screen.interaction_layout` (`top`/`bottom`, def.
   `bottom`). `render()` (renderer.js) mueve `.me-interaction` tras el `<h1>` cuando es
   `top`. Editable en `ScreenEditor`.

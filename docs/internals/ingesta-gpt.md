@@ -54,10 +54,15 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   accordion/tabs, 1ª línea del cuerpo): es maquetación, no contenido. **Jerarquía**:
   sub-epígrafes hermanos con el mismo nivel `###` (ninguno degradado a línea numerada
   en negrita) y ninguna pantalla arranca con contenido residual del epígrafe anterior.
-  **`cover` = solo portada** (título/subtítulo; la intro va en la 1ª de contenido).
-  **Bibliografía solo en `bibliography[]`** (la carcasa la muestra en el modal
-  «Recursos y bibliografía», `app.js`; nunca pantalla «Referencias»), una entrada
-  limpia por referencia. **Negritas**: la
+  **`cover` = solo portada** (título/subtítulo; la intro va en la 1ª de contenido)
+  pero **con el número del tema visible** («Tema 1», «Tema 2»… en `subtitle` o
+  antepuesto al título). **Ejercicios prácticos en pantalla propia**: `case_practice`/
+  `reflection` y callouts con tarea (`::: case`/`::: reflect`) nunca pegados al final
+  de una pantalla de contenido; el ejercicio va en la pantalla siguiente con solo su
+  enunciado. **Bibliografía solo en `bibliography[]`** (la carcasa la muestra en el
+  modal «Recursos y bibliografía», `app.js`; nunca pantalla «Referencias»), una entrada
+  limpia por referencia y **todas con formato homogéneo** (`Autor/Entidad (año).
+  Título. Fuente.`), normalizando aunque el original sea desordenado. **Negritas**: la
   extracción con `get_text("dict")` debe detectar la negrita por `span.flags & 16` o
   fuente con `Bold`/`Black`/`Semibold` y re-emitirla como `**...**` (helper
   `extract_text_markdown` en el contrato §11); el texto plano las pierde. (4) Interacciones

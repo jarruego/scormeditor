@@ -117,12 +117,16 @@
     });
     html += '</div>';
     el.innerHTML = html;
-    el.querySelectorAll('.me-acc-head').forEach(function (btn) {
+    var heads = [].slice.call(el.querySelectorAll('.me-acc-head'));
+    heads.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var open = btn.getAttribute('aria-expanded') === 'true';
-        btn.setAttribute('aria-expanded', String(!open));
-        var body = document.getElementById(btn.getAttribute('aria-controls'));
-        body.hidden = open;
+        // Exclusivo: al abrir uno se cierran los demás
+        heads.forEach(function (other) {
+          var on = other === btn && !open;
+          other.setAttribute('aria-expanded', String(on));
+          document.getElementById(other.getAttribute('aria-controls')).hidden = !on;
+        });
       });
     });
     return { result: function () { return { completed: true, scored: false }; } };
@@ -699,11 +703,16 @@
     });
     html += '</ol>';
     el.innerHTML = html;
-    el.querySelectorAll('.me-tl-head').forEach(function (btn) {
+    var heads = [].slice.call(el.querySelectorAll('.me-tl-head'));
+    heads.forEach(function (btn) {
       btn.addEventListener('click', function () {
         var open = btn.getAttribute('aria-expanded') === 'true';
-        btn.setAttribute('aria-expanded', String(!open));
-        document.getElementById(btn.getAttribute('aria-controls')).hidden = open;
+        // Exclusivo: al abrir un hito se cierran los demás
+        heads.forEach(function (other) {
+          var on = other === btn && !open;
+          other.setAttribute('aria-expanded', String(on));
+          document.getElementById(other.getAttribute('aria-controls')).hidden = !on;
+        });
       });
     });
     return { result: function () { return { completed: true, scored: false }; } };

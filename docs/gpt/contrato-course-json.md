@@ -155,7 +155,15 @@ Reglas que NO se pueden romper:
   `video`, `reflection`, `forum_prompt`, `unit_quiz`, `content_placeholder`.
 - **`cover` = solo portada**: `title` + `subtitle` (y una imagen si procede), **sin
   contenido didáctico**. Los párrafos de introducción («En la unidad anterior vimos…»)
-  van en la **primera pantalla `content`** del tema, nunca en la `cover`.
+  van en la **primera pantalla `content`** del tema, nunca en la `cover`. En la `cover`
+  **sí debe figurar el número del tema** («Tema 1», «Tema 2»…): ponlo en el `subtitle`
+  o antepuesto al título («Tema 1. Herramientas…»), para que el alumno sepa dónde está.
+- **Los ejercicios prácticos van en su propia pantalla.** `case_practice`, `reflection`
+  y los callouts con tarea (`::: case`, `::: reflect` que proponen un ejercicio) **no se
+  pegan al final de una pantalla de contenido** (mal: «Errores y práctica» = lista de
+  errores + caso en la misma pantalla). El contenido va en su pantalla y el ejercicio en
+  la **siguiente**, cuyo `student_text` es solo el enunciado/introducción del propio
+  ejercicio.
 - `objective`: texto libre (NO `objective_id`). Si tu herramienta maneja
   micro‑objetivos por id, **vuelca aquí el texto del objetivo**. Los objetivos del
   curso forman un **conjunto reducido y controlado**: derívalos del contenido real, de
@@ -528,8 +536,13 @@ preguntas.
   en el modal «Recursos y bibliografía» (una entrada por línea). **NO crees una
   pantalla `content` «Referencias»** con las citas apelotonadas en un párrafo.
 - **Una entrada de `bibliography[]` por referencia** (nunca varias citas en un mismo
-  `ref`), con el texto limpio y los espacios correctos: `Autor, A. (año): Título.
-  Editorial/Revista.` — nada de `«(2010):La atención»` sin espacio ni citas pegadas.
+  `ref`), con el texto limpio y los espacios correctos: nada de `«(2010):La atención»`
+  sin espacio ni citas pegadas.
+- **Formato homogéneo en TODAS las entradas**, mismo orden y puntuación:
+  `Autor/Entidad (año). Título. Revista/Editorial, datos.` Si el original no trae el
+  año, omítelo manteniendo el resto del patrón (`Entidad. Título.`). No mezcles estilos
+  (unas con `(año):`, otras con el título entre comillas, otras empezando por el
+  título): **normaliza todas al mismo patrón** aunque la fuente sea desordenada.
 - `quality_checklist`: **objeto** `criterio → booleano`.
 
 ---

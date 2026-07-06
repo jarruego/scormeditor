@@ -75,10 +75,14 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   encabezados `## `/`### ` con solo el título en su línea; sub-epígrafes hermanos con
   el **mismo nivel** de encabezado (ninguno degradado a `3. **…**`); ninguna pantalla
   arranca con contenido residual del epígrafe anterior.
-- **Estructura**: `cover` solo portada (sin párrafos de contenido); bibliografía
-  **solo** en `bibliography[]` (la carcasa la muestra sola; sin pantalla
-  «Referencias»), una entrada limpia por referencia; interacciones informativas
-  **variadas** (no todo `accordion`; `tabs`/`flip_cards` solo con ≤4 ítems).
+- **Estructura**: `cover` solo portada, con el **número del tema visible** («Tema 1»,
+  «Tema 2»… en `subtitle` o antepuesto al título) y sin párrafos de contenido;
+  ejercicios prácticos (`case_practice`/`reflection`, `::: case`/`::: reflect`) en
+  **pantalla propia**, no pegados tras el contenido; bibliografía **solo** en
+  `bibliography[]` (la carcasa la muestra sola; sin pantalla «Referencias»), una
+  entrada por referencia con **formato homogéneo** (`Autor/Entidad (año). Título.
+  Fuente.`); interacciones informativas **variadas** (no todo `accordion`;
+  `tabs`/`flip_cards` solo con ≤4 ítems).
 - **Contenido íntegro (Regla Nº1)**: texto conservado ~100% (ratio ≥0.95);
   `quality_checklist`: `"Contenido del documento trazado sin pérdidas": true`.
 - **Negritas (check automático, OBLIGATORIO)**: si el PDF fuente tiene texto en negrita

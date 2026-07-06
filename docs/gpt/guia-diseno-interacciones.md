@@ -153,6 +153,13 @@ pantalla, no «Áreas clave (1)» / «(2)». Lo mismo con `tabs`/`flip_cards`. D
 para colocarla **encima** del texto, cuando el manual fuente presente antes la actividad
 y luego el desarrollo (también ajustable en el editor).
 
+**Los ejercicios prácticos, en pantalla propia.** `case_practice`, `reflection` y los
+callouts con tarea (`::: case`, `::: reflect` que proponen un ejercicio al alumno) no
+se pegan al final de una pantalla de contenido: el contenido del tema va en su
+pantalla y el ejercicio en la **siguiente** (mismo `title` si continúa el apartado),
+con solo su enunciado/introducción. Una pantalla «lista de errores + caso práctico
+debajo» son **dos** pantallas.
+
 ### Cadencia de interactividades
 No en cada pantalla, pero **sí con frecuencia**. Usa:
 - **Informativas** (accordion/tabs/flip_cards) para el contenido denso/estructurado
