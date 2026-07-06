@@ -45,12 +45,17 @@ desplegable sigue mandando.
   - **Curso (Finalización)** → `CourseSettingsModal` con `CourseSettingsSection`
     (antes `CourseSettingsEditor`): `scorm.rules` + `mastery_score` (nota mínima,
     `score_source`, `mixed_final_weight`, % pantallas, `require_interactions`, intentos,
-    navegación) vía `updateScorm`.
+    navegación) vía `updateScorm`. Incluye la herramienta **«Tiempo mínimo por pantalla»**
+    (jul 2026): input 0–30 s + «Aplicar a todas las pantallas» → `setAllMinTime` del store
+    (un solo paso de deshacer). El valor del input NO se persiste (es una herramienta de
+    lote, no un campo de `course.json`); sobrescribe el `min_time_seconds` de cada
+    pantalla tras `confirmDialog`.
   - **Interfaz (Apariencia)** → `AppearanceModal` con `AppearanceSection`: preferencias de
     presentación de la carcasa (`shell`) vía `updateShell` — **Marca y color**
     (`shell.brand`, `shell.primary_color` con picker `input[type=color]` + campo hex
     `.ed-color-row`; el runtime ya los aplicaba en `applyShell`) y **Animaciones**
-    (`shell.motion`, none/subtle/rich; ver `arquitectura-runtime.md`). Decisión: la
+    (`shell.motion`, none/subtle/rich, y `shell.motion_speed`, fast/normal/slow;
+    ver `arquitectura-runtime.md`). Decisión: la
     apariencia NO va con finalización — es config de interfaz, con ventana propia.
   - **Narración (Audio IA)** → `NarrationModal` con `NarrationSection` (antes `TtsPanel`):
     config TTS (localStorage) y generación masiva de audio; ver `tts-narracion.md`.

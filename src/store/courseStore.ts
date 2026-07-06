@@ -73,6 +73,8 @@ interface CourseState {
   updateScorm: (patch: Partial<ScormConfig>) => void
   /** Actualiza la config de la carcasa (marca, color, animaciones…). */
   updateShell: (patch: Partial<ShellConfig>) => void
+  /** Pone el mismo tiempo mínimo (s) en TODAS las pantallas del curso. */
+  setAllMinTime: (seconds: number) => void
   /** Actualiza los metadatos del curso (título principal, subtítulo, entidad…). */
   updateCourseInfo: (patch: Partial<Course['course']>) => void
   /** Renombra un módulo (título estructural del menú lateral). */
@@ -227,6 +229,15 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot()
     const course = clone(get().course)
     course.shell = { ...course.shell, ...patch }
+    set({ course })
+  },
+
+  setAllMinTime: (seconds) => {
+    snapshot()
+    const course = clone(get().course)
+    for (const m of course.modules)
+      for (const u of m.units)
+        for (const s of u.screens) s.min_time_seconds = seconds
     set({ course })
   },
 

@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
+import { confirmDialog } from '../store/confirm'
 import type { ScormConfig } from '../schema/course.schema'
 
 /**
@@ -83,9 +85,25 @@ export function CourseSettingsSection() {
   const scorm = useCourseStore((s) => s.course.scorm)
   const updateScorm = useCourseStore((s) => s.updateScorm)
   const hasFinal = useCourseStore((s) => !!s.course.assessments.final_test)
+  const screenCount = useCourseStore((s) =>
+    s.course.modules.reduce((n, m) => n + m.units.reduce((k, u) => k + u.screens.length, 0), 0))
+  const setAllMinTime = useCourseStore((s) => s.setAllMinTime)
+  // Tiempo a aplicar en lote (no se persiste: es una herramienta, no un ajuste).
+  const [bulkTime, setBulkTime] = useState(0)
 
   const setRule = (p: Partial<ScormConfig['rules']>) => updateScorm({ rules: { ...scorm.rules, ...p } })
   const r = scorm.rules
+
+  async function onApplyMinTime() {
+    const secs = Math.max(0, Math.min(30, Math.round(bulkTime)))
+    setBulkTime(secs)
+    const ok = await confirmDialog({
+      title: 'Aplicar tiempo mínimo a todas',
+      message: `Se pondrá un tiempo mínimo de ${secs} segundo${secs === 1 ? '' : 's'} en las ${screenCount} pantallas del curso, sustituyendo el valor que tenga cada una. Puedes deshacerlo con Ctrl+Z.`,
+      confirmLabel: 'Aplicar a todas',
+    })
+    if (ok) setAllMinTime(secs)
+  }
 
   return (
     <>
@@ -155,6 +173,25 @@ export function CourseSettingsSection() {
             <span>Permitir reanudar donde lo dejó</span>
           </label>
         </div>
+      </fieldset>
+
+      <fieldset className="ed-group">
+        <legend>Tiempo mínimo por pantalla</legend>
+        <div className="ed-row">
+          <label className="ed-field ed-field-narrow">
+            <span>Segundos (0–30)</span>
+            <input type="number" min={0} max={30} value={bulkTime}
+              onChange={(e) => setBulkTime(Number(e.target.value))} />
+          </label>
+          <button type="button" style={{ alignSelf: 'flex-end' }} onClick={() => void onApplyMinTime()}>
+            Aplicar a todas las pantallas
+          </button>
+        </div>
+        <p style={{ margin: 0, fontSize: '.85rem', color: 'var(--c-muted)' }}>
+          Pone el mismo «Tiempo mín. (s)» en las {screenCount} pantallas del curso (el alumno no
+          puede avanzar hasta agotarlo). Sustituye el valor individual de cada pantalla; después
+          puedes afinar pantallas concretas en su editor.
+        </p>
       </fieldset>
 
       <fieldset className="ed-group">
