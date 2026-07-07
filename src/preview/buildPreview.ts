@@ -23,6 +23,7 @@ export function buildPreviewHtml(course: Course, assetUrls: Record<string, strin
   const jsOrder = [
     'assets/js/scorm_api.js',
     'assets/js/accessibility.js',
+    'assets/js/icons.js',
     'assets/js/interactions.js',
     'assets/js/renderer.js',
     'assets/js/app.js',

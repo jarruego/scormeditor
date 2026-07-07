@@ -48,9 +48,27 @@ body {
 .me-topbar .me-tools { margin-left: auto; }
 
 /* Body */
-.me-body { display: grid; grid-template-columns: 280px 1fr; overflow: hidden; }
+.me-body { display: grid; grid-template-columns: 280px 1fr; overflow: hidden; position: relative; }
 #me-app.me-menu-hidden .me-body { grid-template-columns: 0 1fr; }
 #me-app.me-menu-hidden .me-menu { transform: translateX(-100%); }
+
+/* Pestaña de plegado del índice: asa gris plana pegada al borde derecho del
+   menú (flecha ◂). Con el menú plegado asoma en el lateral izquierdo (flecha ▸).
+   Convive con el botón ☰ de la barra superior: ambos llaman a toggleMenu(). */
+.me-menu-tab {
+  position: absolute; top: 50%; left: 280px; transform: translateY(-50%);
+  z-index: 30; width: 20px; height: 60px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--me-border); color: var(--me-muted);
+  border: none; border-radius: 0 8px 8px 0; cursor: pointer;
+  font-size: .8rem; line-height: 1;
+  transition: left .25s ease, background .15s ease;
+}
+.me-menu-tab:hover { background: color-mix(in srgb, var(--me-muted) 25%, var(--me-border)); color: var(--me-text); }
+.me-menu-tab:focus-visible { outline: 3px solid var(--me-primary); outline-offset: 1px; }
+.me-menu-tab-arrow { display: inline-flex; }
+.me-menu-tab .me-ico { width: 15px; height: 15px; }
+#me-app.me-menu-hidden .me-menu-tab { left: 0; }
 
 .me-menu {
   background: var(--me-surface); border-right: 1px solid var(--me-border);
@@ -80,12 +98,26 @@ body {
 /* Tarjeta de pantalla: elevación con sombra suave + filo superior de acento.
    Entra con un fade+slide sutil en cada navegación (el nodo se recrea). */
 .me-screen {
+  position: relative; /* ancla de la etiqueta «Evaluable» (.me-scored-badge) */
+  /* Altura mínima estándar de diapositiva SCORM (~960×540 de las herramientas
+     de autor): evita tarjetas raquíticas en pantallas con poco contenido. */
+  min-height: clamp(360px, 60vh, 540px);
   max-width: 820px; margin: 0 auto; background: var(--me-surface);
   padding: 1.75rem 2rem 2rem; border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--me-border) 55%, transparent);
   border-top: 4px solid var(--me-accent);
   box-shadow: var(--me-shadow-1);
   animation: me-screen-in calc(var(--me-anim-dur, .22s) * var(--me-speed, 1)) ease-out;
+}
+/* Etiqueta «Evaluable»: píldora discreta en la esquina superior derecha de la
+   tarjeta cuando la pantalla puntúa (interaction.scored). Azul de acción, no
+   turquesa, para que no se funda con el filo superior de la tarjeta. */
+.me-scored-badge {
+  position: absolute; top: .65rem; right: .75rem;
+  font-size: .72rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase;
+  padding: .18rem .6rem; border-radius: 99px;
+  background: color-mix(in srgb, var(--me-primary) 10%, white);
+  color: var(--me-primary);
 }
 @keyframes me-screen-in {
   from { opacity: 0; transform: translateY(10px); }
@@ -155,6 +187,13 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 /* Toolbar */
 .me-toolbar { display: flex; align-items: center; gap: .75rem; padding: .6rem .9rem; background: var(--me-surface); border-top: 1px solid var(--me-border); flex-wrap: wrap; }
 .me-tools { display: flex; gap: .4rem; flex-wrap: wrap; }
+/* Iconos SVG del set propio (icons.js): heredan currentColor y se centran en
+   línea con el texto del botón. */
+.me-ico { width: 17px; height: 17px; display: block; }
+.me-tool-ico { margin-right: .4rem; display: inline-flex; }
+.me-tools .me-btn { display: inline-flex; align-items: center; justify-content: center; }
+.me-icon-btn [data-icon] { display: inline-flex; }
+.me-icon-btn .me-ico { width: 19px; height: 19px; }
 /* Barra de progreso entre Anterior y Siguiente: más gruesa y en un color propio
    (turquesa corporativo), distinto del azul de los botones. Muestra la posición
    (nº actual / total) centrada.
@@ -179,7 +218,7 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-check { display: block; margin: 1.1rem auto .2rem; padding: .55rem 1.8rem; background: var(--me-primary); color: #fff; border-color: var(--me-primary); font-weight: 600; }
 .me-check:hover:not(:disabled) { background: color-mix(in srgb, var(--me-primary) 88%, black); }
 .me-ghost { background: transparent; }
-.me-icon-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: .25rem .5rem; border-radius: 6px; }
+.me-icon-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: .25rem .5rem; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
 .me-icon-btn:hover { background: var(--me-bg); }
 .me-btn:focus-visible, .me-icon-btn:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--me-primary); outline-offset: 2px; }
 
@@ -405,15 +444,21 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
   .me-menu { position: absolute; top: 0; bottom: 0; left: 0; z-index: 40; width: 82%; max-width: 320px;
     box-shadow: 4px 0 18px rgba(0,0,0,.28); transform: translateX(-100%); }
   #me-app:not(.me-menu-hidden) .me-menu { transform: translateX(0); }
+  /* En móvil el menú es un slide-over y basta con el ☰: la pestaña sobra. */
+  .me-menu-tab { display: none; }
 
-  /* Barra superior compacta; las herramientas pasan a una fila propia */
+  /* Barra superior compacta; las herramientas quedan en la misma fila, solo
+     con el icono (texto oculto, aria-label en cada botón) y pegadas a la
+     derecha de la cabecera. */
   .me-topbar { gap: .5rem; padding: .5rem .6rem; flex-wrap: wrap; }
   .me-brand { font-size: .95rem; }
-  .me-topbar .me-tools { order: 5; width: 100%; margin-left: 0; justify-content: center; }
+  .me-topbar .me-tools { margin-left: auto; gap: .2rem; }
+  .me-tools .me-tool-txt { display: none; }
+  .me-tool-ico { margin-right: 0; }
 
-  /* Contenido con menos margen */
+  /* Contenido con menos margen; altura mínima más contenida en móvil */
   .me-content { padding: .9rem .8rem; }
-  .me-screen { padding: 1rem; }
+  .me-screen { padding: 1rem; min-height: clamp(260px, 50vh, 440px); }
   .me-screen h1 { font-size: 1.25rem; }
 
   /* Barra de navegación: Anterior · progreso · Siguiente en una fila */
@@ -421,7 +466,8 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 
   /* Objetivos táctiles cómodos (>=44px) */
   .me-btn, .me-icon-btn { min-height: 44px; }
-  .me-tools .me-btn { min-height: 40px; padding: .45rem .7rem; }
+  /* Botones de herramientas al ancho mínimo: solo el icono, sin borde */
+  .me-tools .me-btn { min-height: 40px; min-width: 40px; padding: .3rem .4rem; border: none; }
   .me-menu-link { padding: .6rem .5rem; }
   .me-choice, .me-acc-head, .me-card { min-height: 44px; }
 }

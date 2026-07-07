@@ -217,8 +217,13 @@
   function render(container, screen, ctx) {
     var tpl = templates[screen.type] || templates.content;
     var html = tpl(screen);
+    // Etiqueta «Evaluable» en la esquina superior derecha de la tarjeta cuando
+    // la pantalla tiene una interacción que puntúa (interaction.scored) y las
+    // actividades cuentan para la nota (ctx.showScoredBadge, según score_source).
+    var badge = ctx && ctx.showScoredBadge && screen.interaction && screen.interaction.scored
+      ? '<span class="me-scored-badge">Evaluable</span>' : '';
     container.innerHTML = '<article class="me-screen me-screen-' + esc(screen.type) + '">' +
-      narrationBlock(screen) + html +
+      badge + narrationBlock(screen) + html +
       (screen.interaction ? '<section class="me-interaction" aria-label="Actividad"></section>' : '') + '</article>';
 
     var controller = null;

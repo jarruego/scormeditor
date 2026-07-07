@@ -23,6 +23,7 @@ export function generateManifest(course: Course, extraFiles: string[] = []): str
     'assets/css/styles.css',
     'assets/js/scorm_api.js',
     'assets/js/accessibility.js',
+    'assets/js/icons.js',
     'assets/js/interactions.js',
     'assets/js/renderer.js',
     'assets/js/app.js',

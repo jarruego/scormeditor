@@ -119,6 +119,39 @@ que lo etiquete).
 - **Menú con progreso por unidad**: `buildMenu` marca cada unidad con
   `data-start`/`data-count`; `refreshMenuChecks` rellena el contador «hechas/total»
   (`.me-menu-count`) y la mini-barra (`.me-menu-uprog`).
+- **Iconos SVG propios** (`assets/js/icons.js`, jul 2026): mini-set con paths de
+  **Feather Icons** (MIT), trazo 2px, 24×24, `stroke: currentColor`. Declarativo:
+  cualquier `[data-icon="nombre"]` se rellena al cargar (`MEIcons.hydrate`);
+  programático: `MEIcons.svg('printer')`. Tamaño por CSS sobre `.me-ico`. Pensado para
+  reutilizarse (p. ej. futuros iconos de callouts). ⚠ Un fichero JS nuevo del runtime
+  hay que añadirlo en TRES sitios: `index.html`, `jsOrder` de `buildPreview.ts` y
+  `baseFiles` de `manifest.ts` (el glob del ZIP lo copia solo, pero el manifiesto y la
+  preview tienen listas fijas).
+- **Herramientas de la topbar con icono** (jul 2026): cada botón de `.me-tools` es
+  `<span class="me-tool-ico" data-icon="…">` + `<span class="me-tool-txt">`
+  (file-text Transcripción, volume-on/off Audio, book-open Glosario, paperclip
+  Recursos, printer Imprimir; el ☰ es `menu`, la ayuda `help-circle` y la pestaña del
+  índice `chevron-left/right`). En móvil el texto se oculta y quedan solo los iconos al
+  ancho mínimo, alineados a la derecha de la cabecera (ya no bajan a una fila propia);
+  el nombre accesible lo da el `aria-label` fijo de cada botón. `reflectAudioButton` y
+  `reflectMenuUI` (app.js) regeneran solo el span del icono vía `MEIcons.svg`.
+- **Altura mínima de la tarjeta** (jul 2026): `.me-screen` lleva
+  `min-height: clamp(360px, 60vh, 540px)` (móvil: `clamp(260px, 50vh, 440px)`) para que
+  las pantallas con poco contenido no queden raquíticas. El techo de 540 px viene del
+  formato clásico 960×540 de las herramientas de autor SCORM. En impresión se anula
+  (`min-height: 0` en print.css).
+- **Etiqueta «Evaluable»** (jul 2026): píldora `.me-scored-badge` en la esquina superior
+  derecha de la tarjeta `.me-screen` cuando `interaction.scored` es true (la inserta
+  `render()` en renderer.js). Solo se muestra si las actividades cuentan para la nota:
+  app.js pasa `ctx.showScoredBadge` (`score_source !== 'final_test'`). Azul
+  `--me-primary` diluido, no turquesa, para que no se funda con el filo superior de
+  acento de la tarjeta.
+- **Pestaña de plegado del índice** (jul 2026): asa gris plana (`#me-menu-tab`,
+  `.me-menu-tab`) centrada verticalmente en el borde derecho del menú, con flecha ◂;
+  plegado el menú, asoma pegada al lateral izquierdo con ▸. Es un segundo control del
+  mismo `toggleMenu()` que el ☰ de la topbar; `reflectMenuUI()` (app.js) sincroniza
+  `aria-expanded` de ambos y el sentido de la flecha. Solo escritorio (en móvil el
+  slide-over se maneja con el ☰ y la pestaña se oculta); tampoco sale en impresión.
 
 ### Niveles de animación (`shell.motion`, jul 2026)
 `shell.motion` (`none`/`subtle` def./`rich`; editable en ⚙ Ajustes → Interfaz (Apariencia))

@@ -12,22 +12,36 @@
   <div id="me-app" class="me-menu-hidden">
     <!-- Barra superior -->
     <header class="me-topbar" role="banner">
-      <button id="me-toggle-menu" class="me-icon-btn" aria-expanded="false" aria-controls="me-menu" title="Mostrar/ocultar menú (Alt+M)">☰</button>
+      <button id="me-toggle-menu" class="me-icon-btn" aria-expanded="false" aria-controls="me-menu" title="Mostrar/ocultar menú (Alt+M)" aria-label="Mostrar u ocultar el menú"><span data-icon="menu" aria-hidden="true"></span></button>
       <span id="me-brand" class="me-brand">Curso</span>
       <span id="me-course-title" class="me-course-title"></span>
+      <!-- Herramientas: icono SVG (icons.js) + texto; en móvil solo queda el
+           icono (el texto se oculta por CSS), de ahí el aria-label fijo. -->
       <div class="me-tools">
-        <button id="me-btn-transcript" class="me-btn me-ghost" title="Transcripción (Alt+T)">Transcripción</button>
-        <button id="me-btn-audio" class="me-btn me-ghost is-on" aria-pressed="true" title="Activar o desactivar el audio de las diapositivas">🔊 Audio</button>
-        <button id="me-btn-glossary" class="me-btn me-ghost">Glosario</button>
-        <button id="me-btn-resources" class="me-btn me-ghost">Recursos</button>
-        <button id="me-btn-print" class="me-btn me-ghost">Imprimir</button>
+        <button id="me-btn-transcript" class="me-btn me-ghost" title="Transcripción (Alt+T)" aria-label="Transcripción">
+          <span class="me-tool-ico" data-icon="file-text" aria-hidden="true"></span><span class="me-tool-txt">Transcripción</span></button>
+        <button id="me-btn-audio" class="me-btn me-ghost is-on" aria-pressed="true" aria-label="Audio"
+          title="Activar o desactivar el audio de las diapositivas">
+          <span class="me-tool-ico" data-icon="volume-on" aria-hidden="true"></span><span class="me-tool-txt">Audio</span></button>
+        <button id="me-btn-glossary" class="me-btn me-ghost" title="Glosario" aria-label="Glosario">
+          <span class="me-tool-ico" data-icon="book-open" aria-hidden="true"></span><span class="me-tool-txt">Glosario</span></button>
+        <button id="me-btn-resources" class="me-btn me-ghost" title="Recursos" aria-label="Recursos">
+          <span class="me-tool-ico" data-icon="paperclip" aria-hidden="true"></span><span class="me-tool-txt">Recursos</span></button>
+        <button id="me-btn-print" class="me-btn me-ghost" title="Imprimir" aria-label="Imprimir">
+          <span class="me-tool-ico" data-icon="printer" aria-hidden="true"></span><span class="me-tool-txt">Imprimir</span></button>
       </div>
-      <button id="me-btn-help" class="me-icon-btn" title="Ayuda">?</button>
+      <button id="me-btn-help" class="me-icon-btn" title="Ayuda" aria-label="Ayuda"><span data-icon="help-circle" aria-hidden="true"></span></button>
     </header>
 
     <div class="me-body">
       <!-- Menú lateral -->
       <nav id="me-menu" class="me-menu" aria-label="Índice del curso"></nav>
+
+      <!-- Pestaña de plegado del índice (solo escritorio; en móvil queda el ☰) -->
+      <button id="me-menu-tab" class="me-menu-tab" aria-expanded="false" aria-controls="me-menu"
+        aria-label="Mostrar u ocultar el índice" title="Mostrar/ocultar índice (Alt+M)">
+        <span class="me-menu-tab-arrow" data-icon="chevron-right" aria-hidden="true"></span>
+      </button>
 
       <!-- Área principal -->
       <main id="me-content" class="me-content" tabindex="-1" aria-live="polite"></main>
@@ -58,6 +72,7 @@
 
   <script src="assets/js/scorm_api.js"></script>
   <script src="assets/js/accessibility.js"></script>
+  <script src="assets/js/icons.js"></script>
   <script src="assets/js/interactions.js"></script>
   <script src="assets/js/renderer.js"></script>
   <script src="assets/js/app.js"></script>

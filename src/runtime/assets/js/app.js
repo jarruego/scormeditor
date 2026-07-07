@@ -89,10 +89,8 @@
     }
     if (SCORM.getStatus() === 'not attempted') SCORM.setStatus('incomplete');
     // En móvil el menú lateral arranca cerrado para no tapar el contenido.
-    if (isMobile()) {
-      document.getElementById('me-app').classList.add('me-menu-hidden');
-      document.getElementById('me-toggle-menu').setAttribute('aria-expanded', 'false');
-    }
+    if (isMobile()) document.getElementById('me-app').classList.add('me-menu-hidden');
+    reflectMenuUI();
     goTo(current, true);
   }
 
@@ -100,7 +98,7 @@
   function closeMenuIfMobile() {
     if (isMobile()) {
       document.getElementById('me-app').classList.add('me-menu-hidden');
-      document.getElementById('me-toggle-menu').setAttribute('aria-expanded', 'false');
+      reflectMenuUI();
     }
   }
 
@@ -163,6 +161,7 @@
     document.getElementById('me-prev').addEventListener('click', function () { goRelative(-1); });
     document.getElementById('me-next').addEventListener('click', function () { goRelative(1); });
     document.getElementById('me-toggle-menu').addEventListener('click', toggleMenu);
+    document.getElementById('me-menu-tab').addEventListener('click', toggleMenu);
     document.getElementById('me-btn-transcript').addEventListener('click', toggleTranscript);
     document.getElementById('me-btn-audio').addEventListener('click', toggleAudio);
     reflectAudioButton();
@@ -322,6 +321,9 @@
           refreshNavState();
         },
         announce: A11Y.announce,
+        // La etiqueta «Evaluable» solo tiene sentido si las actividades cuentan
+        // para la nota; con score_source 'final_test' puntúa solo el test final.
+        showScoredBadge: (COURSE.scorm.rules || {}).score_source !== 'final_test',
       };
       var rendered = Renderer.render(content, sc, ctx);
       activeController = rendered.interaction;
@@ -486,10 +488,17 @@
 
   // ---- Chrome / paneles --------------------------------------------------
   function toggleMenu() {
-    var app = document.getElementById('me-app');
-    app.classList.toggle('me-menu-hidden');
-    var btn = document.getElementById('me-toggle-menu');
-    btn.setAttribute('aria-expanded', String(!app.classList.contains('me-menu-hidden')));
+    document.getElementById('me-app').classList.toggle('me-menu-hidden');
+    reflectMenuUI();
+  }
+  // Sincroniza los dos controles de plegado del índice (botón ☰ de la barra
+  // superior y pestaña lateral): aria-expanded y sentido de la flecha.
+  function reflectMenuUI() {
+    var visible = menuVisible();
+    document.getElementById('me-toggle-menu').setAttribute('aria-expanded', String(visible));
+    var tab = document.getElementById('me-menu-tab');
+    tab.setAttribute('aria-expanded', String(visible));
+    tab.querySelector('.me-menu-tab-arrow').innerHTML = global.MEIcons.svg(visible ? 'chevron-left' : 'chevron-right');
   }
   function toggleTranscript() {
     var entry = SCREENS[current];
@@ -519,7 +528,7 @@
     if (!btn) return;
     btn.setAttribute('aria-pressed', String(audioEnabled));
     btn.classList.toggle('is-on', audioEnabled);
-    btn.textContent = (audioEnabled ? '🔊' : '🔇') + ' Audio';
+    btn.querySelector('.me-tool-ico').innerHTML = global.MEIcons.svg(audioEnabled ? 'volume-on' : 'volume-off');
   }
   function toggleAudio() {
     audioEnabled = !audioEnabled;
