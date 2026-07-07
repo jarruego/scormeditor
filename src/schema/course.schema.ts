@@ -304,7 +304,10 @@ const LanguageCode = z.string()
   .catch('es')
 
 export const ShellConfig = z.object({
-  brand: z.string().default('SCORMEditor'),
+  brand: z
+    .string()
+    .default('')
+    .describe('Marca de la cabecera; vacía, la cabecera muestra solo el título del curso'),
   logo: z.string().optional(),
   primary_color: z.string().default('#0b5fff'),
   show_sidebar: z.boolean().default(true),

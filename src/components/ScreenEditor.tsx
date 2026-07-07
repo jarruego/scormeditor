@@ -175,14 +175,16 @@ export function ScreenEditor() {
       if (paths.length) {
         const ok = await confirmDialog({
           title: 'Quitar recurso',
-          message: 'Se borrará el archivo asociado de assets sin poder recuperarlo. ¿Deseas continuar?',
+          message: 'Se quitará el recurso de esta diapositiva. Si el archivo no se usa en ninguna otra pantalla, se borrará de assets para no ocupar espacio (irrecuperable). ¿Deseas continuar?',
           confirmLabel: 'Quitar',
           danger: true,
         })
         if (!ok) return
-        paths.forEach((p) => removeAsset(p))
       }
-      setVr({ kind: 'none', src: '' })
+      // Quitamos la referencia ANTES de intentar borrar: removeAsset conserva el
+      // binario si alguna otra pantalla aún lo usa (p. ej. tras duplicar).
+      setVr({ kind: 'none', src: '', poster: '', tracks: [] })
+      paths.forEach((p) => removeAsset(p))
       return
     }
     setVr({ kind: next as any })

@@ -42,7 +42,7 @@ export function FileButton({
     if (currentPath) {
       const ok = await confirmDialog({
         title: 'Sustituir recurso',
-        message: 'Se sustituirá el recurso actual y se borrará el anterior sin poder recuperarlo. ¿Deseas continuar?',
+        message: 'Se sustituirá el recurso actual. Si el archivo anterior no se usa en ninguna otra pantalla, se borrará de assets (irrecuperable). ¿Deseas continuar?',
         confirmLabel: 'Sustituir',
         danger: true,
       })
@@ -55,9 +55,11 @@ export function FileButton({
       const { blob, ext, changed } = await optimizeImage(file)
       const path = makePath(ext)
       addAsset(path, blob)
+      // Actualizamos la referencia a la nueva ruta ANTES de borrar la anterior:
+      // así removeAsset conserva el binario viejo si otra pantalla aún lo usa.
+      onUploaded(path)
       // Borra el binario anterior si su ruta cambia (misma ruta = ya sobrescrito).
       if (currentPath && currentPath !== path) removeAsset(currentPath)
-      onUploaded(path)
       if (changed) setMsg(`Imagen reducida de ${fmtSize(originalSize)} a ${fmtSize(blob.size)}.`)
     } finally {
       setBusy(false)

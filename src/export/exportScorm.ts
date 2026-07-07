@@ -2,6 +2,11 @@ import JSZip from 'jszip'
 import type { Course } from '../schema/course.schema'
 import { generateManifest } from '../scorm/manifest'
 import { getRuntimeFiles } from '../scorm/runtimeAssets'
+import { collectAssetPaths } from '../schema/assetRefs'
+
+// `collectAssetPaths` vive en `../schema/assetRefs` (compartido con el store para
+// el borrado seguro de assets); se reexporta aquí por compatibilidad.
+export { collectAssetPaths }
 
 /** Mapa de assets binarios: rutaEnZip -> contenido. */
 export type AssetMap = Record<string, Blob | Uint8Array | ArrayBuffer | string>
@@ -9,28 +14,6 @@ export type AssetMap = Record<string, Blob | Uint8Array | ArrayBuffer | string>
 export interface ExportOptions {
   course: Course
   assets?: AssetMap
-}
-
-/**
- * Recorre el curso y devuelve el conjunto de rutas `assets/…` realmente
- * referenciadas (recurso visual, póster, pistas VTT, audio, imágenes de
- * interacciones, etc.). Se usa para no empaquetar assets huérfanos que
- * engordarían el ZIP inútilmente.
- */
-export function collectAssetPaths(course: Course): Set<string> {
-  const out = new Set<string>()
-  const visit = (v: unknown) => {
-    if (typeof v === 'string') {
-      if (v.startsWith('assets/')) out.add(v)
-      return
-    }
-    if (Array.isArray(v)) { v.forEach(visit); return }
-    if (v && typeof v === 'object') {
-      for (const key of Object.keys(v as Record<string, unknown>)) visit((v as Record<string, unknown>)[key])
-    }
-  }
-  visit(course)
-  return out
 }
 
 /**

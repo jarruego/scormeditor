@@ -11,6 +11,8 @@ import {
 } from '../store/autosave'
 import { CourseSettingsModal, AppearanceModal, NarrationModal } from './SettingsModal'
 import { InlineRename } from './InlineRename'
+import { confirmDialog } from '../store/confirm'
+import { orphanAssetPaths } from '../schema/assetRefs'
 
 const DISCARD_MSG =
   'Esto reemplazará el curso que tienes abierto. Los cambios que no hayas guardado en el archivo de proyecto se perderán. ¿Continuar?'
@@ -31,6 +33,7 @@ export function Toolbar() {
   const canRedo = useCourseStore((s) => s.future.length > 0)
   const setActiveTab = useCourseStore((s) => s.setActiveTab)
   const updateCourseInfo = useCourseStore((s) => s.updateCourseInfo)
+  const pruneOrphanAssets = useCourseStore((s) => s.pruneOrphanAssets)
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   // Qué ventana de ajustes está abierta. Vive en el store para que Validación
@@ -67,6 +70,8 @@ export function Toolbar() {
 
   const val = useMemo(() => validateCourse(course), [course])
   const isSaved = !!linkedFileName && !projectDirty
+  // Recursos que ya no usa ninguna diapositiva (peso muerto en el .scormproj).
+  const orphanCount = useMemo(() => orphanAssetPaths(course, assets).length, [course, assets])
 
   function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -95,6 +100,16 @@ export function Toolbar() {
   }
   function onOpen() {
     if (confirmDiscard()) void openProject()
+  }
+  async function onPruneOrphans() {
+    if (orphanCount === 0) return
+    const ok = await confirmDialog({
+      title: 'Borrar recursos huérfanos',
+      message: `Se eliminarán ${orphanCount} recurso(s) que ya no usa ninguna diapositiva, para reducir el tamaño del proyecto. Es irreversible (no se puede deshacer). ¿Continuar?`,
+      confirmLabel: 'Borrar',
+      danger: true,
+    })
+    if (ok) pruneOrphanAssets()
   }
 
   return (
@@ -144,6 +159,13 @@ export function Toolbar() {
               {fsOk && (
                 <button role="menuitem" onClick={() => runMenu(() => void saveProjectAs())} title="Guardar una copia en un archivo nuevo">
                   Guardar como…
+                </button>
+              )}
+              {orphanCount > 0 && (
+                <button role="menuitem"
+                  onClick={() => runMenu(() => void onPruneOrphans())}
+                  title="Elimina del proyecto los archivos que ya no usa ninguna diapositiva, para reducir su tamaño (el SCORM exportado ya los ignora)">
+                  Borrar recursos huérfanos ({orphanCount})
                 </button>
               )}
               <hr className="ed-menu-sep" />

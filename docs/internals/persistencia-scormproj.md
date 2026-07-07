@@ -36,10 +36,28 @@ reemplazar en el mismo hueco con **otra extensión**, cambiar el **tipo** de rec
      `currentPath` en imagen/vídeo/audio, póster, VTT y audio de locución.
    - **Tipo «Sin recurso»** (`changeKind` en `ScreenEditor`): borra `src`/`poster`/tracks
      asociados y pone `kind:'none'`, previo aviso.
+
+   **Guarda anti-borrado de assets compartidos**: `removeAsset` **no** elimina el binario si
+   alguna pantalla del curso aún lo referencia (`isAssetReferenced` en `schema/assetRefs.ts`,
+   mismo recorrido profundo que `collectAssetPaths`). Un mismo archivo puede reutilizarse en
+   varias diapositivas (p. ej. al **duplicar** una pantalla, la copia hereda la misma ruta de
+   asset), así que borrarlo desde una rompería las demás. Por eso los llamantes **actualizan
+   primero la referencia** (quitan/sustituyen la ruta en el curso) y llaman a `removeAsset`
+   **después**: si queda algún uso, el binario se conserva; si era el último, se borra.
 2. **Red de seguridad en el export**: `buildScormZip` empaqueta **solo lo referenciado**
-   (`collectAssetPaths(course)`, recorrido profundo recogiendo strings `assets/…`). Cubre
+   (`collectAssetPaths(course)` en `schema/assetRefs.ts` —reexportado desde `exportScorm`—,
+   recorrido profundo recogiendo strings `assets/…`). Cubre
    los huérfanos que no pasaron por (1) (p. ej. pantalla borrada o cambio a otro tipo de
    media). → El ZIP entregado **nunca** lleva basura.
+
+**Purga manual de huérfanos** (peso del `.scormproj`): el guardado (autosave a IndexedDB y
+`buildProjectBlob` del `.scormproj`) persiste **todos** los assets, incluidos los huérfanos
+(borrar una pantalla **no** borra su binario, para no chocar con deshacer/rehacer). Para
+controlar el tamaño hay una acción explícita en **menú Archivo → «Borrar recursos huérfanos
+(N)»** (`pruneOrphanAssets` en el store; usa `orphanAssetPaths(course, assets)`): solo se muestra
+si N>0, con aviso de que es irreversible. Es deliberada (no automática) precisamente porque
+`removeAsset`/purga **no** entran en el historial. El contador N se recalcula por render en la
+Toolbar (`useMemo` sobre `course`+`assets`).
 
 Al **subir imágenes** se optimizan antes de guardar (`optimizeImage` en `FileButton`): lado
 máx. 1600 px, recompresión (PNG opaco→JPEG q0.85, PNG con alfa se mantiene, SVG/GIF

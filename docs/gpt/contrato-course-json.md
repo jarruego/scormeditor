@@ -85,7 +85,7 @@ Reglas que NO se pueden romper:
 
 ```json
 "shell": {
-  "brand": "Nombre formación",
+  "brand": "",
   "primary_color": "#0b5fff",
   "show_sidebar": true,
   "show_progress": true,
@@ -95,6 +95,9 @@ Reglas que NO se pueden romper:
 }
 ```
 
+- `brand` (opcional; def. vacío): marca/entidad en la cabecera del curso. **Déjala
+  vacía salvo que se pida expresamente**: sin marca, la cabecera muestra únicamente el
+  título del curso.
 - `motion` (opcional; def. `"subtle"`): animaciones de la carcasa. `"none"` (sin),
   `"subtle"` (transiciones básicas) o `"rich"` (revelado progresivo del contenido
   al entrar/hacer scroll y microanimaciones). Es una preferencia de presentación:

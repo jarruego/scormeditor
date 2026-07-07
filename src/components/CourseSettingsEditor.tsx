@@ -44,8 +44,9 @@ export function AppearanceSection() {
           </label>
         </div>
         <p style={{ margin: 0, fontSize: '.85rem', color: 'var(--c-muted)' }}>
-          El color se aplica a botones, enlaces y elementos de acción de la carcasa; la marca
-          aparece en la barra superior del curso.
+          El color se aplica a botones, enlaces y elementos de acción de la carcasa. La marca
+          aparece en la barra superior del curso; si la dejas vacía, la cabecera muestra
+          únicamente el título del curso.
         </p>
       </fieldset>
 

@@ -119,6 +119,10 @@ que lo etiquete).
 - **Menú con progreso por unidad**: `buildMenu` marca cada unidad con
   `data-start`/`data-count`; `refreshMenuChecks` rellena el contador «hechas/total»
   (`.me-menu-count`) y la mini-barra (`.me-menu-uprog`).
+- **Cabecera sin marca por defecto** (jul 2026): `shell.brand` tiene default vacío; sin
+  marca, `applyBranding` oculta `#me-brand`, añade `.me-no-brand` a la topbar y el
+  título del curso pasa a ser el único texto (destacado; en móvil deja de ocultarse).
+  El valor histórico `'SCORMEditor'` se trata como «sin marca» para proyectos antiguos.
 - **Iconos SVG propios** (`assets/js/icons.js`, jul 2026): mini-set con paths de
   **Feather Icons** (MIT), trazo 2px, 24×24, `stroke: currentColor`. Declarativo:
   cualquier `[data-icon="nombre"]` se rellena al cargar (`MEIcons.hydrate`);

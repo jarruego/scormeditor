@@ -43,6 +43,9 @@ body {
 }
 .me-brand { font-weight: 700; color: var(--me-primary); }
 .me-course-title { color: var(--me-muted); font-size: .9rem; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Sin marca configurada (.me-no-brand): el título del curso es el único texto
+   de la cabecera y toma el protagonismo. */
+.me-topbar.me-no-brand .me-course-title { color: var(--me-text); font-weight: 700; font-size: 1rem; }
 /* Herramientas (Transcripción, Glosario, Recursos, Imprimir) ancladas a la
    derecha de la barra superior. */
 .me-topbar .me-tools { margin-left: auto; }
@@ -434,7 +437,10 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 
 /* Responsive */
 @media (max-width: 760px) {
+  /* Con marca, el título del curso se sacrifica por espacio; sin marca es el
+     único texto de la cabecera y se mantiene (con su ellipsis). */
   .me-course-title { display: none; }
+  .me-topbar.me-no-brand .me-course-title { display: block; font-size: .9rem; }
 
   /* Menú lateral como panel deslizante sobre el contenido.
      Forzamos 1 columna en AMBOS estados (gana a la regla .me-menu-hidden de

@@ -3,6 +3,7 @@ import type { Course, Screen, ScreenType, UnitTest, ScormConfig, ShellConfig, Gl
 import { Course as CourseSchema, Screen as ScreenSchema } from '../schema/course.schema'
 import { migrate } from '../schema/migrations'
 import { sampleCourse } from '../schema/sample-course'
+import { isAssetReferenced, orphanAssetPaths } from '../schema/assetRefs'
 import type { AssetMap } from '../export/exportScorm'
 
 function clone<T>(x: T): T {
@@ -89,6 +90,8 @@ interface CourseState {
   addAsset: (path: string, blob: Blob) => void
   /** Borra un binario del mapa de assets (irreversible: no entra en el historial). */
   removeAsset: (path: string) => void
+  /** Purga los assets huérfanos (sin referencia en el curso). Devuelve cuántos borró. */
+  pruneOrphanAssets: () => number
 
   // Historial de cambios (deshacer / rehacer)
   past: CourseSnapshot[]
@@ -340,11 +343,27 @@ export const useCourseStore = create<CourseState>((set, get) => {
   addAsset: (path, blob) => set({ assets: { ...get().assets, [path]: blob } }),
 
   removeAsset: (path) => {
+    // Seguridad: no se borra el binario si alguna pantalla del curso aún lo
+    // referencia (una misma imagen puede reutilizarse en varias diapositivas).
+    // Por eso los llamantes deben ACTUALIZAR primero el curso (quitar/sustituir
+    // la referencia) y llamar a removeAsset después: si queda algún uso, se
+    // conserva; si era el último, se elimina.
+    if (isAssetReferenced(get().course, path)) return
     const assets = { ...get().assets }
     if (path in assets) {
       delete assets[path]
       set({ assets })
     }
+  },
+
+  pruneOrphanAssets: () => {
+    const { course, assets } = get()
+    const orphans = orphanAssetPaths(course, assets)
+    if (!orphans.length) return 0
+    const next = { ...assets }
+    for (const p of orphans) delete next[p]
+    set({ assets: next })
+    return orphans.length
   },
 
   undo: () => {

@@ -113,7 +113,16 @@
     var spd = shell.motion_speed === 'fast' || shell.motion_speed === 'slow' ? shell.motion_speed : 'normal';
     SPEED = spd === 'fast' ? 1 : spd === 'slow' ? 3 : 1.5;
     document.body.classList.add('me-speed-' + spd);
-    document.getElementById('me-brand').textContent = shell.brand || COURSE.course.title || 'Curso';
+    // La marca solo se muestra si el autor la configuró: sin marca, la cabecera
+    // lleva únicamente el título del curso (con estilo destacado, .me-no-brand).
+    // 'SCORMEditor' era el default histórico del schema: se trata como «sin marca».
+    var brand = (shell.brand || '').trim();
+    if (!brand || brand === 'SCORMEditor') {
+      document.getElementById('me-brand').hidden = true;
+      document.querySelector('.me-topbar').classList.add('me-no-brand');
+    } else {
+      document.getElementById('me-brand').textContent = brand;
+    }
     document.getElementById('me-course-title').textContent = COURSE.course.title || '';
     document.title = COURSE.course.title || 'Curso SCORM';
     document.documentElement.lang = (shell.language || COURSE.course.language || 'es');

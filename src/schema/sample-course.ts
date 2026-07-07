@@ -31,7 +31,7 @@ export const sampleCourse: Course = {
     },
   },
   shell: {
-    brand: 'Mecohisa Formación',
+    brand: '',
     primary_color: '#0b5fff',
     show_sidebar: true,
     show_progress: true,
