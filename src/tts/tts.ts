@@ -1,5 +1,6 @@
 import { useCourseStore } from '../store/courseStore'
 import type { Screen } from '../schema/course.schema'
+import { buildTranscript } from './buildTranscript'
 
 /**
  * Narración por voz (TTS) integrada en el editor.
@@ -322,6 +323,10 @@ export interface NarratableScreen {
   title: string
   hasTranscript: boolean
   hasAudio: boolean
+  /** Tiene contenido narrable (mismo criterio que `buildTranscript`/validación). */
+  hasContent: boolean
+  /** Esqueleto/pendiente de desarrollo: se excluye del trabajo de narración. */
+  skeleton: boolean
 }
 
 /** Lista las pantallas con datos relevantes para narración. */
@@ -331,6 +336,8 @@ export function listNarratable(): NarratableScreen[] {
     title: s.title || s.id,
     hasTranscript: s.transcript.trim().length > 0,
     hasAudio: s.audio_src.trim().length > 0,
+    hasContent: buildTranscript(s).trim().length > 0,
+    skeleton: s.type === 'content_placeholder' || s.status === 'esqueleto_pendiente_desarrollo',
   }))
 }
 

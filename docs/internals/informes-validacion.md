@@ -25,11 +25,37 @@ Reglas por pantalla / unidad / curso, p. ej.:
   de pantalla con `scored`), no `assessments.unit_tests`. Reglas: `SCORM_NO_FINAL`
   (final_test sin preguntas, `screenId '__final__'`), `SCORM_NO_ACTIVITIES` (unit_tests sin
   interacciones puntuadas), `SCORM_MIXED_EMPTY`/`SCORM_MIXED_NO_FINAL`/
-  `SCORM_MIXED_NO_ACTIVITIES` (mixed sin uno u otro bloque).
+  `SCORM_MIXED_NO_ACTIVITIES` (mixed sin uno u otro bloque), y
+  `SCORM_ACTIVITIES_IGNORED` (aviso: hay interacciones `scored` pero
+  `score_source: 'final_test'` → no contarán; hace visible que «puntúa o no» se decide
+  en Ajustes, no en la pantalla). El curso de ejemplo usa `score_source: 'mixed'`
+  precisamente para arrancar sin este aviso.
+- **Narración pendiente** (jul 2026): solo se activa en **cursos narrados**
+  (`Ctx.narrated`). Manda el ajuste explícito **`course.narration.mode`** (`'on'`/`'off'`,
+  editable en Ajustes → Narración, se guarda en el proyecto); su default `'auto'` mantiene
+  la heurística: narrado si alguna pantalla tiene `audio_src` (sin locución un curso
+  sin transcripciones es legítimo y no genera ruido). El campo es **opcional en
+  `course.json`** y el GPT debe omitirlo (anotado en `contrato-course-json.md`). En pantallas sin `audio_src` (los
+  casos con audio/vídeo sin transcripción ya son errores) y que no sean esqueleto:
+  `NARR_NO_TRANSCRIPT` (`warning`) si falta transcripción y la pantalla tiene **contenido
+  narrable** — mismo criterio que el botón «Generar transcripción»: `buildTranscript(s)`
+  no vacío —; `NARR_NO_AUDIO` (`info`, solo pestaña Validación) si hay transcripción pero
+  falta el audio. No se duplican: el info solo salta con la transcripción ya resuelta,
+  creando el flujo «primero transcripciones (warnings), luego narrar (infos como lista de
+  pendientes del TTS)».
+- **Congruencia tipo ↔ recurso ↔ interacción** (jul 2026, complemento de las recetas de
+  creación; ver `editor-ui.md`): avisos —nunca errores— para combinaciones que casi
+  siempre son un despiste. `COVER_INTERACTION` (portada con actividad), `VIDEO_NO_MEDIA`
+  (pantalla `video` sin recurso de vídeo **ni** interacción `video`), `QUIZ_NO_SCORED`
+  (`unit_quiz` sin interacción `scored`), `FORUM_SCORED` (`forum_prompt` con interacción
+  puntuable — el foro es actividad externa del campus). La filosofía: las recetas guían
+  al crear, el editor permite todo, y estos avisos señalan lo incongruente sin bloquear.
 
 Uso en UI:
-- `Toolbar` muestra el badge `.ed-status` con el recuento `errores ⛔ · avisos ⚠`
-  (memoizado con `useMemo(course)`); al pulsarlo navega a la pestaña de validación.
+- El badge `.ed-status` con el recuento `errores ⛔ · avisos ⚠` vive **dentro de la
+  pestaña «Validación»** (`App.tsx`, memoizado con `useMemo(course)`) y **solo se muestra
+  si hay algún error o aviso** (rojo con errores, ámbar solo con avisos); los `info` no
+  cuentan. La pestaña Validación se muestra a ancho completo, sin el árbol lateral.
 - `ValidationPanel` (`src/components/ValidationPanel.tsx`): issues **agrupados por
   módulo › unidad** (por ids, no parseando `location`), más grupos «Test final» y «Curso y
   SCORM». Los recuadros de severidad del resumen actúan de **filtro** (clic = ocultar/

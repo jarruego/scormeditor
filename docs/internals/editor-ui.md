@@ -127,10 +127,74 @@ clics para poder vivir dentro del `<summary>` de la unidad sin plegarla.
   muestra badge ⛔/⚠ por pantalla (`IssueBadge`); el `ScreenEditor` muestra la lista de
   issues de la pantalla abierta (`.ed-inline-issues`) encima del formulario. Los `info` no
   se muestran en contexto (solo en la pestaña Validación).
-- **Plantillas**: «+ Añadir pantalla…» abre un menú (`AddScreenMenu`) con presets — Texto,
-  Texto + imagen (imagen a la derecha 50%), Actividad (interacción `single_choice` en
-  blanco) y Vídeo (YouTube). `addScreen(unitId, afterId?, preset?)` acepta un
-  `Partial<Screen>` que `blankScreen` funde y pasa por `ScreenSchema.parse` (defaults).
+- **Recetas de creación** (jul 2026, sustituye al menú de plantillas): «+ Añadir
+  pantalla…» abre un modal (`AddScreenModal`, reutiliza `SettingsWindow`) con **tarjetas
+  agrupadas por lo que hace el alumno** — Estructura (armazón) / Contenido (leer, ver,
+  explorar: incluye las interacciones informativas acordeón/pestañas/tarjetas/línea de
+  tiempo/hotspots) / Práctica (hacer y recibir corrección: pregunta, emparejar, ordenar,
+  clasificar, huecos, escenario, caso, fichas, reflexión, foro) / Evaluación (test de
+  unidad) / Otros (placeholder y en blanco, discretas). El catálogo vive en
+  `src/schema/screenRecipes.ts` (`SCREEN_RECIPES`): cada receta fija de golpe `type` +
+  recurso visual + interacción + título inicial, para que el autor novel no combine a
+  mano las tres decisiones. Es una **capa de UI**: no toca el esquema ni el contrato de
+  `course.json`, y tras crear todo sigue siendo editable (el desplegable «Tipo de
+  pantalla» queda como ajuste avanzado). Decisiones:
+  - **Puntuar es el default del grupo, no una promesa de la tarjeta**: Práctica crea con
+    `scored: false`, Evaluación con `scored: true`; el subtítulo del grupo
+    (`RECIPE_GROUP_HINTS`) lo comunica y las descripciones no mencionan la nota (la
+    decisión real vive en la interacción + `score_source` de Ajustes; el aviso
+    `SCORM_ACTIVITIES_IGNORED` de `validators.ts` cierra el círculo). Una línea fija al
+    pie del modal (`.ed-recipes-note`) aclara que la receta solo preconfigura.
+  - **Sin tarjeta a propósito**: `html_embed` (interacción avanzada, sandbox) y
+    Verdadero/Falso (variante de Pregunta). Glosario y bibliografía tampoco: son
+    materiales únicos a nivel de curso (sección «Materiales» del árbol), no pantallas.
+  - Las interacciones de las recetas se construyen con `Interaction.parse(...)` — los
+    defaults del esquema son la única fuente de verdad (no hay literales duplicados).
+  - `place?: (screens) => number` coloca la pantalla (portada al principio, objetivos tras
+    la portada, resumen antes del test, test al final); para ello `addScreen` acepta un
+    cuarto parámetro `atIndex` (si falta: tras `afterId` o al final, como antes).
+  - `uniquePerUnit` **atenúa** la tarjeta si la unidad ya tiene ese tipo (tooltip «Ya
+    existe…») pero **no bloquea** — aviso blando.
+  - Las recetas **no** rellenan `student_text` (acabaría exportado) ni `min_time_seconds`
+    (ya hay ajuste masivo en Ajustes).
+  - Tras crear, el foco salta al input de Título (`data-field="screen-title"` en
+    `ScreenEditor`). «En blanco» (tarjeta discreta, borde discontinuo) es la vía de
+    escape sin preconfigurar.
+  - `addScreen(unitId, afterId?, preset?, atIndex?)` tipa el preset como
+    `Partial<ScreenInput>` (`z.input` del esquema: los campos con default son opcionales),
+    lo que elimina los `as any` que llevaban los presets antiguos.
+  - **Puntos de inserción** (`InsertPoint`, `.ed-insert`): entre cada par de pantallas del
+    árbol hay una zona fina que al pasar el ratón (o enfocar con Tab) revela un divisor
+    con «+»; abre el mismo modal con `atIndex`, que **manda sobre** la colocación
+    automática de la receta (`place`). Con el filtro activo no se muestran (los índices
+    de la lista filtrada no se corresponden con la unidad).
+  - **Auto-scroll**: al seleccionarse una pantalla (recién creada o vía enlaces de
+    Validación/Informe), su `<li>` hace `scrollIntoView({ block: 'nearest' })` para
+    quedar a la vista en el árbol.
+
+### Editor sensible al tipo (capa 2 de la guía al autor, jul 2026)
+El `ScreenEditor` adapta el formulario al tipo de pantalla según la config de
+`src/schema/screenTypeUI.ts` (`SCREEN_TYPE_UI`). Igual que las recetas, es **solo
+presentación** (reordena, pliega y sugiere; nunca restringe — lo incongruente lo señalan
+los avisos de `validators.ts`):
+- **Orden y plegado**: título → objetivo → texto → recurso visual → interacción → audio →
+  «Avanzado». En `video` (`mediaFirst`) el recurso va **antes** del texto; la sección de
+  recurso se abre si hay recurso (`kind !== 'none'`) y la de interacción si hay
+  interacción o el tipo lo pide (`interactionOpen`, p. ej. `unit_quiz`).
+- Las secciones usan el helper `Fold` (details **no controlado**: `defaultOpen` solo
+  aplica al montar; la `key` por `id`+`type` remonta la sección al cambiar de pantalla o
+  de tipo para re-aplicar el énfasis sin pisar lo que el autor pliegue a mano).
+- **«Avanzado»** (plegado): tipo de pantalla, tiempo mínimo y obligatoria. El tipo se
+  muestra como chip de solo lectura junto al título del formulario (`.ed-form-type`).
+  El selector usa `changeScreenType` del store, que al pasar a `video` sin recurso
+  precarga `video_youtube` (congruencia mínima).
+- **Objetivo oculto** en `cover`/`summary` (`hideObjective`): son los tipos exentos en
+  validación.
+- **Interacciones recomendadas** (`recommended`): el desplegable de tipo de interacción
+  se agrupa en «Recomendadas para este tipo» / «Otras» (`unit_quiz` → tipos de pregunta;
+  `video` → vídeo interactivo). La primera recomendada es además el tipo inicial de
+  «+ Añadir interacción» (`blankInteraction`, ahora vía `Interaction.parse`), y su
+  puntuación sigue la filosofía de las recetas: `scored: true` solo en `unit_quiz`.
 
 ### Etiquetas en español (no exponer identificadores del esquema)
 La UI del editor **nunca muestra los valores internos en crudo** (`content_placeholder`,

@@ -10,11 +10,14 @@ export function SettingsWindow({
   title,
   onClose,
   busy = false,
+  wide = false,
   children,
 }: {
   title: string
   onClose: () => void
   busy?: boolean
+  /** Ventana extra ancha (p. ej. el selector de recetas, con tarjetas en grid). */
+  wide?: boolean
   children: React.ReactNode
 }) {
   const close = () => { if (!busy) onClose() }
@@ -28,7 +31,7 @@ export function SettingsWindow({
 
   return (
     <div className="ed-modal-backdrop" onMouseDown={close}>
-      <div className="ed-modal ed-modal-lg" role="dialog" aria-modal="true" aria-label={title}
+      <div className={`ed-modal ${wide ? 'ed-modal-xl' : 'ed-modal-lg'}`} role="dialog" aria-modal="true" aria-label={title}
         onMouseDown={(e) => e.stopPropagation()}>
         <header className="ed-modal-head">
           <strong>{title}</strong>

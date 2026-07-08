@@ -1,10 +1,11 @@
 import { create } from 'zustand'
-import type { Course, Screen, ScreenType, UnitTest, ScormConfig, ShellConfig, GlossaryTerm, BibliographyEntry } from '../schema/course.schema'
+import type { Course, Screen, ScreenInput, ScreenType, UnitTest, ScormConfig, ShellConfig, GlossaryTerm, BibliographyEntry } from '../schema/course.schema'
 import { Course as CourseSchema, Screen as ScreenSchema } from '../schema/course.schema'
 import { migrate } from '../schema/migrations'
 import { sampleCourse } from '../schema/sample-course'
 import { isAssetReferenced, orphanAssetPaths } from '../schema/assetRefs'
 import { normalizeObjective } from '../validation/objectives'
+import { buildTranscript } from '../tts/buildTranscript'
 import type { AssetMap } from '../export/exportScorm'
 
 function clone<T>(x: T): T {
@@ -16,7 +17,7 @@ function newId(prefix: string): string {
 }
 
 /** Crea una pantalla vacía válida según el schema. */
-function blankScreen(preset?: Partial<Screen>): Screen {
+function blankScreen(preset?: Partial<ScreenInput>): Screen {
   // El parse rellena los defaults del esquema sobre lo que traiga el preset.
   return ScreenSchema.parse({ id: newId('s'), type: 'content', title: 'Nueva pantalla', ...(preset || {}) })
 }
@@ -63,8 +64,9 @@ interface CourseState {
   getScreen: (id: string) => Screen | null
   updateScreen: (id: string, patch: Partial<Screen>) => void
   changeScreenType: (id: string, type: ScreenType) => void
-  /** Añade una pantalla; `preset` permite plantillas (texto+imagen, actividad…). */
-  addScreen: (unitId: string, afterId?: string, preset?: Partial<Screen>) => void
+  /** Añade una pantalla; `preset` permite recetas (texto+imagen, actividad…) y
+   *  `atIndex` fija la posición en la unidad (si falta: tras `afterId` o al final). */
+  addScreen: (unitId: string, afterId?: string, preset?: Partial<ScreenInput>, atIndex?: number) => void
   duplicateScreen: (id: string) => void
   deleteScreen: (id: string) => void
   /** Reordena dentro de la unidad o mueve entre unidades. */
@@ -75,6 +77,11 @@ interface CourseState {
   updateScorm: (patch: Partial<ScormConfig>) => void
   /** Actualiza la config de la carcasa (marca, color, animaciones…). */
   updateShell: (patch: Partial<ShellConfig>) => void
+  /** Actualiza la config de narración del curso (curso narrado auto/sí/no). */
+  updateNarration: (patch: Partial<Course['narration']>) => void
+  /** Rellena la transcripción de las pantallas narrables que la tienen VACÍA
+   *  (nunca sobrescribe una existente). Devuelve cuántas rellenó. */
+  fillMissingTranscripts: () => number
   /** Pone el mismo tiempo mínimo (s) en TODAS las pantallas del curso. */
   setAllMinTime: (seconds: number) => void
   /** Actualiza los metadatos del curso (título principal, subtítulo, entidad…). */
@@ -237,7 +244,13 @@ export const useCourseStore = create<CourseState>((set, get) => {
   },
 
   changeScreenType: (id, type) => {
-    get().updateScreen(id, { type })
+    const s = get().getScreen(id)
+    if (!s) return
+    // Congruencia mínima al pasar a Vídeo sin recurso: precarga YouTube (el
+    // autor puede cambiarlo; evita una pantalla de vídeo sin vídeo).
+    if (type === 'video' && s.visual_resource.kind === 'none')
+      get().updateScreen(id, { type, visual_resource: { ...s.visual_resource, kind: 'video_youtube', layout: 'top' } })
+    else get().updateScreen(id, { type })
   },
 
   setFinalTest: (test) => {
@@ -259,6 +272,34 @@ export const useCourseStore = create<CourseState>((set, get) => {
     const course = clone(get().course)
     course.shell = { ...course.shell, ...patch }
     set({ course })
+  },
+
+  updateNarration: (patch) => {
+    snapshot()
+    const course = clone(get().course)
+    course.narration = { ...course.narration, ...patch }
+    set({ course })
+  },
+
+  fillMissingTranscripts: () => {
+    // Solo pantallas con contenido narrable y sin esqueleto (mismo criterio que
+    // el aviso NARR_NO_TRANSCRIPT de validators.ts). Un único snapshot: el
+    // relleno masivo se deshace de una vez.
+    snapshot()
+    const course = clone(get().course)
+    let filled = 0
+    for (const m of course.modules)
+      for (const u of m.units)
+        for (const s of u.screens) {
+          if (s.transcript.trim()) continue
+          if (s.type === 'content_placeholder' || s.status === 'esqueleto_pendiente_desarrollo') continue
+          const t = buildTranscript(s).trim()
+          if (!t) continue
+          s.transcript = t
+          filled++
+        }
+    if (filled) set({ course })
+    return filled
   },
 
   setAllMinTime: (seconds) => {
@@ -324,14 +365,16 @@ export const useCourseStore = create<CourseState>((set, get) => {
     set({ course })
   },
 
-  addScreen: (unitId, afterId, preset) => {
+  addScreen: (unitId, afterId, preset, atIndex) => {
     snapshot()
     const course = clone(get().course)
     outer: for (const m of course.modules)
       for (const u of m.units)
         if (u.id === unitId) {
           const s = blankScreen(preset)
-          const idx = afterId ? u.screens.findIndex((x) => x.id === afterId) + 1 : u.screens.length
+          const idx = atIndex != null
+            ? Math.max(0, Math.min(atIndex, u.screens.length))
+            : afterId ? u.screens.findIndex((x) => x.id === afterId) + 1 : u.screens.length
           u.screens.splice(idx, 0, s)
           set({ course, selectedScreenId: s.id })
           break outer

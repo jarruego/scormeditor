@@ -24,7 +24,7 @@ export const sampleCourse: Course = {
       require_interactions: true,
       min_score: 60,
       attempts_allowed: 0,
-      score_source: 'final_test',
+      score_source: 'mixed',
       mixed_final_weight: 70,
       navigation: 'mixed',
       allow_resume: true,
@@ -39,6 +39,7 @@ export const sampleCourse: Course = {
     motion_speed: 'normal',
     language: 'es',
   },
+  narration: { mode: 'auto' },
   modules: [
     {
       id: 'm1',

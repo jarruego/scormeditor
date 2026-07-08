@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { initAutoSave, saveProject } from './store/autosave'
 import { useCourseStore } from './store/courseStore'
+import { validateCourse } from './validation/validators'
 import type { Tab } from './store/courseStore'
 import { Toolbar } from './components/Toolbar'
 import { CourseTree } from './components/CourseTree'
@@ -15,6 +16,9 @@ import { ConfirmModal } from './components/ConfirmModal'
 export function App() {
   const tab = useCourseStore((s) => s.activeTab)
   const setTab = useCourseStore((s) => s.setActiveTab)
+  const course = useCourseStore((s) => s.course)
+  // Recuento para el badge de la pestaña Validación (solo si hay errores/avisos).
+  const val = useMemo(() => validateCourse(course), [course])
   // Entradas sintéticas del árbol (no son pantallas): test final y materiales.
   const selectedSynthetic = useCourseStore((s) =>
     s.selectedScreenId === '__final__' || s.selectedScreenId === '__glossary__' || s.selectedScreenId === '__bibliography__'
@@ -63,12 +67,20 @@ export function App() {
             onClick={() => setTab(id)}
           >
             {label}
+            {id === 'validation' && (val.errors > 0 || val.warnings > 0) && (
+              <span className={`ed-status ${val.errors > 0 ? 'err' : 'warn'}`}
+                title={`${val.errors} error${val.errors === 1 ? '' : 'es'} · ${val.warnings} aviso${val.warnings === 1 ? '' : 's'}`}>
+                {val.errors > 0 && <>{val.errors} ⛔</>}
+                {val.errors > 0 && val.warnings > 0 && ' · '}
+                {val.warnings > 0 && <>{val.warnings} ⚠</>}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      <div className={`ed-main ${tab === 'preview' || tab === 'report' ? 'ed-main-full' : ''}`}>
-        {(tab === 'editor' || tab === 'validation') && (
+      <div className={`ed-main ${tab === 'editor' ? '' : 'ed-main-full'}`}>
+        {tab === 'editor' && (
           <aside className="ed-tree">
             <CourseTree />
           </aside>

@@ -40,6 +40,9 @@ Reglas que NO se pueden romper:
 - Cualquier clave extra que no esté en este contrato se ignora (no rompe, pero se
   pierde). No metas `parent_course`, `learning_design`, `generation_context`, etc.:
   su información útil debe volcarse en los campos que sí existen (ver §2).
+- Existe una clave opcional `narration` (`{"mode": "auto"|"on"|"off"}`, ajuste del
+  editor sobre si el curso lleva locución). **Omítela**: la gestiona el autor en el
+  editor y su default (`auto`) es el correcto.
 
 ---
 

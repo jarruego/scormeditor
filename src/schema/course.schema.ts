@@ -213,6 +213,8 @@ export const Screen = z.object({
     .default('ok'),
 })
 export type Screen = z.infer<typeof Screen>
+/** Forma de entrada del esquema: los campos con default son opcionales (presets/recetas). */
+export type ScreenInput = z.input<typeof Screen>
 
 export const Unit = z.object({
   id: z.string(),
@@ -343,6 +345,12 @@ export const Course = z.object({
   }).default({}),
   scorm: ScormConfig.default({}),
   shell: ShellConfig,
+  narration: z.object({
+    mode: z
+      .enum(['auto', 'on', 'off'])
+      .default('auto')
+      .describe('Curso narrado: activa los avisos de transcripción/audio pendientes. auto = según haya locución en alguna pantalla'),
+  }).default({}),
   modules: z.array(Module).default([]),
   assessments: z.object({
     unit_tests: z.array(UnitTest).default([]),

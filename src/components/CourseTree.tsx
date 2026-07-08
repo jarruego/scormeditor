@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import {
   DndContext,
   PointerSensor,
@@ -21,6 +21,7 @@ import { screenTypeLabel, screenTypeIcon } from '../schema/labels'
 import { validateCourse, type Issue } from '../validation/validators'
 import { confirmDialog } from '../store/confirm'
 import { InlineRename } from './InlineRename'
+import { AddScreenModal } from './AddScreenModal'
 
 /** Peor severidad de los issues de una pantalla (para el badge del árbol). */
 type ScreenIssues = { errors: number; warnings: number }
@@ -53,8 +54,16 @@ function ScreenItem({ screen, unitId, issues }: { screen: Screen; unitId: string
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
   const flagged = screen.type === 'content_placeholder' || screen.status === 'esqueleto_pendiente_desarrollo'
 
+  // Al seleccionarse (p. ej. pantalla recién creada desde una receta, o enlace
+  // desde Validación), el árbol hace scroll hasta dejarla a la vista.
+  const liRef = useRef<HTMLLIElement | null>(null)
+  useEffect(() => {
+    if (selected) liRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [selected])
+  const setRefs = (el: HTMLLIElement | null) => { liRef.current = el; setNodeRef(el) }
+
   return (
-    <li ref={setNodeRef} style={style} className={`ed-screen ${selected ? 'is-selected' : ''}`}>
+    <li ref={setRefs} style={style} className={`ed-screen ${selected ? 'is-selected' : ''}`}>
       <button className="ed-grip" {...attributes} {...listeners} aria-label="Arrastrar para reordenar">⋮⋮</button>
       <button className="ed-screen-label" onClick={() => select(screen.id)}>
         <span className="ed-screen-type">
@@ -85,82 +94,28 @@ function ScreenItem({ screen, unitId, issues }: { screen: Screen; unitId: string
   )
 }
 
-/** Plantillas del botón «+ Añadir pantalla». */
-const PRESETS: { key: string; icon: string; label: string; make: () => Partial<Screen> }[] = [
-  { key: 'text', icon: '📄', label: 'Texto', make: () => ({}) },
-  {
-    key: 'text-image',
-    icon: '🖼️',
-    label: 'Texto + imagen',
-    make: () => ({ visual_resource: { kind: 'image', layout: 'right', media_width: '50' } as any }),
-  },
-  {
-    key: 'activity',
-    icon: '🧩',
-    label: 'Actividad',
-    make: () => ({
-      interaction: {
-        id: `i-${Math.random().toString(36).slice(2, 7)}`,
-        type: 'single_choice',
-        prompt: '',
-        instructions: '',
-        options: [],
-        config: {},
-        feedback: { correct: 'Correcto.', incorrect: 'Revisa tu respuesta.', explanation: '' },
-        scored: true,
-        points: 1,
-        attempts: 1,
-        retries: 0,
-        learning_objective: '',
-        source_refs: [],
-      } as any,
-    }),
-  },
-  {
-    key: 'video',
-    icon: '🎬',
-    label: 'Vídeo',
-    make: () => ({ type: 'video', visual_resource: { kind: 'video_youtube', layout: 'top' } as any }),
-  },
-]
-
-function AddScreenMenu({ unitId }: { unitId: string }) {
-  const addScreen = useCourseStore((s) => s.addScreen)
+/** Botón «+ Añadir pantalla»: abre el selector de recetas (AddScreenModal). */
+function AddScreenButton({ unitId }: { unitId: string }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
-
   return (
-    <div className="ed-addmenu" ref={ref}>
-      <button className="ed-add" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        + Añadir pantalla…
+    <>
+      <button className="ed-add" onClick={() => setOpen(true)}>+ Añadir pantalla…</button>
+      {open && <AddScreenModal unitId={unitId} onClose={() => setOpen(false)} />}
+    </>
+  )
+}
+
+/** Punto de inserción entre pantallas: al pasar el ratón (o con Tab) aparece un
+ *  divisor con «+» que abre el selector de recetas insertando justo ahí. */
+function InsertPoint({ unitId, index }: { unitId: string; index: number }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <li className="ed-insert" role="presentation">
+      <button aria-label="Insertar pantalla aquí" title="Insertar pantalla aquí" onClick={() => setOpen(true)}>
+        <span aria-hidden="true">＋</span>
       </button>
-      {open && (
-        <div className="ed-addmenu-list" role="menu">
-          {PRESETS.map((p) => (
-            <button key={p.key} role="menuitem"
-              onClick={() => { setOpen(false); addScreen(unitId, undefined, p.make()) }}>
-              <span aria-hidden="true">{p.icon}</span> {p.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+      {open && <AddScreenModal unitId={unitId} atIndex={index} onClose={() => setOpen(false)} />}
+    </li>
   )
 }
 
@@ -240,12 +195,16 @@ export function CourseTree() {
                   </summary>
                   <SortableContext items={u.screens.map((s) => s.id)} strategy={verticalListSortingStrategy}>
                     <ul className="ed-screens">
-                      {visible.map((s) => (
-                        <ScreenItem key={s.id} screen={s} unitId={u.id} issues={issuesByScreen.get(s.id)} />
+                      {visible.map((s, i) => (
+                        <Fragment key={s.id}>
+                          {/* Con filtro activo los índices no se corresponden con la unidad → sin puntos de inserción */}
+                          {!q && <InsertPoint unitId={u.id} index={i} />}
+                          <ScreenItem screen={s} unitId={u.id} issues={issuesByScreen.get(s.id)} />
+                        </Fragment>
                       ))}
                     </ul>
                   </SortableContext>
-                  {!q && <AddScreenMenu unitId={u.id} />}
+                  {!q && <AddScreenButton unitId={u.id} />}
                 </details>
               )
             })}

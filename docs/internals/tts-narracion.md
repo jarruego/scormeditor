@@ -28,6 +28,23 @@ transcripción y audio (al editar la transcripción, solo el audio). Es **único
 sesión** (`audioStaleWarned`, `Set` a nivel de módulo en `ScreenEditor`) y se re-arma al
 regenerar el audio con TTS.
 
+En cursos **narrados**, la validación señala el trabajo pendiente por pantalla:
+`NARR_NO_TRANSCRIPT` (aviso) y `NARR_NO_AUDIO` (info, lista de «pendientes de narrar»).
+«Narrado» lo decide el ajuste **«Curso narrado»** de Ajustes → Narración
+(`course.narration.mode`: `auto` = si alguna pantalla tiene `audio_src` | `on` | `off`;
+se guarda en el proyecto, no en localStorage; helper compartido `isNarrated()` en
+`validators.ts`). Detalle en `informes-validacion.md`.
+
+El panel de generación masiva **respeta ese ajuste** (jul 2026): con `off` la generación
+(audios y transcripciones) queda deshabilitada con una nota — probable despiste y coste
+de API. Los contadores incluyen las pantallas **con contenido narrable sin transcripción**
+(mismo criterio que `NARR_NO_TRANSCRIPT`: `hasContent`/`skeleton` en `listNarratable`),
+y hay un paso previo masivo «↻ Generar transcripciones desde el contenido»
+(`fillMissingTranscripts` en el store): **solo rellena las vacías** — nunca sobrescribe
+una editada a mano, por eso no pide confirmación — y hace un único snapshot (un solo
+deshacer). El flujo completo queda: marcar curso narrado → transcripciones en bloque →
+revisarlas → audios en bloque, con los números cuadrando con la pestaña Validación.
+
 ## Narración por diapositiva (`screen.audio_src`)
 Audio propio de la pantalla (ruta en `assets/media`), **separado del media visual**. El
 runtime lo inyecta con `narrationBlock()` (renderer.js) como `<audio class=

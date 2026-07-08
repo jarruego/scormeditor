@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { validateCourse } from '../validation/validators'
-import { ScreenType, InteractionType, type Interaction } from '../schema/course.schema'
-import { screenTypeLabel, interactionTypeLabel } from '../schema/labels'
+import { ScreenType, InteractionType, Interaction } from '../schema/course.schema'
+import { screenTypeLabel, screenTypeIcon, interactionTypeLabel } from '../schema/labels'
+import { SCREEN_TYPE_UI } from '../schema/screenTypeUI'
 import { RichTextArea } from './RichTextArea'
 import { InteractionConfigEditor } from './InteractionConfigEditor'
 import { ObjectiveInput, ObjectiveSelect } from './ObjectiveSelect'
@@ -61,6 +62,23 @@ function SegIcons({ label, value, options, onChange }: {
   )
 }
 
+/** Sección plegable no controlada: `defaultOpen` solo aplica al montar. Las
+ *  claves externas (por pantalla/tipo) remontan la sección para re-aplicar el
+ *  énfasis del tipo sin pisar lo que el autor pliegue/despliegue a mano. */
+function Fold({ summary, defaultOpen = false, children }: {
+  summary: string
+  defaultOpen?: boolean
+  children: React.ReactNode
+}) {
+  const [open] = useState(defaultOpen)
+  return (
+    <details className="ed-fold" open={open || undefined}>
+      <summary>{summary}</summary>
+      <div className="ed-fold-body">{children}</div>
+    </details>
+  )
+}
+
 // Pantallas ya avisadas (en esta sesión) de que editar su contenido deja el
 // audio de locución desactualizado. Aviso único por pantalla; se re-arma al
 // regenerar el audio con TTS.
@@ -110,6 +128,7 @@ export function ScreenEditor() {
   const id = useCourseStore((s) => s.selectedScreenId)
   const screen = useCourseStore((s) => (id ? s.getScreen(id) : null))
   const update = useCourseStore((s) => s.updateScreen)
+  const changeType = useCourseStore((s) => s.changeScreenType)
   const assets = useCourseStore((s) => s.assets)
   const removeAsset = useCourseStore((s) => s.removeAsset)
   const course = useCourseStore((s) => s.course)
@@ -147,6 +166,8 @@ export function ScreenEditor() {
   const patch = (p: Parameters<typeof update>[1]) => update(id, p)
   const vr = screen.visual_resource
   const it = screen.interaction
+  // Énfasis por tipo de pantalla (capa de UI: reordena y sugiere, no restringe).
+  const uiCfg = SCREEN_TYPE_UI[screen.type] ?? {}
 
   // Si la pantalla tiene audio de locución, avisa (una vez por pantalla) de que
   // los cambios en el contenido no se aplican al audio ya generado: hay que
@@ -229,76 +250,25 @@ export function ScreenEditor() {
     patch({ interaction: next })
   }
   function blankInteraction(): Interaction {
-    return {
+    // Tipo inicial y puntuación coherentes con el tipo de pantalla (misma
+    // filosofía que las recetas: práctica no puntúa de serie, evaluación sí).
+    const scored = screen?.type === 'unit_quiz'
+    return Interaction.parse({
       id: `i-${Math.random().toString(36).slice(2, 7)}`,
-      type: 'single_choice',
-      prompt: '',
-      instructions: '',
-      options: [],
-      config: {},
-      feedback: { correct: 'Correcto.', incorrect: 'Revisa tu respuesta.', explanation: '' },
-      scored: true,
-      points: 1,
-      attempts: 1,
-      retries: 0,
+      type: uiCfg.recommended?.[0] ?? 'single_choice',
+      scored,
+      points: scored ? 1 : 0,
       // Prerrelleno: casi siempre la interacción evalúa el objetivo de su
       // propia pantalla (se puede cambiar en el desplegable si no es el caso).
       learning_objective: screen?.objective.trim() ?? '',
-      source_refs: [],
-    }
+    })
   }
 
-  return (
-    <div className="ed-form">
-      <h2>Editar pantalla</h2>
-
-      {screenIssues.length > 0 && (
-        <ul className="ed-inline-issues" aria-label="Avisos de validación de esta pantalla">
-          {screenIssues.map((i, n) => (
-            <li key={n} className={i.severity === 'error' ? 'is-err' : 'is-warn'}>
-              {i.severity === 'error' ? '⛔' : '⚠'} {i.message}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <label className="ed-field">
-        <span>Título</span>
-        <input value={screen.title} onChange={(e) => patch({ title: e.target.value })} />
-      </label>
-
-      <div className="ed-row">
-        <label className="ed-field">
-          <span>Tipo de pantalla</span>
-          <select value={screen.type} onChange={(e) => patch({ type: e.target.value as any })}>
-            {ScreenType.options.map((t) => <option key={t} value={t}>{screenTypeLabel(t)}</option>)}
-          </select>
-        </label>
-        <label className="ed-field ed-field-narrow">
-          <span>Tiempo mín. (s)</span>
-          <input type="number" min={0} value={screen.min_time_seconds}
-            onChange={(e) => patch({ min_time_seconds: Number(e.target.value) })} />
-        </label>
-        <label className="ed-check">
-          <input type="checkbox" checked={screen.required} onChange={(e) => patch({ required: e.target.checked })} />
-          <span>Obligatoria</span>
-        </label>
-      </div>
-
-      <label className="ed-field">
-        <span>Objetivo de aprendizaje</span>
-        <ObjectiveInput value={screen.objective} onChange={(v) => patch({ objective: v })} />
-      </label>
-
-      <label className="ed-field">
-        <span>Texto del estudiante (texto enriquecido: encabezados, negrita, cursiva, enlaces, listas y destacados)</span>
-        <RichTextArea rows={16} value={screen.student_text}
-          onChange={(v) => { warnAudioStale(); patch({ student_text: v }) }} />
-      </label>
-
-      <details className="ed-fold" open>
-        <summary>Recurso visual</summary>
-        <div className="ed-fold-body">
+  // Sección «Recurso visual» (se coloca antes o después del texto según el
+  // énfasis del tipo: en Vídeo el medio ES el contenido).
+  const mediaSection = (
+    <Fold key={`vr-${id}-${screen.type}`} summary="Recurso visual"
+      defaultOpen={!!uiCfg.mediaFirst || vr.kind !== 'none'}>
         <div className="ed-row">
           <SegIcons label="Tipo de recurso" value={vr.kind}
             onChange={changeKind} options={KIND_ICONS} />
@@ -394,12 +364,12 @@ export function ScreenEditor() {
             </div>
           </>
         )}
-        </div>
-      </details>
+    </Fold>
+  )
 
-      <details className="ed-fold">
-        <summary>Audio de locución y transcripción</summary>
-        <div className="ed-fold-body">
+  // Sección «Audio de locución y transcripción» (plegada de serie, como antes).
+  const audioSection = (
+    <Fold summary="Audio de locución y transcripción">
         <div className="ed-row">
           <label className="ed-field">
             <span>Audio de la diapositiva (assets/media/…)</span>
@@ -433,12 +403,52 @@ export function ScreenEditor() {
           </button>
           {ttsMsg && <span className="ed-tts-msg">{ttsMsg}</span>}
         </div>
-        </div>
-      </details>
+    </Fold>
+  )
 
-      <details className="ed-fold">
-        <summary>Interacción</summary>
-        <div className="ed-fold-body">
+  return (
+    <div className="ed-form">
+      <h2>
+        Editar pantalla{' '}
+        <span className="ed-form-type"><span aria-hidden="true">{screenTypeIcon(screen.type)}</span> {screenTypeLabel(screen.type)}</span>
+      </h2>
+
+      {screenIssues.length > 0 && (
+        <ul className="ed-inline-issues" aria-label="Avisos de validación de esta pantalla">
+          {screenIssues.map((i, n) => (
+            <li key={n} className={i.severity === 'error' ? 'is-err' : 'is-warn'}>
+              {i.severity === 'error' ? '⛔' : '⚠'} {i.message}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <label className="ed-field">
+        <span>Título</span>
+        {/* data-field: diana del foco al crear una pantalla desde una receta */}
+        <input data-field="screen-title" value={screen.title} onChange={(e) => patch({ title: e.target.value })} />
+      </label>
+
+      {/* Portada y resumen están exentas de objetivo (validación): no se muestra */}
+      {!uiCfg.hideObjective && (
+        <label className="ed-field">
+          <span>Objetivo de aprendizaje</span>
+          <ObjectiveInput value={screen.objective} onChange={(v) => patch({ objective: v })} />
+        </label>
+      )}
+
+      {uiCfg.mediaFirst && mediaSection}
+
+      <label className="ed-field">
+        <span>Texto del estudiante (texto enriquecido: encabezados, negrita, cursiva, enlaces, listas y destacados)</span>
+        <RichTextArea rows={16} value={screen.student_text}
+          onChange={(v) => { warnAudioStale(); patch({ student_text: v }) }} />
+      </label>
+
+      {!uiCfg.mediaFirst && mediaSection}
+
+      <Fold key={`it-${id}-${screen.type}`} summary="Interacción"
+        defaultOpen={!!it || !!uiCfg.interactionOpen}>
         {!it ? (
           <button onClick={() => setInteraction(blankInteraction())}>+ Añadir interacción</button>
         ) : (
@@ -447,7 +457,19 @@ export function ScreenEditor() {
               <label className="ed-field">
                 <span>Tipo</span>
                 <select value={it.type} onChange={(e) => setInteraction({ ...it, type: e.target.value as any })}>
-                  {InteractionType.options.map((t) => <option key={t} value={t}>{interactionTypeLabel(t)}</option>)}
+                  {uiCfg.recommended ? (
+                    <>
+                      <optgroup label="Recomendadas para este tipo">
+                        {uiCfg.recommended.map((t) => <option key={t} value={t}>{interactionTypeLabel(t)}</option>)}
+                      </optgroup>
+                      <optgroup label="Otras">
+                        {InteractionType.options.filter((t) => !uiCfg.recommended!.includes(t))
+                          .map((t) => <option key={t} value={t}>{interactionTypeLabel(t)}</option>)}
+                      </optgroup>
+                    </>
+                  ) : (
+                    InteractionType.options.map((t) => <option key={t} value={t}>{interactionTypeLabel(t)}</option>)
+                  )}
                 </select>
               </label>
               <label className="ed-field ed-field-narrow">
@@ -492,8 +514,29 @@ export function ScreenEditor() {
             <button className="ed-danger" onClick={() => setInteraction(null)}>Eliminar interacción</button>
           </>
         )}
+      </Fold>
+
+      {audioSection}
+
+      <Fold summary="Avanzado">
+        <div className="ed-row">
+          <label className="ed-field">
+            <span>Tipo de pantalla</span>
+            <select value={screen.type} onChange={(e) => changeType(id, e.target.value as ScreenType)}>
+              {ScreenType.options.map((t) => <option key={t} value={t}>{screenTypeLabel(t)}</option>)}
+            </select>
+          </label>
+          <label className="ed-field ed-field-narrow">
+            <span>Tiempo mín. (s)</span>
+            <input type="number" min={0} value={screen.min_time_seconds}
+              onChange={(e) => patch({ min_time_seconds: Number(e.target.value) })} />
+          </label>
+          <label className="ed-check">
+            <input type="checkbox" checked={screen.required} onChange={(e) => patch({ required: e.target.checked })} />
+            <span>Obligatoria</span>
+          </label>
         </div>
-      </details>
+      </Fold>
 
       {screen.source_refs.length > 0 && (
         <div className="ed-sources">

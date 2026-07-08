@@ -27,6 +27,9 @@ import {
 export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boolean) => void }) {
   // El curso cambia mientras se genera (audio_src): lo leemos para el recuento.
   const course = useCourseStore((s) => s.course)
+  const updateNarration = useCourseStore((s) => s.updateNarration)
+  const fillMissingTranscripts = useCourseStore((s) => s.fillMissingTranscripts)
+  const [trMsg, setTrMsg] = useState<string | null>(null)
   const [cfg, setCfg] = useState<TtsConfig>(() => getTtsConfig())
   const [busy, setBusy] = useState(false)
   const [onlyMissing, setOnlyMissing] = useState(true)
@@ -36,7 +39,9 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
   const abortRef = useRef<AbortController | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Recuento reactivo (depende del curso).
+  // Recuento reactivo (depende del curso). `missingTranscript` usa el mismo
+  // criterio que el aviso NARR_NO_TRANSCRIPT de validación (contenido narrable,
+  // sin esqueletos), para que los números cuadren con la pestaña Validación.
   const stats = useMemo(() => {
     void course
     const list = listNarratable()
@@ -45,10 +50,21 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
       total: list.length,
       withTranscript: withTranscript.length,
       missingAudio: withTranscript.filter((s) => !s.hasAudio).length,
+      missingTranscript: list.filter((s) => s.hasContent && !s.hasTranscript && !s.skeleton).length,
     }
   }, [course])
 
   const willGenerate = onlyMissing ? stats.missingAudio : stats.withTranscript
+  // Curso marcado como NO narrado: la generación masiva queda deshabilitada
+  // (probable despiste y coste de API); el ajuste está justo encima.
+  const narrationOff = course.narration.mode === 'off'
+
+  function onFillTranscripts() {
+    const n = fillMissingTranscripts()
+    setTrMsg(n
+      ? `✓ ${n} transcripción${n === 1 ? '' : 'es'} generada${n === 1 ? '' : 's'} desde el contenido (revísalas antes de locutar).`
+      : 'No había pantallas narrables con la transcripción vacía.')
+  }
 
   // Informa al modal contenedor de si hay una generación en curso (bloquea cierre).
   useEffect(() => {
@@ -112,6 +128,19 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
 
   return (
     <>
+          <fieldset className="ed-group">
+            <legend>Curso narrado</legend>
+            <label className="ed-field">
+              <span>¿Este curso lleva locución? Activa los avisos de validación de transcripciones y audios pendientes (se guarda en el proyecto)</span>
+              <select value={course.narration.mode} disabled={busy}
+                onChange={(e) => updateNarration({ mode: e.target.value as typeof course.narration.mode })}>
+                <option value="auto">Automático: narrado si alguna pantalla ya tiene audio</option>
+                <option value="on">Sí — avisar de transcripciones y audios pendientes</option>
+                <option value="off">No — sin avisos de narración</option>
+              </select>
+            </label>
+          </fieldset>
+
           <fieldset className="ed-group">
             <legend>Conexión con la API</legend>
             <label className="ed-field">
@@ -185,12 +214,34 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
 
           <fieldset className="ed-group">
             <legend>Generar todos los audios</legend>
+            {narrationOff && (
+              <p className="ed-tts-msg">
+                ⚠ El curso está marcado como <strong>no narrado</strong>: la generación masiva está
+                deshabilitada. Cambia el ajuste «Curso narrado» (arriba) si quieres locutarlo.
+              </p>
+            )}
             <p className="ed-tts-stats">
               {stats.withTranscript} de {stats.total} pantallas tienen transcripción.
               {' '}{stats.missingAudio} sin audio todavía.
+              {stats.missingTranscript > 0 && <>
+                {' '}<strong>{stats.missingTranscript} con contenido narrable aún sin transcripción.</strong>
+              </>}
             </p>
+
+            {/* Paso previo: transcripciones en bloque. Solo rellena las VACÍAS
+                (nunca sobrescribe una editada a mano, por eso no pide confirmación). */}
+            <div className="ed-row">
+              <button type="button" disabled={busy || narrationOff || stats.missingTranscript === 0}
+                onClick={onFillTranscripts}
+                title="Genera la transcripción desde el texto y las interacciones informativas; solo rellena las que están vacías">
+                ↻ Generar transcripciones desde el contenido
+                {stats.missingTranscript > 0 && ` (${stats.missingTranscript} vacía${stats.missingTranscript === 1 ? '' : 's'})`}
+              </button>
+              {trMsg && <span className="ed-tts-msg">{trMsg}</span>}
+            </div>
+
             <label className="ed-check">
-              <input type="checkbox" checked={onlyMissing} disabled={busy}
+              <input type="checkbox" checked={onlyMissing} disabled={busy || narrationOff}
                 onChange={(e) => setOnlyMissing(e.target.checked)} />
               <span>Generar solo las que aún no tienen audio (desmarca para regenerar todas)</span>
             </label>
@@ -206,7 +257,7 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
               </div>
             ) : (
               <div className="ed-row">
-                <button type="button" className="ed-primary" disabled={busy || willGenerate === 0}
+                <button type="button" className="ed-primary" disabled={busy || narrationOff || willGenerate === 0}
                   onClick={onGenerate}>
                   Generar {willGenerate} audio{willGenerate === 1 ? '' : 's'}
                 </button>

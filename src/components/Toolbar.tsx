@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { downloadScorm } from '../export/exportScorm'
-import { validateCourse } from '../validation/validators'
 import {
   isFsSupported,
   openProject,
@@ -32,7 +31,6 @@ export function Toolbar() {
   const redo = useCourseStore((s) => s.redo)
   const canUndo = useCourseStore((s) => s.past.length > 0)
   const canRedo = useCourseStore((s) => s.future.length > 0)
-  const setActiveTab = useCourseStore((s) => s.setActiveTab)
   const updateCourseInfo = useCourseStore((s) => s.updateCourseInfo)
   const pruneOrphanAssets = useCourseStore((s) => s.pruneOrphanAssets)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -69,7 +67,6 @@ export function Toolbar() {
   useMenuDismiss(menuOpen, menuRef, () => setMenuOpen(false))
   useMenuDismiss(settingsMenuOpen, settingsMenuRef, () => setSettingsMenuOpen(false))
 
-  const val = useMemo(() => validateCourse(course), [course])
   const isSaved = !!linkedFileName && !projectDirty
   // Recursos que ya no usa ninguna diapositiva (peso muerto en el .scormproj).
   const orphanCount = useMemo(() => orphanAssetPaths(course, assets).length, [course, assets])
@@ -210,13 +207,6 @@ export function Toolbar() {
           )}
         </div>
 
-        <button
-          className={`ed-status ${val.ok ? 'ok' : 'err'}`}
-          onClick={() => setActiveTab('validation')}
-          title="Ver pantalla de validación"
-        >
-          {val.errors} ⛔ · {val.warnings} ⚠
-        </button>
       </div>
 
       {importError && <div className="ed-import-error">⛔ {importError}</div>}

@@ -1,5 +1,6 @@
 import type { Course, QuizQuestion, Screen, Unit } from '../schema/course.schema'
 import { normalizeObjective } from './objectives'
+import { buildTranscript } from '../tts/buildTranscript'
 
 export type Severity = 'error' | 'warning' | 'info'
 
@@ -15,6 +16,11 @@ export interface Issue {
 
 interface Ctx {
   course: Course
+  /** El curso es narrado: activa los avisos de narración pendiente. Manda el
+   *  ajuste explícito `course.narration.mode` ('on'/'off'); en 'auto' (default)
+   *  se deduce de que alguna pantalla tenga `audio_src` — sin locución, un
+   *  curso sin transcripciones es perfectamente legítimo y no debe generar ruido. */
+  narrated: boolean
   push: (i: Issue) => void
 }
 
@@ -34,6 +40,19 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
   if (s.type !== 'cover' && s.type !== 'summary' && !s.objective.trim())
     add('NO_OBJECTIVE', 'warning', 'Pantalla sin objetivo de aprendizaje.')
 
+  // Congruencia tipo ↔ recurso ↔ interacción: avisos (no bloquean) para
+  // combinaciones que casi siempre son un despiste del autor.
+  if (s.type === 'cover' && s.interaction)
+    add('COVER_INTERACTION', 'warning', 'La portada lleva una actividad: se recomienda moverla a una pantalla propia.')
+  if (s.type === 'video' &&
+      s.visual_resource.kind !== 'video_file' && s.visual_resource.kind !== 'video_youtube' &&
+      s.interaction?.type !== 'video')
+    add('VIDEO_NO_MEDIA', 'warning', 'Pantalla de tipo Vídeo sin recurso de vídeo.')
+  if (s.type === 'unit_quiz' && !s.interaction?.scored)
+    add('QUIZ_NO_SCORED', 'warning', 'Test de unidad sin actividad evaluable: no aportará nada a la nota.')
+  if (s.type === 'forum_prompt' && s.interaction?.scored)
+    add('FORUM_SCORED', 'warning', 'El debate en foro es una actividad externa (campus): su interacción no debería puntuar.')
+
   const vr = s.visual_resource
   if (vr.kind === 'image' && !vr.alt.trim())
     add('IMG_NO_ALT', 'error', 'Imagen sin texto alternativo (alt).')
@@ -45,6 +64,22 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
     add('AUDIO_NO_TRANSCRIPT', 'error', 'Audio de locución sin transcripción.')
   if ((vr.kind === 'video_file' || vr.kind === 'audio') && vr.has_voice && (vr.tracks || []).length === 0)
     add('MEDIA_NO_SUBS', 'error', 'Medio con voz sin subtítulos (VTT).')
+
+  // Narración pendiente (solo en cursos con locución; ver Ctx.narrated). Los
+  // placeholders ya cargan con SKELETON y los casos con vídeo/audio sin
+  // transcripción ya son errores arriba: aquí solo el flujo de trabajo.
+  const skeleton = s.type === 'content_placeholder' || s.status === 'esqueleto_pendiente_desarrollo'
+  if (ctx.narrated && !skeleton && !s.audio_src.trim()) {
+    if (!s.transcript.trim()) {
+      // «Debería tenerla» = tiene contenido narrable (mismo criterio que el
+      // botón «Generar transcripción desde el contenido»). El caso isVideo ya
+      // es VIDEO_NO_TRANSCRIPT (error): no duplicar.
+      if (!isVideo && buildTranscript(s).trim())
+        add('NARR_NO_TRANSCRIPT', 'warning', 'El curso usa locución y esta pantalla no tiene transcripción (alternativa textual y entrada del TTS).')
+    } else {
+      add('NARR_NO_AUDIO', 'info', 'Pendiente de narrar: hay transcripción pero no audio de locución.')
+    }
+  }
 
   // Interacción
   const it = s.interaction
@@ -144,6 +179,12 @@ function checkGlobal(ctx: Ctx) {
     (a, m) => a + m.units.reduce((b, u) => b + u.screens.filter((s) => s.interaction?.scored).length, 0), 0)
   if (rules.score_source === 'final_test' && finalQuestions === 0)
     ctx.push({ code: 'SCORM_NO_FINAL', severity: 'error', message: 'La nota sale del test final pero no hay preguntas en el test final.', location: 'SCORM', screenId: '__final__' })
+  if (rules.score_source === 'final_test' && scoredActivities > 0)
+    ctx.push({
+      code: 'SCORM_ACTIVITIES_IGNORED', severity: 'warning',
+      message: `Hay ${scoredActivities} actividad${scoredActivities === 1 ? '' : 'es'} marcada${scoredActivities === 1 ? '' : 's'} como evaluable${scoredActivities === 1 ? '' : 's'}, pero la nota sale solo del test final: no contarán para la nota.`,
+      location: 'SCORM',
+    })
   if (rules.score_source === 'unit_tests' && scoredActivities === 0)
     ctx.push({ code: 'SCORM_NO_ACTIVITIES', severity: 'error', message: 'La nota sale de las actividades evaluables pero ninguna interacción puntúa.', location: 'SCORM' })
   if (rules.score_source === 'mixed') {
@@ -198,9 +239,17 @@ export interface ValidationResult {
   ok: boolean
 }
 
+/** El curso es narrado según el ajuste `narration.mode` ('auto' = si alguna
+ *  pantalla tiene locución). Compartido con el panel de Narración (TtsPanel). */
+export function isNarrated(course: Course): boolean {
+  return course.narration.mode === 'on' ||
+    (course.narration.mode === 'auto' && course.modules.some((m) =>
+      m.units.some((u) => u.screens.some((s) => s.audio_src.trim()))))
+}
+
 export function validateCourse(course: Course): ValidationResult {
   const issues: Issue[] = []
-  const ctx: Ctx = { course, push: (i) => issues.push(i) }
+  const ctx: Ctx = { course, narrated: isNarrated(course), push: (i) => issues.push(i) }
 
   course.modules.forEach((m) => {
     m.units.forEach((u) => {
