@@ -24,6 +24,9 @@ interactions.js`. Cualquier formato nuevo debe pasar por ese pipeline (escapar p
 formatear después). No se almacena HTML en `course.json`: el contenido es **markdown
 ligero en texto plano** (`student_text` y similares), portable y versionable. Nunca
 introducir un editor WYSIWYG que guarde HTML ni un sanitizador en el paquete SCORM.
+**Única excepción**: la interacción `html_embed` (código a medida pegado por el autor),
+que se aísla en un `<iframe sandbox="allow-scripts">` sin `allow-same-origin` — nunca
+se inyecta en el DOM de la carcasa (ver `docs/internals/interacciones.md`).
 
 ## Índice de documentación interna (`docs/internals/`)
 Lee el que corresponda al tocar esa área:

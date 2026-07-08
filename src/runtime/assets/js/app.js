@@ -24,7 +24,9 @@
 
   // Modo autor (previsualización del editor): navegación libre sin restricciones
   // de tiempo mínimo, interacciones obligatorias ni secuencia. En el SCORM real
-  // (sin este flag) se aplican todas las reglas configuradas.
+  // (sin este flag) se aplican todas las reglas configuradas. En la Vista
+  // estudiante se puede desactivar temporalmente con el conmutador flotante
+  // (setupAuthorToggle) para probar el comportamiento real del curso.
   var AUTHOR = !!global.__AUTHOR_MODE__;
 
   // ---- Carga -------------------------------------------------------------
@@ -178,11 +180,50 @@
     document.getElementById('me-btn-glossary').addEventListener('click', function () { openModal('glossary'); });
     document.getElementById('me-btn-resources').addEventListener('click', function () { openModal('resources'); });
     document.getElementById('me-btn-help').addEventListener('click', function () { openModal('help'); });
+    setupFullscreen();
     document.querySelectorAll('.me-modal-close').forEach(function (b) { b.addEventListener('click', closeModals); });
     A11Y.bindShortcuts({ next: function () { goRelative(1); }, prev: function () { goRelative(-1); }, menu: toggleMenu, transcript: toggleTranscript });
     global.addEventListener('beforeunload', function () { finishSession(); });
     setupLightbox();
     setupPrint();
+    setupAuthorToggle();
+  }
+
+  // ---- Conmutador de modo autor (solo previsualización) --------------------
+  // Píldora flotante que permite desactivar el modo autor para ver el
+  // comportamiento real de la diapositiva (tiempo mínimo, interacciones
+  // obligatorias, navegación). Solo se crea si __AUTHOR_MODE__ existe: en el
+  // SCORM exportado no aparece. Por defecto el modo autor está activado.
+  function setupAuthorToggle() {
+    if (!global.__AUTHOR_MODE__) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'me-author-toggle';
+    // Anclada a .me-body: queda sobre la esquina superior derecha del área de
+    // contenido (persistente: no la borra el re-render de cada diapositiva).
+    document.querySelector('.me-body').appendChild(btn);
+    function reflect() {
+      btn.classList.toggle('is-on', AUTHOR);
+      btn.setAttribute('aria-pressed', String(AUTHOR));
+      btn.innerHTML = '<span class="me-author-dot" aria-hidden="true"></span>Modo autor: ' +
+        (AUTHOR ? 'activado' : 'desactivado');
+      btn.title = AUTHOR
+        ? 'Navegación libre, sin reglas. Pulsa para probar el comportamiento real del curso.'
+        : 'Se aplican las reglas reales del curso. Pulsa para volver a la navegación libre.';
+    }
+    btn.addEventListener('click', function () {
+      AUTHOR = !AUTHOR;
+      // Al pasar a modo real, el tiempo mínimo de la pantalla actual cuenta
+      // desde ahora (si no, llevaría ya consumido el rato de edición previa).
+      if (!AUTHOR) { screenEnter = Date.now(); startMinTimer(); }
+      reflect();
+      refreshMenuChecks();
+      refreshNavState();
+      A11Y.announce(AUTHOR
+        ? 'Modo autor activado: navegación libre.'
+        : 'Modo autor desactivado: se aplican las reglas del curso.');
+    });
+    reflect();
   }
 
   // Impresión: solo se imprime la pantalla actual (ver print/print.css). Las
@@ -306,9 +347,11 @@
     current = idx;
     screenEnter = Date.now();
     var entry = SCREENS[idx];
-    // En modo autor avisa al editor de la pantalla actual, para que al volver a
-    // la pestaña «Editar» se sitúe en la misma diapositiva (test final excluido).
-    if (AUTHOR && entry.screen && !entry.isFinalTest && !entry.isResults && global.parent && global.parent !== global) {
+    // En la previsualización avisa al editor de la pantalla actual, para que al
+    // volver a la pestaña «Editar» se sitúe en la misma diapositiva (test final
+    // excluido). Depende de estar en la Vista estudiante (__AUTHOR_MODE__), no
+    // del conmutador de modo autor: sigue sincronizando aunque se desactive.
+    if (global.__AUTHOR_MODE__ && entry.screen && !entry.isFinalTest && !entry.isResults && global.parent && global.parent !== global) {
       try { global.parent.postMessage({ type: 'me-screen-change', screenId: entry.screen.id }, '*'); } catch (e) {}
     }
     var content = document.getElementById('me-content');
@@ -337,11 +380,12 @@
       var rendered = Renderer.render(content, sc, ctx);
       activeController = rendered.interaction;
       applyReveal(sc.id, content);
-      // Captura el estado inicial: las interacciones informativas (accordion,
-      // tabs, flip_cards, video, case_practice...) se consideran completadas al
-      // renderizarse y nunca llaman a ctx.save. Las evaluables devuelven
-      // completed:false hasta que el usuario las resuelve. No se sobrescribe un
-      // resultado ya guardado (reanudación de sesión).
+      // Captura el estado inicial. Las de exploración (accordion, tabs,
+      // flip_cards, timeline, flashcards) devuelven completed solo cuando se ha
+      // visto TODO su contenido; video, case_practice y html_embed se consideran
+      // completadas al renderizarse. Las evaluables devuelven completed:false
+      // hasta que el usuario las resuelve. No se sobrescribe un resultado ya
+      // guardado (reanudación de sesión).
       if (activeController && sc.interaction && !STATE.results[sc.interaction.id]) {
         STATE.results[sc.interaction.id] = activeController.result();
       }
@@ -509,6 +553,43 @@
     tab.setAttribute('aria-expanded', String(visible));
     tab.querySelector('.me-menu-tab-arrow').innerHTML = global.MEIcons.svg(visible ? 'chevron-left' : 'chevron-right');
   }
+  // ---- Pantalla completa ---------------------------------------------------
+  // Botón de la cabecera que pone el curso a pantalla completa (Fullscreen API,
+  // con fallback webkit para navegadores/LMS antiguos). Si el entorno no lo
+  // permite (p. ej. un iframe de LMS sin allowfullscreen, o iPhone), el botón
+  // permanece oculto: nunca se muestra un control muerto.
+  function fullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+  function setupFullscreen() {
+    var btn = document.getElementById('me-btn-fullscreen');
+    var root = document.documentElement;
+    var supported = (document.fullscreenEnabled || document.webkitFullscreenEnabled) &&
+      (root.requestFullscreen || root.webkitRequestFullscreen);
+    if (!supported) return;
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+      if (fullscreenElement()) {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      } else {
+        var p = (root.requestFullscreen || root.webkitRequestFullscreen).call(root);
+        if (p && p.catch) p.catch(function () {});
+      }
+    });
+    // El estado puede cambiar también por Esc o por el propio navegador: el
+    // icono/etiqueta se sincronizan en el evento, no en el clic.
+    document.addEventListener('fullscreenchange', reflectFullscreenButton);
+    document.addEventListener('webkitfullscreenchange', reflectFullscreenButton);
+  }
+  function reflectFullscreenButton() {
+    var btn = document.getElementById('me-btn-fullscreen');
+    var on = !!fullscreenElement();
+    btn.querySelector('[data-icon]').innerHTML = global.MEIcons.svg(on ? 'minimize' : 'maximize');
+    var label = on ? 'Salir de pantalla completa' : 'Pantalla completa';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+  }
+
   function toggleTranscript() {
     var entry = SCREENS[current];
     var t = entry && !entry.isFinalTest ? entry.screen.transcript : '';

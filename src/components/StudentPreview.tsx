@@ -52,14 +52,9 @@ export function StudentPreview() {
 
   return (
     <div className="ed-preview">
-      <p className="ed-preview-note">
-        Vista estudiante con la <strong>misma carcasa</strong> que el SCORM exportado (modo standalone,
-        sin LMS). <strong>Modo autor</strong>: navegación libre sin restricciones de tiempo ni
-        interacciones obligatorias (en el SCORM exportado sí se aplican las reglas). Los recursos
-        <strong> subidos </strong>(audio, imágenes, vídeo, subtítulos) se reproducen aquí; los que solo
-        tengan una ruta escrita sin archivo cargado, no.
-      </p>
-      <iframe ref={frameRef} className="ed-preview-frame" title="Vista estudiante" srcDoc={srcDoc} />
+      {/* allowFullScreen: sin él, el botón de pantalla completa de la carcasa
+          no estaría disponible dentro de la vista previa */}
+      <iframe ref={frameRef} className="ed-preview-frame" title="Vista estudiante" srcDoc={srcDoc} allowFullScreen />
     </div>
   )
 }

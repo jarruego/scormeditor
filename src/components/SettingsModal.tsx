@@ -6,7 +6,7 @@ import { NarrationSection } from './TtsPanel'
  * Ventana (modal) genérica de ajustes: marco + cabecera + cierre (Escape / clic
  * fuera / ✕). Si `busy` es true (p. ej. narración generando) no se puede cerrar.
  */
-function SettingsWindow({
+export function SettingsWindow({
   title,
   onClose,
   busy = false,

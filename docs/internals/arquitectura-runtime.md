@@ -139,11 +139,13 @@ que lo etiquete).
   ancho mínimo, alineados a la derecha de la cabecera (ya no bajan a una fila propia);
   el nombre accesible lo da el `aria-label` fijo de cada botón. `reflectAudioButton` y
   `reflectMenuUI` (app.js) regeneran solo el span del icono vía `MEIcons.svg`.
-- **Altura mínima de la tarjeta** (jul 2026): `.me-screen` lleva
-  `min-height: clamp(360px, 60vh, 540px)` (móvil: `clamp(260px, 50vh, 440px)`) para que
-  las pantallas con poco contenido no queden raquíticas. El techo de 540 px viene del
-  formato clásico 960×540 de las herramientas de autor SCORM. En impresión se anula
-  (`min-height: 0` en print.css).
+- **Dimensiones de la tarjeta** (jul 2026): `.me-screen` se estira hasta llenar TODO el
+  alto disponible del área de contenido (`.me-content` es columna flex; la tarjeta lleva
+  `flex: 1 0 auto` — crece, nunca encoge: con contenido largo hay scroll normal). El
+  `min-height: clamp(360px, 60vh, 540px)` (móvil: `clamp(260px, 50vh, 440px)`) queda como
+  red de seguridad. `max-width: 960px` para aprovechar pantallas grandes y el modo
+  pantalla completa (formato clásico 960×540 de las herramientas de autor; antes 820 px).
+  En impresión se anulan flex y altura mínima (print.css).
 - **Etiqueta «Evaluable»** (jul 2026): píldora `.me-scored-badge` en la esquina superior
   derecha de la tarjeta `.me-screen` cuando `interaction.scored` es true (la inserta
   `render()` en renderer.js). Solo se muestra si las actividades cuentan para la nota:
@@ -156,6 +158,13 @@ que lo etiquete).
   mismo `toggleMenu()` que el ☰ de la topbar; `reflectMenuUI()` (app.js) sincroniza
   `aria-expanded` de ambos y el sentido de la flecha. Solo escritorio (en móvil el
   slide-over se maneja con el ☰ y la pestaña se oculta); tampoco sale en impresión.
+- **Botón de pantalla completa** (jul 2026): `#me-btn-fullscreen`, último de la topbar
+  (arriba a la derecha). Fullscreen API sobre `documentElement` con fallback `webkit`;
+  icono `maximize`/`minimize` y title/aria-label se sincronizan en `fullscreenchange`
+  (cubre también la salida con Esc). Arranca `hidden` y solo se muestra si el entorno
+  lo permite (`fullscreenEnabled`): en un iframe de LMS sin `allowfullscreen` o en
+  iPhone no aparece. El iframe de la Vista estudiante lleva `allowFullScreen`
+  (`StudentPreview.tsx`) para que funcione también en la previsualización.
 
 ### Niveles de animación (`shell.motion`, jul 2026)
 `shell.motion` (`none`/`subtle` def./`rich`; editable en ⚙ Ajustes → Interfaz (Apariencia))

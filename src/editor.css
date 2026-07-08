@@ -227,7 +227,7 @@ button.ed-pill { cursor: pointer; }
 
 /* Preview / report */
 .ed-preview, .ed-report { display: grid; grid-template-rows: auto 1fr; height: 100%; gap: .5rem; }
-.ed-preview-note, .ed-report-actions { font-size: .85rem; color: var(--c-muted); }
+.ed-report-actions { font-size: .85rem; color: var(--c-muted); }
 .ed-report-actions { display: flex; gap: .5rem; }
 .ed-preview-frame { width: 100%; height: 100%; min-height: 60vh; border: 1px solid var(--c-border); border-radius: 8px; background: #fff; }
 
@@ -250,7 +250,30 @@ button.ed-pill { cursor: pointer; }
 .ed-term-row > button { border: none; background: none; color: var(--c-muted); font-size: 1rem; padding: .2rem .4rem; cursor: pointer; }
 .ed-term-row > button:hover { color: #b3261e; }
 
+/* Campos de código (interacción HTML a medida) */
+.ed-code { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: .85rem; white-space: pre; }
+
 /* Renombrado inline (título del curso, módulos y unidades) */
 .ed-rename { border: none; background: none; padding: 0 .25rem; margin-left: .15rem; color: var(--c-muted); font-size: .85rem; cursor: pointer; opacity: .35; }
 .ed-rename:focus, .ed-module-title:hover .ed-rename, .ed-unit-title:hover .ed-rename, .ed-course-name:hover .ed-rename { opacity: 1; }
 .ed-rename-input { font: inherit; width: 100%; min-width: 8rem; padding: .1rem .3rem; border: 1px solid var(--c-primary); border-radius: 4px; }
+
+/* Gestor de objetivos de aprendizaje (modal) */
+.ed-obj-list { display: grid; gap: .6rem; }
+.ed-obj-row { border: 1px solid var(--c-border); border-radius: 8px; padding: .6rem .7rem; display: grid; gap: .45rem; background: var(--c-surface); }
+.ed-obj-main { display: flex; gap: .4rem; align-items: center; }
+.ed-obj-main input { flex: 1; }
+.ed-obj-del { border: none; background: none; color: var(--c-muted); font-size: 1rem; padding: .2rem .4rem; cursor: pointer; }
+.ed-obj-del:hover { color: #b3261e; }
+.ed-obj-uses { display: flex; gap: .35rem; flex-wrap: wrap; align-items: center; }
+.ed-obj-chip { border: 1px solid var(--c-border); background: var(--c-bg); border-radius: 99px; padding: .15rem .6rem; font-size: .8rem; cursor: pointer; }
+.ed-obj-chip:hover:not(:disabled) { background: #f4f7ff; border-color: var(--c-primary); }
+.ed-obj-chip:disabled { cursor: default; opacity: .7; }
+.ed-obj-flag { border-radius: 99px; padding: .15rem .6rem; font-size: .8rem; }
+.ed-obj-flag.warn { background: #fff4e0; color: #7a4a00; }
+.ed-obj-flag.err { background: #fdecea; color: #7a1a14; }
+.ed-obj-add { border-top: 1px dashed var(--c-border); padding-top: .75rem; display: grid; gap: .45rem; }
+.ed-obj-add h4 { margin: 0; font-size: .95rem; }
+.ed-obj-add-form { display: flex; gap: .5rem; flex-wrap: wrap; }
+.ed-obj-add-form input { flex: 2 1 220px; }
+.ed-obj-add-form select { flex: 1 1 180px; min-width: 0; }

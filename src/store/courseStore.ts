@@ -4,6 +4,7 @@ import { Course as CourseSchema, Screen as ScreenSchema } from '../schema/course
 import { migrate } from '../schema/migrations'
 import { sampleCourse } from '../schema/sample-course'
 import { isAssetReferenced, orphanAssetPaths } from '../schema/assetRefs'
+import { normalizeObjective } from '../validation/objectives'
 import type { AssetMap } from '../export/exportScorm'
 
 function clone<T>(x: T): T {
@@ -25,7 +26,7 @@ interface Located { mi: number; ui: number; si: number }
 export type Tab = 'editor' | 'preview' | 'validation' | 'report'
 
 /** Ventana de ajustes abierta (vive en el store para poder abrirla desde Validación). */
-export type SettingsModalKind = 'course' | 'narration' | 'appearance'
+export type SettingsModalKind = 'course' | 'narration' | 'appearance' | 'objectives'
 
 /** Instantánea para el historial de deshacer/rehacer. */
 type CourseSnapshot = { course: Course; selectedScreenId: string | null }
@@ -82,6 +83,11 @@ interface CourseState {
   updateModule: (id: string, patch: { title?: string }) => void
   /** Renombra una unidad (título estructural del menú lateral). */
   updateUnit: (id: string, patch: { title?: string; summary?: string }) => void
+  /** Renombra un objetivo de aprendizaje en TODOS sus usos (pantallas,
+   *  interacciones y preguntas de test; comparación normalizada). */
+  renameObjective: (from: string, to: string) => void
+  /** Quita un objetivo de todos sus usos (deja el campo vacío). */
+  removeObjective: (text: string) => void
   /** Reemplaza el glosario completo (edición del panel Glosario). */
   setGlossary: (terms: GlossaryTerm[]) => void
   /** Reemplaza la bibliografía completa (panel Recursos y bibliografía). */
@@ -128,6 +134,26 @@ export const useCourseStore = create<CourseState>((set, get) => {
   function resetCoalesce() {
     lastKey = null
     lastTime = 0
+  }
+
+  // Sustituye un objetivo por otro texto ('' = quitarlo) en todos sus usos:
+  // pantallas, interacciones y preguntas de test (comparación normalizada).
+  function remapObjective(from: string, to: string) {
+    const key = normalizeObjective(from)
+    if (!key) return
+    snapshot()
+    const course = clone(get().course)
+    const apply = (v: string) => (normalizeObjective(v) === key ? to : v)
+    for (const m of course.modules)
+      for (const u of m.units)
+        for (const s of u.screens) {
+          s.objective = apply(s.objective)
+          if (s.interaction) s.interaction.learning_objective = apply(s.interaction.learning_objective ?? '')
+        }
+    const tests = [...course.assessments.unit_tests, ...(course.assessments.final_test ? [course.assessments.final_test] : [])]
+    for (const t of tests)
+      for (const q of t.questions) q.learning_objective = apply(q.learning_objective ?? '')
+    set({ course })
   }
 
   return {
@@ -243,6 +269,15 @@ export const useCourseStore = create<CourseState>((set, get) => {
         for (const s of u.screens) s.min_time_seconds = seconds
     set({ course })
   },
+
+  // Renombrar/quitar un objetivo actúa sobre TODOS sus usos a la vez para que
+  // la vinculación (por texto, comparado normalizado) nunca quede rota a medias.
+  renameObjective: (from, to) => {
+    const text = to.trim()
+    if (text && text !== from.trim()) remapObjective(from, text)
+  },
+
+  removeObjective: (text) => remapObjective(text, ''),
 
   // Los renombrados y la edición de glosario/bibliografía se coalescen por clave
   // (como updateScreen): teclear un título entero = un solo paso de deshacer.

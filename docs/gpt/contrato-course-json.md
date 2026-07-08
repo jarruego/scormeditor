@@ -363,7 +363,7 @@ Estructura común a TODAS:
 - `type` (enum cerrado): `accordion`, `tabs`, `flip_cards`, `match_pairs`,
   `sort_steps`, `single_choice`, `true_false`, `classification`,
   `scenario_decision`, `case_practice`, `hotspots`, `video`, `fill_blanks`,
-  `timeline`, `flashcards`.
+  `timeline`, `flashcards`, `html_embed`.
 - `retries`: `0` = ilimitados.
 - `learning_objective`: rellénalo siempre (el validador lo pide).
 - Reglas del validador para preguntas evaluables: deben tener **respuesta
@@ -479,6 +479,12 @@ al cierre de un tema; `flip_cards` para explorar contenido:
 }
 ```
 (usa `"src": "assets/media/v.mp4"` en vez de `youtube` si es vídeo propio.)
+
+**`html_embed`** — animación o interactivo a medida en HTML/CSS/JS que el **autor
+humano pega a mano en el editor** (corre aislado en un iframe sandbox, no puntúa).
+**NO lo generes**: existe en el enum, pero escribir código no es tarea del GPT; si un
+contenido pide un interactivo que ningún otro tipo cubre, deja una pantalla `content`
+con una `editor_note` describiendo el interactivo deseado y el autor lo montará.
 
 > Tipos de tu GPT que NO existen aquí y su equivalencia:
 > `match_to_category` → `classification`; `classify` → `classification`;

@@ -37,6 +37,22 @@ ya declarados pero admite escribir uno nuevo. Ambos comparten `useDeclaredObject
 `src/validation/objectives.ts`) — así «+ Añadir pregunta» va recorriendo solo los
 objetivos pendientes. Son valores iniciales editables, no un vínculo automático: el
 desplegable sigue mandando.
+
+### Gestor de objetivos (⚙ Ajustes › Objetivos de aprendizaje)
+Los objetivos **no son una entidad** del `course.json`: viven como texto repetido en
+`screen.objective`, `interaction.learning_objective` y `question.learning_objective`. El
+gestor (`src/components/ObjectivesModal.tsx`, `settingsModal: 'objectives'`) los reúne con
+`collectObjectives()` (`src/validation/objectives.ts`): por clave normalizada, con las
+pantallas que lo declaran y las evaluaciones vinculadas (chips que navegan al editor vía
+`goToScreen`, incluido `__final__`). Acciones sobre **todos los usos a la vez** para no
+dejar la vinculación rota a medias (`remapObjective` en el store): **renombrar**
+(`renameObjective`, se confirma al salir del campo — no tecla a tecla — para no fusionar
+por accidente con otro objetivo que normalice igual; renombrar a un texto ya existente
+**fusiona** ambos, es deliberado) y **quitar** (`removeObjective`, vacía el campo en todos
+los usos, con `confirmDialog`). **Añadir** = declarar el texto en una pantalla elegida
+(`updateScreen`), porque un objetivo solo existe si una pantalla lo declara. Los objetivos
+vinculados desde evaluaciones pero no declarados en ninguna pantalla (cursos importados)
+se listan al final con la marca «no declarado en ninguna pantalla».
 - **Ajustes** **no** es un nodo del árbol: es un **menú desplegable ⚙ Ajustes** en la
   `Toolbar` (junto a «Archivo ▾») con tres opciones **independientes**, cada una abre **su
   propia ventana** (decisión jul 2026: menú de Ajustes con ventanas separadas, ya no un modal
@@ -138,9 +154,18 @@ para usar con `await` desde código imperativo. El modal (`ConfirmModal`, montad
   `app.js` lo respeta en modo autor. El id de arranque se congela con `useRef` al montar
   (`StudentPreview.tsx`) para no recargar el iframe al navegar dentro de la vista.
 - **Vista → Editor:** `app.js` emite `postMessage({type:'me-screen-change'})` en cada
-  `goTo` (modo autor; excluye el test final `__final__` y la pantalla de resultados
+  `goTo` (solo en previsualización, condicionado a `__AUTHOR_MODE__` — no al conmutador
+  de modo autor —; excluye el test final `__final__` y la pantalla de resultados
   `__results__`); `StudentPreview` escucha y llama a `selectScreen(id)`. Al volver a
   Editar, se sitúa donde quedaste.
+- **Conmutador de modo autor (jul 2026):** píldora `.me-author-toggle` anclada a
+  `.me-body`, sobre la esquina superior derecha del área de contenido
+  (`setupAuthorToggle` en app.js; persistente, no la afecta el re-render de las
+  diapositivas ni el scroll) que activa o
+  desactiva en vivo la variable `AUTHOR` para probar el comportamiento real (gating de
+  navegación, tiempo mínimo —se reinicia `screenEnter` al desactivar—, interacciones
+  obligatorias). Por defecto activado. Solo se crea si existe `__AUTHOR_MODE__`: el
+  SCORM exportado nunca lo lleva. Oculto en impresión.
 - **Endurecimiento de la vista previa:** el iframe `srcDoc` comparte origen con el editor
   (no lleva `sandbox` porque rompería las blob URLs de los assets), así que cualquier dato
   del curso interpolado en el HTML de `buildPreviewHtml` debe escaparse o validarse.

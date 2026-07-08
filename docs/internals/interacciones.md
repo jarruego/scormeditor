@@ -60,7 +60,15 @@ ese contrato; no conoce el tipo concreto.
   pulso-glow (`.me-pulse`, keyframes `me-pulse-glow`) en el **primer** ítem/carta mientras
   no se haya abierto ninguno, y **check verde** al abrir (`.is-seen`; en la carta la
   lengüeta pasa a «✓» verde). Lo visto se persiste como `{seen: {idx: true}}` vía
-  `ctx.save` (no fija results: estas interacciones siguen sin puntuar ni bloquear).
+  `ctx.save`.
+- **Los interactivos de exploración bloquean hasta verlo todo** (jul 2026): `accordion`,
+  `tabs`, `flip_cards`, `timeline` y `flashcards` devuelven `completed` solo cuando el
+  alumno ha abierto/girado **todos** los apartados (flashcards: al terminar el repaso una
+  vez; «Repetir repaso» no la des-completa, se persiste `done: true`). Con la regla
+  `require_interactions` activa y la pantalla `required`, el gating de navegación
+  (`interactionOk`, app.js) no deja avanzar hasta entonces. Siguen sin puntuar
+  (`scored: false`). `video`, `case_practice` y `html_embed` completan al renderizarse
+  (no hay señal fiable de «visto entero»).
 - **Posición respecto al texto**: `screen.interaction_layout` (`top`/`bottom`, def.
   `bottom`). `render()` (renderer.js) mueve `.me-interaction` tras el `<h1>` cuando es
   `top`. Editable en `ScreenEditor`.
@@ -80,9 +88,11 @@ ese contrato; no conoce el tipo concreto.
   restaurar; `replay()` reinicia las animaciones (shake/pop) entre intentos.
 
 ## Tipos añadidos en fase 4 (jul 2026)
-Tres tipos nuevos en el enum (`course.schema.ts`), con etiqueta (`labels.ts`), coletilla
-(`TYPE_LABELS`), editor de config (`InteractionConfigEditor`), validación y contrato GPT
-(`docs/gpt/contrato-course-json.md`) sincronizados:
+Tres tipos nuevos en el enum (`course.schema.ts`), con etiqueta (`labels.ts`), editor de
+config (`InteractionConfigEditor`), validación y contrato GPT
+(`docs/gpt/contrato-course-json.md`) sincronizados. (La coletilla `TYPE_LABELS`
+«Actividad/Interactivo» que encabezaba cada interacción se retiró en jul 2026 a petición
+del autor: la instrucción de cada ejercicio ya la da su `prompt`/`instructions`.)
 - **`fill_blanks`** (evaluable): `config.text` con huecos `[[respuesta]]` +
   `config.distractors` opcional. Cada hueco → `<select>` con pool barajado (determinista,
   `shuffle` por id). Comprobar marca cada select `.is-right`/`.is-wrong`; intentos y
@@ -96,6 +106,23 @@ Tres tipos nuevos en el enum (`course.schema.ts`), con etiqueta (`labels.ts`), c
   shape que `flip_cards`). Flujo una carta cada vez: «Mostrar respuesta» → «¿La sabías?»
   → resumen «X de N» + repetir. Estado `{idx, known[]}` restaurable. Validador: `FC_EMPTY`
   y `FC_SCORED` (warning si `scored: true`). `completed: true` siempre (no bloquea).
+
+## `html_embed` — HTML/CSS/JS a medida (jul 2026)
+Tipo informativo para animaciones e interactivos ad hoc que el **autor pega a mano** en el
+editor (tres textareas de código + alto opcional). `config: { html, css, js, height? }`.
+- **Excepción controlada a la invariante anti-XSS**: es el único tipo que guarda código en
+  `course.json`, y por eso corre en un `<iframe sandbox="allow-scripts">` **sin**
+  `allow-same-origin` (origen opaco): no puede tocar la API SCORM, `suspend_data` ni el DOM
+  de la carcasa. Nada del autor se inyecta en nuestro DOM — el documento interno viaja
+  **escapado** dentro del atributo `srcdoc` (y `</script>`/`</style>` internos se neutralizan
+  para no romper el documento del iframe).
+- **Alto**: fijo si `config.height` (px); si no, **auto-resize** — el doc interno reporta
+  `scrollHeight` por `postMessage` (`{meEmbed: id, height}`, único canal con origen opaco)
+  y la carcasa ajusta el iframe filtrando por id de interacción.
+- No puntúa ni guarda estado (`completed: true, scored: false`); el sandbox no tiene acceso
+  a `ctx`. El código debe ser **autocontenido** (sin CDN si el curso puede verse offline).
+- Validadores: `EMBED_EMPTY` (error sin html ni js) y `EMBED_SCORED` (warning si `scored`).
+- No participa en TTS (`buildTranscript` no lo lista como informativa narrable: es código).
 
 ## Roadmap (acordado, no implementado)
 - **Animación secuencial** del contenido: revelar bloques en cascada. Encaja porque cada

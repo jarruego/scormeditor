@@ -35,6 +35,7 @@ export const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
   fill_blanks: 'Rellenar huecos',
   timeline: 'Línea de tiempo',
   flashcards: 'Tarjetas de repaso',
+  html_embed: 'HTML a medida (código)',
 }
 
 /** Icono compacto por tipo de pantalla (árbol del editor). */

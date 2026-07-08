@@ -1,4 +1,4 @@
-import type { Course } from '../schema/course.schema'
+import type { Course, UnitTest } from '../schema/course.schema'
 
 /**
  * Normaliza un objetivo de aprendizaje para compararlo con tolerancia: sin
@@ -19,6 +19,86 @@ export function normalizeObjective(s: string): string {
     .trim()
 }
 
+/** Un objetivo del curso con todos sus usos, para el gestor de objetivos. */
+export type ObjectiveInfo = {
+  /** Clave normalizada (identidad del objetivo). */
+  key: string
+  /** Texto canónico: el de la primera pantalla que lo declara. */
+  text: string
+  /** Pantallas que lo declaran como su «Objetivo de aprendizaje». */
+  declaredIn: { id: string; title: string }[]
+  /** Interacciones y preguntas de test vinculadas a él. `screenId` es la
+   *  pantalla del editor a la que navegar (`__final__` para el test final;
+   *  null si el test de unidad no tiene pantallas donde aterrizar). */
+  usedBy: { screenId: string | null; label: string; evaluative: boolean }[]
+}
+
+/**
+ * Recorre el curso y agrupa por clave normalizada todos los objetivos:
+ * declarados en pantallas y/o vinculados desde interacciones y preguntas de
+ * test. Devuelve primero los declarados (en orden de aparición) y después los
+ * huérfanos (vinculados pero sin pantalla que los declare).
+ */
+export function collectObjectives(course: Course): ObjectiveInfo[] {
+  const byKey = new Map<string, ObjectiveInfo>()
+  const entry = (raw: string): ObjectiveInfo | null => {
+    const text = raw.trim()
+    const key = normalizeObjective(text)
+    if (!key) return null
+    let info = byKey.get(key)
+    if (!info) {
+      info = { key, text, declaredIn: [], usedBy: [] }
+      byKey.set(key, info)
+    }
+    return info
+  }
+
+  course.modules.forEach((m) => m.units.forEach((u) => u.screens.forEach((s) => {
+    const decl = entry(s.objective)
+    if (decl) {
+      // El texto canónico es el de la primera pantalla que lo declara (puede
+      // haber aparecido antes como vínculo de una interacción).
+      if (decl.declaredIn.length === 0) decl.text = s.objective.trim()
+      decl.declaredIn.push({ id: s.id, title: s.title || s.id })
+    }
+    if (s.interaction?.learning_objective) {
+      entry(s.interaction.learning_objective)?.usedBy.push({
+        screenId: s.id,
+        label: `Interacción en «${s.title || s.id}»`,
+        evaluative: !!s.interaction.scored,
+      })
+    }
+  })))
+
+  const addTest = (test: UnitTest | null, screenId: string | null, origin: string) => {
+    if (!test) return
+    const counts = new Map<string, { text: string; n: number }>()
+    for (const q of test.questions) {
+      const text = (q.learning_objective ?? '').trim()
+      const key = normalizeObjective(text)
+      if (!key) continue
+      const c = counts.get(key) ?? { text, n: 0 }
+      c.n += 1
+      counts.set(key, c)
+    }
+    for (const { text, n } of counts.values()) {
+      entry(text)?.usedBy.push({
+        screenId,
+        label: `${n} pregunta${n === 1 ? '' : 's'} ${origin}`,
+        evaluative: true,
+      })
+    }
+  }
+  addTest(course.assessments.final_test, '__final__', 'del test final')
+  for (const t of course.assessments.unit_tests) {
+    const unit = course.modules.flatMap((m) => m.units).find((u) => u.id === t.unit_id)
+    addTest(t, unit?.screens[0]?.id ?? null, `del test «${t.title}»`)
+  }
+
+  const all = [...byKey.values()]
+  return [...all.filter((o) => o.declaredIn.length > 0), ...all.filter((o) => o.declaredIn.length === 0)]
+}
+
 /**
  * Objetivos declarados en pantallas que ninguna evaluación cubre todavía
  * (interacciones `scored`, test final y tests de unidad; comparación
@@ -26,16 +106,7 @@ export function normalizeObjective(s: string): string {
  * objetivo de las preguntas nuevas del test con el primero pendiente.
  */
 export function uncoveredObjectives(course: Course): string[] {
-  const declared = new Map<string, string>()
-  const evaluated = new Set<string>()
-  course.modules.forEach((m) => m.units.forEach((u) => u.screens.forEach((s) => {
-    const obj = s.objective.trim()
-    const key = normalizeObjective(obj)
-    if (key && !declared.has(key)) declared.set(key, obj)
-    if (s.interaction?.scored && s.interaction.learning_objective)
-      evaluated.add(normalizeObjective(s.interaction.learning_objective))
-  })))
-  course.assessments.final_test?.questions.forEach((q) => q.learning_objective && evaluated.add(normalizeObjective(q.learning_objective)))
-  course.assessments.unit_tests.forEach((t) => t.questions.forEach((q) => q.learning_objective && evaluated.add(normalizeObjective(q.learning_objective))))
-  return [...declared.entries()].filter(([key]) => !evaluated.has(key)).map(([, obj]) => obj)
+  return collectObjectives(course)
+    .filter((o) => o.declaredIn.length > 0 && !o.usedBy.some((u) => u.evaluative))
+    .map((o) => o.text)
 }

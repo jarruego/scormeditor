@@ -280,6 +280,34 @@ export function InteractionConfigEditor({
       )
     }
 
+    // ---- HTML a medida (iframe sandbox) ------------------------------------
+    case 'html_embed':
+      return (
+        <div className="ed-stack">
+          <p className="ed-hint">
+            Pega aquí tu animación o interactivo. El código se ejecuta <strong>aislado en un
+            iframe sandbox</strong> dentro del SCORM: no puede acceder al LMS, a la API SCORM ni al
+            resto de la pantalla. Debe ser autocontenido (sin cargar librerías externas por CDN si
+            el curso puede verse sin conexión).
+          </p>
+          <label className="ed-field"><span>HTML</span>
+            <textarea className="ed-code" rows={8} spellCheck={false} value={cfg.html || ''}
+              placeholder={'<div id="demo">…</div>'}
+              onChange={(e) => setConfig({ html: e.target.value })} /></label>
+          <label className="ed-field"><span>CSS</span>
+            <textarea className="ed-code" rows={5} spellCheck={false} value={cfg.css || ''}
+              placeholder={'#demo { color: teal; }'}
+              onChange={(e) => setConfig({ css: e.target.value })} /></label>
+          <label className="ed-field"><span>JavaScript</span>
+            <textarea className="ed-code" rows={8} spellCheck={false} value={cfg.js || ''}
+              placeholder={"document.getElementById('demo').addEventListener('click', …)"}
+              onChange={(e) => setConfig({ js: e.target.value })} /></label>
+          <label className="ed-field ed-field-narrow"><span>Alto fijo en px (vacío = automático)</span>
+            <input type="number" min={0} value={cfg.height ?? ''}
+              onChange={(e) => setConfig({ height: e.target.value === '' ? undefined : Number(e.target.value) })} /></label>
+        </div>
+      )
+
     default:
       return null
   }

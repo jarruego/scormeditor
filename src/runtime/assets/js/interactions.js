@@ -151,7 +151,11 @@
         if (!open && !seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
       });
     });
-    return { result: function () { return { completed: true, scored: false }; } };
+    // Completada solo cuando se han abierto TODOS los apartados: con la regla
+    // «exigir completar las interacciones» activa, no deja avanzar hasta entonces.
+    return { result: function () {
+      return { completed: items.every(function (_, i) { return !!seen[i]; }), scored: false };
+    } };
   });
 
   // --- 2. Tabs ---------------------------------------------------------------
@@ -191,7 +195,11 @@
         if (e.key === 'ArrowLeft') { e.preventDefault(); activate((i - 1 + tabs.length) % tabs.length); }
       });
     });
-    return { result: function () { return { completed: true, scored: false }; } };
+    // Completada solo cuando se han visitado TODAS las pestañas (la primera
+    // cuenta desde el principio porque ya está visible).
+    return { result: function () {
+      return { completed: items.every(function (_, i) { return !!seen[i]; }), scored: false };
+    } };
   });
 
   // --- 3. Flip cards ---------------------------------------------------------
@@ -228,7 +236,10 @@
         if (!flipped && !seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
       });
     });
-    return { result: function () { return { completed: true, scored: false }; } };
+    // Completada solo cuando se han girado TODAS las tarjetas.
+    return { result: function () {
+      return { completed: cards.every(function (_, i) { return !!seen[i]; }), scored: false };
+    } };
   });
 
   // --- 6. Single choice / 7. True-false (comparten lógica) -------------------
@@ -832,7 +843,10 @@
         if (!open && !seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
       });
     });
-    return { result: function () { return { completed: true, scored: false }; } };
+    // Completada solo cuando se han desplegado TODOS los hitos.
+    return { result: function () {
+      return { completed: miles.every(function (_, i) { return !!seen[i]; }), scored: false };
+    } };
   });
 
   // --- 15. Tarjetas de repaso (flashcards) -------------------------------------
@@ -849,6 +863,9 @@
     var idx = st.idx || 0;
     var known = st.known || []; // true/false por carta respondida
     if (idx > cards.length) idx = 0;
+    // Completada al terminar el repaso una vez; «Repetir repaso» no la des-completa
+    // (el flag persiste para no re-bloquear el avance en repasos posteriores).
+    var doneOnce = !!st.done || (idx >= cards.length && known.length >= cards.length);
 
     var html = header(data) + '<div class="me-fc">' +
       '<p class="me-fc-progress" aria-live="polite"></p>' +
@@ -859,7 +876,7 @@
     var controls = el.querySelector('.me-fc-controls');
     var progress = el.querySelector('.me-fc-progress');
 
-    function save() { ctx.save({ idx: idx, known: known }); }
+    function save() { ctx.save({ idx: idx, known: known, done: doneOnce }); }
 
     function renderSummary() {
       var yes = known.filter(function (k) { return k; }).length;
@@ -902,6 +919,7 @@
     function answer(knew) {
       known[idx] = knew;
       idx++;
+      if (idx >= cards.length) doneOnce = true;
       save();
       if (idx >= cards.length) renderSummary();
       else renderCard(false);
@@ -910,41 +928,56 @@
     if (idx >= cards.length && known.length >= cards.length) renderSummary();
     else renderCard(false);
 
-    return { result: function () { return { completed: true, scored: false }; } };
+    return { result: function () { return { completed: doneOnce, scored: false }; } };
   });
 
-  // Etiqueta/coletilla que indica el TIPO de ejercicio. Así el título de la
-  // pantalla puede ser el del tema (no "Checkpoint…") y la app señala por sí
-  // misma qué clase de actividad es. Evaluable ⇒ "Actividad"; informativa ⇒
-  // "Interactivo".
-  var TYPE_LABELS = {
-    accordion:      { kind: 'Interactivo', text: 'Despliega cada apartado' },
-    tabs:           { kind: 'Interactivo', text: 'Explora las pestañas' },
-    flip_cards:     { kind: 'Interactivo', text: 'Voltea las tarjetas' },
-    hotspots:       { kind: 'Interactivo', text: 'Explora los puntos de la imagen' },
-    case_practice:  { kind: 'Actividad',   text: 'Caso práctico' },
-    single_choice:  { kind: 'Actividad',   text: 'Elige la opción correcta' },
-    true_false:     { kind: 'Actividad',   text: 'Verdadero o falso' },
-    sort_steps:     { kind: 'Actividad',   text: 'Ordena los pasos' },
-    match_pairs:    { kind: 'Actividad',   text: 'Relaciona los pares' },
-    classification: { kind: 'Actividad',   text: 'Clasifica los elementos' },
-    fill_blanks:    { kind: 'Actividad',   text: 'Completa los huecos' },
-    timeline:       { kind: 'Interactivo', text: 'Recorre la línea de tiempo' },
-    flashcards:     { kind: 'Actividad',   text: 'Repasa con las tarjetas' }
-  };
-  function typeTag(type) {
-    var t = TYPE_LABELS[type];
-    if (!t) return '';
-    return '<p class="me-inter-tag"><span class="me-inter-tag-kind">' + esc(t.kind) +
-      '</span> ' + esc(t.text) + '</p>';
-  }
+  // --- 16. HTML a medida (iframe sandbox) ------------------------------------
+  // El autor pega HTML+CSS+JS propios (animaciones, interactivos ad hoc).
+  // config: { html, css, js, height? } (height en px; sin ella, alto automático).
+  // Corre en <iframe sandbox="allow-scripts"> SIN allow-same-origin: origen
+  // opaco, así el código NO puede tocar la API SCORM, el estado ni el DOM de la
+  // carcasa. La invariante anti-XSS se mantiene porque nada del autor se inyecta
+  // en nuestro DOM: viaja escapado dentro del atributo srcdoc.
+  register('html_embed', function (el, data, ctx) {
+    var c = data.config || {};
+    var height = parseInt(c.height, 10) || 0;
+    // El código del usuario no debe poder cerrar por accidente su propio
+    // <script>/<style> dentro del documento interno.
+    function noClose(s, tag) {
+      return String(s || '').replace(new RegExp('</' + tag, 'gi'), '<\\/' + tag);
+    }
+    // Sin alto fijo, el documento interno reporta su altura por postMessage
+    // (único canal disponible con origen opaco).
+    var resizer = '<script>(function(){var h=0;function post(){var n=document.documentElement.scrollHeight;' +
+      'if(n!==h){h=n;parent.postMessage({meEmbed:' + JSON.stringify(String(data.id)) + ',height:n},"*");}}' +
+      'if(window.ResizeObserver){new ResizeObserver(post).observe(document.documentElement);}' +
+      'else{setInterval(post,600);}window.addEventListener("load",post);post();})();<\/script>';
+    var doc = '<!doctype html><html><head><meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+      '<style>html,body{margin:0}' + noClose(c.css, 'style') + '</style></head><body>' +
+      String(c.html || '') +
+      (c.js ? '<script>' + noClose(c.js, 'script') + '<\/script>' : '') +
+      (height ? '' : resizer) + '</body></html>';
+    el.innerHTML = header(data) +
+      '<iframe class="me-embed" sandbox="allow-scripts" srcdoc="' + esc(doc) + '"' +
+      ' title="' + esc(stripTags(data.prompt) || 'Contenido interactivo') + '"' +
+      (height ? ' style="height:' + height + 'px"' : '') + '></iframe>';
+    if (!height) {
+      var frame = el.querySelector('.me-embed');
+      var onMsg = function (e) {
+        if (!frame.isConnected) { global.removeEventListener('message', onMsg); return; }
+        var d = e.data;
+        if (!d || d.meEmbed !== String(data.id)) return;
+        frame.style.height = Math.max(40, d.height | 0) + 'px';
+      };
+      global.addEventListener('message', onMsg);
+    }
+    return { result: function () { return { completed: true, scored: false }; } };
+  });
 
   global.Interactions = { register: register, render: function (el, data, ctx) {
     var f = registry[data.type];
     if (!f) { el.innerHTML = '<p class="me-warn">Tipo de interacción no soportado: ' + esc(data.type) + '</p>'; return { result: function () { return { completed: true, scored: false }; } }; }
-    var ctrl = f(el, data, ctx);
-    var tag = typeTag(data.type);
-    if (tag) el.insertAdjacentHTML('afterbegin', tag);
-    return ctrl;
+    return f(el, data, ctx);
   }, esc: esc, rich: rich, stripTags: stripTags, asset: assetUrl };
 })(window);

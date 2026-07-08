@@ -10,6 +10,7 @@ import {
   saveProjectAs,
 } from '../store/autosave'
 import { CourseSettingsModal, AppearanceModal, NarrationModal } from './SettingsModal'
+import { ObjectivesModal } from './ObjectivesModal'
 import { InlineRename } from './InlineRename'
 import { confirmDialog } from '../store/confirm'
 import { orphanAssetPaths } from '../schema/assetRefs'
@@ -193,6 +194,10 @@ export function Toolbar() {
                 title="Nota mínima, finalización, peso de la nota, navegación…">
                 Curso (Finalización)
               </button>
+              <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('objectives') }}
+                title="Ver, renombrar, quitar y añadir objetivos de aprendizaje del curso">
+                Objetivos de aprendizaje
+              </button>
               <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('appearance') }}
                 title="Presentación de la carcasa: animaciones…">
                 Interfaz (Apariencia)
@@ -217,6 +222,7 @@ export function Toolbar() {
       {importError && <div className="ed-import-error">⛔ {importError}</div>}
 
       {settingsModal === 'course' && <CourseSettingsModal onClose={() => setSettingsModal(null)} />}
+      {settingsModal === 'objectives' && <ObjectivesModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'appearance' && <AppearanceModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'narration' && <NarrationModal onClose={() => setSettingsModal(null)} />}
     </header>
