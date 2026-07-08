@@ -42,8 +42,8 @@ export function InteractionConfigEditor({
     case 'scenario_decision':
       return (
         <>
-          <label className="ed-field"><span>Escenario / caso</span>
-            <RichTextArea rows={3} value={cfg.scenario || ''} onChange={(v) => setConfig({ scenario: v })} /></label>
+          <div className="ed-field"><span>Escenario / caso</span>
+            <RichTextArea rows={3} value={cfg.scenario || ''} onChange={(v) => setConfig({ scenario: v })} /></div>
           <ListEditor
             title="Opciones de decisión"
             items={it.options}

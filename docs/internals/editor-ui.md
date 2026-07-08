@@ -99,6 +99,56 @@ resuelven a object URL desde `assets` (hook `useObjectUrl`, que libera con
 `revokeObjectURL`); YouTube se incrusta por ID (`/embed/`). Si la ruta aún no tiene binario
 subido, muestra un aviso en vez de romper.
 
+### Editor de texto enriquecido (`RichTextArea` + `cmMarkdown`)
+`RichTextArea` (`src/components/RichTextArea.tsx`) es la caja de texto de `student_text`
+y de otros campos (feedback, escenarios…). Está sobre **CodeMirror 6** en modo **«vista
+viva»** (estilo Obsidian): el valor sigue siendo **markdown en texto plano** (la invariante
+no cambia — no hay HTML ni WYSIWYG que lo guarde; CodeMirror opera sobre texto plano y se
+ve idéntico en «Vista estudiante»), pero la caja **muestra el resultado** y **oculta los
+marcadores** de sintaxis salvo en la línea donde está el cursor (para poder editarlos). La
+configuración vive en `src/components/cmMarkdown.ts`:
+- `mdHighlighting` (`HighlightStyle`): negrita en negrita, `##/###` grandes, enlaces, código.
+- `livePreview` (`ViewPlugin`): oculta **siempre** con `Decoration.replace` los marcadores
+  (`**`, `#`, `[ ]( )`, `URL`) — nunca se revelan por cursor ni por selección, para que ni el
+  clic simple ni el doble clic ni seleccionar un bloque hagan reaparecer los `**`/`:::` ni
+  desplacen el contenido — y sustituye la cabecera `::: tipo …` por un **chip** legible (icono
+  + título / etiqueta del callout). Sus rangos se exponen como `atomicRanges` para que las
+  flechas salten los marcadores ocultos.
+  Todo por línea: solo `replace` de **una** línea (nunca cruza saltos → sin decoraciones de
+  bloque, más robusto).
+- `calloutDecorations`: fondo/filete de color por línea para los bloques `:::`. El color
+  sale de `calloutColor(type, rest)`: los `custom` con su hex validado y los predefinidos con
+  su color de paleta (`CALLOUT_COLORS`, **alineado con `runtime/styles.css`** para que en el
+  editor se vea el MISMO color que de verdad, no gris). Se expone como `--cm-callout-color`.
+- `editorTheme(rows*1.5)`: aspecto alineado con las variables del editor; `rows` → alto mínimo.
+
+La **barra** conmuta de verdad: `B`/`I` usan el árbol de sintaxis (`syntaxTree`) para, si la
+selección ya está dentro de `StrongEmphasis`/`Emphasis`, **quitar** los marcadores en vez de
+añadirlos. Edición **contextual** (según lo que hay bajo el cursor, recalculado en
+`updateListener`): si el cursor está en un enlace, el botón pasa a «Editar enlace» y abre un
+popover (texto/URL, con «Quitar»); si está dentro de un bloque `:::`, aparece una **barra de
+bloque** con un `<select>` para **cambiar el tipo** —incluye los tipos estándar, los **presets
+personalizados guardados** (valor `preset:<id>`, que reescriben la cabecera con su
+color/icono/título) y «Personalizado a medida…» que abre el diálogo precargado— y
+**«Eliminar bloque»** (borra toda la región cabecera→cierre). Estas
+barras contextuales se renderizan **debajo** del editor (no entre barra y caja) para que al
+aparecer/desaparecer no lo desplacen y no provoquen clics fallidos entre los dos toques de un
+doble clic. La barra de formato lleva `onMouseDown={preventDefault}` para **no robar el foco**
+al editor (si no, el botón pulsado se quedaba resaltado y con foco). **Aviso importante:**
+`RichTextArea` **no debe envolverse en un `<label>`** (usar `<div className="ed-field">`). Un
+`<label>` asocia su primer control etiquetable y le reenvía **clics** y **:hover**; como
+CodeMirror no es un control etiquetable, el label apuntaría al **primer botón de la barra**
+(la «B»), de modo que pasar el ratón la resaltaba y clicar en cualquier parte del campo
+aplicaba negrita. El editor añade además `onClick={preventDefault}` en su contenedor como
+salvaguarda. El
+componente es controlado: sincroniza el valor externo (deshacer global, carga de proyecto)
+comparando el doc actual antes de despachar, para no entrar en bucle ni mover el cursor.
+Como los marcadores no se revelan nunca, **editar el crudo** (URL de un enlace, color/icono/
+título de un bloque, quitar negrita…) se hace siempre por los controles de la barra —no
+tecleando entre los `**`—; para casos límite el texto plano subyacente sigue ahí (deshacer,
+seleccionar todo, etc.). Un WYSIWYG «puro» alternativo (ProseMirror/Lexical) se descartó por
+peso y por crear un segundo renderizador que divergiría del runtime.
+
 `CourseTree` (`src/components/CourseTree.tsx`): módulos → unidades → pantallas
 (reordenables con dnd-kit) + secciones «Evaluación» (test final) y «Materiales»
 (glosario/bibliografía). Añadir pantalla por unidad; duplicar/eliminar por pantalla

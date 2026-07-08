@@ -439,11 +439,13 @@ export function ScreenEditor() {
 
       {uiCfg.mediaFirst && mediaSection}
 
-      <label className="ed-field">
+      {/* Contenedor <div> (no <label>): un <label> reenviaría los clics de toda el
+          área a su primer control —ahora el botón de la barra— disparando su acción. */}
+      <div className="ed-field">
         <span>Texto del estudiante (texto enriquecido: encabezados, negrita, cursiva, enlaces, listas y destacados)</span>
         <RichTextArea rows={16} value={screen.student_text}
           onChange={(v) => { warnAudioStale(); patch({ student_text: v }) }} />
-      </label>
+      </div>
 
       {!uiCfg.mediaFirst && mediaSection}
 
@@ -508,8 +510,8 @@ export function ScreenEditor() {
               <input value={it.feedback.correct} onChange={(e) => setInteraction({ ...it, feedback: { ...it.feedback, correct: e.target.value } })} /></label>
             <label className="ed-field"><span>Feedback error</span>
               <input value={it.feedback.incorrect} onChange={(e) => setInteraction({ ...it, feedback: { ...it.feedback, incorrect: e.target.value } })} /></label>
-            <label className="ed-field"><span>Explicación pedagógica</span>
-              <RichTextArea rows={2} value={it.feedback.explanation} onChange={(v) => setInteraction({ ...it, feedback: { ...it.feedback, explanation: v } })} /></label>
+            <div className="ed-field"><span>Explicación pedagógica</span>
+              <RichTextArea rows={2} value={it.feedback.explanation} onChange={(v) => setInteraction({ ...it, feedback: { ...it.feedback, explanation: v } })} /></div>
 
             <button className="ed-danger" onClick={() => setInteraction(null)}>Eliminar interacción</button>
           </>
