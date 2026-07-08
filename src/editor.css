@@ -339,3 +339,29 @@ button.ed-pill { cursor: pointer; }
 .ed-obj-add-form { display: flex; gap: .5rem; flex-wrap: wrap; }
 .ed-obj-add-form input { flex: 2 1 220px; }
 .ed-obj-add-form select { flex: 1 1 180px; min-width: 0; }
+
+/* Editor visual de zonas de hotspots (modal) */
+.ed-hz-open { align-self: flex-start; border: 1px solid var(--c-primary); color: var(--c-primary); background: var(--c-surface); border-radius: 6px; padding: .45rem .7rem; cursor: pointer; }
+.ed-hz-open:hover:not(:disabled) { background: #f4f7ff; }
+.ed-hz-open:disabled { opacity: .55; cursor: default; border-color: var(--c-border); color: var(--c-muted); }
+.ed-hz-layout { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+.ed-hz-stage { position: relative; flex: 1 1 420px; min-width: 300px; user-select: none; touch-action: none; cursor: crosshair; }
+.ed-hz-stage img { display: block; width: 100%; height: auto; border-radius: 6px; }
+.ed-hz-zone { position: absolute; border: 2px solid #c23b3b; background: rgba(194, 59, 59, .16); border-radius: 4px; cursor: move; box-sizing: border-box; }
+.ed-hz-zone.is-correct { border-color: #2c8a4b; background: rgba(44, 138, 75, .18); }
+.ed-hz-zone.is-sel { box-shadow: 0 0 0 2px var(--c-primary), 0 0 0 4px rgba(255, 255, 255, .7); z-index: 2; }
+.ed-hz-zone:focus-visible { outline: 2px dashed var(--c-primary); outline-offset: 2px; }
+.ed-hz-num { position: absolute; top: -.65rem; left: -.65rem; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: var(--c-primary); color: #fff; font-size: .75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.ed-hz-handle { position: absolute; right: -7px; bottom: -7px; width: 14px; height: 14px; border-radius: 50%; background: var(--c-primary); border: 2px solid #fff; cursor: nwse-resize; }
+.ed-hz-panel { flex: 1 1 240px; min-width: 220px; display: grid; gap: .6rem; align-content: start; }
+.ed-hz-list { display: grid; gap: .3rem; }
+.ed-hz-item { display: flex; align-items: center; gap: .5rem; border: 1px solid var(--c-border); background: var(--c-bg); border-radius: 6px; padding: .35rem .5rem; cursor: pointer; text-align: left; }
+.ed-hz-item.is-sel { border-color: var(--c-primary); background: #f4f7ff; }
+.ed-hz-item .ed-hz-num { position: static; flex: 0 0 auto; }
+.ed-hz-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed-hz-ok { color: #2c8a4b; font-weight: 700; }
+.ed-hz-del { align-self: start; border: 1px solid var(--c-border); background: var(--c-surface); border-radius: 6px; padding: .4rem .6rem; cursor: pointer; color: #b3261e; }
+.ed-hz-del:hover { border-color: #b3261e; }
+.ed-hz-foot { display: flex; justify-content: flex-end; gap: .5rem; border-top: 1px solid var(--c-border); padding-top: .75rem; }
+.ed-hz-foot button { border: 1px solid var(--c-border); border-radius: 6px; padding: .45rem .9rem; background: var(--c-surface); cursor: pointer; }
+.ed-hz-foot button.ed-primary { background: var(--c-primary); color: #fff; border-color: var(--c-primary); }

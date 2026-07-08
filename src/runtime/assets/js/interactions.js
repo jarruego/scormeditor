@@ -655,10 +655,11 @@
       html += '<button class="me-hotspot" data-id="' + esc(s.id) + '" aria-label="' + esc(s.label) + '" ' +
         'style="left:' + s.x + '%;top:' + s.y + '%;width:' + (s.w || 8) + '%;height:' + (s.h || 8) + '%"></button>';
     });
-    // Alternativa textual accesible: lista de botones equivalentes
-    html += '</div><ul class="me-hotspot-list">';
-    (c.spots || []).forEach(function (s) { html += '<li><button class="me-btn me-hs-alt" data-id="' + esc(s.id) + '">' + esc(s.label) + '</button></li>'; });
-    el.innerHTML = html + '</ul>' + feedbackBox(data);
+    // Solo la imagen con sus zonas: cada zona ya es un <button> con aria-label
+    // (focusable con teclado y anunciado por lector), así que no hace falta una
+    // lista textual aparte (se retiró en jul 2026: duplicaba los botones y
+    // desvelaba las etiquetas de las zonas bajo la imagen).
+    el.innerHTML = html + '</div>' + feedbackBox(data);
     var correct = false, done = false;
     // Pulso en las zonas para invitar al clic (en todas: señalar solo una sesgaría
     // la respuesta); se apaga al primer intento
@@ -673,7 +674,7 @@
       ctx.save({ choice: id, correct: correct });
       ctx.announce(correct ? 'Zona correcta.' : 'Zona incorrecta.');
     }
-    el.querySelectorAll('.me-hotspot, .me-hs-alt').forEach(function (b) {
+    el.querySelectorAll('.me-hotspot').forEach(function (b) {
       b.addEventListener('click', function () { pick(b.dataset.id); });
     });
     if (ctx.state && ctx.state.choice) {

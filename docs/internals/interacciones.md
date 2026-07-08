@@ -69,6 +69,16 @@ ese contrato; no conoce el tipo concreto.
   (`interactionOk`, app.js) no deja avanzar hasta entonces. Siguen sin puntuar
   (`scored: false`). `video`, `case_practice` y `html_embed` completan al renderizarse
   (no hay señal fiable de «visto entero»).
+- **`hotspots`: solo imagen + glow permanente (jul 2026)**: se retiró la lista de
+  botones equivalentes bajo la imagen — duplicaba las zonas para el lector de pantalla
+  (cada zona ya es un `<button>` con `aria-label`) y desvelaba las etiquetas. Las zonas
+  llevan **glow permanente** (anillo blanco + halo del primario) para que se vea que
+  existen; el pulso de invitación usa keyframes propios (`me-hotspot-pulse`) que
+  conservan el anillo blanco mientras animan. Evaluación: `result()` devuelve
+  `scored: !!data.scored` — puede puntuar si el autor la marca evaluable, pero **no**
+  tiene botón Comprobar ni `attempts`: las zonas siguen activas tras responder y cada
+  clic re-evalúa (intentos ilimitados de facto; el último clic manda). Sus zonas se
+  editan visualmente en el editor (ver `editor-ui.md`).
 - **Posición respecto al texto**: `screen.interaction_layout` (`top`/`bottom`, def.
   `bottom`). `render()` (renderer.js) mueve `.me-interaction` tras el `<h1>` cuando es
   `top`. Editable en `ScreenEditor`.

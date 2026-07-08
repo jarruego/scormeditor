@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import type { Interaction, InteractionOption } from '../schema/course.schema'
 import { RichTextArea } from './RichTextArea'
 import { FileButton } from './FileButton'
+import { HotspotZonesModal, type HotspotSpot } from './HotspotZonesModal'
 
 const rid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 7)}`
 
@@ -18,6 +20,9 @@ export function InteractionConfigEditor({
   const cfg: Record<string, any> = it.config || {}
   const setConfig = (patch: Record<string, any>) => onChange({ ...it, config: { ...cfg, ...patch } })
   const setOptions = (options: InteractionOption[]) => onChange({ ...it, options })
+  // Modal del editor visual de zonas (solo lo usa el caso `hotspots`; el hook
+  // vive aquí porque dentro del switch no puede haber hooks).
+  const [zonesOpen, setZonesOpen] = useState(false)
 
   switch (it.type) {
     // ---- Elección simple / Verdadero-Falso --------------------------------
@@ -187,29 +192,34 @@ export function InteractionConfigEditor({
       const spots: any[] = cfg.spots || []
       return (
         <>
-          <label className="ed-field"><span>Imagen (assets/img/…)</span>
-            <input value={cfg.image || ''} onChange={(e) => setConfig({ image: e.target.value })} /></label>
+          <div className="ed-row">
+            <label className="ed-field"><span>Imagen (assets/img/…)</span>
+              <input value={cfg.image || ''} onChange={(e) => setConfig({ image: e.target.value })} /></label>
+            <FileButton accept="image/*" label="Subir imagen…" currentPath={cfg.image || undefined}
+              makePath={(ext) => `assets/img/${it.id}-img.${ext}`}
+              onUploaded={(path) => setConfig({ image: path })} />
+          </div>
           <label className="ed-field"><span>Texto alternativo de la imagen</span>
             <input value={cfg.alt || ''} onChange={(e) => setConfig({ alt: e.target.value })} /></label>
-          <ListEditor
-            title="Zonas activas (x, y, w, h en %)"
-            items={spots}
-            onChange={(next) => setConfig({ spots: next })}
-            create={() => ({ id: rid('z'), label: '', x: 10, y: 10, w: 12, h: 12, correct: false, feedback: '' })}
-            render={(s, update) => (
-              <div className="ed-stack">
-                <input value={s.label} placeholder="Etiqueta accesible" onChange={(e) => update({ ...s, label: e.target.value })} />
-                <div className="ed-row">
-                  {(['x', 'y', 'w', 'h'] as const).map((k) => (
-                    <label key={k} className="ed-field ed-field-narrow"><span>{k} %</span>
-                      <input type="number" value={s[k]} onChange={(e) => update({ ...s, [k]: Number(e.target.value) })} /></label>
-                  ))}
-                  <label className="ed-check"><input type="checkbox" checked={!!s.correct} onChange={(e) => update({ ...s, correct: e.target.checked })} /><span>Correcta</span></label>
-                </div>
-                <input value={s.feedback || ''} placeholder="Feedback de la zona" onChange={(e) => update({ ...s, feedback: e.target.value })} />
-              </div>
-            )}
-          />
+          <button className="ed-hz-open" onClick={() => setZonesOpen(true)} disabled={!cfg.image}>
+            🎯 Editar zonas sobre la imagen…
+          </button>
+          {!cfg.image && <p className="ed-hint">Sube o indica la imagen para poder dibujar las zonas visualmente.</p>}
+          {zonesOpen && (
+            <HotspotZonesModal
+              image={cfg.image || ''}
+              alt={cfg.alt || ''}
+              initialSpots={spots as HotspotSpot[]}
+              onSave={(next) => setConfig({ spots: next })}
+              onClose={() => setZonesOpen(false)}
+            />
+          )}
+          {spots.length > 0 && (
+            <p className="ed-hint">
+              {spots.length === 1 ? '1 zona definida' : `${spots.length} zonas definidas`}
+              {spots.some((s) => s.correct) ? ` · correcta: «${spots.find((s) => s.correct)?.label || 'sin etiqueta'}»` : ' · ninguna marcada como correcta'}
+            </p>
+          )}
         </>
       )
     }

@@ -505,10 +505,17 @@ export function ScreenEditor() {
 
             <InteractionConfigEditor it={it} onChange={setInteraction} />
 
-            <label className="ed-field"><span>Feedback acierto</span>
-              <input value={it.feedback.correct} onChange={(e) => setInteraction({ ...it, feedback: { ...it.feedback, correct: e.target.value } })} /></label>
-            <label className="ed-field"><span>Feedback error</span>
-              <input value={it.feedback.incorrect} onChange={(e) => setInteraction({ ...it, feedback: { ...it.feedback, incorrect: e.target.value } })} /></label>
+            {/* En hotspots el feedback se escribe por zona (editor visual); los
+                genéricos quedan solo como respaldo interno con su texto por
+                defecto, así que no se muestran para no duplicar superficies. */}
+            {it.type !== 'hotspots' && (
+              <>
+                <label className="ed-field"><span>Feedback acierto</span>
+                  <input value={it.feedback.correct} onChange={(e) => setInteraction({ ...it, feedback: { ...it.feedback, correct: e.target.value } })} /></label>
+                <label className="ed-field"><span>Feedback error</span>
+                  <input value={it.feedback.incorrect} onChange={(e) => setInteraction({ ...it, feedback: { ...it.feedback, incorrect: e.target.value } })} /></label>
+              </>
+            )}
             <div className="ed-field"><span>Explicación pedagógica</span>
               <RichTextArea rows={2} value={it.feedback.explanation} onChange={(v) => setInteraction({ ...it, feedback: { ...it.feedback, explanation: v } })} /></div>
 

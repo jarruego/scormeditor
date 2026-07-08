@@ -269,6 +269,31 @@ los avisos de `validators.ts`):
   «+ Añadir interacción» (`blankInteraction`, ahora vía `Interaction.parse`), y su
   puntuación sigue la filosofía de las recetas: `scored: true` solo en `unit_quiz`.
 
+### Editor visual de zonas de hotspots (jul 2026)
+Definir las zonas de `hotspots` a base de números (x/y/w/h en %) era inviable a mano, así
+que el caso `hotspots` de `InteractionConfigEditor` abre un **editor visual en modal**
+(`src/components/HotspotZonesModal.tsx`, reutiliza `SettingsWindow` en modo `wide`):
+- La imagen se muestra a tamaño grande (object URL del asset, o la URL http directa) y las
+  zonas son rectángulos superpuestos numerados: **arrastrar en vacío dibuja** una zona
+  nueva, arrastrar una zona la **mueve** y el tirador de la esquina la **redimensiona**
+  (pointer events con `setPointerCapture` sobre el «stage»; un arrastre menor del 2 % se
+  descarta como clic). Teclado: flechas mueven la zona con foco (con Mayús redimensionan),
+  Supr la elimina.
+- Panel lateral: lista de zonas (selección) y, para la seleccionada, etiqueta accesible,
+  check «correcta», feedback y borrado. Verde = correcta, rojo = incorrecta.
+- Trabaja sobre una **copia local** y solo llama a `setConfig({ spots })` al pulsar
+  «Guardar zonas» → una única entrada en el historial; Cancelar/Esc descarta.
+- Las coordenadas se redondean a 1 decimal y son el mismo contrato que consume el runtime
+  (`spots: [{id,x,y,w,h,label,correct,feedback}]`). El `ListEditor` numérico de
+  coordenadas se **eliminó** (el modal es la única superficie de edición de zonas; bajo
+  el botón queda solo un resumen «N zonas definidas · correcta: …»). El campo imagen
+  ganó además su `FileButton` de subida (antes solo admitía escribir la ruta a mano).
+- Para `hotspots` el `ScreenEditor` **oculta** «Feedback acierto/error»: el feedback se
+  escribe por zona en el modal y los genéricos quedan solo como respaldo interno (el
+  runtime hace `s.feedback || data.feedback.correct`, y conservan su texto por defecto
+  «Correcto.»/«Revisa tu respuesta.»). «Explicación pedagógica» sí se muestra (es común
+  a todos los tipos).
+
 ### Etiquetas en español (no exponer identificadores del esquema)
 La UI del editor **nunca muestra los valores internos en crudo** (`content_placeholder`,
 `single_choice`…): pasa por `src/schema/labels.ts` (`screenTypeLabel`/

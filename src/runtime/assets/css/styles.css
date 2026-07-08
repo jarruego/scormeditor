@@ -392,10 +392,17 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-embed { display: block; width: 100%; height: 320px; border: 0; }
 .me-hotspot-wrap { position: relative; display: inline-block; max-width: 100%; }
 .me-hotspot-img { max-width: 100%; display: block; }
-.me-hotspot { position: absolute; border: 2px solid var(--me-primary); background: rgba(11,95,255,.15); border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+/* Glow permanente: anillo blanco + halo del color primario, legible sobre
+   cualquier fotografía; el pulso (me-pulse) anima por encima hasta el 1er clic. */
+.me-hotspot { position: absolute; border: 2px solid var(--me-primary); background: rgba(11,95,255,.15); border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 0 0 2px rgba(255,255,255,.75), 0 0 12px 3px color-mix(in srgb, var(--me-primary) 55%, transparent); }
+.me-hotspot:hover { background: color-mix(in srgb, var(--me-primary) 30%, transparent); }
 .me-hotspot::after { content: '+'; width: 1.3rem; height: 1.3rem; display: flex; align-items: center; justify-content: center; background: var(--me-surface); color: var(--me-primary); border-radius: 50%; font-weight: 700; font-size: 1rem; line-height: 1; box-shadow: var(--me-shadow-1); }
-.me-hotspot.me-pulse { animation: me-pulse-glow 1.6s ease-out infinite; }
-.me-hotspot-list { list-style: none; padding: 0; display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .6rem; }
+.me-hotspot.me-pulse { animation: me-hotspot-pulse 1.6s ease-out infinite; }
+@keyframes me-hotspot-pulse {
+  0% { box-shadow: 0 0 0 2px rgba(255,255,255,.75), 0 0 0 0 color-mix(in srgb, var(--me-primary) 60%, transparent); }
+  70% { box-shadow: 0 0 0 2px rgba(255,255,255,.75), 0 0 0 10px transparent; }
+  100% { box-shadow: 0 0 0 2px rgba(255,255,255,.75), 0 0 0 0 transparent; }
+}
 .me-warn { color: var(--me-error); font-weight: 600; }
 
 /* Rellenar huecos (fill_blanks) */

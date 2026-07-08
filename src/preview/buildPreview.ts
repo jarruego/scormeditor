@@ -37,9 +37,11 @@ export function buildPreviewHtml(course: Course, assetUrls: Record<string, strin
   // Quitamos los <script src> (los inlineamos nosotros)
   body = body.replace(/<script\s+src=[^>]*><\/script>/gi, '')
 
+  // Las tres se interpolan en un <script> inline del mismo origen que el editor:
+  // hay que neutralizar </script> en TODAS (los ids de pantalla son texto libre).
   const data = JSON.stringify(course).replace(/<\/script>/gi, '<\\/script>')
   const assetsJson = JSON.stringify(assetUrls).replace(/<\/script>/gi, '<\\/script>')
-  const startJson = JSON.stringify(startScreenId || null)
+  const startJson = JSON.stringify(startScreenId || null).replace(/<\/script>/gi, '<\\/script>')
 
   // Se interpola en un atributo HTML: solo se acepta un código de idioma válido
   // (defensa en profundidad además de la validación del schema).
