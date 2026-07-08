@@ -50,6 +50,10 @@ Lee el que corresponda al tocar esa área:
 > `docs/gpt/*.md` son **externos**: material de conocimiento que se sube al GPT de ChatGPT.
 > `docs/internals/*.md` es doc interna del código. No mezclar.
 
+> `docs/internals/demo-scormeditor.scormproj` es el **proyecto de demostración** (todos
+> los tipos de pantalla e interactividad). Al añadir un tipo nuevo de contenido o
+> interacción, actualízalo también (detalle en `persistencia-scormproj.md`).
+
 ## Convenciones del repo
 - Idioma de UI, comentarios y commits: **español** (con acentos correctos).
 - Sin dependencias nuevas salvo necesidad real (hoy: React, zustand, zod, JSZip, dnd-kit).

@@ -86,6 +86,27 @@ async function buildProjectBlob(): Promise<Blob> {
   return zip.generateAsync({ type: 'blob', compression: 'STORE' })
 }
 
+// MIME por extensión para los assets del ZIP: JSZip devuelve blobs SIN tipo y
+// los object URLs de la vista previa heredan ese vacío. PNG/JPEG sobreviven
+// porque el navegador los detecta por contenido, pero SVG y VTT no se detectan
+// (un <img> con SVG sin image/svg+xml no se pinta). Extensiones desconocidas:
+// se deja el blob tal cual (mismo comportamiento que antes).
+const MIME_BY_EXT: Record<string, string> = {
+  svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+  gif: 'image/gif', webp: 'image/webp', avif: 'image/avif',
+  mp4: 'video/mp4', webm: 'video/webm', ogv: 'video/ogg',
+  mp3: 'audio/mpeg', m4a: 'audio/mp4', ogg: 'audio/ogg', wav: 'audio/wav',
+  vtt: 'text/vtt',
+}
+
+/** Devuelve el blob con su MIME según la extensión de `name` (si le falta). */
+function typedBlob(name: string, blob: Blob): Blob {
+  if (blob.type) return blob
+  const ext = name.split('.').pop()?.toLowerCase() || ''
+  const mime = MIME_BY_EXT[ext]
+  return mime ? new Blob([blob], { type: mime }) : blob
+}
+
 /** Carga un proyecto desde un Blob/File `.scormproj` al store. */
 async function loadProjectFromBlob(blob: Blob): Promise<boolean> {
   const zip = await JSZip.loadAsync(blob)
@@ -98,7 +119,7 @@ async function loadProjectFromBlob(blob: Blob): Promise<boolean> {
   const assets: AssetMap = {}
   for (const entry of Object.values(zip.files) as any[]) {
     if (entry.dir || entry.name === 'course.json') continue
-    assets[entry.name] = await entry.async('blob')
+    assets[entry.name] = typedBlob(entry.name, await entry.async('blob'))
   }
   useCourseStore.getState().replaceAssets(assets)
   useCourseStore.getState().setProjectDirty(false)

@@ -14,6 +14,23 @@ guardar → Ctrl+S → Guardado».
   `loadProjectFromBlob()` lee el ZIP, exige `course.json` (si falta, error), llama a
   `importJson` (parsea+migra+valida) y vuelca el resto de entradas a `AssetMap` por su
   `entry.name` (las claves ya incluyen `assets/`).
+- **MIME por extensión al abrir** (jul 2026): JSZip devuelve los blobs de las entradas
+  **sin tipo**, y los object URLs de la vista previa (`StudentPreview`, `useObjectUrl`,
+  `cmMarkdown`) heredan ese vacío. PNG/JPEG sobreviven porque el navegador los detecta
+  por contenido, pero **SVG y VTT no** (un `<img>` con SVG sin `image/svg+xml` no se
+  pinta). `typedBlob()` (autosave.ts, mapa `MIME_BY_EXT`) reenvuelve cada blob con el
+  MIME de su extensión al importar; extensión desconocida → blob tal cual. Subir con
+  `FileButton` no lo necesita (el `File` trae tipo del SO), pero el ciclo
+  guardar→reabrir lo perdía.
+
+### Proyecto de demostración (`docs/internals/demo-scormeditor.scormproj`)
+Curso demo completo que ejercita **todos** los tipos de pantalla y las 17
+interactividades, con glosario, bibliografía, test final, callouts, bloque
+personalizado (paleta corporativa) e imágenes. **Convención**: al añadir un tipo de
+contenido o interacción nuevo, actualizar también este proyecto (abrirlo en el editor,
+añadir la pantalla que lo demuestre y guardarlo encima). Sus imágenes son PNG
+rasterizados de SVG planos; el aviso SKELETON de su informe es intencionado (la
+pantalla esqueleto se explica a sí misma).
 - **Guardar** (`saveProject` / Ctrl+S / clic en el indicador): construye el blob y, si hay
   `projectHandle`, reescribe el mismo archivo; si no, abre `showSaveFilePicker` (sugerido
   `<courseId>.scormproj`) y lo vincula. `saveProjectAs()` fuerza destino nuevo
