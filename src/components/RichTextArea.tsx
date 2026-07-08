@@ -4,8 +4,10 @@ import { EditorView, keymap, placeholder as cmPlaceholder } from '@codemirror/vi
 import { markdown } from '@codemirror/lang-markdown'
 import { syntaxTree } from '@codemirror/language'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { mdHighlighting, calloutDecorations, livePreview, editorTheme } from './cmMarkdown'
+import { mdHighlighting, calloutDecorations, livePreview, editorTheme, IMG_LINE } from './cmMarkdown'
 import { loadPresets, savePresets, PALETTE, type CustomBlockPreset } from '../store/customBlocks'
+import { useCourseStore } from '../store/courseStore'
+import { optimizeImage } from '../media/optimizeImage'
 
 // Iconos frecuentes en formación online para el bloque personalizado. Es una
 // lista curada (no un teclado emoji completo) para elegir con un clic sin pegar.
@@ -49,17 +51,25 @@ type BlockCtx = {
   icon: string
   title: string
 }
-type Ctx = { link: LinkCtx | null; block: BlockCtx | null }
+type ImgCtx = { lineFrom: number; lineTo: number; alt: string; width: number | null; src: string }
+type Ctx = { link: LinkCtx | null; block: BlockCtx | null; img: ImgCtx | null }
 
 // Analiza el documento alrededor del cursor: enlace [texto](url) en la línea
 // actual y el bloque "::: …" que lo contiene (cabecera arriba, cierre abajo).
 function analyze(state: EditorState): Ctx {
   const head = state.selection.main.head
   const line = state.doc.lineAt(head)
+  // Imagen: la línea entera es `![alt](ruta)` (el widget la sustituye; se edita
+  // desde la barra contextual «Imagen», no revelando el markdown).
+  let img: ImgCtx | null = null
+  const im = IMG_LINE.exec(line.text)
+  if (im) img = { lineFrom: line.from, lineTo: line.to, alt: im[1], width: im[2] ? +im[2] : null, src: im[3] }
+
   let link: LinkCtx | null = null
   const re = /\[([^\]]*)\]\(([^)]*)\)/g
   let m: RegExpExecArray | null
   while ((m = re.exec(line.text))) {
+    if (m.index > 0 && line.text[m.index - 1] === '!') continue // imagen, no enlace
     const from = line.from + m.index
     const to = from + m[0].length
     if (head >= from && head <= to) {
@@ -105,7 +115,7 @@ function analyze(state: EditorState): Ctx {
     }
     block = { from: openL.from, to: closeTo, headerFrom: openL.from, headerTo: openL.to, type, color, icon, title }
   }
-  return { link, block }
+  return { link, block, img }
 }
 
 /**
@@ -141,9 +151,16 @@ export function RichTextArea({
   const [draft, setDraft] = useState({ title: '', icon: '', color: PALETTE[0].value })
   // Si estamos EDITANDO un bloque existente, guardamos el tramo de su cabecera.
   const [editing, setEditing] = useState<{ headerFrom: number; headerTo: number } | null>(null)
-  // Lo que hay bajo el cursor (enlace/bloque) y el popover de edición de enlace.
-  const [ctx, setCtx] = useState<Ctx>({ link: null, block: null })
-  const [linkEdit, setLinkEdit] = useState<LinkCtx | null>(null)
+  // Lo que hay bajo el cursor (enlace/bloque/imagen) y el editor de enlace.
+  const [ctx, setCtx] = useState<Ctx>({ link: null, block: null, img: null })
+  const [linkEdit, setLinkEdit] = useState<(LinkCtx & { sig: string }) | null>(null)
+  // Enlace cerrado con «Cancelar»: no se auto-reabre hasta salir y volver a entrar
+  // (`sig` = "from:to"). "new" = editor abierto para insertar un enlace nuevo.
+  const dismissedLinkRef = useRef<string | null>(null)
+  // Barras de bloque/imagen ocultadas con Esc (por firma de posición); se
+  // reactivan al mover el cursor a otro bloque/imagen o al salir y volver.
+  const [dismissedBlock, setDismissedBlock] = useState<string | null>(null)
+  const [dismissedImg, setDismissedImg] = useState<string | null>(null)
 
   // Crea el editor CodeMirror una sola vez.
   useEffect(() => {
@@ -196,6 +213,25 @@ export function RichTextArea({
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
   }, [showIcons])
+
+  // Auto-abre el editor de enlace al entrar el cursor en un enlace (sin pulsar el
+  // botón); se cierra al salir. Si se cerró con «Cancelar», no reabre hasta volver.
+  useEffect(() => {
+    const l = ctx.link
+    if (l) {
+      const sig = `${l.from}:${l.to}`
+      if (dismissedLinkRef.current === sig) return
+      setLinkEdit((prev) => (prev && prev.sig === sig ? prev : { from: l.from, to: l.to, text: l.text, url: l.url, sig }))
+    } else {
+      dismissedLinkRef.current = null
+      setLinkEdit((prev) => (prev && prev.sig === 'new' ? prev : null))
+    }
+  }, [ctx.link])
+
+  // Al salir de un bloque/imagen, olvida su ocultado con Esc (para que al volver a
+  // entrar la barra se muestre de nuevo).
+  useEffect(() => { if (!ctx.block) setDismissedBlock(null) }, [ctx.block])
+  useEffect(() => { if (!ctx.img) setDismissedImg(null) }, [ctx.img])
 
   // --- Acciones de la barra (operan sobre la selección de CodeMirror) -------
   function surround(before: string, after: string, placeholder: string) {
@@ -269,16 +305,102 @@ export function RichTextArea({
     insertBlock(`custom | ${p.color} | ${p.icon} | ${p.title}`)
   }
 
+  // --- Imagen: subir como asset e insertar ![alt](ruta) en línea propia -----
+  // La línea se ve como la imagen (widget); se edita desde la barra contextual.
+  const addAsset = useCourseStore((s) => s.addAsset)
+  const removeAsset = useCourseStore((s) => s.removeAsset)
+  const [imgBusy, setImgBusy] = useState(false)
+
+  async function uploadImage(file: File): Promise<string> {
+    const { blob, ext } = await optimizeImage(file)
+    const path = `assets/img/txt-${Date.now().toString(36)}.${ext}`
+    addAsset(path, blob)
+    return path
+  }
+
+  async function onPickImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    const v = viewRef.current
+    if (!file || !v) return
+    setImgBusy(true)
+    try {
+      const path = await uploadImage(file)
+      const { from, to } = v.state.selection.main
+      const atLineStart = from === 0 || v.state.sliceDoc(from - 1, from) === '\n'
+      const pre = atLineStart ? '' : '\n'
+      // Cursor sobre la propia imagen: queda seleccionada y con la barra abierta
+      // para escribir el texto alternativo.
+      v.dispatch({
+        changes: { from, to, insert: `${pre}![](${path})\n` },
+        selection: { anchor: from + pre.length },
+      })
+      v.focus()
+    } finally {
+      setImgBusy(false)
+      e.target.value = ''
+    }
+  }
+
+  // Reescribe la línea `![alt|ancho](ruta)` de la imagen bajo el cursor.
+  function updateImg(next: { alt?: string; width?: number | null; src?: string }) {
+    const v = viewRef.current
+    const im = ctx.img
+    if (!v || !im) return
+    const alt = (next.alt ?? im.alt).replace(/[\]|]/g, '') // no romper la sintaxis
+    const width = next.width === undefined ? im.width : next.width
+    const src = next.src ?? im.src
+    const md = `![${alt}${width ? `|${width}` : ''}](${src})`
+    v.dispatch({
+      changes: { from: im.lineFrom, to: im.lineTo, insert: md },
+      selection: { anchor: im.lineFrom },
+    })
+  }
+
+  function removeImage() {
+    const v = viewRef.current
+    const im = ctx.img
+    if (!v || !im) return
+    let to = im.lineTo
+    if (to < v.state.doc.length && v.state.sliceDoc(to, to + 1) === '\n') to += 1
+    v.dispatch({ changes: { from: im.lineFrom, to } })
+    // El binario solo se borra si ninguna otra pantalla lo referencia (removeAsset).
+    if (im.src.startsWith('assets/')) removeAsset(im.src)
+    v.focus()
+  }
+
+  async function onReplaceImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    const im = ctx.img
+    if (!file || !im) return
+    setImgBusy(true)
+    try {
+      const path = await uploadImage(file)
+      updateImg({ src: path })
+      if (im.src.startsWith('assets/') && im.src !== path) removeAsset(im.src)
+    } finally {
+      setImgBusy(false)
+      e.target.value = ''
+    }
+  }
+
   // --- Enlaces: insertar / editar el que hay bajo el cursor -----------------
   function openLinkEditor() {
     const v = viewRef.current
     if (!v) return
     if (ctx.link) {
-      setLinkEdit(ctx.link)
+      dismissedLinkRef.current = null
+      setLinkEdit({ ...ctx.link, sig: `${ctx.link.from}:${ctx.link.to}` })
       return
     }
     const { from, to } = v.state.selection.main
-    setLinkEdit({ from, to, text: v.state.sliceDoc(from, to), url: 'https://' })
+    setLinkEdit({ from, to, text: v.state.sliceDoc(from, to), url: 'https://', sig: 'new' })
+  }
+
+  // «Cancelar»: cierra el editor; si era un enlace existente, lo marca descartado
+  // para que el auto-abrir no lo reabra mientras el cursor siga dentro de él.
+  function cancelLink() {
+    if (linkEdit && linkEdit.sig !== 'new') dismissedLinkRef.current = linkEdit.sig
+    setLinkEdit(null)
   }
 
   function saveLink() {
@@ -288,6 +410,8 @@ export function RichTextArea({
     const url = linkEdit.url.trim()
     const md = url ? `[${text}](${url})` : text
     v.dispatch({ changes: { from: linkEdit.from, to: linkEdit.to, insert: md } })
+    // Evita que el auto-abrir lo reabra al instante sobre el enlace recién guardado.
+    dismissedLinkRef.current = url ? `${linkEdit.from}:${linkEdit.from + md.length}` : null
     setLinkEdit(null)
     v.focus()
   }
@@ -395,9 +519,35 @@ export function RichTextArea({
     return match ? `preset:${match.id}` : 'custom'
   }
   const blockTypeValue = currentBlockValue()
+  const blockSig = ctx.block ? `${ctx.block.from}:${ctx.block.to}` : null
+  const imgSig = ctx.img ? String(ctx.img.lineFrom) : null
+
+  // Esc cierra los paneles flotantes visibles (diálogo personalizado, enlace,
+  // barra de bloque, barra de imagen). Devuelve true si cerró alguno.
+  function handleEscClose(): boolean {
+    if (showCustom) {
+      closeCustom()
+      return true
+    }
+    let closed = false
+    if (linkEdit) {
+      cancelLink()
+      closed = true
+    }
+    if (ctx.block && dismissedBlock !== blockSig) {
+      setDismissedBlock(blockSig)
+      closed = true
+    }
+    if (ctx.img && dismissedImg !== imgSig) {
+      setDismissedImg(imgSig)
+      closed = true
+    }
+    return closed
+  }
 
   return (
-    <div className="ed-rta">
+    <div className="ed-rta"
+      onKeyDown={(e) => { if (e.key === 'Escape' && handleEscClose()) { e.preventDefault(); e.stopPropagation() } }}>
       <div className="ed-rta-bar" role="toolbar" aria-label="Formato de texto"
         onMouseDown={(e) => e.preventDefault()}>
         <button type="button" onClick={() => toggleMark('strong')} title="Negrita (poner/quitar)"><strong>B</strong></button>
@@ -412,6 +562,10 @@ export function RichTextArea({
           title={ctx.link ? 'Editar el enlace donde está el cursor' : 'Insertar enlace'}>
           🔗 {ctx.link ? 'Editar enlace' : 'Enlace'}
         </button>
+        <label className="ed-rta-imgbtn" title="Insertar una imagen (se optimiza y viaja en el ZIP)" aria-busy={imgBusy}>
+          🖼 {imgBusy ? 'Subiendo…' : 'Imagen'}
+          <input type="file" accept="image/*" hidden disabled={imgBusy} onChange={onPickImage} />
+        </label>
         <span className="ed-rta-sep" aria-hidden="true" />
         <button type="button" onClick={() => callout('tip')} title="Bloque: consejo">💡 Consejo</button>
         <button type="button" onClick={() => callout('warn')} title="Bloque: atención">⚠️ Atención</button>
@@ -488,16 +642,13 @@ export function RichTextArea({
         </div>
       )}
 
-      {/* preventDefault en el click evita que, si este editor quedara dentro de un
-          <label>, sus clics se reenvíen al primer control (un botón de la barra) y
-          disparen su acción. CodeMirror coloca el cursor en mousedown, no en click. */}
-      <div ref={hostRef} className="ed-rta-cm" onClick={(e) => e.preventDefault()} />
-
-      {/* Barras contextuales DEBAJO del editor: al aparecer/desaparecer no desplazan
-          la caja (evita clics fallidos entre los dos toques de un doble clic). */}
-      {ctx.block && (
+      {/* Barras contextuales FLOTANTES sobre la parte superior de la caja: al ser
+          absolutas, NO empujan el editor cuando aparecen/desaparecen. */}
+      <div className="ed-rta-editwrap">
+        <div className="ed-rta-floats">
+          {ctx.block && dismissedBlock !== blockSig && (
         <div className="ed-rta-blockbar">
-          <span className="ed-rta-blocklbl">Bloque donde está el cursor:</span>
+          <span className="ed-rta-blocklbl">🧩 Bloque:</span>
           <select value={blockTypeValue} onChange={(e) => changeType(e.target.value)} title="Cambiar el tipo del bloque">
             <optgroup label="Estándar">
               {CALLOUT_TYPES.map((tp) => (
@@ -520,25 +671,48 @@ export function RichTextArea({
         </div>
       )}
 
-      {linkEdit && (
-        <div className="ed-rta-linkedit">
-          <label>
-            <span>Texto</span>
-            <input value={linkEdit.text} placeholder="texto visible"
-              onChange={(e) => setLinkEdit({ ...linkEdit, text: e.target.value })} />
+      {ctx.img && dismissedImg !== imgSig && (
+        <div className="ed-rta-blockbar ed-rta-imgbar">
+          <span className="ed-rta-blocklbl">🖼 Imagen:</span>
+          <input className="ed-rta-imgalt" value={ctx.img.alt} placeholder="Texto alternativo (accesibilidad)"
+            onChange={(e) => updateImg({ alt: e.target.value })} />
+          <select value={ctx.img.width ?? ''} title="Ancho de la imagen en la diapositiva"
+            onChange={(e) => updateImg({ width: e.target.value ? Number(e.target.value) : null })}>
+            <option value="">Tamaño real</option>
+            <option value="25">25 % del ancho</option>
+            <option value="33">33 % del ancho</option>
+            <option value="50">50 % del ancho</option>
+            <option value="66">66 % del ancho</option>
+            <option value="100">100 % del ancho</option>
+          </select>
+          <label className="ed-rta-imgbtn" title="Sustituir por otra imagen" aria-busy={imgBusy}>
+            {imgBusy ? 'Subiendo…' : '↻ Sustituir…'}
+            <input type="file" accept="image/*" hidden disabled={imgBusy} onChange={onReplaceImage} />
           </label>
-          <label>
-            <span>URL</span>
-            <input value={linkEdit.url} placeholder="https://… o mailto:…"
-              onChange={(e) => setLinkEdit({ ...linkEdit, url: e.target.value })} />
-          </label>
-          <div className="ed-rta-custom-actions">
-            <button type="button" onClick={() => setLinkEdit(null)}>Cancelar</button>
-            {ctx.link && <button type="button" onClick={removeLink} title="Quitar el enlace y dejar solo el texto">Quitar</button>}
-            <button type="button" className="ed-primary" onClick={saveLink}>{ctx.link ? 'Guardar' : 'Insertar'}</button>
-          </div>
+          <button type="button" className="ed-danger" onClick={removeImage}
+            title="Quitar la imagen (el archivo se conserva si otra pantalla lo usa)">🗑 Quitar</button>
         </div>
       )}
+
+      {linkEdit && (
+        <div className="ed-rta-blockbar ed-rta-linkedit">
+          <span className="ed-rta-blocklbl">🔗 Enlace:</span>
+          <input className="ed-rta-linktext" value={linkEdit.text} placeholder="Texto visible"
+            onChange={(e) => setLinkEdit({ ...linkEdit, text: e.target.value })} />
+          <input className="ed-rta-linkurl" value={linkEdit.url} placeholder="https://… o mailto:…"
+            onChange={(e) => setLinkEdit({ ...linkEdit, url: e.target.value })} />
+          <button type="button" onClick={cancelLink}>Cancelar</button>
+          {ctx.link && <button type="button" onClick={removeLink} title="Quitar el enlace y dejar solo el texto">Quitar</button>}
+          <button type="button" className="ed-primary" onClick={saveLink}>{ctx.link ? 'Guardar' : 'Insertar'}</button>
+        </div>
+      )}
+        </div>
+
+        {/* preventDefault en el click evita que, si este editor quedara dentro de un
+            <label>, sus clics se reenvíen al primer control (un botón de la barra) y
+            disparen su acción. CodeMirror coloca el cursor en mousedown, no en click. */}
+        <div ref={hostRef} className="ed-rta-cm" onClick={(e) => e.preventDefault()} />
+      </div>
     </div>
   )
 }

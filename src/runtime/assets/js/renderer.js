@@ -97,6 +97,19 @@
         html += '<li value="' + oli[1] + '">' + inline(oli[2]) + '</li>';
         continue;
       }
+      // Imagen en línea propia: ![alt](assets/… | http(s)://…), con ancho
+      // opcional en % (`![alt|50](ruta)`). Bloque, no inline: una imagen ocupa
+      // su propio renglón. Solo rutas de assets o URL absolutas http(s)
+      // (anti-inyección); amplía con el lightbox (.me-zoomable).
+      var im = /^\s*!\[([^\]|]*)(?:\|(\d{1,3}))?\]\((assets\/[^\s)]+|https?:\/\/[^\s)]+)\)\s*$/.exec(ln);
+      if (im) {
+        closeLists();
+        var iw = im[2] ? Math.min(100, Math.max(10, parseInt(im[2], 10))) : 0;
+        html += '<figure class="me-md-img"><img class="me-zoomable" src="' + esc(asset(im[3])) +
+          '" alt="' + esc(im[1]) + '" loading="lazy" tabindex="0" role="button" aria-label="Ampliar imagen"' +
+          (iw ? ' style="width:' + iw + '%"' : '') + '></figure>';
+        continue;
+      }
       // Viñetas: además de "-", admite "*", "•", "·", "–", "—" (los que suelen
       // aparecer en PDF/DOC), para que las listas no queden como párrafo corrido.
       var uli = /^\s*[-*•·–—]\s+(.*)/.exec(ln);

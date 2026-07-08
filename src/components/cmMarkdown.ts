@@ -15,6 +15,7 @@ import { HighlightStyle, syntaxHighlighting, syntaxTree } from '@codemirror/lang
 import { tags as t } from '@lezer/highlight'
 import { Decoration, EditorView, ViewPlugin, WidgetType } from '@codemirror/view'
 import type { DecorationSet, ViewUpdate } from '@codemirror/view'
+import { useCourseStore } from '../store/courseStore'
 
 // Resaltado del markdown: el contenido se ve con su formato y los marcadores
 // (**, #, [ ]( )) quedan atenuados/ocultos, para que la caja se lea como el resultado.
@@ -141,11 +142,72 @@ class ChipWidget extends WidgetType {
   }
 }
 
+// --- Previsualización de imágenes ![alt](ruta) -----------------------------
+// Misma sintaxis que renderiza la carcasa (línea propia, ruta assets/ o http(s),
+// ancho opcional en % con `![alt|50](ruta)`). La línea entera se sustituye por
+// la imagen (sin markdown visible); se edita con la barra contextual «Imagen»
+// de RichTextArea. Los blobs de assets se resuelven a object URLs cacheadas.
+export const IMG_LINE = /^\s*!\[([^\]|]*)(?:\|(\d{1,3}))?\]\((assets\/[^\s)]+|https?:\/\/[^\s)]+)\)\s*$/
+
+const imgUrlCache = new Map<string, { raw: unknown; url: string }>()
+function imageUrl(path: string): string | null {
+  if (/^https?:\/\//.test(path)) return path
+  const raw = useCourseStore.getState().assets[path]
+  if (raw == null) return null
+  const hit = imgUrlCache.get(path)
+  if (hit && hit.raw === raw) return hit.url
+  if (hit) URL.revokeObjectURL(hit.url)
+  // El mapa de assets admite Blob u otros binarios (mismo criterio que useObjectUrl).
+  const blob = raw instanceof Blob ? raw : new Blob([raw as BlobPart])
+  const url = URL.createObjectURL(blob)
+  imgUrlCache.set(path, { raw, url })
+  return url
+}
+
+class ImgWidget extends WidgetType {
+  constructor(
+    readonly url: string | null,
+    readonly alt: string,
+    readonly width: number | null,
+    readonly selected: boolean,
+  ) {
+    super()
+  }
+  eq(other: ImgWidget) {
+    return other.url === this.url && other.alt === this.alt &&
+      other.width === this.width && other.selected === this.selected
+  }
+  toDOM() {
+    const span = document.createElement('span')
+    span.className = 'cm-md-img' + (this.selected ? ' is-selected' : '')
+    if (!this.url) {
+      span.classList.add('is-missing')
+      span.textContent = '🖼 imagen no encontrada en assets'
+      return span
+    }
+    const img = document.createElement('img')
+    img.src = this.url
+    img.alt = this.alt
+    img.title = this.alt
+    if (this.width) {
+      // Ancho en % del ancho de la caja (WYSIWYG con la diapositiva).
+      span.classList.add('has-width')
+      img.style.width = `${this.width}%`
+    }
+    span.appendChild(img)
+    return span
+  }
+  ignoreEvent() {
+    return false
+  }
+}
+
 function buildLivePreview(view: EditorView): DecorationSet {
   const state = view.state
   const doc = state.doc
   const items: { from: number; to: number; deco: Decoration }[] = []
   const fenceLines = new Set<number>()
+  const imgLines = new Set<number>()
 
   // 1) Bloques ::: — cabecera como chip legible y línea de cierre oculta.
   let open = false
@@ -174,6 +236,24 @@ function buildLivePreview(view: EditorView): DecorationSet {
       open = false
       continue
     }
+    // Línea de imagen (también dentro de un callout): se sustituye ENTERA por
+    // la imagen. Con el cursor en la línea se marca seleccionada (contorno) y
+    // RichTextArea muestra su barra contextual para editarla.
+    const img = IMG_LINE.exec(line.text)
+    if (img && line.length > 0) {
+      imgLines.add(i)
+      const head = state.selection.main.head
+      items.push({
+        from: line.from,
+        to: line.to,
+        deco: Decoration.replace({
+          widget: new ImgWidget(
+            imageUrl(img[3]), img[1], img[2] ? +img[2] : null,
+            head >= line.from && head <= line.to,
+          ),
+        }),
+      })
+    }
   }
 
   // 2) Marcadores inline (**, #, enlaces, código) vía árbol de sintaxis: se
@@ -188,7 +268,7 @@ function buildLivePreview(view: EditorView): DecorationSet {
         if (n === 'EmphasisMark' || n === 'HeaderMark' || n === 'LinkMark' || n === 'CodeMark' || n === 'URL') {
           if (node.to <= node.from) return
           const ln = doc.lineAt(node.from).number
-          if (fenceLines.has(ln)) return
+          if (fenceLines.has(ln) || imgLines.has(ln)) return
           items.push({ from: node.from, to: node.to, deco: HIDE })
         }
       },
@@ -208,7 +288,8 @@ export const livePreview = ViewPlugin.fromClass(
       this.decorations = buildLivePreview(view)
     }
     update(u: ViewUpdate) {
-      if (u.docChanged || u.viewportChanged) this.decorations = buildLivePreview(u.view)
+      // selectionSet: el contorno de imagen seleccionada depende del cursor.
+      if (u.docChanged || u.viewportChanged || u.selectionSet) this.decorations = buildLivePreview(u.view)
     }
   },
   {

@@ -208,6 +208,10 @@ editor SCORMEditor lo renderiza. Sintaxis admitida:
 - `## ` y `### ` encabezados (el `#`/H1 se reserva al título de pantalla).
 - `**negrita**`, `*cursiva*`, `[texto](url)` (http(s) o mailto).
 - `- ` listas con viñetas; `1. ` listas numeradas.
+- Imagen en **línea propia**: `![texto alternativo](assets/img/archivo.png)` (o URL
+  http(s)); ancho opcional en % con `![texto alternativo|50](ruta)`. No la uses inline
+  dentro de un párrafo. Normalmente NO la generarás tú: las imágenes las sube el autor
+  desde el editor; si el contenido pide una, deja una `editor_note` describiéndola.
 - **Bloques destacados (callouts)**: una línea `::: tipo`, el contenido en las
   líneas siguientes, y una línea `:::` para cerrar. Usa `\n` en el JSON:
 
@@ -366,7 +370,7 @@ Estructura común a TODAS:
 - `type` (enum cerrado): `accordion`, `tabs`, `flip_cards`, `match_pairs`,
   `sort_steps`, `single_choice`, `true_false`, `classification`,
   `scenario_decision`, `case_practice`, `hotspots`, `video`, `fill_blanks`,
-  `timeline`, `flashcards`, `html_embed`.
+  `timeline`, `flashcards`, `html_embed`, `image_cards`.
 - `retries`: `0` = ilimitados.
 - `learning_objective`: rellénalo siempre (el validador lo pide).
 - Reglas del validador para preguntas evaluables: deben tener **respuesta
@@ -482,6 +486,17 @@ al cierre de un tema; `flip_cards` para explorar contenido:
 }
 ```
 (usa `"src": "assets/media/v.mp4"` en vez de `youtube` si es vídeo propio.)
+
+**`image_cards`** — tarjetas de imagen (informativa, no puntúa): rejilla de tarjetas
+con imagen y título; al clicar una se abre una modal con el texto a la izquierda y la
+imagen a la derecha. Como las imágenes las sube el autor, si generas este tipo deja
+`image` vacío y descríbela en una `editor_note`; `alt` es obligatorio y `text` admite
+markdown ligero:
+```json
+"config": { "cards": [
+  { "image": "assets/img/extintor.jpg", "alt": "Extintor de CO2", "title": "Extintor de CO2", "text": "Indicado para fuegos eléctricos.\n\n- No deja residuo." }
+] }, "scored": false
+```
 
 **`html_embed`** — animación o interactivo a medida en HTML/CSS/JS que el **autor
 humano pega a mano en el editor** (corre aislado en un iframe sandbox, no puntúa).

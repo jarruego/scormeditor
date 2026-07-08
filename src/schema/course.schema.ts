@@ -44,6 +44,7 @@ export const InteractionType = z.enum([
   'timeline',
   'flashcards',
   'html_embed',
+  'image_cards',
 ])
 export type InteractionType = z.infer<typeof InteractionType>
 

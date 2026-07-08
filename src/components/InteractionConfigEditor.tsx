@@ -1,5 +1,6 @@
 import type { Interaction, InteractionOption } from '../schema/course.schema'
 import { RichTextArea } from './RichTextArea'
+import { FileButton } from './FileButton'
 
 const rid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 7)}`
 
@@ -275,6 +276,35 @@ export function InteractionConfigEditor({
               <input value={c.front} placeholder="Pregunta / concepto" onChange={(e) => update({ ...c, front: e.target.value })} />
               <input value={c.back} placeholder="Respuesta / definición" onChange={(e) => update({ ...c, back: e.target.value })} />
             </>
+          )}
+        />
+      )
+    }
+
+    // ---- Tarjetas de imagen (modal texto + imagen) --------------------------
+    case 'image_cards': {
+      const cards: { image: string; alt: string; title: string; text: string }[] = cfg.cards || []
+      return (
+        <ListEditor
+          title="Tarjetas de imagen (clic → modal con texto a la izquierda e imagen a la derecha)"
+          items={cards}
+          onChange={(next) => setConfig({ cards: next })}
+          create={() => ({ image: '', alt: '', title: '', text: '' })}
+          render={(c, update) => (
+            <div className="ed-stack">
+              <div className="ed-row">
+                <input value={c.image} placeholder="Imagen (assets/img/…)"
+                  onChange={(e) => update({ ...c, image: e.target.value })} />
+                <FileButton accept="image/*" label="Subir imagen…" currentPath={c.image || undefined}
+                  makePath={(ext) => `assets/img/${it.id}-${rid('c')}.${ext}`}
+                  onUploaded={(p) => update({ ...c, image: p })} />
+              </div>
+              <input value={c.alt} placeholder="Texto alternativo de la imagen (obligatorio)"
+                onChange={(e) => update({ ...c, alt: e.target.value })} />
+              <input value={c.title} placeholder="Título de la tarjeta"
+                onChange={(e) => update({ ...c, title: e.target.value })} />
+              <RichTextArea rows={3} value={c.text} onChange={(v) => update({ ...c, text: v })} />
+            </div>
           )}
         />
       )

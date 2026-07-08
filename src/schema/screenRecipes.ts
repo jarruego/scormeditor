@@ -201,6 +201,15 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     type: 'content',
     extras: () => ({ interaction: makeInteraction('hotspots') }),
   },
+  {
+    key: 'image-cards',
+    icon: '🏞️',
+    label: 'Tarjetas de imagen',
+    description: 'Tarjetas con imagen que se abren en grande con su explicación.',
+    group: 'contenido',
+    type: 'content',
+    extras: () => ({ interaction: makeInteraction('image_cards') }),
+  },
 
   // --- Práctica (hacer y recibir corrección; scored:false de serie) ------------
   {

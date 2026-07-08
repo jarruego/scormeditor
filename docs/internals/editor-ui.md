@@ -122,6 +122,22 @@ configuración vive en `src/components/cmMarkdown.ts`:
   editor se vea el MISMO color que de verdad, no gris). Se expone como `--cm-callout-color`.
 - `editorTheme(rows*1.5)`: aspecto alineado con las variables del editor; `rows` → alto mínimo.
 
+Botón **🖼 Imagen** (jul 2026): es un `<label>` con `<input type="file">` oculto (vestido de
+botón, `.ed-rta-imgbtn`); sube la imagen con `optimizeImage`, la guarda como asset
+(`assets/img/txt-<ts>.<ext>`) e inserta `![](ruta)` en línea propia con el cursor sobre
+ella. El render y sus invariantes, en `interacciones.md` / `arquitectura-runtime.md`.
+Las líneas `![alt|ancho](ruta)` se **sustituyen enteras** por la imagen (`ImgWidget` en
+`cmMarkdown.ts`; el markdown nunca se ve — decisión tras probar la variante con el texto
+visible, que confundía porque el alt parecía un enlace). Al clicar la imagen se selecciona
+(contorno + `selectionSet` en el plugin) y aparece la **barra contextual «Imagen»** bajo el
+editor (mismo patrón que la barra de bloque): campo de **alt** (se sanea `]`/`|`), select
+de **tamaño** (Tamaño real / 25–100 % → sufijo `|NN` en el markdown), **↻ Sustituir…**
+(sube otra y borra el binario anterior si nadie más lo usa) y **🗑 Quitar** (borra la línea
+y el asset vía `removeAsset`, que respeta referencias). El detector de enlaces de
+`analyze()` ignora los `[…](…)` precedidos de `!` para no ofrecer «Editar enlace» sobre
+una imagen. Los blobs de assets se resuelven a object URLs cacheadas (`imageUrl`); si la
+ruta no existe en assets el widget muestra «imagen no encontrada».
+
 La **barra** conmuta de verdad: `B`/`I` usan el árbol de sintaxis (`syntaxTree`) para, si la
 selección ya está dentro de `StrongEmphasis`/`Emphasis`, **quitar** los marcadores en vez de
 añadirlos. Edición **contextual** (según lo que hay bajo el cursor, recalculado en
@@ -130,10 +146,17 @@ popover (texto/URL, con «Quitar»); si está dentro de un bloque `:::`, aparece
 bloque** con un `<select>` para **cambiar el tipo** —incluye los tipos estándar, los **presets
 personalizados guardados** (valor `preset:<id>`, que reescriben la cabecera con su
 color/icono/título) y «Personalizado a medida…» que abre el diálogo precargado— y
-**«Eliminar bloque»** (borra toda la región cabecera→cierre). Estas
-barras contextuales se renderizan **debajo** del editor (no entre barra y caja) para que al
-aparecer/desaparecer no lo desplacen y no provoquen clics fallidos entre los dos toques de un
-doble clic. La barra de formato lleva `onMouseDown={preventDefault}` para **no robar el foco**
+**«Eliminar bloque»** (borra toda la región cabecera→cierre). Las
+barras contextuales (bloque, imagen y enlace) **flotan** sobre la parte superior de la caja
+(`.ed-rta-floats`, `position:absolute` dentro de `.ed-rta-editwrap`), de modo que aparecer o
+desaparecer **no empuja** el editor; el contenedor lleva `pointer-events:none` (salvo las
+propias barras) para no bloquear los clics del editor. **Esc** cierra los paneles flotantes
+visibles (`handleEscClose` en el `onKeyDown` de `.ed-rta`): el diálogo personalizado, el
+enlace (Cancelar) y las barras de bloque/imagen (ocultadas por firma con `dismissedBlock`/
+`dismissedImg`, que se reactivan al salir y volver). El editor de **enlace se
+abre automáticamente** al entrar el cursor en un `[texto](url)` (sin pulsar «Editar enlace») y
+se cierra al salir; «Cancelar» lo descarta hasta salir y volver a entrar (`dismissedLinkRef`).
+La barra de formato lleva `onMouseDown={preventDefault}` para **no robar el foco**
 al editor (si no, el botón pulsado se quedaba resaltado y con foco). **Aviso importante:**
 `RichTextArea` **no debe envolverse en un `<label>`** (usar `<div className="ed-field">`). Un
 `<label>` asocia su primer control etiquetable y le reenvía **clics** y **:hover**; como

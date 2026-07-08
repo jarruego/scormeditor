@@ -14,7 +14,11 @@ export function collectAssetPaths(course: Course): Set<string> {
   const out = new Set<string>()
   const visit = (v: unknown) => {
     if (typeof v === 'string') {
-      if (v.startsWith('assets/')) out.add(v)
+      if (v.startsWith('assets/')) { out.add(v); return }
+      // Rutas incrustadas en markdown (p. ej. ![alt](assets/img/x.png) dentro
+      // de student_text o de un cuerpo de interacción).
+      const embedded = v.match(/assets\/[^\s)"'\]]+/g)
+      if (embedded) embedded.forEach((p) => out.add(p))
       return
     }
     if (Array.isArray(v)) { v.forEach(visit); return }

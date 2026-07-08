@@ -442,7 +442,6 @@ export function ScreenEditor() {
       {/* Contenedor <div> (no <label>): un <label> reenviaría los clics de toda el
           área a su primer control —ahora el botón de la barra— disparando su acción. */}
       <div className="ed-field">
-        <span>Texto del estudiante (texto enriquecido: encabezados, negrita, cursiva, enlaces, listas y destacados)</span>
         <RichTextArea rows={16} value={screen.student_text}
           onChange={(v) => { warnAudioStale(); patch({ student_text: v }) }} />
       </div>

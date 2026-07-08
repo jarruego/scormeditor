@@ -124,6 +124,37 @@ editor (tres textareas de código + alto opcional). `config: { html, css, js, he
 - Validadores: `EMBED_EMPTY` (error sin html ni js) y `EMBED_SCORED` (warning si `scored`).
 - No participa en TTS (`buildTranscript` no lo lista como informativa narrable: es código).
 
+## `image_cards` — tarjetas de imagen con modal (jul 2026)
+Tipo informativo: rejilla de tarjetas (imagen + título) que al clicarlas abren una
+**modal** con el **texto a la izquierda y la imagen a la derecha** (apilado en móvil,
+imagen primero). `config.cards: [{image, alt, title, text}]` (`text` es markdown de
+bloque, `block()`).
+- Reutiliza `.me-modal`/`.me-modal-card` de la carcasa; la modal se crea al abrir y se
+  destruye al cerrar (`document.body`, no dentro de `.me-screen`, para esquivar los
+  `transform` de las animaciones de entrada, que romperían el `position: fixed`).
+  Cierre por ✕, clic fuera y Esc; si el lightbox está abierto encima, Esc cierra solo
+  el lightbox. La imagen de la modal es `.me-zoomable` (amplía a pantalla completa).
+- Affordance estándar: lengüeta «+» (`.me-flip-tab`), pulso en la primera tarjeta hasta
+  el primer clic, check verde y `{seen}` persistido, como accordion/flip_cards.
+- **Impresión**: el texto de la modal viaja oculto en el DOM (`.me-imgcard-print[hidden]`,
+  fuera del `<button>` para no anidar bloques en él) y `print.css` lo muestra bajo cada
+  tarjeta — sin tocar `setupPrint`.
+- Validadores: `IC_EMPTY` (sin tarjetas), `IC_NO_IMAGE` (tarjeta sin imagen) e
+  `IMG_NO_ALT` (imagen sin alt), errores. Sí se narra en TTS (título + texto).
+- Tiene tarjeta en la modal de Añadir pantalla (receta `image-cards`, grupo Contenido).
+
+## Imagen en el markdown ligero (jul 2026)
+`![alt](assets/img/… | https://…)` en **línea propia** → `<figure class="me-md-img">`
+con `.me-zoomable` (lightbox gratis). Ancho opcional en % del ancho de la diapositiva:
+`![alt|50](ruta)` (clamp 10–100). Funciona en `student_text` **y** en cualquier
+cuerpo que pase por `block()` (accordion, tabs, timeline). Solo bloque, no inline; solo
+rutas `assets/` o http(s) (anti-inyección). Piezas relacionadas:
+- Botón **🖼 Imagen** en la barra de `RichTextArea` (sube + optimiza + inserta) y
+  **barra contextual «Imagen»** (alt, tamaño, sustituir, quitar): ver `editor-ui.md`.
+- `collectAssetPaths` (assetRefs.ts) extrae también rutas `assets/…` **incrustadas** en
+  strings (antes solo strings que empezaban por `assets/` → la imagen no viajaría al ZIP).
+- El TTS (`inlinePlain`) descarta la sintaxis de imagen (no se narra).
+
 ## Roadmap (acordado, no implementado)
 - **Animación secuencial** del contenido: revelar bloques en cascada. Encaja porque cada
   bloque (`<p>`, `<li>`, callout) ya sale como elemento independiente; se marcarían con

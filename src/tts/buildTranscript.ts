@@ -12,7 +12,7 @@ import type { Screen, Interaction } from '../schema/course.schema'
  */
 
 /** Tipos de interacción cuyo contenido forma parte de la transcripción/narración. */
-export const INFORMATIVE = new Set(['accordion', 'tabs', 'flip_cards', 'timeline', 'flashcards'])
+export const INFORMATIVE = new Set(['accordion', 'tabs', 'flip_cards', 'timeline', 'flashcards', 'image_cards'])
 
 // Etiquetas habladas de los callouts (mismas que renderer.js).
 const CALLOUT_LABELS: Record<string, string> = {
@@ -28,6 +28,8 @@ const CALLOUT_LABELS: Record<string, string> = {
 /** Quita las marcas inline del markdown ligero (negrita, cursiva, enlaces). */
 function inlinePlain(s: string): string {
   return String(s || '')
+    // Imágenes ![alt](ruta): no se narran (el alt describe, no cuenta).
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
@@ -90,6 +92,12 @@ function interactionPlain(it: Interaction): string {
       const front = inlinePlain(c.front || '')
       const back = inlinePlain(c.back || '')
       if (front || back) parts.push([front, back].filter(Boolean).join('. '))
+    }
+  } else if (it.type === 'image_cards') {
+    for (const c of cfg.cards || []) {
+      if (c.title) push(`${inlinePlain(c.title)}.`)
+      const body = plainText(c.text || '')
+      if (body) parts.push(body)
     }
   } else if (it.type === 'timeline') {
     for (const m of cfg.milestones || []) {

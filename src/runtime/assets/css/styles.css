@@ -452,6 +452,38 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 /* Confeti de celebración (canvas efímero al aprobar en Resultados) */
 .me-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 300; }
 
+/* Tarjetas de imagen (clic → modal con texto a la izquierda e imagen a la derecha) */
+.me-imgcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .75rem; margin-top: .5rem; }
+.me-imgcard {
+  position: relative; overflow: hidden; width: 100%; padding: 0;
+  display: flex; flex-direction: column; text-align: left;
+  border: 1px solid var(--me-border); border-radius: 10px; background: var(--me-surface);
+  cursor: pointer; box-shadow: var(--me-shadow-1);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.me-imgcard:hover { transform: translateY(-2px); box-shadow: var(--me-shadow-2); }
+.me-imgcard img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+.me-imgcard-title { padding: .5rem .65rem .6rem; font-weight: 600; }
+.me-imgcard .me-flip-tab { z-index: 1; border-radius: 0 9px 0 10px; }
+.me-imgcard.is-seen .me-flip-tab { background: var(--me-ok); }
+.me-imgcard.is-seen .me-flip-tab::after { content: '✓'; }
+.me-imgcard.me-pulse { animation: me-pulse-glow 1.6s ease-out infinite; }
+.me-imgcard-print[hidden] { display: none; }
+/* Modal de tarjeta: texto a la izquierda, imagen a la derecha (apilada en móvil) */
+.me-icmodal-card { max-width: 860px; }
+.me-icmodal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; padding: 1rem; align-items: start; }
+.me-icmodal-text > :first-child { margin-top: 0; }
+.me-icmodal-media { margin: 0; }
+.me-icmodal-media img { width: 100%; border-radius: 8px; display: block; }
+@media (max-width: 640px) {
+  .me-icmodal-body { grid-template-columns: 1fr; }
+  .me-icmodal-media { order: -1; }
+}
+
+/* Imagen dentro del markdown ligero (![alt](ruta) en línea propia) */
+.me-md-img { margin: .9rem 0; }
+.me-md-img img { max-width: 100%; border-radius: 8px; box-shadow: var(--me-shadow-1); display: block; }
+
 /* Lightbox de imágenes */
 .me-zoomable { cursor: zoom-in; }
 .me-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.88); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 1.5rem; }

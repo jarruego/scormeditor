@@ -25,6 +25,10 @@ Sintaxis soportada:
   escrito con `<ol start>`/`<li value>` cuando no van consecutivos).
 - Bloques destacados (callouts): `::: tipo` … `:::`
 - Bloque personalizado: `::: custom | #color | icono | título` … `:::`
+- Imagen en línea propia: `![alt](assets/img/… | https://…)` → `<figure class="me-md-img">`
+  ampliable con el lightbox. Ancho opcional en % con `![alt|50](ruta)` (clamp 10–100,
+  `style="width:NN%"`). Solo bloque (no inline) y solo rutas `assets/` o http(s).
+  Botón 🖼 en la barra del editor y barra contextual «Imagen» (ver `editor-ui.md`).
 
 Ninguna plantilla de `renderer.js` muestra `objective` como banner — tampoco la pantalla
 `objectives` (jul 2026): su `student_text` ya presenta los objetivos al alumno y pintarlo

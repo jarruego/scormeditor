@@ -164,6 +164,20 @@ details.ed-fold[open] > summary { border-bottom: 1px solid var(--c-border); }
 .ed-rta { display: grid; gap: .3rem; }
 .ed-rta-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
 .ed-rta-bar button { padding: .2rem .5rem; font-size: .85rem; line-height: 1.2; }
+/* Imagen ![alt](ruta) dentro del editor: el widget sustituye la línea entera.
+   Sin ancho fijado se ve como miniatura; con `|NN` ocupa ese % de la caja
+   (WYSIWYG). Al clicarla se selecciona (contorno) y sale la barra contextual. */
+.cm-md-img { display: inline-block; vertical-align: text-bottom; max-width: 100%; cursor: pointer; }
+.cm-md-img img { display: block; max-height: 120px; max-width: 100%; border: 1px solid var(--c-border); border-radius: 6px; }
+.cm-md-img.has-width { display: block; }
+.cm-md-img.has-width img { max-height: none; }
+.cm-md-img.is-selected img { outline: 3px solid var(--c-primary); outline-offset: 1px; }
+.cm-md-img.is-missing { color: var(--c-muted); font-style: italic; font-size: .85rem; }
+
+/* El botón de imagen es un <label> con input file oculto; se viste de botón. */
+.ed-rta-imgbtn { padding: .2rem .5rem; font-size: .85rem; line-height: 1.2; border: 1px solid var(--c-border); background: var(--c-surface); border-radius: 6px; cursor: pointer; }
+.ed-rta-imgbtn:hover { border-color: var(--c-primary); }
+.ed-rta-imgbtn[aria-busy='true'] { opacity: .45; cursor: default; }
 .ed-rta-sep { width: 1px; align-self: stretch; margin: .1rem .25rem; background: var(--c-border); }
 .ed-rta-preset { display: inline-flex; align-items: stretch; }
 .ed-rta-preset > button:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
@@ -202,10 +216,16 @@ details.ed-fold[open] > summary { border-bottom: 1px solid var(--c-border); }
   border: 1px solid var(--c-border); border-radius: 6px; background: color-mix(in srgb, var(--c-primary) 5%, white); }
 .ed-rta-blocklbl { font-size: .8rem; color: var(--c-muted); }
 .ed-rta-blockbar select { width: auto; }
-/* Popover de edición de enlace bajo la barra. */
-.ed-rta-linkedit { display: flex; gap: .6rem; align-items: flex-end; flex-wrap: wrap; border: 1px solid var(--c-border);
-  border-radius: 6px; padding: .6rem; background: color-mix(in srgb, var(--c-primary) 4%, white); }
-.ed-rta-linkedit label { display: grid; gap: .2rem; font-size: .8rem; flex: 1 1 180px; }
+/* Barras contextuales flotantes sobre la parte superior de la caja: absolutas,
+   no empujan el editor. El contenedor deja pasar los clics salvo en las barras. */
+.ed-rta-editwrap { position: relative; }
+.ed-rta-floats { position: absolute; top: .5rem; left: .6rem; right: .6rem; z-index: 15; display: flex; flex-direction: column; gap: .4rem; pointer-events: none; }
+.ed-rta-floats > * { pointer-events: auto; box-shadow: 0 8px 22px rgba(0, 0, 0, .22); }
+/* Barra contextual de imagen (cursor sobre una línea ![alt](ruta)) */
+.ed-rta-imgbar .ed-rta-imgalt { flex: 1; min-width: 160px; width: auto; }
+/* Editor de enlace: misma tira que la barra de imagen (etiqueta + inputs inline). */
+.ed-rta-linkedit .ed-rta-linktext { flex: 1; min-width: 110px; width: auto; }
+.ed-rta-linkedit .ed-rta-linkurl { flex: 2; min-width: 160px; width: auto; }
 .ed-sources { font-size: .85rem; color: var(--c-muted); }
 .ed-empty { color: var(--c-muted); padding: 2rem; text-align: center; }
 

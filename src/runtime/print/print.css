@@ -34,4 +34,11 @@
   }
   .me-card-front { font-weight: 600; }
   .me-card-back { margin-top: .3rem; }
+  /* Tarjetas de imagen: en papel, el texto de la modal se imprime bajo cada tarjeta. */
+  .me-imgcards { display: block; }
+  .me-imgcard-wrap { break-inside: avoid; page-break-inside: avoid; margin-bottom: .8rem; }
+  .me-imgcard { box-shadow: none; }
+  .me-imgcard img { max-width: 45%; aspect-ratio: auto; }
+  .me-imgcard .me-flip-tab { display: none; }
+  .me-imgcard-print[hidden] { display: block !important; }
 }

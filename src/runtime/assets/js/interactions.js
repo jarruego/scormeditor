@@ -975,6 +975,79 @@
     return { result: function () { return { completed: true, scored: false }; } };
   });
 
+  // --- 17. Tarjetas de imagen (modal texto + imagen) ---------------------------
+  // config.cards: [{ image, alt, title, text }]. Informativa: cada tarjeta
+  // muestra su imagen (+ título) y al clicarla se abre una modal con el texto a
+  // la izquierda y la imagen a la derecha. Mismo lenguaje de affordance que el
+  // resto: lengüeta «+», pulso-glow en la primera y check verde al verla.
+  register('image_cards', function (el, data, ctx) {
+    var cards = (data.config || {}).cards || [];
+    var seen = (ctx.state && ctx.state.seen) || {}; // índice -> true (persistido)
+    var html = header(data) + '<div class="me-imgcards">';
+    cards.forEach(function (c, i) {
+      html += '<div class="me-imgcard-wrap">' +
+        '<button class="me-imgcard' + (seen[i] ? ' is-seen' : '') + '" type="button" data-i="' + i + '"' +
+        (c.title ? '' : ' aria-label="' + esc(stripTags(c.alt || 'Ver detalle')) + '"') + '>' +
+        '<span class="me-flip-tab" aria-hidden="true"></span>' +
+        (c.image ? '<img src="' + esc(assetUrl(c.image)) + '" alt="' + esc(c.alt || '') + '" loading="lazy">' : '') +
+        (c.title ? '<span class="me-imgcard-title">' + rich(c.title) + '</span>' : '') +
+        '</button>' +
+        // Solo impresión: el texto de la modal, oculto en pantalla (print.css lo muestra)
+        '<div class="me-imgcard-print" hidden>' + block(c.text || '') + '</div>' +
+        '</div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+    var btns = [].slice.call(el.querySelectorAll('.me-imgcard'));
+    if (!Object.keys(seen).length && btns.length) btns[0].classList.add('me-pulse');
+
+    function openCard(c) {
+      var overlay = document.createElement('div');
+      overlay.className = 'me-modal me-icmodal';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.setAttribute('aria-label', stripTags(c.title || c.alt || 'Detalle'));
+      overlay.innerHTML = '<div class="me-modal-card me-icmodal-card">' +
+        '<div class="me-modal-head"><h2 class="me-modal-title">' + rich(c.title || '') + '</h2>' +
+        '<button class="me-modal-close me-icon-btn" aria-label="Cerrar">✕</button></div>' +
+        '<div class="me-icmodal-body">' +
+        '<div class="me-icmodal-text">' + block(c.text || '') + '</div>' +
+        (c.image ? '<figure class="me-icmodal-media"><img class="me-zoomable" src="' + esc(assetUrl(c.image)) +
+          '" alt="' + esc(c.alt || '') + '" tabindex="0" role="button" aria-label="Ampliar imagen"></figure>' : '') +
+        '</div></div>';
+      var last = document.activeElement;
+      function close() {
+        overlay.remove();
+        document.removeEventListener('keydown', onKey);
+        if (last && last.focus) last.focus();
+      }
+      function onKey(e) {
+        if (e.key !== 'Escape') return;
+        // Con el lightbox abierto encima, Esc cierra solo el lightbox.
+        var lb = document.getElementById('me-lightbox');
+        if (lb && !lb.hidden) return;
+        close();
+      }
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay || e.target.closest('.me-modal-close')) close();
+      });
+      document.addEventListener('keydown', onKey);
+      document.body.appendChild(overlay);
+      overlay.querySelector('.me-modal-close').focus();
+    }
+
+    el.querySelector('.me-imgcards').addEventListener('click', function (e) {
+      var btn = e.target.closest('.me-imgcard');
+      if (!btn) return;
+      var i = +btn.getAttribute('data-i');
+      btns.forEach(function (b) { b.classList.remove('me-pulse'); });
+      if (!seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
+      openCard(cards[i]);
+    });
+
+    return { result: function () { return { completed: true, scored: false }; } };
+  });
+
   global.Interactions = { register: register, render: function (el, data, ctx) {
     var f = registry[data.type];
     if (!f) { el.innerHTML = '<p class="me-warn">Tipo de interacción no soportado: ' + esc(data.type) + '</p>'; return { result: function () { return { completed: true, scored: false }; } }; }

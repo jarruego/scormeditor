@@ -113,6 +113,17 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
       if (it.scored)
         add('EMBED_SCORED', 'warning', 'El HTML a medida corre aislado en un sandbox y no puede puntuar (scored: false).')
     }
+    if (it.type === 'image_cards') {
+      const cards = (((it.config as any)?.cards || []) as { image?: string; alt?: string }[])
+      if (cards.length === 0)
+        add('IC_EMPTY', 'error', 'Tarjetas de imagen sin tarjetas.')
+      cards.forEach((c, i) => {
+        if (!String(c.image || '').trim())
+          add('IC_NO_IMAGE', 'error', `La tarjeta de imagen ${i + 1} no tiene imagen.`)
+        else if (!String(c.alt || '').trim())
+          add('IMG_NO_ALT', 'error', `La tarjeta de imagen ${i + 1} no tiene texto alternativo (alt).`)
+      })
+    }
     if (it.type === 'flashcards') {
       if (((it.config as any)?.cards || []).length === 0)
         add('FC_EMPTY', 'error', 'Tarjetas de repaso sin tarjetas.')
