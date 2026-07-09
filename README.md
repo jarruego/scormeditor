@@ -10,12 +10,15 @@ exportado es HTML/CSS/JS plano, autocontenido y compatible con Moodle.
 Proyecto **libre y colaborativo**: cualquier persona puede usarlo, proponer mejoras
 y abrir Pull Requests.
 
-El contenido **no se teclea a mano**: un **GPT de ChatGPT** (diseñador instruccional)
-convierte un PDF/Word en un proyecto `.scormproj` que SCORMEditor abre, editas y
-exportas a SCORM. Flujo típico:
+SCORMEditor permite crear un proyecto completo **desde cero** en el propio editor.
+Además, si quieres acelerar la maquetación inicial, puedes usar un **GPT de ChatGPT**
+que convierta un PDF/Word en un `.scormproj` editable. Mientras se termina de validar al
+100% un GPT oficial compatible, puedes configurar el tuyo con los ficheros de `docs/gpt/`.
+Flujos típicos:
 
 ```
-PDF/Word ─▶ [GPT ChatGPT] ─▶ .scormproj ─▶ [SCORMEditor: editar] ─▶ Exportar SCORM ZIP ─▶ Moodle
+Desde 0 en SCORMEditor ─▶ [SCORMEditor: editar] ─▶ Exportar SCORM ZIP ─▶ Moodle
+PDF/Word ─▶ [GPT ChatGPT propio] ─▶ .scormproj ─▶ [SCORMEditor: editar] ─▶ Exportar SCORM ZIP ─▶ Moodle
 ```
 
 Ese GPT es un paso **intermedio**: entrega el proyecto editable, no el SCORM final (lo
