@@ -1,5 +1,5 @@
 /* =============================================================================
- * interactions.js — Motor de interacciones (12 tipos MVP)
+ * interactions.js — Motor de interacciones (todos los tipos del enum)
  * Patrón registro: Interactions.register(type, factory).
  * factory(el, data, ctx) -> controller { result() }
  *   ctx = { state, save(state), announce(msg), esc(str) }
@@ -1047,6 +1047,232 @@
     });
 
     return { result: function () { return { completed: true, scored: false }; } };
+  });
+
+  // --- 18. Antes / después (comparador de imágenes) ---------------------------
+  // config: { before_image, before_alt, after_image, after_alt,
+  //           before_label?, after_label? }. Informativa: dos imágenes
+  // superpuestas; un divisor deslizante (input range accesible) recorta la de
+  // «antes» con clip-path. Completa al mover el divisor una vez.
+  register('before_after', function (el, data, ctx) {
+    var c = data.config || {};
+    var labelB = c.before_label || 'Antes';
+    var labelA = c.after_label || 'Después';
+    var moved = !!(ctx.state && ctx.state.moved);
+    var pos = (ctx.state && typeof ctx.state.pos === 'number') ? ctx.state.pos : 50;
+    el.innerHTML = header(data) +
+      '<div class="me-ba">' +
+      '<img class="me-ba-after" src="' + esc(assetUrl(c.after_image)) + '" alt="' + esc(c.after_alt || '') + '">' +
+      '<img class="me-ba-before" src="' + esc(assetUrl(c.before_image)) + '" alt="' + esc(c.before_alt || '') + '">' +
+      '<span class="me-ba-label me-ba-label-b">' + rich(labelB) + '</span>' +
+      '<span class="me-ba-label me-ba-label-a">' + rich(labelA) + '</span>' +
+      '<span class="me-ba-divider" aria-hidden="true"><span class="me-ba-handle' + (moved ? '' : ' me-pulse') + '">◂▸</span></span>' +
+      '<input class="me-ba-range" type="range" min="0" max="100" step="1" value="' + pos + '"' +
+      ' aria-label="' + esc(stripTags(data.prompt) || 'Comparador antes y después') + '">' +
+      '</div>' +
+      // Solo impresión: ambas imágenes completas con su etiqueta (print.css lo muestra)
+      '<div class="me-ba-print" hidden>' +
+      '<figure><img src="' + esc(assetUrl(c.before_image)) + '" alt="' + esc(c.before_alt || '') + '"><figcaption>' + rich(labelB) + '</figcaption></figure>' +
+      '<figure><img src="' + esc(assetUrl(c.after_image)) + '" alt="' + esc(c.after_alt || '') + '"><figcaption>' + rich(labelA) + '</figcaption></figure>' +
+      '</div>';
+
+    var box = el.querySelector('.me-ba');
+    var range = el.querySelector('.me-ba-range');
+    var handle = el.querySelector('.me-ba-handle');
+    function apply(p) {
+      // La imagen «antes» se recorta por la derecha; el divisor sigue al valor.
+      box.style.setProperty('--me-ba-pos', p + '%');
+    }
+    apply(pos);
+    range.addEventListener('input', function () {
+      pos = +range.value;
+      apply(pos);
+      if (!moved) {
+        moved = true;
+        handle.classList.remove('me-pulse');
+        ctx.announce('Comparador activado: desliza para comparar ambas imágenes.');
+      }
+      ctx.save({ moved: true, pos: pos });
+    });
+
+    return { result: function () { return { completed: moved, scored: false }; } };
+  });
+
+  // --- 19. Sopa de letras (word_search) ---------------------------------------
+  // config: { words: [string] }. Evaluable opcional y AUTOVALIDANTE: sin botón
+  // Comprobar ni attempts — se toca la primera y la última letra de una palabra
+  // y se valida al momento (mismo criterio «tocar y colocar» que el drag&drop).
+  // El grid se genera DETERMINISTA desde data.id para que la restauración desde
+  // suspend_data ({found}) reconstruya exactamente el mismo tablero.
+  register('word_search', function (el, data, ctx) {
+    // PRNG sembrado (mulberry32) con hash del id: mismo tablero en cada sesión.
+    function seedOf(s) {
+      var h = 1779033703 ^ s.length;
+      for (var i = 0; i < s.length; i++) { h = Math.imul(h ^ s.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+      return h >>> 0;
+    }
+    function mulberry32(a) {
+      return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        var t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    // Normaliza para el tablero: mayúsculas, sin acentos (Ñ se conserva), sin espacios.
+    var NTILDE = String.fromCharCode(209); // letra enye
+    var WSMARK = String.fromCharCode(1);   // marcador interno (nunca visible)
+    var DIACRITICS = new RegExp('[' + String.fromCharCode(0x300) + '-' + String.fromCharCode(0x36f) + ']', 'g');
+    function norm(w) {
+      return String(w || '').toUpperCase()
+        .split(NTILDE).join(WSMARK) // aparta la enye para que NFD no la descomponga
+        .normalize('NFD').replace(DIACRITICS, '') // quita acentos
+        .split(WSMARK).join(NTILDE)
+        .replace(new RegExp('[^A-Z' + NTILDE + ']', 'g'), '');
+    }
+
+    var rawWords = ((data.config || {}).words || []).map(function (w) { return String(w || '').trim(); }).filter(Boolean);
+    var words = [];
+    var wordMap = {}; // normalizada -> original (para la lista visible)
+    rawWords.forEach(function (w) {
+      var n = norm(w);
+      if (n.length >= 3 && n.length <= 12 && !wordMap[n]) { words.push(n); wordMap[n] = w; }
+    });
+
+    if (!words.length) {
+      el.innerHTML = header(data) + '<p class="me-warn">Sopa de letras sin palabras válidas (3–12 letras).</p>';
+      return { result: function () { return { completed: true, scored: false }; } };
+    }
+
+    var rnd = mulberry32(seedOf(String(data.id)));
+    var maxLen = words.reduce(function (m, w) { return Math.max(m, w.length); }, 0);
+    var size = Math.max(8, Math.min(14, maxLen, 14));
+    size = Math.max(size, Math.min(14, maxLen + 2, Math.ceil(Math.sqrt(words.join('').length * 2.2))));
+
+    // Colocación: 4 direcciones (→ ↓ ↘ ↗), con reintentos; permite cruces
+    // compatibles (misma letra en la celda).
+    var DIRS = [[0, 1], [1, 0], [1, 1], [-1, 1]];
+    var grid = [], placements = {}; // palabra -> [ [r,c], ... ]
+    for (var r = 0; r < size; r++) { grid.push([]); for (var q = 0; q < size; q++) grid[r].push(''); }
+    // Las largas primero: más difíciles de encajar.
+    var toPlace = words.slice().sort(function (a, b) { return b.length - a.length; });
+    toPlace.forEach(function (w) {
+      for (var att = 0; att < 200; att++) {
+        var d = DIRS[Math.floor(rnd() * DIRS.length)];
+        var r0 = Math.floor(rnd() * size), c0 = Math.floor(rnd() * size);
+        var rEnd = r0 + d[0] * (w.length - 1), cEnd = c0 + d[1] * (w.length - 1);
+        if (rEnd < 0 || rEnd >= size || cEnd < 0 || cEnd >= size) continue;
+        var cells = [], ok = true;
+        for (var k = 0; k < w.length; k++) {
+          var rr = r0 + d[0] * k, cc = c0 + d[1] * k;
+          if (grid[rr][cc] && grid[rr][cc] !== w[k]) { ok = false; break; }
+          cells.push([rr, cc]);
+        }
+        if (!ok) continue;
+        cells.forEach(function (rc, k2) { grid[rc[0]][rc[1]] = w[k2]; });
+        placements[w] = cells;
+        return;
+      }
+      // Sin hueco tras 200 intentos: la palabra queda fuera del tablero (y de la
+      // lista), para no dejar una palabra imposible de encontrar.
+    });
+    words = words.filter(function (w) { return placements[w]; });
+
+    // Relleno sesgado a las letras de las propias palabras (dificulta sin frustrar).
+    var poolLetters = (words.join('') + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ').split('');
+    for (var r2 = 0; r2 < size; r2++) for (var c2 = 0; c2 < size; c2++) {
+      if (!grid[r2][c2]) grid[r2][c2] = poolLetters[Math.floor(rnd() * poolLetters.length)];
+    }
+
+    var found = (ctx.state && ctx.state.found) || []; // palabras normalizadas
+    found = found.filter(function (w) { return placements[w]; });
+
+    var html = header(data) + '<div class="me-ws">' +
+      '<div class="me-ws-grid" role="group" aria-label="Tablero de la sopa de letras" style="--me-ws-size:' + size + '">';
+    for (var r3 = 0; r3 < size; r3++) for (var c3 = 0; c3 < size; c3++) {
+      html += '<button type="button" class="me-ws-cell" data-r="' + r3 + '" data-c="' + c3 + '"' +
+        ' aria-label="Fila ' + (r3 + 1) + ', columna ' + (c3 + 1) + ': ' + grid[r3][c3] + '">' + grid[r3][c3] + '</button>';
+    }
+    html += '</div><ul class="me-ws-words" aria-label="Palabras a encontrar">';
+    words.forEach(function (w) {
+      html += '<li class="me-ws-word' + (found.indexOf(w) !== -1 ? ' is-found' : '') + '" data-w="' + esc(w) + '">' + esc(wordMap[w]) + '</li>';
+    });
+    html += '</ul></div>' + feedbackBox(data);
+    el.innerHTML = html;
+
+    var cellAt = function (r4, c4) { return el.querySelector('.me-ws-cell[data-r="' + r4 + '"][data-c="' + c4 + '"]'); };
+    function markFound(w) {
+      (placements[w] || []).forEach(function (rc) { cellAt(rc[0], rc[1]).classList.add('is-found'); });
+      var li = el.querySelector('.me-ws-word[data-w="' + w + '"]');
+      if (li) li.classList.add('is-found');
+    }
+    found.forEach(markFound);
+
+    var first = null; // celda inicial seleccionada
+    function clearPick() {
+      if (first) { first.classList.remove('is-picked'); first = null; }
+    }
+    function lineBetween(a, b) {
+      // Devuelve las celdas de la recta a→b si es horizontal/vertical/diagonal.
+      var dr = b.r - a.r, dc = b.c - a.c;
+      var len = Math.max(Math.abs(dr), Math.abs(dc)) + 1;
+      if (!(dr === 0 || dc === 0 || Math.abs(dr) === Math.abs(dc))) return null;
+      var sr = dr === 0 ? 0 : (dr > 0 ? 1 : -1), sc = dc === 0 ? 0 : (dc > 0 ? 1 : -1);
+      var cells = [];
+      for (var k = 0; k < len; k++) cells.push([a.r + sr * k, a.c + sc * k]);
+      return cells;
+    }
+    function wordDone() { return words.every(function (w) { return found.indexOf(w) !== -1; }); }
+
+    el.querySelector('.me-ws-grid').addEventListener('click', function (e) {
+      var cell = e.target.closest('.me-ws-cell');
+      if (!cell || wordDone()) return;
+      var pt = { r: +cell.getAttribute('data-r'), c: +cell.getAttribute('data-c') };
+      if (!first) {
+        first = cell;
+        cell.classList.add('is-picked');
+        ctx.announce('Letra inicial marcada. Toca la última letra de la palabra.');
+        return;
+      }
+      if (cell === first) { clearPick(); return; }
+      var a = { r: +first.getAttribute('data-r'), c: +first.getAttribute('data-c') };
+      var cells = lineBetween(a, pt);
+      clearPick();
+      if (!cells) { ctx.announce('La selección debe ser una línea recta.'); return; }
+      var s = cells.map(function (rc) { return grid[rc[0]][rc[1]]; }).join('');
+      var rev = s.split('').reverse().join('');
+      var hit = null;
+      words.forEach(function (w) {
+        if (found.indexOf(w) !== -1) return;
+        if (w === s || w === rev) hit = w;
+      });
+      if (hit) {
+        found.push(hit);
+        markFound(hit);
+        ctx.save({ found: found });
+        ctx.announce('«' + wordMap[hit] + '» encontrada. ' + (words.length - found.length) + ' restantes.');
+        if (wordDone()) showFeedback(el, true, data);
+      } else {
+        ctx.announce('Ahí no hay ninguna palabra de la lista.');
+      }
+    });
+
+    if (wordDone()) showFeedback(el, true, data);
+
+    return {
+      result: function () {
+        var all = wordDone();
+        var pts = data.points || 1;
+        return {
+          completed: all,
+          scored: !!data.scored,
+          correct: all,
+          score: Math.round(pts * (found.length / words.length) * 100) / 100,
+          maxScore: pts,
+        };
+      },
+      hasAnswer: function () { return found.length > 0; },
+    };
   });
 
   global.Interactions = { register: register, render: function (el, data, ctx) {

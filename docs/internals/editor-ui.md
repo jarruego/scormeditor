@@ -146,7 +146,10 @@ popover (texto/URL, con «Quitar»); si está dentro de un bloque `:::`, aparece
 bloque** con un `<select>` para **cambiar el tipo** —incluye los tipos estándar, los **presets
 personalizados guardados** (valor `preset:<id>`, que reescriben la cabecera con su
 color/icono/título) y «Personalizado a medida…» que abre el diálogo precargado— y
-**«Eliminar bloque»** (borra toda la región cabecera→cierre). Las
+**«Quitar formato»** (`unwrapBlock`), que **conserva el texto**: elimina solo la línea de
+cabecera `::: …` y la de cierre `:::` (cada una con su salto de línea; se despachan en
+coordenadas del documento original, sin solaparse), dejando el contenido interior como texto
+plano. No es un borrado destructivo, así que no lleva estilo `ed-danger`. Las
 barras contextuales (bloque, imagen y enlace) **flotan** sobre la parte superior de la caja
 (`.ed-rta-floats`, `position:absolute` dentro de `.ed-rta-editwrap`), de modo que aparecer o
 desaparecer **no empuja** el editor; el contenedor lleva `pointer-events:none` (salvo las
@@ -254,6 +257,17 @@ los avisos de `validators.ts`):
   «Avanzado». En `video` (`mediaFirst`) el recurso va **antes** del texto; la sección de
   recurso se abre si hay recurso (`kind !== 'none'`) y la de interacción si hay
   interacción o el tipo lo pide (`interactionOpen`, p. ej. `unit_quiz`).
+- **Título en la cabecera (jul 2026)**: no hay campo «Título» aparte ni rótulo «Editar
+  pantalla»; el `h2` del formulario (`.ed-form-head`) es un input con aspecto de
+  encabezado (`.ed-title-input`, borde solo al pasar/enfocar) que edita `screen.title`
+  directamente, con un lápiz al lado que enfoca+selecciona. Conserva
+  `data-field="screen-title"` como diana del foco al crear desde receta. El
+  `FinalTestEditor` usa el mismo patrón (chip «📝 Test final» en vez del tipo), y
+  `MaterialsEditor` también (helper `EditableHead`): ahí el título edita
+  `glossary_title`/`bibliography_title` del curso (campos del contrato, con default
+  «Glosario»/«Recursos y bibliografía»), que la carcasa usa como rótulo del botón de la
+  barra y título del modal (con el default, el botón conserva el corto «Recursos»). El
+  árbol refleja el título personalizado en las filas de Materiales.
 - Las secciones usan el helper `Fold` (details **no controlado**: `defaultOpen` solo
   aplica al montar; la `key` por `id`+`type` remonta la sección al cambiar de pantalla o
   de tipo para re-aplicar el énfasis sin pisar lo que el autor pliegue a mano).

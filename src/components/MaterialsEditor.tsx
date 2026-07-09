@@ -1,6 +1,30 @@
+import { useRef } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import type { GlossaryTerm, BibliographyEntry } from '../schema/course.schema'
 import { confirmDialog } from '../store/confirm'
+
+/** Cabecera con título editable in situ (mismo patrón que ScreenEditor). */
+function EditableHead({ value, placeholder, ariaLabel, chipIcon, chipLabel, onChange }: {
+  value: string
+  placeholder: string
+  ariaLabel: string
+  chipIcon: string
+  chipLabel: string
+  onChange: (v: string) => void
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  return (
+    <h2 className="ed-form-head">
+      <input ref={ref} className="ed-title-input" value={value} placeholder={placeholder}
+        aria-label={ariaLabel} onChange={(e) => onChange(e.target.value)} />
+      <button type="button" className="ed-title-pencil" title="Editar título" aria-label="Editar título"
+        onClick={() => { ref.current?.focus(); ref.current?.select() }}>
+        <span aria-hidden="true">✏️</span>
+      </button>
+      <span className="ed-form-type"><span aria-hidden="true">{chipIcon}</span> {chipLabel}</span>
+    </h2>
+  )
+}
 
 /**
  * Editores de los materiales transversales del curso: Glosario y Recursos/
@@ -12,6 +36,8 @@ import { confirmDialog } from '../store/confirm'
 export function GlossaryEditor() {
   const glossary = useCourseStore((s) => s.course.glossary)
   const setGlossary = useCourseStore((s) => s.setGlossary)
+  const glossaryTitle = useCourseStore((s) => s.course.glossary_title)
+  const setGlossaryTitle = useCourseStore((s) => s.setGlossaryTitle)
 
   const update = (i: number, patch: Partial<GlossaryTerm>) =>
     setGlossary(glossary.map((t, j) => (j === i ? { ...t, ...patch } : t)))
@@ -32,10 +58,11 @@ export function GlossaryEditor() {
 
   return (
     <div className="ed-form">
-      <h2>Glosario</h2>
+      <EditableHead value={glossaryTitle} placeholder="Glosario" ariaLabel="Título del glosario"
+        chipIcon="📖" chipLabel="Glosario" onChange={setGlossaryTitle} />
       <p className="ed-hint">
-        El estudiante lo consulta con el botón «Glosario» de la barra superior del curso.
-        Los términos se muestran en el orden de esta lista.
+        El estudiante lo consulta con el botón correspondiente de la barra superior del curso
+        (rotulado con este título). Los términos se muestran en el orden de esta lista.
       </p>
 
       {glossary.length === 0 && <p className="ed-empty">Glosario vacío. Añade el primer término.</p>}
@@ -69,6 +96,8 @@ export function GlossaryEditor() {
 export function BibliographyEditor() {
   const bibliography = useCourseStore((s) => s.course.bibliography)
   const setBibliography = useCourseStore((s) => s.setBibliography)
+  const bibliographyTitle = useCourseStore((s) => s.course.bibliography_title)
+  const setBibliographyTitle = useCourseStore((s) => s.setBibliographyTitle)
 
   const update = (i: number, patch: Partial<BibliographyEntry>) =>
     setBibliography(bibliography.map((b, j) => (j === i ? { ...b, ...patch } : b)))
@@ -87,9 +116,12 @@ export function BibliographyEditor() {
 
   return (
     <div className="ed-form">
-      <h2>Recursos y bibliografía</h2>
+      <EditableHead value={bibliographyTitle} placeholder="Recursos y bibliografía"
+        ariaLabel="Título de recursos y bibliografía" chipIcon="🔗" chipLabel="Recursos"
+        onChange={setBibliographyTitle} />
       <p className="ed-hint">
-        El estudiante los consulta con el botón «Recursos» de la barra superior del curso.
+        El estudiante los consulta con el botón «Recursos» de la barra superior del curso
+        (si personalizas el título, el botón lo usa como rótulo).
         Usa un formato de cita homogéneo; el enlace es opcional.
       </p>
 

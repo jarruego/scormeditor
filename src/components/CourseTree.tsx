@@ -238,7 +238,7 @@ export function CourseTree() {
               <ul className="ed-screens">
                 <li className={`ed-screen ${glossarySelected ? 'is-selected' : ''}`}>
                   <button className="ed-screen-label" onClick={() => select('__glossary__')}>
-                    <span className="ed-screen-type"><span aria-hidden="true">📖</span> Glosario</span>
+                    <span className="ed-screen-type"><span aria-hidden="true">📖</span> {course.glossary_title.trim() || 'Glosario'}</span>
                     <span className="ed-screen-title">
                       {course.glossary.length
                         ? `${course.glossary.length} término${course.glossary.length === 1 ? '' : 's'}`
@@ -248,7 +248,11 @@ export function CourseTree() {
                 </li>
                 <li className={`ed-screen ${biblioSelected ? 'is-selected' : ''}`}>
                   <button className="ed-screen-label" onClick={() => select('__bibliography__')}>
-                    <span className="ed-screen-type"><span aria-hidden="true">🔗</span> Recursos</span>
+                    {/* Con el título por defecto se abrevia a «Recursos», como el botón de la carcasa */}
+                    <span className="ed-screen-type"><span aria-hidden="true">🔗</span> {
+                      course.bibliography_title.trim() === 'Recursos y bibliografía' || !course.bibliography_title.trim()
+                        ? 'Recursos' : course.bibliography_title
+                    }</span>
                     <span className="ed-screen-title">
                       {course.bibliography.length
                         ? `${course.bibliography.length} referencia${course.bibliography.length === 1 ? '' : 's'}`

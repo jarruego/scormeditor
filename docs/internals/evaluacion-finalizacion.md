@@ -29,6 +29,19 @@ ilimitados, donde hay que acertar). `SCORM.setStatus`: `incomplete` / `passed` /
 - `mastery_score`/`masteryscore` van al manifiesto (`src/scorm/manifest.ts`);
   `rules.min_score` es el umbral APTO en el runtime.
 
+## Cierre de sesión y modos del LMS (jul 2026, inspirado en eXeLearning)
+- `finishSession()` (app.js) es **idempotente** (flag `sessionFinished`) y se engancha a
+  `beforeunload` **y** `pagehide` (Safari/iOS no dispara beforeunload de forma fiable).
+  Si se cierra antes de cargar `course.json`, no evalúa nada.
+- Al salir **sin terminar** se setea `cmi.core.exit = "suspend"` (`SCORM.setExit`), salvo
+  `rules.allow_resume: false`. Moodle reanuda igualmente, pero otros LMS **descartan** el
+  intento (y el `suspend_data`) si no se marca suspend.
+- **Modo repaso**: el wrapper (`scorm_api.js`) lee `cmi.core.lesson_mode` al inicializar;
+  con `review`/`browse` (`SCORM.isReview()`) los setters de tracking (`setStatus`,
+  `setScore`, `setLocation`, `setSuspend`, `setExit`) son **no-op**: un alumno ya
+  calificado puede repasar el curso sin machacar su estado ni su nota. La guarda vive en
+  el wrapper a propósito: ninguna llamada de `app.js` puede saltársela.
+
 ## Pantallas sintéticas (no están en `course.json`)
 `flatten()` añade al final de `SCREENS`:
 - **Test final** `__final__` (si `assessments.final_test` tiene preguntas):

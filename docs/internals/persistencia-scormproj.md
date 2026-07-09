@@ -24,7 +24,7 @@ guardar → Ctrl+S → Guardado».
   guardar→reabrir lo perdía.
 
 ### Proyecto de demostración (`docs/internals/demo-scormeditor.scormproj`)
-Curso demo completo que ejercita **todos** los tipos de pantalla y las 17
+Curso demo completo que ejercita **todos** los tipos de pantalla y **todas** las
 interactividades, con glosario, bibliografía, test final, callouts, bloque
 personalizado (paleta corporativa) e imágenes. **Convención**: al añadir un tipo de
 contenido o interacción nuevo, actualizar también este proyecto (abrirlo en el editor,

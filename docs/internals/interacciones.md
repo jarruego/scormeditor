@@ -153,6 +153,46 @@ bloque, `block()`).
   `IMG_NO_ALT` (imagen sin alt), errores. Sí se narra en TTS (título + texto).
 - Tiene tarjeta en la modal de Añadir pantalla (receta `image-cards`, grupo Contenido).
 
+## `before_after` — comparador antes/después (jul 2026, inspirado en eXeLearning)
+Tipo informativo: dos imágenes superpuestas y un divisor deslizante.
+`config: { before_image, before_alt, after_image, after_alt, before_label?, after_label? }`
+(etiquetas por defecto «Antes»/«Después»).
+- **Mecánica**: la imagen «después» es la base; la de «antes» va encima recortada con
+  `clip-path: inset(0 … 0 0)` gobernado por la variable CSS `--me-ba-pos`. El control es
+  un **`<input type=range>` invisible a pantalla completa** sobre el comparador: arrastre
+  con ratón/dedo y flechas de teclado gratis (foco visible vía
+  `.me-ba:has(.me-ba-range:focus-visible)`).
+- **Affordance**: tirador central «◂▸» con pulso-glow hasta el primer movimiento.
+- **Completa al mover el divisor una vez** (`{moved, pos}` persistido; la posición se
+  restaura al volver). Con `require_interactions`, bloquea «Siguiente» hasta moverlo.
+  No puntúa (`BA_SCORED` avisa si se marca evaluable).
+- **Impresión**: `.me-ba-print[hidden]` con ambas imágenes completas y su etiqueta
+  (print.css lo muestra y oculta el comparador), patrón `.me-imgcard-print`.
+- Validadores: `BA_NO_IMAGES` (error si falta alguna) e `IMG_NO_ALT` por cara. Se narra
+  en TTS (etiqueta + alt de cada cara, lo único textual).
+
+## `word_search` — sopa de letras (jul 2026, inspirado en eXeLearning)
+Evaluable **opcional** y **autovalidante**: sin botón Comprobar ni `attempts` (como
+hotspots). `config: { words: [string] }` (3–12 letras útiles; se filtran las demás).
+- **Tablero determinista**: PRNG propio (mulberry32 sembrado con hash de `data.id`) →
+  mismo tablero en cada sesión, y la restauración desde `suspend_data` (`{found}`)
+  recoloca las palabras encontradas sin guardar posiciones. Normalización: mayúsculas,
+  sin acentos (NFD, la Ñ se preserva), sin espacios — duplicada a propósito en
+  `validators.ts` (el runtime es JS plano, no puede compartir módulo con el editor).
+- **Colocación**: 4 direcciones (→ ↓ ↘ ↗), 200 reintentos por palabra, cruces
+  compatibles permitidos; tamaño 8–14 autoajustado. Una palabra sin hueco tras los
+  reintentos **se cae del tablero y de la lista** (nunca una palabra imposible). El
+  relleno se sesga a las letras de las propias palabras.
+- **UX**: tocar la primera letra (`.is-picked`) y la última; la recta (8 direcciones,
+  también al revés) se compara con las pendientes. Acierto → celdas `.is-found` +
+  palabra tachada con ✓ en la lista lateral + `ctx.announce`. Cada celda es un
+  `<button>` con `aria-label` de fila/columna (teclado/táctil de serie).
+- **Puntuación proporcional**: `score = points × encontradas/total` (única interacción
+  con crédito parcial); `completed`/`correct` solo con todas encontradas. Al completar
+  se muestra el feedback de acierto.
+- Validadores: `WS_EMPTY`, `WS_WORD_LONG` (>12 letras), `WS_WORD_SHORT` (<3 útiles).
+  No se narra en TTS (es juego, como las evaluables).
+
 ## Imagen en el markdown ligero (jul 2026)
 `![alt](assets/img/… | https://…)` en **línea propia** → `<figure class="me-md-img">`
 con `.me-zoomable` (lightbox gratis). Ancho opcional en % del ancho de la diapositiva:

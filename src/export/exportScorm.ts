@@ -1,6 +1,6 @@
 import JSZip from 'jszip'
 import type { Course } from '../schema/course.schema'
-import { generateManifest } from '../scorm/manifest'
+import { generateManifest, generateLomMetadata } from '../scorm/manifest'
 import { getRuntimeFiles } from '../scorm/runtimeAssets'
 import { collectAssetPaths } from '../schema/assetRefs'
 
@@ -42,7 +42,8 @@ export async function buildScormZip({ course, assets = {} }: ExportOptions): Pro
     assetPaths.push(path)
   }
 
-  // 4) Manifiesto (incluye los assets en el listado de ficheros)
+  // 4) Metadatos LOM + manifiesto (incluye los assets en el listado de ficheros)
+  zip.file('imslrm.xml', generateLomMetadata(course))
   zip.file('imsmanifest.xml', generateManifest(course, assetPaths))
 
   return zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })

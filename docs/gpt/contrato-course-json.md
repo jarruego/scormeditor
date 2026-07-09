@@ -370,7 +370,8 @@ Estructura común a TODAS:
 - `type` (enum cerrado): `accordion`, `tabs`, `flip_cards`, `match_pairs`,
   `sort_steps`, `single_choice`, `true_false`, `classification`,
   `scenario_decision`, `case_practice`, `hotspots`, `video`, `fill_blanks`,
-  `timeline`, `flashcards`, `html_embed`, `image_cards`.
+  `timeline`, `flashcards`, `html_embed`, `image_cards`, `before_after`,
+  `word_search`.
 - `retries`: `0` = ilimitados.
 - `learning_objective`: rellénalo siempre (el validador lo pide).
 - Reglas del validador para preguntas evaluables: deben tener **respuesta
@@ -498,6 +499,31 @@ markdown ligero:
 ] }, "scored": false
 ```
 
+**`before_after`** — comparador antes/después (informativa, no puntúa): dos
+imágenes superpuestas con un divisor deslizante. Ideal para mostrar el efecto de
+aplicar una norma o procedimiento (zona ordenada/desordenada, con/sin EPI…). Como
+las imágenes las sube el autor, si generas este tipo deja las rutas vacías y
+descríbelas en una `editor_note`; los `alt` son obligatorios y las etiquetas son
+opcionales («Antes»/«Después» por defecto):
+```json
+"config": {
+  "before_image": "assets/img/zona-desordenada.png",
+  "before_alt": "Zona de trabajo con obstáculos en el suelo",
+  "after_image": "assets/img/zona-ordenada.png",
+  "after_alt": "La misma zona despejada y señalizada",
+  "before_label": "Antes", "after_label": "Después"
+}, "scored": false
+```
+
+**`word_search`** — sopa de letras (evaluable opcional). El tablero se genera solo
+a partir de `config.words` (3–12 letras por palabra; acentos y espacios se ignoran
+al colocarla). El alumno toca la primera y la última letra de cada palabra; no hay
+botón Comprobar ni intentos. Si puntúa, cada palabra encontrada suma su parte
+proporcional de `points`. Úsala para afianzar vocabulario clave del tema:
+```json
+"config": { "words": ["SCORM", "Moodle", "Prevención", "Extintor"] }
+```
+
 **`html_embed`** — animación o interactivo a medida en HTML/CSS/JS que el **autor
 humano pega a mano en el editor** (corre aislado en un iframe sandbox, no puntúa).
 **NO lo generes**: existe en el enum, pero escribir código no es tarea del GPT; si un
@@ -579,6 +605,10 @@ preguntas.
 
 - `glossary[]`: `{ term, definition, source_refs[] }` (NO uses `id`/`source_ref`).
 - `bibliography[]`: `{ ref, url? }` (el campo es **`ref`**, NO `reference`).
+- `glossary_title` y `bibliography_title` (opcionales, junto a sus arrays): rótulo
+  personalizado que la carcasa usa en el botón de la barra y en el título del modal.
+  Por defecto «Glosario» y «Recursos y bibliografía»; normalmente **omítelos** (el
+  autor los ajusta en el editor si quiere otro nombre).
 - **La bibliografía va SOLO en `bibliography[]`**: la carcasa ya la muestra al alumno
   en el modal «Recursos y bibliografía» (una entrada por línea). **NO crees una
   pantalla `content` «Referencias»** con las citas apelotonadas en un párrafo.

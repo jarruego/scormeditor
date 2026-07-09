@@ -124,6 +124,32 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
           add('IMG_NO_ALT', 'error', `La tarjeta de imagen ${i + 1} no tiene texto alternativo (alt).`)
       })
     }
+    if (it.type === 'before_after') {
+      const c = (it.config as any) || {}
+      if (!String(c.before_image || '').trim() || !String(c.after_image || '').trim())
+        add('BA_NO_IMAGES', 'error', 'El comparador antes/después necesita las dos imágenes.')
+      else {
+        if (!String(c.before_alt || '').trim())
+          add('IMG_NO_ALT', 'error', 'La imagen «antes» no tiene texto alternativo (alt).')
+        if (!String(c.after_alt || '').trim())
+          add('IMG_NO_ALT', 'error', 'La imagen «después» no tiene texto alternativo (alt).')
+      }
+      if (it.scored)
+        add('BA_SCORED', 'warning', 'El comparador antes/después es informativo: no debería puntuar (scored: false).')
+    }
+    if (it.type === 'word_search') {
+      const raw = (((it.config as any)?.words || []) as string[]).map((w) => String(w || '').trim()).filter(Boolean)
+      // Misma normalización que la carcasa: solo letras, sin acentos ni espacios.
+      const norm = (w: string) => w.toUpperCase().replace(/\u00d1/g, '\u0001').normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '').replace(/\u0001/g, '\u00d1').replace(/[^A-Z\u00d1]/g, '')
+      if (raw.length === 0)
+        add('WS_EMPTY', 'error', 'Sopa de letras sin palabras.')
+      raw.forEach((w) => {
+        const n = norm(w)
+        if (n.length > 12) add('WS_WORD_LONG', 'error', `«${w}» tiene más de 12 letras: no cabe en el tablero.`)
+        else if (n.length < 3) add('WS_WORD_SHORT', 'error', `«${w}» se queda en menos de 3 letras útiles: demasiado corta para el tablero.`)
+      })
+    }
     if (it.type === 'flashcards') {
       if (((it.config as any)?.cards || []).length === 0)
         add('FC_EMPTY', 'error', 'Tarjetas de repaso sin tarjetas.')

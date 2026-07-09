@@ -320,6 +320,58 @@ export function InteractionConfigEditor({
       )
     }
 
+    // ---- Antes / después (comparador de imágenes) ----------------------------
+    case 'before_after': {
+      const side = (key: 'before' | 'after', title: string, defLabel: string) => (
+        <div className="ed-stack">
+          <p className="ed-options-head">{title}</p>
+          <div className="ed-row">
+            <input value={cfg[`${key}_image`] || ''} placeholder="Imagen (assets/img/…)"
+              onChange={(e) => setConfig({ [`${key}_image`]: e.target.value })} />
+            <FileButton accept="image/*" label="Subir imagen…" currentPath={cfg[`${key}_image`] || undefined}
+              makePath={(ext) => `assets/img/${it.id}-${key}.${ext}`}
+              onUploaded={(p) => setConfig({ [`${key}_image`]: p })} />
+          </div>
+          <input value={cfg[`${key}_alt`] || ''} placeholder="Texto alternativo (obligatorio)"
+            onChange={(e) => setConfig({ [`${key}_alt`]: e.target.value })} />
+          <input value={cfg[`${key}_label`] || ''} placeholder={`Etiqueta sobre la imagen (por defecto «${defLabel}»)`}
+            onChange={(e) => setConfig({ [`${key}_label`]: e.target.value })} />
+        </div>
+      )
+      return (
+        <>
+          <p className="ed-hint">
+            Las dos imágenes se superponen y el alumno desliza el divisor para compararlas.
+            Funcionan mejor si tienen las mismas dimensiones.
+          </p>
+          {side('before', 'Imagen «antes» (izquierda)', 'Antes')}
+          {side('after', 'Imagen «después» (derecha)', 'Después')}
+        </>
+      )
+    }
+
+    // ---- Sopa de letras ------------------------------------------------------
+    case 'word_search': {
+      const words: string[] = cfg.words || []
+      return (
+        <>
+          <ListEditor
+            title="Palabras a encontrar (3–12 letras; acentos y espacios se ignoran en el tablero)"
+            items={words.map((t) => ({ text: t }))}
+            onChange={(next) => setConfig({ words: next.map((w) => w.text) })}
+            create={() => ({ text: '' })}
+            render={(w, update) => (
+              <input value={w.text} placeholder="Palabra" onChange={(e) => update({ text: e.target.value })} />
+            )}
+          />
+          <p className="ed-hint">
+            El tablero se genera solo. El alumno toca la primera y la última letra de cada
+            palabra; se valida al momento, sin botón Comprobar.
+          </p>
+        </>
+      )
+    }
+
     // ---- HTML a medida (iframe sandbox) ------------------------------------
     case 'html_embed':
       return (

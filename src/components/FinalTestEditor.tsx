@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import type { UnitTest, QuizQuestion, InteractionOption } from '../schema/course.schema'
 import { uncoveredObjectives } from '../validation/objectives'
@@ -35,6 +35,7 @@ export function FinalTestEditor() {
   const test = useCourseStore((s) => s.course.assessments.final_test)
   const setFinalTest = useCourseStore((s) => s.setFinalTest)
   const course = useCourseStore((s) => s.course)
+  const titleRef = useRef<HTMLInputElement>(null)
   // Primer objetivo declarado que ninguna evaluación cubre: al añadir preguntas
   // se va avanzando solo por los objetivos pendientes.
   const nextObjective = useMemo(() => uncoveredObjectives(course)[0] ?? '', [course])
@@ -60,13 +61,19 @@ export function FinalTestEditor() {
 
   return (
     <div className="ed-form">
-      <h2>Test final</h2>
+      {/* Cabecera con el título del test editable in situ, como en ScreenEditor */}
+      <h2 className="ed-form-head">
+        <input ref={titleRef} className="ed-title-input"
+          value={test.title} placeholder="(sin título)" aria-label="Título del test final"
+          onChange={(e) => patch({ title: e.target.value })} />
+        <button type="button" className="ed-title-pencil" title="Editar título" aria-label="Editar título"
+          onClick={() => { titleRef.current?.focus(); titleRef.current?.select() }}>
+          <span aria-hidden="true">✏️</span>
+        </button>
+        <span className="ed-form-type"><span aria-hidden="true">📝</span> Test final</span>
+      </h2>
 
       <div className="ed-row">
-        <label className="ed-field">
-          <span>Título</span>
-          <input value={test.title} onChange={(e) => patch({ title: e.target.value })} />
-        </label>
         <label className="ed-field ed-field-narrow">
           <span>Nota mínima (%)</span>
           <input type="number" min={0} max={100} value={test.pass_score}

@@ -12,7 +12,7 @@ import type { Screen, Interaction } from '../schema/course.schema'
  */
 
 /** Tipos de interacción cuyo contenido forma parte de la transcripción/narración. */
-export const INFORMATIVE = new Set(['accordion', 'tabs', 'flip_cards', 'timeline', 'flashcards', 'image_cards'])
+export const INFORMATIVE = new Set(['accordion', 'tabs', 'flip_cards', 'timeline', 'flashcards', 'image_cards', 'before_after'])
 
 // Etiquetas habladas de los callouts (mismas que renderer.js).
 const CALLOUT_LABELS: Record<string, string> = {
@@ -99,6 +99,15 @@ function interactionPlain(it: Interaction): string {
       const body = plainText(c.text || '')
       if (body) parts.push(body)
     }
+  } else if (it.type === 'before_after') {
+    // Lo único textual del comparador: etiqueta + descripción (alt) de cada cara.
+    const face = (label: string, def: string, alt: string) => {
+      const l = inlinePlain(label || def)
+      const a = inlinePlain(alt || '')
+      if (a) parts.push(`${l}: ${a}`)
+    }
+    face(cfg.before_label, 'Antes', cfg.before_alt)
+    face(cfg.after_label, 'Después', cfg.after_alt)
   } else if (it.type === 'timeline') {
     for (const m of cfg.milestones || []) {
       const head = [inlinePlain(m.label || ''), inlinePlain(m.title || '')].filter(Boolean).join('. ')

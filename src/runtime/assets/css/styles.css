@@ -476,6 +476,43 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-imgcard.is-seen .me-flip-tab::after { content: '✓'; }
 .me-imgcard.me-pulse { animation: me-pulse-glow 1.6s ease-out infinite; }
 .me-imgcard-print[hidden] { display: none; }
+
+/* --- Antes/después (comparador de imágenes) -------------------------------- */
+.me-ba { position: relative; margin-top: .5rem; border-radius: 10px; overflow: hidden; line-height: 0; box-shadow: var(--me-shadow-1); }
+.me-ba img { width: 100%; display: block; user-select: none; -webkit-user-select: none; pointer-events: none; }
+/* La imagen «antes» va encima, recortada por la derecha según la posición. */
+.me-ba-before { position: absolute; inset: 0; height: 100%; object-fit: cover; clip-path: inset(0 calc(100% - var(--me-ba-pos, 50%)) 0 0); }
+.me-ba-label { position: absolute; top: .6rem; background: rgba(0, 0, 0, .62); color: #fff; padding: .15rem .6rem; border-radius: 99px; font-size: .8rem; line-height: 1.4; pointer-events: none; }
+.me-ba-label-b { left: .6rem; }
+.me-ba-label-a { right: .6rem; }
+.me-ba-divider { position: absolute; top: 0; bottom: 0; left: var(--me-ba-pos, 50%); width: 3px; background: #fff; transform: translateX(-50%); pointer-events: none; box-shadow: 0 0 6px rgba(0, 0, 0, .45); }
+.me-ba-handle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; color: #333; border-radius: 99px; padding: .35rem .5rem; font-size: .85rem; line-height: 1; box-shadow: var(--me-shadow-2); }
+.me-ba-handle.me-pulse { animation: me-pulse-glow 1.6s ease-out infinite; }
+/* El range invisible cubre todo el comparador: arrastre táctil/ratón y teclado. */
+.me-ba-range { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
+.me-ba:has(.me-ba-range:focus-visible) { outline: 3px solid var(--me-primary); outline-offset: 2px; }
+.me-ba-print[hidden] { display: none; }
+
+/* --- Sopa de letras --------------------------------------------------------- */
+.me-ws { display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, auto); gap: 1rem; margin-top: .5rem; align-items: start; }
+.me-ws-grid { display: grid; grid-template-columns: repeat(var(--me-ws-size, 10), minmax(0, 2.1rem)); gap: 2px; justify-content: center; }
+.me-ws-cell {
+  aspect-ratio: 1; display: grid; place-items: center; padding: 0;
+  background: var(--me-surface); border: 1px solid var(--me-border); border-radius: 4px;
+  font: inherit; font-size: .85rem; font-weight: 600; color: var(--me-text);
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+}
+.me-ws-cell:hover { border-color: var(--me-primary); }
+.me-ws-cell.is-picked { background: var(--me-primary); border-color: var(--me-primary); color: #fff; }
+.me-ws-cell.is-found { background: color-mix(in srgb, var(--me-ok) 18%, white); border-color: var(--me-ok); color: var(--me-ok); }
+.me-ws-words { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .35rem; }
+.me-ws-word { padding: .25rem .7rem; border: 1px solid var(--me-border); border-radius: 99px; background: var(--me-surface); font-size: .9rem; width: fit-content; }
+.me-ws-word.is-found { text-decoration: line-through; color: var(--me-ok); border-color: var(--me-ok); background: color-mix(in srgb, var(--me-ok) 10%, white); }
+.me-ws-word.is-found::after { content: ' ✓'; }
+@media (max-width: 640px) {
+  .me-ws { grid-template-columns: 1fr; }
+  .me-ws-words { flex-direction: row; flex-wrap: wrap; }
+}
 /* Modal de tarjeta: texto a la izquierda, imagen a la derecha (apilada en móvil) */
 .me-icmodal-card { max-width: 860px; }
 .me-icmodal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; padding: 1rem; align-items: start; }

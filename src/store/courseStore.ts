@@ -97,8 +97,10 @@ interface CourseState {
   removeObjective: (text: string) => void
   /** Reemplaza el glosario completo (edición del panel Glosario). */
   setGlossary: (terms: GlossaryTerm[]) => void
+  setGlossaryTitle: (title: string) => void
   /** Reemplaza la bibliografía completa (panel Recursos y bibliografía). */
   setBibliography: (entries: BibliographyEntry[]) => void
+  setBibliographyTitle: (title: string) => void
 
   addAsset: (path: string, blob: Blob) => void
   /** Borra un binario del mapa de assets (irreversible: no entra en el historial). */
@@ -358,10 +360,24 @@ export const useCourseStore = create<CourseState>((set, get) => {
     set({ course })
   },
 
+  setGlossaryTitle: (title) => {
+    snapshot('glossary-title')
+    const course = clone(get().course)
+    course.glossary_title = title
+    set({ course })
+  },
+
   setBibliography: (entries) => {
     snapshot('bibliography')
     const course = clone(get().course)
     course.bibliography = entries
+    set({ course })
+  },
+
+  setBibliographyTitle: (title) => {
+    snapshot('bibliography-title')
+    const course = clone(get().course)
+    course.bibliography_title = title
     set({ course })
   },
 

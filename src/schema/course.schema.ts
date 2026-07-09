@@ -45,6 +45,8 @@ export const InteractionType = z.enum([
   'flashcards',
   'html_embed',
   'image_cards',
+  'before_after',
+  'word_search',
 ])
 export type InteractionType = z.infer<typeof InteractionType>
 
@@ -358,7 +360,15 @@ export const Course = z.object({
     final_test: UnitTest.nullable().default(null),
   }).default({}),
   glossary: z.array(GlossaryTerm).default([]),
+  glossary_title: z
+    .string()
+    .default('Glosario')
+    .describe('Rótulo del glosario en la carcasa (botón de la barra y título del modal)'),
   bibliography: z.array(BibliographyEntry).default([]),
+  bibliography_title: z
+    .string()
+    .default('Recursos y bibliografía')
+    .describe('Rótulo de recursos/bibliografía en la carcasa (título del modal; el botón lo abrevia si es el valor por defecto)'),
   quality_checklist: z.record(z.boolean()).default({}),
 })
 export type Course = z.infer<typeof Course>

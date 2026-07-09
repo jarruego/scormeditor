@@ -41,4 +41,12 @@
   .me-imgcard img { max-width: 45%; aspect-ratio: auto; }
   .me-imgcard .me-flip-tab { display: none; }
   .me-imgcard-print[hidden] { display: block !important; }
+  /* Antes/después: en papel no hay deslizador — ambas imágenes con su etiqueta. */
+  .me-ba { display: none; }
+  .me-ba-print[hidden] { display: flex !important; gap: 4%; }
+  .me-ba-print figure { margin: 0; width: 48%; break-inside: avoid; }
+  .me-ba-print img { max-width: 100%; }
+  .me-ba-print figcaption { font-weight: 600; font-size: .85rem; }
+  /* Sopa de letras: el tablero se imprime tal cual (celdas con borde). */
+  .me-ws-cell { box-shadow: none; }
 }

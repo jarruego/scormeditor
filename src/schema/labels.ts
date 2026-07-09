@@ -37,6 +37,8 @@ export const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
   flashcards: 'Tarjetas de repaso',
   html_embed: 'HTML a medida (código)',
   image_cards: 'Tarjetas de imagen (modal)',
+  before_after: 'Antes / después (comparador)',
+  word_search: 'Sopa de letras',
 }
 
 /** Icono compacto por tipo de pantalla (árbol del editor). */

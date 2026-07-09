@@ -445,13 +445,27 @@ export function RichTextArea({
     v.focus()
   }
 
-  function deleteBlock() {
+  // Quita el formato de bloque conservando el texto: elimina la línea de cabecera
+  // "::: …" y la línea de cierre ":::", dejando el contenido como texto plano.
+  function unwrapBlock() {
     const b = ctx.block
     const v = viewRef.current
     if (!b || !v) return
-    let to = b.to
-    if (to < v.state.doc.length && v.state.sliceDoc(to, to + 1) === '\n') to += 1
-    v.dispatch({ changes: { from: b.from, to } })
+    const doc = v.state.doc
+    const headerLine = doc.lineAt(b.headerFrom)
+    const closeLine = doc.lineAt(b.to)
+    // Cada línea incluye su salto de línea final. Se pasan en coordenadas del
+    // documento original (no se solapan); CodeMirror las ordena.
+    let headTo = headerLine.to
+    if (headTo < doc.length && v.state.sliceDoc(headTo, headTo + 1) === '\n') headTo += 1
+    let closeTo = closeLine.to
+    if (closeTo < doc.length && v.state.sliceDoc(closeTo, closeTo + 1) === '\n') closeTo += 1
+    v.dispatch({
+      changes: [
+        { from: headerLine.from, to: headTo },
+        { from: closeLine.from, to: closeTo },
+      ],
+    })
     v.focus()
   }
 
@@ -667,7 +681,7 @@ export function RichTextArea({
           {ctx.block.type === 'custom' && (
             <button type="button" onClick={openCustomEdit} title="Editar color, icono y título">✎ Editar</button>
           )}
-          <button type="button" className="ed-danger" onClick={deleteBlock} title="Eliminar todo el bloque">🗑 Eliminar bloque</button>
+          <button type="button" onClick={unwrapBlock} title="Quitar el formato de bloque y dejar el texto plano">⤯ Quitar formato</button>
         </div>
       )}
 

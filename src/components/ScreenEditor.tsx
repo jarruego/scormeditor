@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { validateCourse } from '../validation/validators'
 import { ScreenType, InteractionType, Interaction } from '../schema/course.schema'
@@ -134,6 +134,7 @@ export function ScreenEditor() {
   const course = useCourseStore((s) => s.course)
   const [ttsBusy, setTtsBusy] = useState(false)
   const [ttsMsg, setTtsMsg] = useState<string | null>(null)
+  const titleRef = useRef<HTMLInputElement>(null)
 
   // Issues de validación de ESTA pantalla (validación en contexto, no solo en
   // la pestaña Validación).
@@ -408,8 +409,17 @@ export function ScreenEditor() {
 
   return (
     <div className="ed-form">
-      <h2>
-        Editar pantalla{' '}
+      {/* Cabecera: el título de la pantalla se edita aquí mismo (clic sobre el
+          texto o sobre el lápiz). data-field: diana del foco al crear una
+          pantalla desde una receta (AddScreenModal). */}
+      <h2 className="ed-form-head">
+        <input ref={titleRef} data-field="screen-title" className="ed-title-input"
+          value={screen.title} placeholder="(sin título)" aria-label="Título de la pantalla"
+          onChange={(e) => patch({ title: e.target.value })} />
+        <button type="button" className="ed-title-pencil" title="Editar título" aria-label="Editar título"
+          onClick={() => { titleRef.current?.focus(); titleRef.current?.select() }}>
+          <span aria-hidden="true">✏️</span>
+        </button>
         <span className="ed-form-type"><span aria-hidden="true">{screenTypeIcon(screen.type)}</span> {screenTypeLabel(screen.type)}</span>
       </h2>
 
@@ -422,12 +432,6 @@ export function ScreenEditor() {
           ))}
         </ul>
       )}
-
-      <label className="ed-field">
-        <span>Título</span>
-        {/* data-field: diana del foco al crear una pantalla desde una receta */}
-        <input data-field="screen-title" value={screen.title} onChange={(e) => patch({ title: e.target.value })} />
-      </label>
 
       {/* Portada y resumen están exentas de objetivo (validación): no se muestra */}
       {!uiCfg.hideObjective && (

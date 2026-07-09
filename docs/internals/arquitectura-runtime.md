@@ -10,6 +10,20 @@
   `import.meta.glob('../runtime/**', { query:'?raw' })` (`src/scorm/runtimeAssets.ts`);
   Vista estudiante (`buildPreview.ts`) y export ZIP consumen los mismos strings.
 
+## Manifiesto y metadatos SCORM (jul 2026, inspirado en eXeLearning)
+- **La lista de `<file>` del manifiesto se deriva de `getRuntimeFiles()`** (el mismo glob
+  que alimenta el ZIP) + `data/course.json` + `imslrm.xml` + los assets referenciados:
+  un fichero nuevo en `src/runtime/` entra solo, imposible desincronizarse
+  (`src/scorm/manifest.ts`).
+- **`imslrm.xml`** (`generateLomMetadata`): metadatos LOM (IMS MD 1.2) con título,
+  idioma, descripción y autoría desde `course.json`, referenciado con
+  `<adlcp:location>` en el `<metadata>` del manifiesto. Moodle los muestra al importar.
+- **Sin `xsi:schemaLocation`**: declaraba XSDs que no viajan en el paquete; los
+  validadores estrictos (ADL) piden coherencia — o se incluyen los XSD o no se declaran.
+- El `manifest identifier` es `course.scorm.identifier` (estable entre re-exportaciones:
+  el LMS conserva el tracking al re-subir el paquete; misma decisión que eXeLearning
+  #1785). No regenerarlo nunca automáticamente.
+
 ## Texto enriquecido (markdown ligero)
 Editor: `src/components/RichTextArea.tsx` (barra de botones, sin dependencias).
 Render: `mdToHtml`/`blocksToHtml` en `src/runtime/assets/js/renderer.js`.
@@ -76,6 +90,10 @@ que lo etiquete).
   el texto). Un preset vale si tiene `color` y al menos `title` **o** `icon`.
 - **Seguridad**: el color se valida como hex antes de inyectarlo en `style` (anti-inyección
   CSS); icono y título se escapan con `esc()`.
+- **Editar / quitar** un bloque ya escrito se hace desde la **barra de bloque** (con el cursor
+  dentro): **✎ Editar** reabre el diálogo precargado y reescribe **solo la cabecera** (respeta
+  el contenido); **⤯ Quitar formato** (`unwrapBlock`) borra cabecera y cierre y deja el texto
+  plano, sin borrar contenido. Detalle en `editor-ui.md`.
 
 ## Recursos visuales
 - `visual_resource` admite `layout` (`top`/`bottom`/`left`/`right`, def. `top`) y
@@ -132,9 +150,9 @@ que lo etiquete).
   cualquier `[data-icon="nombre"]` se rellena al cargar (`MEIcons.hydrate`);
   programático: `MEIcons.svg('printer')`. Tamaño por CSS sobre `.me-ico`. Pensado para
   reutilizarse (p. ej. futuros iconos de callouts). ⚠ Un fichero JS nuevo del runtime
-  hay que añadirlo en TRES sitios: `index.html`, `jsOrder` de `buildPreview.ts` y
-  `baseFiles` de `manifest.ts` (el glob del ZIP lo copia solo, pero el manifiesto y la
-  preview tienen listas fijas).
+  hay que añadirlo en DOS sitios: `index.html` y `jsOrder` de `buildPreview.ts` (el glob
+  del ZIP lo copia solo y, desde jul 2026, el manifiesto también deriva su lista de ese
+  mismo glob — ver «Manifiesto y metadatos» abajo).
 - **Herramientas de la topbar con icono** (jul 2026): cada botón de `.me-tools` es
   `<span class="me-tool-ico" data-icon="…">` + `<span class="me-tool-txt">`
   (file-text Transcripción, volume-on/off Audio, book-open Glosario, paperclip
@@ -143,6 +161,12 @@ que lo etiquete).
   ancho mínimo, alineados a la derecha de la cabecera (ya no bajan a una fila propia);
   el nombre accesible lo da el `aria-label` fijo de cada botón. `reflectAudioButton` y
   `reflectMenuUI` (app.js) regeneran solo el span del icono vía `MEIcons.svg`.
+- **Rótulos de Glosario/Recursos personalizables** (jul 2026): `glossary_title` y
+  `bibliography_title` de `course.json` (defaults «Glosario» / «Recursos y
+  bibliografía») rotulan el título del modal y, si el autor los personaliza, también el
+  botón de la topbar (`relabelTool` en app.js: texto, `title` y `aria-label`); con el
+  valor por defecto el botón de bibliografía conserva su corto «Recursos». Se editan en
+  la cabecera de `MaterialsEditor` (ver `editor-ui.md`).
 - **Dimensiones de la tarjeta** (jul 2026): `.me-screen` se estira hasta llenar TODO el
   alto disponible del área de contenido (`.me-content` es columna flex; la tarjeta lleva
   `flex: 1 0 auto` — crece, nunca encoge: con contenido largo hay scroll normal). El

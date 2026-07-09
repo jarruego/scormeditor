@@ -210,6 +210,15 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     type: 'content',
     extras: () => ({ interaction: makeInteraction('image_cards') }),
   },
+  {
+    key: 'before-after',
+    icon: '↔️',
+    label: 'Antes / después',
+    description: 'Dos imágenes superpuestas con un divisor deslizante para compararlas.',
+    group: 'contenido',
+    type: 'content',
+    extras: () => ({ interaction: makeInteraction('before_after') }),
+  },
 
   // --- Práctica (hacer y recibir corrección; scored:false de serie) ------------
   {
@@ -283,6 +292,15 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     group: 'practica',
     type: 'content',
     extras: () => ({ interaction: makeInteraction('flashcards') }),
+  },
+  {
+    key: 'word-search',
+    icon: '🔠',
+    label: 'Sopa de letras',
+    description: 'Encontrar en el tablero las palabras clave del tema.',
+    group: 'practica',
+    type: 'content',
+    extras: () => ({ interaction: makeInteraction('word_search') }),
   },
   {
     key: 'reflection',

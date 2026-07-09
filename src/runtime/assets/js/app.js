@@ -128,6 +128,26 @@
     document.getElementById('me-course-title').textContent = COURSE.course.title || '';
     document.title = COURSE.course.title || 'Curso SCORM';
     document.documentElement.lang = (shell.language || COURSE.course.language || 'es');
+    // Rótulos personalizados de glosario y recursos (glossary_title /
+    // bibliography_title): re-rotulan el botón de la barra. Con el valor por
+    // defecto el botón conserva su texto corto de fábrica («Recursos»).
+    var gt = glossaryTitle();
+    if (gt !== 'Glosario') relabelTool('me-btn-glossary', gt);
+    var bt = bibliographyTitle();
+    if (bt !== 'Recursos y bibliografía') relabelTool('me-btn-resources', bt);
+  }
+
+  function glossaryTitle() {
+    return (COURSE.glossary_title || '').trim() || 'Glosario';
+  }
+  function bibliographyTitle() {
+    return (COURSE.bibliography_title || '').trim() || 'Recursos y bibliografía';
+  }
+  function relabelTool(id, label) {
+    var btn = document.getElementById(id);
+    btn.querySelector('.me-tool-txt').textContent = label;
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
   }
 
   function buildMenu() {
@@ -183,7 +203,10 @@
     setupFullscreen();
     document.querySelectorAll('.me-modal-close').forEach(function (b) { b.addEventListener('click', closeModals); });
     A11Y.bindShortcuts({ next: function () { goRelative(1); }, prev: function () { goRelative(-1); }, menu: toggleMenu, transcript: toggleTranscript });
+    // pagehide además de beforeunload: Safari/iOS no dispara beforeunload de
+    // forma fiable. finishSession es idempotente, así que oír ambos es seguro.
     global.addEventListener('beforeunload', function () { finishSession(); });
+    global.addEventListener('pagehide', function () { finishSession(); });
     setupLightbox();
     setupPrint();
     setupAuthorToggle();
@@ -630,12 +653,12 @@
   function openModal(which) {
     if (which === 'glossary') {
       var g = (COURSE.glossary || []).map(function (t) { return '<dt>' + esc(t.term) + '</dt><dd>' + esc(t.definition) + '</dd>'; }).join('');
-      openModalHtml('Glosario', g ? '<dl class="me-glossary">' + g + '</dl>' : '<p>Glosario vacío.</p>');
+      openModalHtml(glossaryTitle(), g ? '<dl class="me-glossary">' + g + '</dl>' : '<p>Glosario vacío.</p>');
     } else if (which === 'resources') {
       var b = (COURSE.bibliography || []).map(function (e) {
         return '<li>' + esc(e.ref) + (e.url ? ' — <a href="' + esc(e.url) + '" target="_blank" rel="noopener">enlace</a>' : '') + '</li>';
       }).join('');
-      openModalHtml('Recursos y bibliografía', b ? '<ul>' + b + '</ul>' : '<p>Sin recursos.</p>');
+      openModalHtml(bibliographyTitle(), b ? '<ul>' + b + '</ul>' : '<p>Sin recursos.</p>');
     } else if (which === 'help') {
       openModalHtml('Ayuda', '<ul><li><strong>Alt + →</strong> Siguiente</li><li><strong>Alt + ←</strong> Anterior</li><li><strong>Alt + M</strong> Menú</li><li><strong>Alt + T</strong> Transcripción</li></ul><p>Usa Tab para navegar por los controles.</p>');
     }
@@ -937,10 +960,18 @@
 
   // ---- Tiempo / cierre ---------------------------------------------------
   function saveTime() {}
+  var sessionFinished = false;
   function finishSession() {
+    if (sessionFinished) return; // puede llegar por pagehide Y beforeunload
+    sessionFinished = true;
     var secs = Math.round((Date.now() - sessionStart) / 1000);
     SCORM.setSessionTime(secs);
-    evaluateCompletion();
+    // Si se cierra antes de cargar el curso no hay nada que evaluar.
+    var status = COURSE ? evaluateCompletion() : SCORM.getStatus();
+    // Salida sin terminar → exit=suspend para que LMS estrictos conserven el
+    // intento y permitan reanudar (salvo que el curso desactive allow_resume).
+    var rules = (COURSE && COURSE.scorm && COURSE.scorm.rules) || {};
+    SCORM.setExit(status === 'incomplete' && rules.allow_resume !== false ? 'suspend' : '');
     SCORM.finish();
   }
 

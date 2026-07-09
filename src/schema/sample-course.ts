@@ -221,6 +221,8 @@ export const sampleCourse: Course = {
   glossary: [
     { term: 'Riesgo laboral', definition: 'Posibilidad de que un trabajador sufra un daño derivado del trabajo.', source_refs: [] },
   ],
+  glossary_title: 'Glosario',
   bibliography: [{ ref: 'Ley 31/1995, de 8 de noviembre, de Prevención de Riesgos Laborales.' }],
+  bibliography_title: 'Recursos y bibliografía',
   quality_checklist: {},
 }
