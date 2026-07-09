@@ -7,6 +7,9 @@ Editor y generador de paquetes **SCORM 1.2** para Moodle a partir de un curso
 estructurado (`course.json`). Sin dependencias de Articulate/Captivate: el SCORM
 exportado es HTML/CSS/JS plano, autocontenido y compatible con Moodle.
 
+Proyecto **libre y colaborativo**: cualquier persona puede usarlo, proponer mejoras
+y abrir Pull Requests.
+
 El contenido **no se teclea a mano**: un **GPT de ChatGPT** (diseñador instruccional)
 convierte un PDF/Word en un proyecto `.scormproj` que SCORMEditor abre, editas y
 exportas a SCORM. Flujo típico:
@@ -27,6 +30,8 @@ genera SCORMEditor al exportar). Ver «Generación del contenido (GPT)».
 - **`CLAUDE.md`** — invariantes de diseño + índice de la doc interna.
 - **`docs/internals/`** — doc interna por área (runtime, editor, interacciones,
   evaluación/finalización, persistencia, TTS, validación/informes, ingesta).
+- **`docs/internals/demo-scormeditor.scormproj`** — proyecto demo con todos los
+  tipos de pantalla e interacción.
 - **`docs/gpt/`** — los 6 ficheros de conocimiento que se suben al GPT de ChatGPT
   (contrato, ejemplo, guía, flujo por fases, referencia rápida, instrucciones).
 
@@ -37,6 +42,7 @@ npm install
 npm run dev         # editor en http://localhost:5173
 npm run build       # build de producción del editor (tsc -b + vite build)
 npm run typecheck   # verificación de tipos
+npm run preview     # servir build local
 npm run scorm:build # empaqueta el curso de ejemplo a SCORM por CLI (scripts/build-scorm.mjs)
 ```
 
@@ -59,6 +65,8 @@ o un `.fig`. El flujo es el estándar de cualquier app de documento:
 
 - **Menú «Archivo»** de la barra superior: *Abrir proyecto…*, *Guardar*,
   *Guardar como…*, *Nuevo (demo)* y *Exportar SCORM ZIP*.
+- **Importación dual** al abrir: admite `.scormproj` y también `.zip` SCORM
+  exportado (se importa como proyecto editable, sin vincular el ZIP de origen).
 - El **indicador de estado** junto al título es además un botón: pulsarlo guarda.
 - En **Chrome/Edge** (File System Access API) se reescribe el mismo archivo sin
   volver a preguntar; el permiso, si caduca tras recargar, se vuelve a pedir de
@@ -86,13 +94,13 @@ parciales auditables). Detalle en `docs/internals/ingesta-gpt.md`.
 
 - **Pantallas**: árbol con reordenación (dnd-kit); editor de campos, recurso visual
   (imagen/vídeo/audio con subida de archivos y disposición por proporción) e interacción.
+- **Materiales**: nodos editables de **Glosario** y **Bibliografía** desde el árbol.
 - **Test final**: editable desde el nodo «Evaluación → Test final» (preguntas, opciones,
   feedback, nota de corte).
-- **Ajustes del curso** (botón **⚙ Ajustes**): reglas SCORM de finalización y aprobado
-  (nota mínima, `mastery_score`, origen de la nota, peso mixto, % de pantallas, intentos,
-  navegación).
+- **⚙ Ajustes** (menú con ventanas separadas): **Curso (finalización/evaluación)**,
+  **Interfaz (marca, color y animaciones)** y **Narración (Audio IA)**.
 - **Narración por voz (TTS)**: genera el audio de las pantallas a partir de la
-  transcripción, individualmente o en lote (botón **🔊 Narración**).
+  transcripción, individualmente o en lote (desde **⚙ Ajustes → Narración**).
 - **Vista estudiante**: la misma carcasa que se exporta, sincronizada con el editor.
 - **Validación e informe**: badge de errores/avisos + pestañas de validación y de informe
   (recuentos y matriz de trazabilidad de objetivos).
@@ -187,6 +195,10 @@ standalone** automático cuando no hay LMS (para la Vista estudiante). Registra:
 `cmi.core.lesson_status`, `cmi.core.score.raw`, `cmi.core.session_time`,
 `cmi.core.lesson_location`, `cmi.suspend_data`.
 
+El manifiesto (`imsmanifest.xml`) se genera desde los mismos ficheros reales del
+runtime + `course.json` + assets referenciados, e incluye metadatos LOM en
+`imslrm.xml`.
+
 Reglas configurables (`scorm.rules` + `mastery_score`, editables en **⚙ Ajustes**):
 % de pantallas obligatorias vistas, interacciones obligatorias, nota mínima, nota de
 superación (`masteryscore`), intentos, origen de la nota (test final / tests de unidad /
@@ -223,6 +235,27 @@ entrada en `migrations.ts`.
   `docs/internals/interacciones.md`).
 - Tests de empaquetado SCORM contra Moodle (SCORM Cloud / `scorm-again`).
 
+## Cómo colaborar
+
+Este proyecto también está pensado para aprender. **No hace falta ser experto en
+desarrollo ni en Git** para participar.
+
+Yo también estoy aprendiendo el flujo de mantenimiento colaborativo (issues,
+revisiones y pull requests), así que puede que algunas respuestas tarden más de
+lo ideal. Aun así, la intención es mantener el proyecto vivo y hacerlo crecer
+con la comunidad.
+
+Si quieres aportar, puedes empezar así:
+
+1. Abre un **Issue** y cuéntanos la idea, duda o bug (aunque sea breve).
+2. Si te animas, envía un **Pull Request** pequeño y enfocado.
+3. Si es tu primera contribución, indícalo en el Issue/PR y te ayudamos con el proceso.
+4. Si tocas comportamiento, actualiza también la doc interna de `docs/internals/`.
+5. Verifica antes de enviar con `npm run build` (y `npm run typecheck` si procede).
+
+El objetivo del proyecto es ser útil y mantenible para toda la comunidad de
+formación e-learning.
+
 ## Tipos soportados
 
 **Pantallas:** cover, objectives, route, content, summary, video, reflection,
@@ -230,7 +263,8 @@ forum_prompt, unit_quiz, content_placeholder.
 
 **Interacciones:** accordion, tabs, flip_cards, match_pairs, sort_steps,
 single_choice, true_false, classification, scenario_decision, case_practice,
-hotspots, video (con transcripción + subtítulos VTT).
+hotspots, video (con preguntas opcionales), fill_blanks, timeline,
+flashcards, html_embed, image_cards, before_after, word_search.
 
 Todas son editables, todo multimedia admite transcripción y todo feedback es
 textual además de visual (región `aria-live`).
