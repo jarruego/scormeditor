@@ -14,8 +14,11 @@ ese contrato; no conoce el tipo concreto.
   un botón `.me-check` que llama a `check()`. Al agotar intentos, `lock()` deshabilita el
   botón pero **siempre se puede avanzar**.
 - **Intentos**: campo `attempts` por interacción (`attemptsOf(data)`: `null`/ausente ⇒ 1;
-  `0` ⇒ ilimitados; `n` ⇒ n). `retries` quedó **DEPRECATED**, no usar. Editor: input de
-  intentos en `ScreenEditor.tsx` para los tipos evaluables. Por defecto **1 intento**.
+  `0` ⇒ ilimitados; `n` ⇒ n). `retries` quedó **DEPRECATED**, no usar. Editor: el input
+  de intentos de `ScreenEditor.tsx` se muestra según `supportsAttempts` del catálogo
+  `src/schema/interactionRecipes.ts` (los tipos cuyo factory pasa por `attemptsOf`:
+  single_choice, true_false, sort_steps, match_pairs, classification, fill_blanks,
+  crossword). Por defecto **1 intento**.
 - `result()` de una evaluable → `{ completed, scored, correct, score: acierto?points:0,
   maxScore: points }`. `completed` (done) = **resuelta**: acierto **o** intentos agotados
   (con 1 intento, se completa al responder aunque falles; con ilimitados, solo al

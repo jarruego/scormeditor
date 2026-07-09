@@ -129,7 +129,42 @@ export function CourseTree() {
   const biblioSelected = useCourseStore((s) => s.selectedScreenId === '__bibliography__')
   const updateModule = useCourseStore((s) => s.updateModule)
   const updateUnit = useCourseStore((s) => s.updateUnit)
+  const addModule = useCourseStore((s) => s.addModule)
+  const addUnit = useCourseStore((s) => s.addUnit)
+  const removeModule = useCourseStore((s) => s.removeModule)
+  const removeUnit = useCourseStore((s) => s.removeUnit)
+  const moveModule = useCourseStore((s) => s.moveModule)
+  const moveUnit = useCourseStore((s) => s.moveUnit)
   const [filter, setFilter] = useState('')
+
+  // Borrado de módulo/unidad: confirma solo si contiene pantallas (deshacer
+  // siempre disponible). Los botones viven en <summary>/<p>: hay que cortar el
+  // clic para no plegar el details ni disparar el rename.
+  async function onRemoveUnit(u: { id: string; title: string; screens: Screen[] }) {
+    if (u.screens.length > 0) {
+      const ok = await confirmDialog({
+        title: 'Eliminar unidad',
+        message: `Se eliminará la unidad «${u.title || '(sin título)'}» con sus ${u.screens.length} pantalla${u.screens.length === 1 ? '' : 's'}. ¿Deseas continuar?`,
+        confirmLabel: 'Eliminar',
+        danger: true,
+      })
+      if (!ok) return
+    }
+    removeUnit(u.id)
+  }
+  async function onRemoveModule(m: { id: string; title: string; units: { screens: Screen[] }[] }) {
+    const n = m.units.reduce((a, u) => a + u.screens.length, 0)
+    if (n > 0 || m.units.length > 1) {
+      const ok = await confirmDialog({
+        title: 'Eliminar módulo',
+        message: `Se eliminará el módulo «${m.title || '(sin título)'}» con sus ${m.units.length} unidad${m.units.length === 1 ? '' : 'es'} y ${n} pantalla${n === 1 ? '' : 's'}. ¿Deseas continuar?`,
+        confirmLabel: 'Eliminar',
+        danger: true,
+      })
+      if (!ok) return
+    }
+    removeModule(m.id)
+  }
 
   // Issues de validación por pantalla (badges ⛔/⚠ en el árbol).
   const issuesByScreen = useMemo(() => {
@@ -174,13 +209,27 @@ export function CourseTree() {
         onChange={(e) => setFilter(e.target.value)}
       />
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        {course.modules.map((m) => (
+        {course.modules.map((m, mi) => (
           <div key={m.id} className="ed-module">
             <p className="ed-module-title">
               <InlineRename value={m.title} title="Renombrar módulo"
                 onChange={(title) => updateModule(m.id, { title })} />
+              {!q && (
+                <span className="ed-struct-tools">
+                  <button type="button" className="ed-struct-btn" title="Subir módulo" aria-label="Subir módulo"
+                    disabled={mi === 0}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveModule(m.id, -1) }}>▲</button>
+                  <button type="button" className="ed-struct-btn" title="Bajar módulo" aria-label="Bajar módulo"
+                    disabled={mi === course.modules.length - 1}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveModule(m.id, 1) }}>▼</button>
+                  <button type="button" className="ed-struct-btn" title="Eliminar módulo" aria-label="Eliminar módulo"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onRemoveModule(m) }}>
+                    <span aria-hidden="true">🗑</span>
+                  </button>
+                </span>
+              )}
             </p>
-            {m.units.map((u) => {
+            {m.units.map((u, ui) => {
               const visible = u.screens.filter(matches)
               if (q && visible.length === 0) return null
               return (
@@ -192,6 +241,20 @@ export function CourseTree() {
                         onChange={(title) => updateUnit(u.id, { title })} />
                     </span>
                     <span className="ed-unit-count">{q ? `${visible.length}/${u.screens.length}` : u.screens.length}</span>
+                    {!q && (
+                      <span className="ed-struct-tools">
+                        <button type="button" className="ed-struct-btn" title="Subir unidad" aria-label="Subir unidad"
+                          disabled={ui === 0}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveUnit(u.id, -1) }}>▲</button>
+                        <button type="button" className="ed-struct-btn" title="Bajar unidad" aria-label="Bajar unidad"
+                          disabled={ui === m.units.length - 1}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveUnit(u.id, 1) }}>▼</button>
+                        <button type="button" className="ed-struct-btn" title="Eliminar unidad" aria-label="Eliminar unidad"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onRemoveUnit(u) }}>
+                          <span aria-hidden="true">🗑</span>
+                        </button>
+                      </span>
+                    )}
                   </summary>
                   <SortableContext items={u.screens.map((s) => s.id)} strategy={verticalListSortingStrategy}>
                     <ul className="ed-screens">
@@ -208,9 +271,23 @@ export function CourseTree() {
                 </details>
               )
             })}
+            {!q && (
+              <button className="ed-add" onClick={() => addUnit(m.id)}>+ Añadir unidad</button>
+            )}
           </div>
         ))}
       </DndContext>
+
+      {!q && (
+        course.modules.length === 0 ? (
+          <div className="ed-tree-empty">
+            <p className="ed-hint">El curso no tiene módulos. Crea el primero para empezar a añadir pantallas.</p>
+            <button className="ed-primary" onClick={addModule}>+ Crear el primer módulo</button>
+          </div>
+        ) : (
+          <button className="ed-add ed-add-module" onClick={addModule}>+ Añadir módulo</button>
+        )
+      )}
 
       {!q && (
         <>

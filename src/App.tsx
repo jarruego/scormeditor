@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { initAutoSave, saveProject } from './store/autosave'
 import { useCourseStore } from './store/courseStore'
 import { validateCourse } from './validation/validators'
@@ -29,9 +29,54 @@ export function App() {
     initAutoSave()
   }, [])
 
-  // Atajos globales: Ctrl/Cmd+Z deshacer, Ctrl/Cmd+Shift+Z o Ctrl+Y rehacer.
+  // Árbol lateral redimensionable (plan UX fase 9): ancho persistido; arrastrar
+  // el separador redimensiona (soltar por debajo de ~80px lo pliega) y el doble
+  // clic pliega/despliega.
+  const [treeW, setTreeW] = useState<number>(() => {
+    const raw = localStorage.getItem('ed:treeW')
+    if (raw === null) return 320 // ojo: Number(null) === 0 plegaría el árbol
+    const v = Number(raw)
+    return Number.isFinite(v) && v >= 0 ? v : 320
+  })
+  useEffect(() => {
+    localStorage.setItem('ed:treeW', String(treeW))
+  }, [treeW])
+  const dragRef = useRef<{ startX: number; startW: number } | null>(null)
+  function onSplitDown(e: React.PointerEvent) {
+    dragRef.current = { startX: e.clientX, startW: treeW }
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }
+  function onSplitMove(e: React.PointerEvent) {
+    if (!dragRef.current) return
+    const w = Math.round(dragRef.current.startW + e.clientX - dragRef.current.startX)
+    setTreeW(w <= 80 ? 0 : Math.max(200, Math.min(560, w)))
+  }
+  function onSplitUp() {
+    dragRef.current = null
+  }
+
+  // Atajos globales: Ctrl/Cmd+Z deshacer, Ctrl/Cmd+Shift+Z o Ctrl+Y rehacer,
+  // Ctrl+S guardar, Alt+↑/↓ pantalla anterior/siguiente, F1 o Ctrl+/ ayuda.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (e.key === 'F1') {
+        e.preventDefault()
+        useCourseStore.getState().setSettingsModal('shortcuts')
+        return
+      }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        e.preventDefault()
+        const st = useCourseStore.getState()
+        const ids = st.course.modules.flatMap((m) => m.units.flatMap((u) => u.screens.map((s) => s.id)))
+        if (!ids.length) return
+        const i = ids.indexOf(st.selectedScreenId ?? '')
+        // Sin selección (o nodo sintético): baja al primero / sube al último.
+        const id = i === -1
+          ? (e.key === 'ArrowDown' ? ids[0] : ids[ids.length - 1])
+          : ids[e.key === 'ArrowDown' ? Math.min(ids.length - 1, i + 1) : Math.max(0, i - 1)]
+        st.goToScreen(id)
+        return
+      }
       if (!(e.ctrlKey || e.metaKey) || e.altKey) return
       const key = e.key.toLowerCase()
       if (key === 'z' && !e.shiftKey) {
@@ -43,6 +88,9 @@ export function App() {
       } else if (key === 's') {
         e.preventDefault()
         void saveProject()
+      } else if (key === '/') {
+        e.preventDefault()
+        useCourseStore.getState().setSettingsModal('shortcuts')
       }
     }
     window.addEventListener('keydown', onKey)
@@ -79,11 +127,23 @@ export function App() {
         ))}
       </div>
 
-      <div className={`ed-main ${tab === 'editor' ? '' : 'ed-main-full'}`}>
+      {/* Con el árbol plegado el aside no se renderiza: si siguiera en el grid
+          (aunque fuera con display:none) los ítems se recolocarían de columna. */}
+      <div className={`ed-main ${tab === 'editor' ? '' : 'ed-main-full'}`}
+        style={tab === 'editor' ? { gridTemplateColumns: treeW === 0 ? '6px 1fr' : `${treeW}px 6px 1fr` } : undefined}>
         {tab === 'editor' && (
-          <aside className="ed-tree">
-            <CourseTree />
-          </aside>
+          <>
+            {treeW > 0 && (
+              <aside className="ed-tree">
+                <CourseTree />
+              </aside>
+            )}
+            <div className="ed-splitter" role="separator" aria-orientation="vertical"
+              aria-label="Redimensionar el árbol"
+              title="Arrastra para redimensionar el árbol; doble clic lo pliega/despliega"
+              onPointerDown={onSplitDown} onPointerMove={onSplitMove} onPointerUp={onSplitUp}
+              onDoubleClick={() => setTreeW((w) => (w === 0 ? 320 : 0))} />
+          </>
         )}
         <section className="ed-content">
           {tab === 'editor' && (

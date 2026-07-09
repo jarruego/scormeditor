@@ -81,8 +81,8 @@ se listan al final con la marca «no declarado en ninguna pantalla».
   existiendo y su aviso remite a «⚙ Ajustes → Narración».
 
 ### Layout y jerarquía del `ScreenEditor` (jul 2026)
-El formulario (`.ed-form`) ocupa **el 100%** del panel central (`max-width: none`),
-pensado para escritorio. Lo primario va siempre visible: título, tipo/tiempo/obligatoria,
+El formulario (`.ed-form`) tiene **ancho máximo legible de 960 px, centrado** (plan UX
+fase 9; antes ocupaba el 100 % y en monitores anchos las líneas se hacían kilométricas). Lo primario va siempre visible: título, tipo/tiempo/obligatoria,
 objetivo y la **caja de texto principal** (`RichTextArea` de `student_text` a `rows={16}`,
 por ser el contenido principal). Las secciones secundarias — **Recurso visual**, **Audio
 de locución y transcripción** e **Interacción** — son `<details className="ed-fold">`:
@@ -179,6 +179,28 @@ peso y por crear un segundo renderizador que divergiría del runtime.
 (reordenables con dnd-kit) + secciones «Evaluación» (test final) y «Materiales»
 (glosario/bibliografía). Añadir pantalla por unidad; duplicar/eliminar por pantalla
 (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla).
+
+### Estructura desde el árbol y «Nuevo (vacío)» (jul 2026 — plan UX fase 7)
+Antes borrar la estructura demo era un callejón sin salida (no había forma de crear
+módulos/unidades). Ahora:
+- **Store**: `addModule()` (módulo al final con una unidad vacía), `addUnit(moduleId)`,
+  `removeUnit(id)` y `removeModule(id)` (limpian `selectedScreenId` si la pantalla
+  seleccionada estaba dentro), y `resetEmpty()` (curso mínimo vía `Course.parse`: un
+  módulo/unidad con la portada; **vacía también los assets**, a diferencia de
+  `resetSample`, para no arrastrar binarios del proyecto anterior).
+- **Árbol**: «+ Añadir unidad» al pie de cada módulo, «+ Añadir módulo» tras el último
+  (`.ed-add-module`), y junto al nombre de módulo/unidad las herramientas discretas
+  `.ed-struct-tools` (**▲/▼ para reordenar** — módulos dentro del curso, unidades
+  dentro de su módulo, vía `moveModule`/`moveUnit` del store; deshabilitados en los
+  extremos — y 🗑 para eliminar). Todas cortan el clic
+  (`preventDefault`+`stopPropagation`) para no plegar el `details` ni disparar el
+  rename; el borrado pide `confirmDialog` **solo si contienen pantallas** (deshacer
+  siempre disponible). Se eligió ▲/▼ y no drag&drop para no anidar sortables con el
+  arrastre de pantallas (uso ocasional; teclado de serie). Sin módulos, CTA «+ Crear
+  el primer módulo» (`.ed-tree-empty`). Todo oculto con el filtro activo, como el
+  resto de acciones de creación.
+- **Toolbar → Archivo**: «Nuevo (vacío)» sobre «Nuevo (demo)», con la misma
+  confirmación de descarte.
 
 ### Renombrado inline de títulos estructurales (jul 2026)
 Los títulos que no son de pantalla se editan **in situ** con `InlineRename`
@@ -283,6 +305,132 @@ los avisos de `validators.ts`):
   «+ Añadir interacción» (`blankInteraction`, ahora vía `Interaction.parse`), y su
   puntuación sigue la filosofía de las recetas: `scored: true` solo en `unit_quiz`.
 
+### Catálogo de interacciones (`interactionRecipes.ts`, jul 2026 — plan UX fase 1)
+`src/schema/interactionRecipes.ts` es el catálogo declarativo de los tipos de
+interacción, hermano de `screenRecipes.ts`: icono, descripción «qué hace el alumno»,
+grupo didáctico (`presentar`/`preguntar`/`manipular`/`juegos`/`media`/`avanzado`),
+`gradable` (tiene corrección real → puede puntuar), `supportsAttempts` (el factory del
+runtime pasa por `attemptsOf`), `family` (shapes compatibles para migrar contenido al
+cambiar de tipo; lo usará `changeInteractionType` en la fase 2) y `seed()` (estado
+inicial útil). Las **etiquetas** siguen viviendo solo en `labels.ts` (no se duplican).
+Es capa de UI: no toca el contrato. Consumo actual en `ScreenEditor`:
+- **«Intentos»** se muestra según `supportsAttempts` (antes lista hardcodeada de 6
+  tipos; ahora incluye también `crossword`, cuyo runtime siempre respetó `attempts`).
+- **«Evaluable»/«Puntos»** solo se muestran si el tipo es `gradable` — o si viene
+  `scored: true` de un curso importado, para poder desmarcarlo (el checkbox lleva un
+  `title` explicando que el tipo es informativo). «Puntos» se **deshabilita** mientras
+  `!scored` (estilo global `input:disabled` en `editor.css`); al activar «Evaluable»
+  con 0 puntos se pone `points: 1` para que puntuar tenga efecto.
+- `blankInteraction()` aplica el `seed()` del tipo inicial (p. ej. `true_false` nace
+  con «Verdadero» correcta / «Falso»; `single_choice` con 2 opciones, la 1ª correcta).
+Al añadir un tipo nuevo al esquema hay que darle también su entrada en el catálogo
+(además de la etiqueta en `labels.ts`); `interactionRecipe()` tiene un fallback
+permisivo para tipos sin entrada.
+
+### Vista previa de configuración (jul 2026 — plan UX fase 5, recortada)
+- **`fill_blanks`**: bajo el textarea, preview trivial (`.ed-fb-preview`) que pinta
+  los `[[huecos]]` como chips `<mark>` + contador «N huecos · M distractores».
+- **Descartado por decisión del autor (jul 2026)**: la mini-preview de pantalla con
+  el runtime real (`ScreenMiniPreview`, curso sintético + iframe) se retiró por
+  redundante con la pestaña «Vista estudiante»; y la preview sandbox en vivo de
+  `html_embed` (`EmbedPreview`) se retiró por no necesitarse de momento. Si algún
+  día vuelven, el criterio sigue siendo runtime real vía `buildPreviewHtml` (nunca
+  un segundo renderizador). Los textareas de `html_embed` siguen siendo textareas:
+  CodeMirror exigiría `@codemirror/lang-html/css/javascript` (deps nuevas,
+  descartado).
+
+### Jerarquía de la sección Interacción (jul 2026 — plan UX fase 4)
+El bloque Interacción del `ScreenEditor` cuenta una historia en 4 partes (antes era
+una pila plana de ~12 campos al mismo nivel):
+1. **Cabecera** (`.ed-it-head`, con filete inferior): icono + nombre del tipo,
+   «Cambiar tipo…» (abre el selector visual), **posición** top/bottom como `SegIcons`
+   de 2 opciones (ya no `<select>`), y **eliminar** como icono discreto a la derecha
+   (`.ed-it-del`) que confirma con `confirmDialog` solo si `interactionHasContent`.
+2. **Actividad** (siempre visible): Enunciado, Instrucciones y el
+   `InteractionConfigEditor` del tipo.
+3. **Fold «Evaluación»** (solo si el tipo es `gradable` — o `scored` importado):
+   Evaluable, Puntos, Intentos y **Objetivo vinculado**. `defaultOpen={it.scored}` y
+   **resumen vivo** en el `<summary>`: «Evaluación — evaluable · 2 puntos · 1
+   intento» / «Evaluación — no puntúa» (se recalcula en cada render; el estado
+   abierto/cerrado sigue siendo del autor). En tipos no evaluables el objetivo
+   vinculado no se muestra (la cobertura `OBJ_NOT_EVALUATED` solo cuenta `scored`).
+4. **Fold «Feedback»** (plegado; resumen «personalizado»/«por defecto» — comparado
+   contra los defaults del esquema, `FB_DEFAULTS` vía `Interaction.parse`): acierto,
+   error y explicación pedagógica, con hint «respaldo general» cuando el tipo tiene
+   además feedback por opción (familias `options`/`questions`). La excepción
+   `hotspots` (feedback por zona en su modal) se conserva dentro del fold.
+Los folds anidados llevan `key` por `id`+`it.type` (misma técnica de remontaje que
+la sección). El botón «Eliminar interacción» de texto al pie desapareció (ahora es
+el icono de la cabecera).
+
+### `ListEditor` unificado (jul 2026 — plan UX fase 3)
+El editor genérico de listas se extrajo de `InteractionConfigEditor` a
+`src/components/ListEditor.tsx` y se enriqueció; **todas** las listas de config de
+interacciones lo usan con el mismo comportamiento:
+- **Reordenar siempre** (▲/▼, deshabilitados en los extremos): desapareció la prop
+  `reorder` — reordenar opciones/tarjetas/preguntas ya no es un privilegio de
+  `sort_steps`/`timeline` (cuyo renumerado sigue viviendo en su `onChange`).
+- **Duplicar** (⧉): clon profundo; si el ítem tiene `id` de primer nivel se regenera
+  (no duplicar identidades: estado del runtime, grupos de radios). Ajustable con la
+  prop `clone`.
+- **Plegado por ítem**: la prop `summary(item, i)` lo activa — fila plegada = nº +
+  resumen pulsable (`.ed-config-sum`), botón ⤒ para plegar; al montar nacen abiertos
+  los primeros `collapseFrom` (def. 4) y los añadidos/duplicados nacen abiertos. El
+  estado de plegado vive por posición y las mutaciones lo reajustan. Tienen resumen
+  las listas «gordas»: accordion/tabs (título), timeline (fecha · título),
+  image_cards (título/alt), az_quiz (letra · pista) y las preguntas de vídeo/imagen
+  oculta.
+- `confirmRemove(item)` opcional: mensaje → `confirmDialog` antes de borrar la fila.
+- **`QuestionListEditor`** (en `InteractionConfigEditor.tsx`): sub-editor común de
+  «pregunta + opciones» que unifica los cases de `video` (con campo Segundo,
+  `withTime`) y `hidden_image` — antes eran dos copias casi idénticas anidando
+  ListEditor a mano.
+### FinalTestEditor compacto (jul 2026 — plan UX fase 6)
+El `FinalTestEditor` se reescribió sobre `ListEditor` (adiós a la página kilométrica
+de `fieldset.ed-group` todos expandidos):
+- **Preguntas plegadas por defecto** (`collapseFrom: 1`: la primera abierta al
+  montar) con resumen = enunciado, prefijado con «⛔ sin opción correcta ·» si
+  ninguna opción está marcada. Reordenar y **duplicar pregunta** de serie;
+  `cloneQuestion` regenera el id de la pregunta **y de cada opción** (el grupo de
+  radios usa `correct-${q.id}` y el runtime guarda por id de opción — duplicar
+  identidades los rompería). Eliminar con contenido pide confirmación
+  (`confirmRemove`).
+- **Opciones también con ListEditor** (reordenar/duplicar/eliminar): el radio
+  «correcta» exclusivo se mantiene; el `clone` de opción pone `correct: false`
+  para no acabar con dos correctas.
+- Cabecera con contador vivo «N preguntas · M puntos» junto a la nota mínima.
+- `blankQuestion`/prerrelleno de objetivo (`uncoveredObjectives`) sin cambios.
+
+### Selector visual de tipo de interacción (jul 2026 — plan UX fase 2)
+El `<select>` de 24 tipos se sustituyó por `InteractionTypeModal`
+(`src/components/InteractionTypeModal.tsx`), calco estructural de `AddScreenModal`:
+tarjetas `ed-recipe` con icono + descripción del catálogo, agrupadas por grupo
+didáctico, con navegación por flechas, marca ⭐ en las que pueden puntuar y sección
+«Recomendadas para esta pantalla» arriba si `SCREEN_TYPE_UI` define `recommended`
+(las recomendadas aparecen además en su grupo, duplicación deliberada). La tarjeta
+del tipo actual se marca (`.ed-recipe.is-current`). Lo abren dos caminos del
+`ScreenEditor` (estado local `typePicker: 'add' | 'change'`):
+- **«+ Añadir interacción»** → modo `add`: crea con `blankInteraction(tipo)` (seed
+  del catálogo; `scored: true` solo en `unit_quiz` **y** si el tipo es `gradable`).
+- **«Cambiar tipo…»** (junto al nombre del tipo actual, `.ed-it-type`) → modo
+  `change`: llama a `changeInteractionType` del store.
+
+**`changeInteractionType(screenId, type)`** (`courseStore.ts`): conserva siempre lo
+común (id, enunciado, instrucciones, feedback, intentos, objetivo, source_refs;
+`scored`/`points` solo si el tipo nuevo es `gradable`) y para options/config aplica
+`migrateInteractionData` (`interactionRecipes.ts`):
+- **Misma `family`** → migra el contenido compartido: `options`
+  (single_choice ↔ true_false ↔ scenario_decision), `config.cards`
+  (flip_cards ↔ flashcards), `config.items` (accordion ↔ tabs), `config.questions`
+  (video ↔ hidden_image). El resto de claves se descarta.
+- **Sin familia común** → `options`/`config` parten del `seed()` del tipo nuevo.
+- En ambos casos **nunca quedan claves huérfanas** del tipo anterior en `config`
+  (antes el cambio de tipo hacía `{...it, type}` y acumulaba basura exportable).
+- Devuelve `lossy`: la UI (`onChangeInteractionType` en `ScreenEditor`) pide
+  `confirmDialog` **solo** si se descartaría contenido escrito (`hasText` profundo);
+  cambiar entre tipos compatibles o sin contenido es instantáneo. El paso de
+  historial usa `snapshot()` sin clave (no se coalesce con el tecleo).
+
 ### Editor visual de zonas de hotspots (jul 2026)
 Definir las zonas de `hotspots` a base de números (x/y/w/h en %) era inviable a mano, así
 que el caso `hotspots` de `InteractionConfigEditor` abre un **editor visual en modal**
@@ -315,6 +463,42 @@ La UI del editor **nunca muestra los valores internos en crudo** (`content_place
 Se aplica en los selects del `ScreenEditor` y en el tipo de pantalla del árbol. Los valores
 internos del `course.json` no cambian (contrato). Al añadir un tipo al esquema, añade su
 etiqueta aquí.
+
+## Homogeneización y layout global (jul 2026 — plan UX fases 8 y 9)
+Convenciones unificadas en el barrido de la fase 8:
+- **Textos de ayuda**: siempre clases — `.ed-hint` (base, margin 0), `.ed-hint-lead`
+  (párrafo introductorio con margen inferior) y `.ed-hint-warn` (aviso inline rojo, el
+  del «score_source sin test»). Nada de estilos inline para hints (antes
+  `CourseSettingsEditor`/Apariencia los llevaban hardcodeados).
+- **Botones de borrar**: 🗑 (con `title`) en filas de lista y elementos del árbol;
+  texto `ed-danger` («Eliminar test final»…) solo para bloques enteros. La ✕ queda
+  reservada para **cerrar** (modales) — ya no borra filas.
+- **«Correcta»**: criterio documentado, no unificado a propósito — en las
+  **interacciones** es checkbox porque puede haber varias correctas (cualquiera cuenta
+  como acierto; los validadores solo exigen `some(correct)`) y el `title` del checkbox
+  lo aclara; en el **test final** es radio porque ahí la semántica es exactamente una.
+- **`SegIcons`** extraído a `src/components/SegIcons.tsx` (antes local de
+  `ScreenEditor`): admite `disabled` y `icon` con **texto corto** además de emoji. Se
+  usa en recurso visual, posición de la interacción, **Apariencia** (nivel de
+  animación «Sin/Sutiles/Llamativas» y velocidad, que se deshabilita con «Sin») y el
+  **puzzle** (columnas/filas 2–5).
+- **Renombrado**: los dos mecanismos se mantienen como patrones distintos —
+  título-input de cabecera (`.ed-title-input`/`EditableHead`) para las superficies de
+  edición y `InlineRename` (lápiz ✏ → input) para etiquetas compactas (árbol, título
+  del curso en la toolbar). Unificarlos empeoraría uno de los dos contextos.
+
+Layout y atajos (fase 9):
+- **Árbol redimensionable**: `.ed-main` en la pestaña Editor es
+  `[ancho árbol] 6px 1fr`; el ancho vive en `App.tsx` (estado `treeW`, persistido en
+  `localStorage['ed:treeW']`; ojo: `Number(null) === 0`, el init trata `null` aparte).
+  El separador `.ed-splitter` se arrastra (pointer capture, clamp 200–560; soltar por
+  debajo de ~80 px pliega) y con **doble clic pliega/despliega**. Con el árbol plegado
+  el `aside` **no se renderiza** y el grid pasa a `6px 1fr` — si siguiera en el grid
+  (aunque fuera `display:none`) los ítems se recolocarían de columna.
+- **Atajos**: `Alt+↓/↑` pantalla siguiente/anterior (recorrido plano de las pantallas
+  del árbol; desde un nodo sintético baja al primero/sube al último), `F1` o `Ctrl+/`
+  abren **«Atajos de teclado»** (`ShortcutsModal`, también en el menú ⚙ Ajustes;
+  `settingsModal: 'shortcuts'`). Los de siempre: `Ctrl+S`/`Ctrl+Z`/`Ctrl+Mayús+Z`/`Ctrl+Y`.
 
 ## Confirmaciones (modal propio, no `window.confirm`)
 Diálogo de confirmación promisificado: `confirmDialog({ title, message, confirmLabel,

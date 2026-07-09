@@ -11,6 +11,7 @@ body { margin: 0; font-family: system-ui, "Segoe UI", Roboto, sans-serif; color:
 button { font: inherit; cursor: pointer; border: 1px solid var(--c-border); background: var(--c-surface); border-radius: 6px; padding: .4rem .7rem; }
 button:hover { border-color: var(--c-primary); }
 button:disabled { opacity: .45; cursor: default; border-color: var(--c-border); }
+input:disabled { opacity: .5; cursor: not-allowed; }
 input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px solid var(--c-border); border-radius: 6px; width: 100%; background: #fff; }
 :focus-visible { outline: 3px solid var(--c-primary); outline-offset: 1px; }
 
@@ -47,9 +48,13 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
 .ed-tabs button { border: none; background: none; border-bottom: 3px solid transparent; border-radius: 0; padding: .6rem .9rem; }
 .ed-tabs button.is-active { border-color: var(--c-primary); font-weight: 600; }
 
-/* Main layout */
-.ed-main { display: grid; grid-template-columns: 320px 1fr; overflow: hidden; }
+/* Main layout (en la pestaña Editor las columnas reales las pone App.tsx:
+   ancho del árbol redimensionable + separador de 6px + contenido) */
+.ed-main { display: grid; grid-template-columns: 320px 6px 1fr; overflow: hidden; }
 .ed-main-full { grid-template-columns: 1fr; }
+/* Separador arrastrable del árbol (doble clic pliega/despliega) */
+.ed-splitter { cursor: col-resize; background: var(--c-border); touch-action: none; }
+.ed-splitter:hover { background: var(--c-primary); }
 .ed-tree { background: var(--c-surface); border-right: 1px solid var(--c-border); overflow-y: auto; padding: .75rem; }
 .ed-content { overflow-y: auto; padding: 1rem 1.5rem; }
 
@@ -81,6 +86,24 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(9
 .ed-recipe-desc { font-size: .75rem; color: var(--c-muted); }
 /* Receta «única por unidad» ya presente: atenuada pero pulsable (aviso blando) */
 .ed-recipe.is-dup { opacity: .55; }
+.ed-recipe.is-current { border-color: var(--c-primary); box-shadow: 0 0 0 1px var(--c-primary) inset; background: #f6f8ff; }
+.ed-recipe-flag { font-size: .8em; }
+/* Cabecera de la interacción: tipo actual · Cambiar tipo… · posición · eliminar */
+.ed-it-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+  padding-bottom: .4rem; border-bottom: 1px solid var(--c-border); }
+.ed-it-type-name { font-weight: 600; }
+.ed-it-head .ed-field { margin-left: .4rem; }
+.ed-it-del { margin-left: auto; border-color: transparent; background: none; }
+.ed-it-del:hover { border-color: var(--c-border); background: #fff4f4; }
+/* Folds anidados (Evaluación/Feedback dentro de Interacción): más discretos */
+.ed-fold .ed-fold { background: none; }
+.ed-fold .ed-fold > summary { font-size: .85rem; }
+
+/* Vista previa de huecos de fill_blanks (plan UX fase 5) */
+.ed-fb-preview { border: 1px solid var(--c-border); border-radius: 6px; padding: .5rem .65rem;
+  font-size: .9rem; background: #fafbff; white-space: pre-wrap; }
+.ed-fb-preview mark { background: #fff3bf; border: 1px solid #e9c46a; border-radius: 4px;
+  padding: 0 .3rem; font-weight: 600; }
 /* Vía de escape «En blanco»: presentación discreta */
 .ed-recipe-blank { border-style: dashed; background: none; }
 .ed-screens { list-style: none; margin: 0; padding: 0; display: grid; gap: .25rem; }
@@ -100,9 +123,18 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(9
 .ed-flag { color: #d09a00; }
 .ed-screen-actions button { border: none; background: none; padding: .2rem; }
 .ed-add { width: 100%; margin: .35rem 0 .75rem; border-style: dashed; color: var(--c-muted); }
+/* Estructura desde el árbol (plan UX fase 7): mover/eliminar módulo y unidad */
+.ed-add-module { margin-top: 0; }
+.ed-struct-tools { display: inline-flex; gap: .1rem; margin-left: .25rem; }
+.ed-struct-btn { border: none; background: none; padding: 0 .2rem; font-size: .8rem; opacity: .45; }
+.ed-struct-btn:hover:not(:disabled) { opacity: 1; }
+.ed-struct-btn:disabled { opacity: .15; }
+.ed-tree-empty { display: grid; gap: .5rem; padding: .5rem 0 1rem; }
+.ed-tree-empty .ed-hint { margin: 0; font-size: .85rem; color: var(--c-muted); }
 
 /* Forms */
-.ed-form { max-width: none; display: grid; gap: .75rem; }
+/* Ancho máximo legible en monitores anchos (plan UX fase 9); centrado. */
+.ed-form { max-width: 960px; margin: 0 auto; display: grid; gap: .75rem; }
 /* Cabecera del formulario: el título de la pantalla se edita ahí directamente.
    El input hereda la tipografía del h2 y solo muestra borde al pasar/enfocar,
    para que en reposo se lea como un encabezado normal. */
@@ -167,8 +199,14 @@ details.ed-fold[open] > summary { border-bottom: 1px solid var(--c-border); }
 .ed-config-num { min-width: 1.4rem; text-align: center; color: var(--c-muted); font-size: .8rem; padding-top: .45rem; }
 .ed-config-fields { flex: 1; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
 .ed-config-fields > input { flex: 1; min-width: 140px; }
-.ed-config-move { display: flex; flex-direction: column; gap: .15rem; }
-.ed-config-move button { padding: 0 .35rem; line-height: 1.3; }
+/* Herramientas por fila del ListEditor: plegar, subir/bajar, duplicar, eliminar */
+.ed-config-tools { display: flex; gap: .15rem; align-items: center; padding-top: .3rem; }
+.ed-config-tools button { padding: .05rem .35rem; line-height: 1.3; font-size: .8rem; }
+/* Fila plegada: resumen pulsable que ocupa el hueco de los campos */
+.ed-config-sum { flex: 1; text-align: left; border: none; background: none; cursor: pointer;
+  padding: .35rem .2rem; color: var(--c-text, inherit); font-size: .9rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed-config-sum:hover { color: var(--c-primary); }
 .ed-stack { display: grid; gap: .35rem; width: 100%; }
 .ed-file { display: inline-flex; flex-direction: column; gap: .2rem; align-self: end; }
 .ed-file-btn { display: inline-flex; align-items: center; padding: .45rem .7rem; border: 1px solid var(--c-border); border-radius: 6px; background: var(--c-surface); cursor: pointer; white-space: nowrap; }
@@ -321,6 +359,13 @@ button.ed-pill { cursor: pointer; }
 
 /* Materiales del curso (Glosario / Recursos y bibliografía) */
 .ed-hint { margin: 0; font-size: .88rem; color: var(--c-muted); }
+.ed-hint-lead { margin-bottom: .75rem; }
+/* Aviso inline (no bloqueante) dentro de formularios: mismo rojo que ed-danger */
+.ed-hint-warn { margin: .25rem 0 0; font-size: .85rem; color: #b3261e; }
+/* Ventana «Atajos de teclado» */
+.ed-shortcuts { border-collapse: collapse; margin-bottom: .75rem; }
+.ed-shortcuts td { padding: .3rem .75rem .3rem 0; border-bottom: 1px solid var(--c-border); }
+.ed-shortcuts-keys { font-family: ui-monospace, Consolas, monospace; font-size: .85rem; white-space: nowrap; }
 .ed-term-row { display: flex; gap: .5rem; align-items: flex-start; padding: .6rem .7rem; border: 1px solid var(--c-border); border-radius: 8px; background: var(--c-surface); }
 .ed-term-fields { flex: 1; display: grid; gap: .5rem; }
 .ed-term-row > button { border: none; background: none; color: var(--c-muted); font-size: 1rem; padding: .2rem .4rem; cursor: pointer; }

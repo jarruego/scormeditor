@@ -10,20 +10,28 @@ import {
 } from '../store/autosave'
 import { CourseSettingsModal, AppearanceModal, NarrationModal } from './SettingsModal'
 import { ObjectivesModal } from './ObjectivesModal'
+import { ShortcutsModal } from './ShortcutsModal'
 import { InlineRename } from './InlineRename'
 import { confirmDialog } from '../store/confirm'
 import { orphanAssetPaths } from '../schema/assetRefs'
 
-const DISCARD_MSG =
-  'Esto reemplazará el curso que tienes abierto. Los cambios que no hayas guardado en el archivo de proyecto se perderán. ¿Continuar?'
+// Confirmación de descarte con el modal propio (no window.confirm), como el
+// resto de confirmaciones del editor.
 function confirmDiscard() {
-  return window.confirm(DISCARD_MSG)
+  return confirmDialog({
+    title: 'Reemplazar el curso abierto',
+    message:
+      'Esto reemplazará el curso que tienes abierto. Los cambios que no hayas guardado en el archivo de proyecto se perderán. ¿Continuar?',
+    confirmLabel: 'Continuar',
+    danger: true,
+  })
 }
 
 export function Toolbar() {
   const course = useCourseStore((s) => s.course)
   const assets = useCourseStore((s) => s.assets)
   const resetSample = useCourseStore((s) => s.resetSample)
+  const resetEmpty = useCourseStore((s) => s.resetEmpty)
   const importError = useCourseStore((s) => s.importError)
   const linkedFileName = useCourseStore((s) => s.linkedFileName)
   const projectDirty = useCourseStore((s) => s.projectDirty)
@@ -71,11 +79,11 @@ export function Toolbar() {
   // Recursos que ya no usa ninguna diapositiva (peso muerto en el .scormproj).
   const orphanCount = useMemo(() => orphanAssetPaths(course, assets).length, [course, assets])
 
-  function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    if (confirmDiscard()) void openProjectFromFile(file)
+    if (await confirmDiscard()) void openProjectFromFile(file)
   }
 
   async function onExportScorm() {
@@ -93,11 +101,14 @@ export function Toolbar() {
     action()
   }
 
-  function onNewDemo() {
-    if (confirmDiscard()) resetSample()
+  async function onNewDemo() {
+    if (await confirmDiscard()) resetSample()
   }
-  function onOpen() {
-    if (confirmDiscard()) void openProject()
+  async function onNewEmpty() {
+    if (await confirmDiscard()) resetEmpty()
+  }
+  async function onOpen() {
+    if (await confirmDiscard()) void openProject()
   }
   async function onPruneOrphans() {
     if (orphanCount === 0) return
@@ -167,6 +178,10 @@ export function Toolbar() {
                 </button>
               )}
               <hr className="ed-menu-sep" />
+              <button role="menuitem" onClick={() => runMenu(onNewEmpty)}
+                title="Curso mínimo desde cero: un módulo con la portada, sin recursos">
+                Nuevo (vacío)
+              </button>
               <button role="menuitem" onClick={() => runMenu(onNewDemo)}>Nuevo (demo)</button>
               <button role="menuitem" className="ed-menu-primary" disabled={busy} onClick={() => runMenu(onExportScorm)}>
                 {busy ? 'Generando…' : 'Exportar SCORM ZIP'}
@@ -203,6 +218,11 @@ export function Toolbar() {
                 title="Proveedor/clave de API, voz y generación de audio">
                 Narración (Audio IA)
               </button>
+              <hr className="ed-menu-sep" />
+              <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('shortcuts') }}
+                title="Lista de atajos de teclado del editor (también con F1)">
+                Atajos de teclado
+              </button>
             </div>
           )}
         </div>
@@ -211,6 +231,7 @@ export function Toolbar() {
 
       {importError && <div className="ed-import-error">⛔ {importError}</div>}
 
+      {settingsModal === 'shortcuts' && <ShortcutsModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'course' && <CourseSettingsModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'objectives' && <ObjectivesModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'appearance' && <AppearanceModal onClose={() => setSettingsModal(null)} />}

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
-import type { Course, Screen, ScreenInput, ScreenType, UnitTest, ScormConfig, ShellConfig, GlossaryTerm, BibliographyEntry } from '../schema/course.schema'
-import { Course as CourseSchema, Screen as ScreenSchema } from '../schema/course.schema'
+import type { Course, Screen, ScreenInput, ScreenType, InteractionType, UnitTest, ScormConfig, ShellConfig, GlossaryTerm, BibliographyEntry } from '../schema/course.schema'
+import { Course as CourseSchema, Screen as ScreenSchema, Interaction as InteractionSchema } from '../schema/course.schema'
+import { interactionRecipe, migrateInteractionData } from '../schema/interactionRecipes'
 import { migrate } from '../schema/migrations'
 import { sampleCourse } from '../schema/sample-course'
 import { isAssetReferenced, orphanAssetPaths } from '../schema/assetRefs'
@@ -27,7 +28,7 @@ interface Located { mi: number; ui: number; si: number }
 export type Tab = 'editor' | 'preview' | 'validation' | 'report'
 
 /** Ventana de ajustes abierta (vive en el store para poder abrirla desde Validación). */
-export type SettingsModalKind = 'course' | 'narration' | 'appearance' | 'objectives'
+export type SettingsModalKind = 'course' | 'narration' | 'appearance' | 'objectives' | 'shortcuts'
 
 /** Instantánea para el historial de deshacer/rehacer. */
 type CourseSnapshot = { course: Course; selectedScreenId: string | null }
@@ -58,12 +59,31 @@ interface CourseState {
   setCourse: (c: Course) => void
   importJson: (text: string) => boolean
   resetSample: () => void
+  /** Curso mínimo vacío (un módulo/unidad con portada); vacía también los assets. */
+  resetEmpty: () => void
+  /** Añade un módulo al final (con una unidad vacía dentro). */
+  addModule: () => void
+  /** Añade una unidad vacía al final del módulo. */
+  addUnit: (moduleId: string) => void
+  /** Elimina la unidad con sus pantallas (la confirmación vive en la UI). */
+  removeUnit: (id: string) => void
+  /** Elimina el módulo con sus unidades y pantallas (confirmación en la UI). */
+  removeModule: (id: string) => void
+  /** Reordena el módulo dentro del curso (dir: -1 sube, +1 baja). */
+  moveModule: (id: string, dir: -1 | 1) => void
+  /** Reordena la unidad dentro de su módulo (dir: -1 sube, +1 baja). */
+  moveUnit: (id: string, dir: -1 | 1) => void
 
   selectScreen: (id: string | null) => void
   locate: (id: string) => Located | null
   getScreen: (id: string) => Screen | null
   updateScreen: (id: string, patch: Partial<Screen>) => void
   changeScreenType: (id: string, type: ScreenType) => void
+  /** Cambia el tipo de la interacción de una pantalla migrando el contenido
+   *  compatible (misma familia) y descartando el resto — nunca deja claves
+   *  huérfanas de otros tipos en `config`. La confirmación de pérdida vive en
+   *  la UI (`migrateInteractionData(...).lossy`). Paso de historial propio. */
+  changeInteractionType: (screenId: string, type: InteractionType) => void
   /** Añade una pantalla; `preset` permite recetas (texto+imagen, actividad…) y
    *  `atIndex` fija la posición en la unidad (si falta: tras `afterId` o al final). */
   addScreen: (unitId: string, afterId?: string, preset?: Partial<ScreenInput>, atIndex?: number) => void
@@ -217,6 +237,90 @@ export const useCourseStore = create<CourseState>((set, get) => {
     set({ course: sampleCourse, importError: null, past: [], future: [], selectedScreenId: sampleCourse.modules[0]?.units[0]?.screens[0]?.id ?? null })
   },
 
+  resetEmpty: () => {
+    resetCoalesce()
+    // Curso mínimo válido vía parse (defaults del esquema): un módulo/unidad
+    // con la portada, listo para empezar de cero. Los assets se vacían: un
+    // proyecto nuevo no debe arrastrar binarios del anterior.
+    const cover = { id: newId('s'), type: 'cover' as const, title: 'Portada' }
+    const course = CourseSchema.parse({
+      course: { title: 'Curso nuevo' },
+      modules: [{ id: newId('m'), title: 'Módulo 1', units: [{ id: newId('u'), title: 'Unidad 1', screens: [cover] }] }],
+    })
+    set({ course, assets: {}, importError: null, past: [], future: [], selectedScreenId: cover.id })
+  },
+
+  addModule: () => {
+    snapshot()
+    const course = clone(get().course)
+    course.modules.push({
+      id: newId('m'),
+      title: `Módulo ${course.modules.length + 1}`,
+      units: [{ id: newId('u'), title: 'Unidad 1', summary: '', screens: [], status: 'ok' }],
+    })
+    set({ course })
+  },
+
+  addUnit: (moduleId) => {
+    if (!get().course.modules.some((m) => m.id === moduleId)) return
+    snapshot()
+    const course = clone(get().course)
+    const m = course.modules.find((x) => x.id === moduleId)!
+    m.units.push({ id: newId('u'), title: `Unidad ${m.units.length + 1}`, summary: '', screens: [], status: 'ok' })
+    set({ course })
+  },
+
+  removeUnit: (id) => {
+    if (!get().course.modules.some((m) => m.units.some((u) => u.id === id))) return
+    snapshot()
+    const course = clone(get().course)
+    let removedScreenIds: string[] = []
+    for (const m of course.modules) {
+      const i = m.units.findIndex((u) => u.id === id)
+      if (i >= 0) {
+        removedScreenIds = m.units[i].screens.map((s) => s.id)
+        m.units.splice(i, 1)
+        break
+      }
+    }
+    const sel = get().selectedScreenId
+    set({ course, selectedScreenId: sel && removedScreenIds.includes(sel) ? null : sel })
+  },
+
+  removeModule: (id) => {
+    if (!get().course.modules.some((m) => m.id === id)) return
+    snapshot()
+    const course = clone(get().course)
+    const mod = course.modules.find((m) => m.id === id)!
+    const removedScreenIds = mod.units.flatMap((u) => u.screens.map((s) => s.id))
+    course.modules = course.modules.filter((m) => m.id !== id)
+    const sel = get().selectedScreenId
+    set({ course, selectedScreenId: sel && removedScreenIds.includes(sel) ? null : sel })
+  },
+
+  moveModule: (id, dir) => {
+    const i = get().course.modules.findIndex((m) => m.id === id)
+    const j = i + dir
+    if (i < 0 || j < 0 || j >= get().course.modules.length) return
+    snapshot()
+    const course = clone(get().course)
+    ;[course.modules[i], course.modules[j]] = [course.modules[j], course.modules[i]]
+    set({ course })
+  },
+
+  moveUnit: (id, dir) => {
+    const src = get().course.modules.find((m) => m.units.some((u) => u.id === id))
+    if (!src) return
+    const i = src.units.findIndex((u) => u.id === id)
+    const j = i + dir
+    if (j < 0 || j >= src.units.length) return
+    snapshot()
+    const course = clone(get().course)
+    const m = course.modules.find((x) => x.id === src.id)!
+    ;[m.units[i], m.units[j]] = [m.units[j], m.units[i]]
+    set({ course })
+  },
+
   selectScreen: (id) => set({ selectedScreenId: id }),
 
   locate: (id) => {
@@ -253,6 +357,31 @@ export const useCourseStore = create<CourseState>((set, get) => {
     if (type === 'video' && s.visual_resource.kind === 'none')
       get().updateScreen(id, { type, visual_resource: { ...s.visual_resource, kind: 'video_youtube', layout: 'top' } })
     else get().updateScreen(id, { type })
+  },
+
+  changeInteractionType: (screenId, type) => {
+    const loc = get().locate(screenId)
+    if (!loc) return
+    const cur = get().course.modules[loc.mi].units[loc.ui].screens[loc.si]
+    if (!cur.interaction || cur.interaction.type === type) return
+    // snapshot sin clave: el cambio de tipo nunca se coalesce con el tecleo.
+    snapshot()
+    const course = clone(get().course)
+    const s = course.modules[loc.mi].units[loc.ui].screens[loc.si]
+    const it = s.interaction!
+    const rec = interactionRecipe(type)
+    const mig = migrateInteractionData(it, type)
+    // Conserva lo común (id, enunciado, instrucciones, feedback, intentos,
+    // objetivo, source_refs); la puntuación solo si el tipo nuevo puede puntuar.
+    s.interaction = InteractionSchema.parse({
+      ...it,
+      type,
+      options: mig.options,
+      config: mig.config,
+      scored: rec.gradable ? it.scored : false,
+      points: rec.gradable ? it.points : 0,
+    })
+    set({ course })
   },
 
   setFinalTest: (test) => {

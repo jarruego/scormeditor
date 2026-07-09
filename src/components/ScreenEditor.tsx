@@ -4,6 +4,9 @@ import { validateCourse } from '../validation/validators'
 import { ScreenType, InteractionType, Interaction } from '../schema/course.schema'
 import { screenTypeLabel, screenTypeIcon, interactionTypeLabel } from '../schema/labels'
 import { SCREEN_TYPE_UI } from '../schema/screenTypeUI'
+import { interactionRecipe, migrateInteractionData, interactionHasContent } from '../schema/interactionRecipes'
+import { InteractionTypeModal } from './InteractionTypeModal'
+import { SegIcons } from './SegIcons'
 import { RichTextArea } from './RichTextArea'
 import { InteractionConfigEditor } from './InteractionConfigEditor'
 import { ObjectiveInput, ObjectiveSelect } from './ObjectiveSelect'
@@ -39,28 +42,15 @@ const FIT_ICONS = [
   { value: 'center', icon: '▣', title: 'Centrada' },
   { value: 'full', icon: '▬', title: 'Ancho completo (100%)' },
 ]
+// Posición de la interacción respecto al texto (mismos iconos que Disposición).
+const IT_POS_ICONS = [
+  { value: 'top', icon: '⬆️', title: 'Encima del texto' },
+  { value: 'bottom', icon: '⬇️', title: 'Debajo del texto' },
+]
 
-function SegIcons({ label, value, options, onChange }: {
-  label: string
-  value: string
-  options: { value: string; icon: string; title: string }[]
-  onChange: (v: string) => void
-}) {
-  return (
-    <div className="ed-field ed-field-auto">
-      <span>{label}</span>
-      <div className="ed-seg" role="group" aria-label={label}>
-        {options.map((o) => (
-          <button key={o.value} type="button" className={value === o.value ? 'is-on' : ''}
-            aria-pressed={value === o.value} title={o.title} aria-label={o.title}
-            onClick={() => onChange(o.value)}>
-            <span aria-hidden="true">{o.icon}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
+// Defaults de feedback del esquema (única fuente de verdad): para saber si el
+// autor lo ha personalizado (resumen del fold «Feedback»).
+const FB_DEFAULTS = Interaction.parse({ id: '_', type: 'single_choice' }).feedback
 
 /** Sección plegable no controlada: `defaultOpen` solo aplica al montar. Las
  *  claves externas (por pantalla/tipo) remontan la sección para re-aplicar el
@@ -132,8 +122,12 @@ export function ScreenEditor() {
   const assets = useCourseStore((s) => s.assets)
   const removeAsset = useCourseStore((s) => s.removeAsset)
   const course = useCourseStore((s) => s.course)
+  const changeItType = useCourseStore((s) => s.changeInteractionType)
   const [ttsBusy, setTtsBusy] = useState(false)
   const [ttsMsg, setTtsMsg] = useState<string | null>(null)
+  // Selector visual de tipo de interacción: 'add' crea una nueva, 'change'
+  // cambia el tipo de la existente (con migración/confirmación).
+  const [typePicker, setTypePicker] = useState<null | 'add' | 'change'>(null)
   const titleRef = useRef<HTMLInputElement>(null)
 
   // Issues de validación de ESTA pantalla (validación en contexto, no solo en
@@ -167,6 +161,8 @@ export function ScreenEditor() {
   const patch = (p: Parameters<typeof update>[1]) => update(id, p)
   const vr = screen.visual_resource
   const it = screen.interaction
+  // Receta del tipo de interacción actual (gradable/attempts/seed del catálogo).
+  const itRecipe = it ? interactionRecipe(it.type) : null
   // Énfasis por tipo de pantalla (capa de UI: reordena y sugiere, no restringe).
   const uiCfg = SCREEN_TYPE_UI[screen.type] ?? {}
 
@@ -250,20 +246,74 @@ export function ScreenEditor() {
     if (INFORMATIVE.has(it?.type ?? '') || INFORMATIVE.has(next?.type ?? '')) warnAudioStale()
     patch({ interaction: next })
   }
-  function blankInteraction(): Interaction {
+  function blankInteraction(type?: InteractionType): Interaction {
     // Tipo inicial y puntuación coherentes con el tipo de pantalla (misma
-    // filosofía que las recetas: práctica no puntúa de serie, evaluación sí).
-    const scored = screen?.type === 'unit_quiz'
+    // filosofía que las recetas: práctica no puntúa de serie, evaluación sí —
+    // y solo si el tipo elegido puede puntuar de verdad).
+    const t = type ?? uiCfg.recommended?.[0] ?? 'single_choice'
+    const scored = screen?.type === 'unit_quiz' && interactionRecipe(t).gradable
     return Interaction.parse({
       id: `i-${Math.random().toString(36).slice(2, 7)}`,
-      type: uiCfg.recommended?.[0] ?? 'single_choice',
+      type: t,
       scored,
       points: scored ? 1 : 0,
       // Prerrelleno: casi siempre la interacción evalúa el objetivo de su
       // propia pantalla (se puede cambiar en el desplegable si no es el caso).
       learning_objective: screen?.objective.trim() ?? '',
+      // Estado inicial útil del tipo (opciones precargadas, config mínima).
+      ...interactionRecipe(t).seed?.(),
     })
   }
+
+  // Cambia el tipo de la interacción existente: solo pide confirmación si la
+  // migración descartaría contenido escrito (misma familia = se conserva).
+  async function onChangeInteractionType(t: InteractionType) {
+    if (!id || !it || t === it.type) return
+    const mig = migrateInteractionData(it, t)
+    if (mig.lossy) {
+      const ok = await confirmDialog({
+        title: 'Cambiar el tipo de interacción',
+        message: `Parte del contenido de «${interactionTypeLabel(it.type)}» no se puede conservar al pasar a «${interactionTypeLabel(t)}» y se descartará (el enunciado, el feedback y el objetivo se mantienen).`,
+        confirmLabel: 'Cambiar tipo',
+        danger: true,
+      })
+      if (!ok) return
+    }
+    // Aviso de audio desactualizado si el tipo viejo o nuevo se narra.
+    if (INFORMATIVE.has(it.type) || INFORMATIVE.has(t)) warnAudioStale()
+    changeItType(id, t)
+  }
+
+  // Elimina la interacción; confirma solo si tiene contenido escrito.
+  async function onDeleteInteraction() {
+    if (!it) return
+    if (interactionHasContent(it)) {
+      const ok = await confirmDialog({
+        title: 'Eliminar interacción',
+        message: `Se eliminará la interacción «${interactionTypeLabel(it.type)}» de esta pantalla con todo su contenido.`,
+        confirmLabel: 'Eliminar',
+        danger: true,
+      })
+      if (!ok) return
+    }
+    setInteraction(null)
+  }
+
+  // Resúmenes vivos de los folds de Evaluación y Feedback (se recalculan en
+  // cada render; el estado abierto/cerrado del fold es del autor).
+  const evalSummary = !it
+    ? ''
+    : it.scored
+      ? `Evaluación — evaluable · ${it.points} ${it.points === 1 ? 'punto' : 'puntos'}` +
+        (itRecipe!.supportsAttempts
+          ? ` · ${it.attempts === 0 ? 'intentos ilimitados' : `${it.attempts} ${it.attempts === 1 ? 'intento' : 'intentos'}`}`
+          : '')
+      : 'Evaluación — no puntúa'
+  const fbCustom = !!it && (
+    it.feedback.correct !== FB_DEFAULTS.correct ||
+    it.feedback.incorrect !== FB_DEFAULTS.incorrect ||
+    it.feedback.explanation.trim() !== ''
+  )
 
   // Sección «Recurso visual» (se coloca antes o después del texto según el
   // énfasis del tipo: en Vídeo el medio ES el contenido).
@@ -357,7 +407,7 @@ export function ScreenEditor() {
                       <FileButton accept=".vtt,text/vtt" label="Subir VTT…" currentPath={t.src}
                         makePath={() => `assets/media/${screen.id}_${t.lang || 'es'}.vtt`} onUploaded={(p) => updateTrack({ ...t, src: p })} />
                     </div>
-                    <button type="button" onClick={() => setTracks(vr.tracks.filter((_, j) => j !== i))} aria-label="Eliminar">✕</button>
+                    <button type="button" onClick={() => setTracks(vr.tracks.filter((_, j) => j !== i))} title="Eliminar subtítulo" aria-label="Eliminar subtítulo">🗑</button>
                   </div>
                 )
               })}
@@ -455,75 +505,90 @@ export function ScreenEditor() {
       <Fold key={`it-${id}-${screen.type}`} summary="Interacción"
         defaultOpen={!!it || !!uiCfg.interactionOpen}>
         {!it ? (
-          <button onClick={() => setInteraction(blankInteraction())}>+ Añadir interacción</button>
+          <button onClick={() => setTypePicker('add')}>+ Añadir interacción</button>
         ) : (
           <>
-            <div className="ed-row">
-              <label className="ed-field">
-                <span>Tipo</span>
-                <select value={it.type} onChange={(e) => setInteraction({ ...it, type: e.target.value as any })}>
-                  {uiCfg.recommended ? (
-                    <>
-                      <optgroup label="Recomendadas para este tipo">
-                        {uiCfg.recommended.map((t) => <option key={t} value={t}>{interactionTypeLabel(t)}</option>)}
-                      </optgroup>
-                      <optgroup label="Otras">
-                        {InteractionType.options.filter((t) => !uiCfg.recommended!.includes(t))
-                          .map((t) => <option key={t} value={t}>{interactionTypeLabel(t)}</option>)}
-                      </optgroup>
-                    </>
-                  ) : (
-                    InteractionType.options.map((t) => <option key={t} value={t}>{interactionTypeLabel(t)}</option>)
-                  )}
-                </select>
-              </label>
-              <label className="ed-field ed-field-narrow">
-                <span>Posición</span>
-                <select value={screen.interaction_layout} onChange={(e) => patch({ interaction_layout: e.target.value as any })}>
-                  <option value="bottom">Debajo del texto</option>
-                  <option value="top">Encima del texto</option>
-                </select>
-              </label>
-              <label className="ed-check">
-                <input type="checkbox" checked={it.scored} onChange={(e) => setInteraction({ ...it, scored: e.target.checked })} />
-                <span>Evaluable</span>
-              </label>
-              <label className="ed-field ed-field-narrow">
-                <span>Puntos</span>
-                <input type="number" min={0} value={it.points} onChange={(e) => setInteraction({ ...it, points: Number(e.target.value) })} />
-              </label>
-              {['single_choice', 'true_false', 'sort_steps', 'match_pairs', 'classification', 'fill_blanks'].includes(it.type) && (
-                <label className="ed-field ed-field-narrow">
-                  <span>Intentos (0=∞)</span>
-                  <input type="number" min={0} value={it.attempts}
-                    onChange={(e) => setInteraction({ ...it, attempts: Number(e.target.value) })} />
-                </label>
-              )}
+            {/* 1. Cabecera: qué es (el tipo se elige en el selector visual),
+                dónde va respecto al texto, y eliminar (discreto, a la derecha). */}
+            <div className="ed-it-head">
+              <span className="ed-it-type-name">
+                <span aria-hidden="true">{itRecipe!.icon}</span> {interactionTypeLabel(it.type)}
+              </span>
+              <button type="button" onClick={() => setTypePicker('change')}
+                title="Elegir otro tipo de interacción (el contenido compatible se conserva)">
+                Cambiar tipo…
+              </button>
+              <SegIcons label="Posición" value={screen.interaction_layout}
+                onChange={(v) => patch({ interaction_layout: v as any })} options={IT_POS_ICONS} />
+              <button type="button" className="ed-it-del" title="Eliminar interacción"
+                aria-label="Eliminar interacción" onClick={() => void onDeleteInteraction()}>
+                <span aria-hidden="true">🗑</span>
+              </button>
             </div>
+
+            {/* 2. Actividad: el corazón del formulario, siempre visible. */}
             <label className="ed-field"><span>Enunciado</span>
               <input value={it.prompt} onChange={(e) => setInteraction({ ...it, prompt: e.target.value })} /></label>
             <label className="ed-field"><span>Instrucciones</span>
               <input value={it.instructions} onChange={(e) => setInteraction({ ...it, instructions: e.target.value })} /></label>
-            <label className="ed-field"><span>Objetivo vinculado</span>
-              <ObjectiveSelect value={it.learning_objective} onChange={(v) => setInteraction({ ...it, learning_objective: v })} /></label>
 
             <InteractionConfigEditor it={it} onChange={setInteraction} />
 
-            {/* En hotspots el feedback se escribe por zona (editor visual); los
-                genéricos quedan solo como respaldo interno con su texto por
-                defecto, así que no se muestran para no duplicar superficies. */}
-            {it.type !== 'hotspots' && (
-              <>
-                <label className="ed-field"><span>Feedback acierto</span>
-                  <input value={it.feedback.correct} onChange={(e) => setInteraction({ ...it, feedback: { ...it.feedback, correct: e.target.value } })} /></label>
-                <label className="ed-field"><span>Feedback error</span>
-                  <input value={it.feedback.incorrect} onChange={(e) => setInteraction({ ...it, feedback: { ...it.feedback, incorrect: e.target.value } })} /></label>
-              </>
+            {/* 3. Evaluación: solo tipos con corrección real (o si viene puntuando
+                de un curso importado, para poder desmarcarlo). Puntos se deshabilita
+                mientras no puntúe; al activar Evaluable con 0 puntos se pone 1. */}
+            {(itRecipe!.gradable || it.scored) && (
+              <Fold key={`ev-${id}-${it.type}`} summary={evalSummary} defaultOpen={it.scored}>
+                <div className="ed-row">
+                  <label className="ed-check"
+                    title={itRecipe!.gradable ? undefined : 'Este tipo es informativo: no tiene corrección y no debería puntuar.'}>
+                    <input type="checkbox" checked={it.scored}
+                      onChange={(e) => setInteraction({ ...it, scored: e.target.checked, points: e.target.checked && !it.points ? 1 : it.points })} />
+                    <span>Evaluable</span>
+                  </label>
+                  <label className="ed-field ed-field-narrow">
+                    <span>Puntos</span>
+                    <input type="number" min={0} value={it.points} disabled={!it.scored}
+                      title={it.scored ? undefined : 'Marca «Evaluable» para que puntúe'}
+                      onChange={(e) => setInteraction({ ...it, points: Number(e.target.value) })} />
+                  </label>
+                  {itRecipe!.supportsAttempts && (
+                    <label className="ed-field ed-field-narrow">
+                      <span>Intentos (0=∞)</span>
+                      <input type="number" min={0} value={it.attempts}
+                        onChange={(e) => setInteraction({ ...it, attempts: Number(e.target.value) })} />
+                    </label>
+                  )}
+                </div>
+                <label className="ed-field"><span>Objetivo vinculado</span>
+                  <ObjectiveSelect value={it.learning_objective} onChange={(v) => setInteraction({ ...it, learning_objective: v })} /></label>
+              </Fold>
             )}
-            <div className="ed-field"><span>Explicación pedagógica</span>
-              <RichTextArea rows={2} value={it.feedback.explanation} onChange={(v) => setInteraction({ ...it, feedback: { ...it.feedback, explanation: v } })} /></div>
 
-            <button className="ed-danger" onClick={() => setInteraction(null)}>Eliminar interacción</button>
+            {/* 4. Feedback, plegado (resumen: personalizado / por defecto). */}
+            <Fold key={`fb-${id}-${it.type}`} summary={`Feedback — ${fbCustom ? 'personalizado' : 'por defecto'}`}>
+              {(itRecipe!.family === 'options' || itRecipe!.family === 'questions') && (
+                <p className="ed-hint">
+                  Cada opción puede llevar su propio feedback (se escribe en la propia opción);
+                  estos textos son el respaldo general cuando la opción no tiene el suyo.
+                </p>
+              )}
+              {it.type !== 'hotspots' ? (
+                <>
+                  <label className="ed-field"><span>Feedback acierto</span>
+                    <input value={it.feedback.correct} onChange={(e) => setInteraction({ ...it, feedback: { ...it.feedback, correct: e.target.value } })} /></label>
+                  <label className="ed-field"><span>Feedback error</span>
+                    <input value={it.feedback.incorrect} onChange={(e) => setInteraction({ ...it, feedback: { ...it.feedback, incorrect: e.target.value } })} /></label>
+                </>
+              ) : (
+                <p className="ed-hint">
+                  En zonas interactivas el feedback de acierto/error se escribe por zona en el
+                  editor visual; aquí solo queda la explicación pedagógica común.
+                </p>
+              )}
+              <div className="ed-field"><span>Explicación pedagógica</span>
+                <RichTextArea rows={2} value={it.feedback.explanation} onChange={(v) => setInteraction({ ...it, feedback: { ...it.feedback, explanation: v } })} /></div>
+            </Fold>
           </>
         )}
       </Fold>
@@ -555,6 +620,17 @@ export function ScreenEditor() {
           <p>Trazabilidad (source_refs):</p>
           <ul>{screen.source_refs.map((r, i) => <li key={i}>{r.doc}{r.locator ? ` · ${r.locator}` : ''}{r.transform ? ` · ${r.transform}` : ''}</li>)}</ul>
         </div>
+      )}
+
+      {typePicker && (
+        <InteractionTypeModal
+          current={typePicker === 'change' ? it?.type : undefined}
+          recommended={uiCfg.recommended}
+          onPick={(t) =>
+            typePicker === 'add' ? setInteraction(blankInteraction(t)) : void onChangeInteractionType(t)
+          }
+          onClose={() => setTypePicker(null)}
+        />
       )}
     </div>
   )

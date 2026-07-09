@@ -3,6 +3,8 @@ import type { Interaction, InteractionOption } from '../schema/course.schema'
 import { RichTextArea } from './RichTextArea'
 import { FileButton } from './FileButton'
 import { HotspotZonesModal, type HotspotSpot } from './HotspotZonesModal'
+import { ListEditor } from './ListEditor'
+import { SegIcons } from './SegIcons'
 
 const rid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 7)}`
 
@@ -37,7 +39,7 @@ export function InteractionConfigEditor({
           render={(o, update) => (
             <>
               <input value={o.text} placeholder="Texto de la opción" onChange={(e) => update({ ...o, text: e.target.value })} />
-              <label className="ed-check"><input type="checkbox" checked={!!o.correct} onChange={(e) => update({ ...o, correct: e.target.checked })} /><span>Correcta</span></label>
+              <label className="ed-check" title="Puede haber varias correctas: cualquiera de ellas cuenta como acierto (en el test final, en cambio, solo hay una)"><input type="checkbox" checked={!!o.correct} onChange={(e) => update({ ...o, correct: e.target.checked })} /><span>Correcta</span></label>
               <input value={o.feedback || ''} placeholder="Feedback de esta opción (opcional)" onChange={(e) => update({ ...o, feedback: e.target.value })} />
             </>
           )}
@@ -58,7 +60,7 @@ export function InteractionConfigEditor({
             render={(o, update) => (
               <>
                 <input value={o.text} placeholder="Texto de la decisión" onChange={(e) => update({ ...o, text: e.target.value })} />
-                <label className="ed-check"><input type="checkbox" checked={!!o.correct} onChange={(e) => update({ ...o, correct: e.target.checked })} /><span>Correcta</span></label>
+                <label className="ed-check" title="Puede haber varias correctas: cualquiera de ellas cuenta como acierto (en el test final, en cambio, solo hay una)"><input type="checkbox" checked={!!o.correct} onChange={(e) => update({ ...o, correct: e.target.checked })} /><span>Correcta</span></label>
                 <input value={o.feedback || ''} placeholder="Feedback de esta decisión" onChange={(e) => update({ ...o, feedback: e.target.value })} />
               </>
             )}
@@ -110,7 +112,6 @@ export function InteractionConfigEditor({
           title="Pasos (en el ORDEN CORRECTO; se barajan en el SCORM)"
           items={steps}
           onChange={commit}
-          reorder
           create={() => ({ id: rid('p'), text: '', order: steps.length + 1 })}
           render={(s, update) => (
             <input value={s.text} placeholder="Texto del paso" onChange={(e) => update({ ...s, text: e.target.value })} />
@@ -128,6 +129,7 @@ export function InteractionConfigEditor({
           title={it.type === 'tabs' ? 'Pestañas' : 'Apartados del acordeón'}
           items={items}
           onChange={(next) => setConfig({ items: next })}
+          summary={(item) => item.title.trim() || '(sin título)'}
           create={() => ({ title: '', body: '' })}
           render={(item, update) => (
             <div className="ed-stack">
@@ -176,9 +178,7 @@ export function InteractionConfigEditor({
 
     // ---- Vídeo (con preguntas opcionales en timestamps) ---------------------
     case 'video': {
-      type IvOption = { text: string; correct?: boolean; feedback?: string }
-      type IvQuestion = { time: number; prompt: string; options: IvOption[] }
-      const questions: IvQuestion[] = cfg.questions || []
+      const questions: QItem[] = cfg.questions || []
       return (
         <div className="ed-stack">
           <label className="ed-field"><span>ID de YouTube (o deja vacío y usa archivo)</span>
@@ -187,35 +187,11 @@ export function InteractionConfigEditor({
             <input value={cfg.src || ''} onChange={(e) => setConfig({ src: e.target.value })} /></label>
           <label className="ed-field"><span>Transcripción</span>
             <textarea rows={3} value={cfg.transcript || ''} onChange={(e) => setConfig({ transcript: e.target.value })} /></label>
-          <ListEditor
+          <QuestionListEditor
             title="Preguntas del vídeo (pausan la reproducción en su segundo)"
-            items={questions}
+            withTime
+            questions={questions}
             onChange={(next) => setConfig({ questions: next })}
-            create={(): IvQuestion => ({ time: 0, prompt: '', options: [{ text: '', correct: true }, { text: '' }] })}
-            render={(q, update) => (
-              <div className="ed-stack">
-                <div className="ed-row">
-                  <label className="ed-field ed-field-narrow"><span>Segundo</span>
-                    <input type="number" min={0} value={q.time}
-                      onChange={(e) => update({ ...q, time: Math.max(0, Number(e.target.value)) })} /></label>
-                  <input value={q.prompt} placeholder="Enunciado de la pregunta"
-                    onChange={(e) => update({ ...q, prompt: e.target.value })} />
-                </div>
-                <ListEditor
-                  title="Opciones"
-                  items={q.options || []}
-                  onChange={(options) => update({ ...q, options })}
-                  create={(): IvOption => ({ text: '' })}
-                  render={(o, uo) => (
-                    <>
-                      <input value={o.text} placeholder="Texto de la opción" onChange={(e) => uo({ ...o, text: e.target.value })} />
-                      <label className="ed-check"><input type="checkbox" checked={!!o.correct} onChange={(e) => uo({ ...o, correct: e.target.checked })} /><span>Correcta</span></label>
-                      <input value={o.feedback || ''} placeholder="Feedback (opcional)" onChange={(e) => uo({ ...o, feedback: e.target.value })} />
-                    </>
-                  )}
-                />
-              </div>
-            )}
           />
           {questions.length > 0 && (
             <p className="ed-hint">
@@ -268,14 +244,30 @@ export function InteractionConfigEditor({
     // ---- Rellenar huecos ---------------------------------------------------
     case 'fill_blanks': {
       const distractors: string[] = cfg.distractors || []
+      // Preview trivial de los huecos: pares texto/hueco por split del [[...]].
+      const fbText: string = cfg.text || ''
+      const fbParts = fbText.split(/\[\[(.+?)\]\]/g)
+      const fbBlanks = (fbParts.length - 1) / 2
       return (
         <>
           <label className="ed-field">
             <span>Texto con huecos — escribe la respuesta correcta entre dobles corchetes: [[respuesta]]</span>
-            <textarea rows={4} value={cfg.text || ''}
+            <textarea rows={4} value={fbText}
               placeholder="El SCORM exportado se sube a [[Moodle]] como paquete [[ZIP]]."
               onChange={(e) => setConfig({ text: e.target.value })} />
           </label>
+          {fbText.trim() !== '' && (
+            <>
+              <div className="ed-fb-preview" aria-label="Vista previa de los huecos">
+                {fbParts.map((p, i) => (i % 2 ? <mark key={i}>{p}</mark> : <span key={i}>{p}</span>))}
+              </div>
+              <p className="ed-hint">
+                {fbBlanks === 1 ? '1 hueco' : `${fbBlanks} huecos`} ·{' '}
+                {distractors.length === 1 ? '1 distractor' : `${distractors.length} distractores`}
+                {fbBlanks === 0 && ' — escribe al menos un [[hueco]] para que haya ejercicio.'}
+              </p>
+            </>
+          )}
           <ListEditor
             title="Distractores (opciones falsas añadidas a los desplegables; opcional)"
             items={distractors.map((t) => ({ text: t }))}
@@ -297,7 +289,7 @@ export function InteractionConfigEditor({
           title="Hitos de la línea de tiempo (en orden)"
           items={milestones}
           onChange={(next) => setConfig({ milestones: next })}
-          reorder
+          summary={(mi) => [mi.label.trim(), mi.title.trim()].filter(Boolean).join(' · ') || '(sin hito)'}
           create={() => ({ label: '', title: '', body: '' })}
           render={(mi, update) => (
             <div className="ed-stack">
@@ -340,6 +332,7 @@ export function InteractionConfigEditor({
           title="Tarjetas de imagen (clic → modal con texto a la izquierda e imagen a la derecha)"
           items={cards}
           onChange={(next) => setConfig({ cards: next })}
+          summary={(c) => c.title.trim() || c.alt.trim() || '(sin título)'}
           create={() => ({ image: '', alt: '', title: '', text: '' })}
           render={(c, update) => (
             <div className="ed-stack">
@@ -442,8 +435,7 @@ export function InteractionConfigEditor({
 
     // ---- Imagen oculta ---------------------------------------------------------
     case 'hidden_image': {
-      type HiOption = { text: string; correct?: boolean; feedback?: string }
-      const hiQuestions: { prompt: string; options: HiOption[] }[] = cfg.questions || []
+      const hiQuestions: QItem[] = cfg.questions || []
       return (
         <>
           <div className="ed-row">
@@ -455,30 +447,10 @@ export function InteractionConfigEditor({
           </div>
           <input value={cfg.alt || ''} placeholder="Texto alternativo de la imagen (obligatorio)"
             onChange={(e) => setConfig({ alt: e.target.value })} />
-          <ListEditor
+          <QuestionListEditor
             title="Preguntas (cada acierto destapa parte de la imagen; un intento por pregunta)"
-            items={hiQuestions}
+            questions={hiQuestions}
             onChange={(next) => setConfig({ questions: next })}
-            create={(): { prompt: string; options: HiOption[] } => ({ prompt: '', options: [{ text: '', correct: true }, { text: '' }] })}
-            render={(q, update) => (
-              <div className="ed-stack">
-                <input value={q.prompt} placeholder="Enunciado de la pregunta"
-                  onChange={(e) => update({ ...q, prompt: e.target.value })} />
-                <ListEditor
-                  title="Opciones"
-                  items={q.options || []}
-                  onChange={(options) => update({ ...q, options })}
-                  create={(): HiOption => ({ text: '' })}
-                  render={(o, uo) => (
-                    <>
-                      <input value={o.text} placeholder="Texto de la opción" onChange={(e) => uo({ ...o, text: e.target.value })} />
-                      <label className="ed-check"><input type="checkbox" checked={!!o.correct} onChange={(e) => uo({ ...o, correct: e.target.checked })} /><span>Correcta</span></label>
-                      <input value={o.feedback || ''} placeholder="Feedback (opcional)" onChange={(e) => uo({ ...o, feedback: e.target.value })} />
-                    </>
-                  )}
-                />
-              </div>
-            )}
           />
         </>
       )
@@ -495,6 +467,7 @@ export function InteractionConfigEditor({
             title="Definiciones del rosco (la letra es la inicial de la respuesta)"
             items={azItems}
             onChange={(next) => setConfig({ items: next })}
+            summary={(q) => `${letterOf(q.answer)} · ${q.clue.trim() || '(sin pista)'}`}
             create={() => ({ clue: '', answer: '' })}
             render={(q, update) => (
               <>
@@ -528,14 +501,12 @@ export function InteractionConfigEditor({
           <input value={cfg.alt || ''} placeholder="Texto alternativo de la imagen (obligatorio)"
             onChange={(e) => setConfig({ alt: e.target.value })} />
           <div className="ed-row">
-            <label className="ed-field ed-field-narrow"><span>Columnas</span>
-              <select value={cfg.cols ?? 3} onChange={(e) => setConfig({ cols: Number(e.target.value) })}>
-                {[2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select></label>
-            <label className="ed-field ed-field-narrow"><span>Filas</span>
-              <select value={cfg.rows ?? 3} onChange={(e) => setConfig({ rows: Number(e.target.value) })}>
-                {[2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select></label>
+            <SegIcons label="Columnas" value={String(cfg.cols ?? 3)}
+              options={[2, 3, 4, 5].map((n) => ({ value: String(n), icon: String(n), title: `${n} columnas` }))}
+              onChange={(v) => setConfig({ cols: Number(v) })} />
+            <SegIcons label="Filas" value={String(cfg.rows ?? 3)}
+              options={[2, 3, 4, 5].map((n) => ({ value: String(n), icon: String(n), title: `${n} filas` }))}
+              onChange={(v) => setConfig({ rows: Number(v) })} />
           </div>
           <p className="ed-hint">El alumno toca dos piezas para intercambiarlas hasta recomponer la imagen.</p>
         </div>
@@ -585,48 +556,64 @@ export function InteractionConfigEditor({
   }
 }
 
-// ---- Editor genérico de listas ---------------------------------------------
-function ListEditor<T>({
+// ---- Preguntas con opciones (compartido por video e hidden_image) -----------
+type QOption = { text: string; correct?: boolean; feedback?: string }
+type QItem = { time?: number; prompt: string; options: QOption[] }
+
+/** Lista de preguntas (enunciado + opciones); `withTime` añade el segundo en el
+ *  que el vídeo se pausa. Sub-editor común de `video` y `hidden_image`. */
+function QuestionListEditor({
   title,
-  items,
+  withTime = false,
+  questions,
   onChange,
-  create,
-  render,
-  reorder = false,
 }: {
   title: string
-  items: T[]
-  onChange: (next: T[]) => void
-  create: () => T
-  render: (item: T, update: (next: T) => void) => React.ReactNode
-  reorder?: boolean
+  withTime?: boolean
+  questions: QItem[]
+  onChange: (next: QItem[]) => void
 }) {
-  const update = (i: number, next: T) => onChange(items.map((x, j) => (j === i ? next : x)))
-  const remove = (i: number) => onChange(items.filter((_, j) => j !== i))
-  const move = (i: number, dir: -1 | 1) => {
-    const j = i + dir
-    if (j < 0 || j >= items.length) return
-    const next = items.slice()
-    ;[next[i], next[j]] = [next[j], next[i]]
-    onChange(next)
-  }
   return (
-    <div className="ed-options">
-      <p className="ed-options-head">{title}</p>
-      {items.map((item, i) => (
-        <div key={i} className="ed-option-row ed-config-row">
-          <span className="ed-config-num">{i + 1}</span>
-          <div className="ed-config-fields">{render(item, (next) => update(i, next))}</div>
-          {reorder && (
-            <span className="ed-config-move">
-              <button type="button" onClick={() => move(i, -1)} aria-label="Subir">▲</button>
-              <button type="button" onClick={() => move(i, 1)} aria-label="Bajar">▼</button>
-            </span>
+    <ListEditor
+      title={title}
+      items={questions}
+      onChange={onChange}
+      addLabel="+ Añadir pregunta"
+      summary={(q) => (withTime ? `${q.time ?? 0} s · ` : '') + (q.prompt.trim() || '(sin enunciado)')}
+      create={(): QItem => ({
+        ...(withTime ? { time: 0 } : {}),
+        prompt: '',
+        options: [{ text: '', correct: true }, { text: '' }],
+      })}
+      render={(q, update) => (
+        <div className="ed-stack">
+          {withTime ? (
+            <div className="ed-row">
+              <label className="ed-field ed-field-narrow"><span>Segundo</span>
+                <input type="number" min={0} value={q.time ?? 0}
+                  onChange={(e) => update({ ...q, time: Math.max(0, Number(e.target.value)) })} /></label>
+              <input value={q.prompt} placeholder="Enunciado de la pregunta"
+                onChange={(e) => update({ ...q, prompt: e.target.value })} />
+            </div>
+          ) : (
+            <input value={q.prompt} placeholder="Enunciado de la pregunta"
+              onChange={(e) => update({ ...q, prompt: e.target.value })} />
           )}
-          <button type="button" onClick={() => remove(i)} aria-label="Eliminar">✕</button>
+          <ListEditor
+            title="Opciones"
+            items={q.options || []}
+            onChange={(options) => update({ ...q, options })}
+            create={(): QOption => ({ text: '' })}
+            render={(o, uo) => (
+              <>
+                <input value={o.text} placeholder="Texto de la opción" onChange={(e) => uo({ ...o, text: e.target.value })} />
+                <label className="ed-check" title="Puede haber varias correctas: cualquiera de ellas cuenta como acierto"><input type="checkbox" checked={!!o.correct} onChange={(e) => uo({ ...o, correct: e.target.checked })} /><span>Correcta</span></label>
+                <input value={o.feedback || ''} placeholder="Feedback (opcional)" onChange={(e) => uo({ ...o, feedback: e.target.value })} />
+              </>
+            )}
+          />
         </div>
-      ))}
-      <button type="button" onClick={() => onChange([...items, create()])}>+ Añadir</button>
-    </div>
+      )}
+    />
   )
 }

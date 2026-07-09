@@ -79,7 +79,7 @@ export function GlossaryEditor() {
               <textarea rows={2} value={t.definition} onChange={(e) => update(i, { definition: e.target.value })} />
             </label>
           </div>
-          <button type="button" onClick={() => void remove(i)} aria-label={`Eliminar término ${t.term || i + 1}`} title="Eliminar término">✕</button>
+          <button type="button" onClick={() => void remove(i)} aria-label={`Eliminar término ${t.term || i + 1}`} title="Eliminar término">🗑</button>
         </div>
       ))}
 
@@ -141,7 +141,7 @@ export function BibliographyEditor() {
                 onChange={(e) => update(i, { url: e.target.value || undefined })} />
             </label>
           </div>
-          <button type="button" onClick={() => void remove(i)} aria-label={`Eliminar referencia ${i + 1}`} title="Eliminar referencia">✕</button>
+          <button type="button" onClick={() => void remove(i)} aria-label={`Eliminar referencia ${i + 1}`} title="Eliminar referencia">🗑</button>
         </div>
       ))}
 

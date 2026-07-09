@@ -2,6 +2,20 @@ import { useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { confirmDialog } from '../store/confirm'
 import type { ScormConfig } from '../schema/course.schema'
+import { SegIcons } from './SegIcons'
+
+// Niveles de animación y velocidad como segmentados de texto corto (el detalle
+// va en el title y en el hint de abajo).
+const MOTION_SEGS = [
+  { value: 'none', icon: 'Sin', title: 'Sin animaciones' },
+  { value: 'subtle', icon: 'Sutiles', title: 'Transiciones básicas (por defecto)' },
+  { value: 'rich', icon: 'Llamativas', title: 'Revelado progresivo del contenido y microanimaciones' },
+]
+const SPEED_SEGS = [
+  { value: 'fast', icon: 'Rápida', title: 'Entradas más cortas' },
+  { value: 'normal', icon: 'Normal', title: 'Velocidad por defecto' },
+  { value: 'slow', icon: 'Lenta', title: 'Entradas más largas' },
+]
 
 /**
  * Sección «Ajustes del curso»: reglas SCORM de finalización y aprobado
@@ -19,7 +33,7 @@ export function AppearanceSection() {
 
   return (
     <>
-      <p style={{ margin: '0 0 .75rem', color: 'var(--c-muted)', fontSize: '.9rem' }}>
+      <p className="ed-hint ed-hint-lead">
         Preferencias de presentación de la carcasa del curso (Vista estudiante y SCORM exportado).
       </p>
 
@@ -43,7 +57,7 @@ export function AppearanceSection() {
             </div>
           </label>
         </div>
-        <p style={{ margin: 0, fontSize: '.85rem', color: 'var(--c-muted)' }}>
+        <p className="ed-hint">
           El color se aplica a botones, enlaces y elementos de acción de la carcasa. La marca
           aparece en la barra superior del curso; si la dejas vacía, la cabecera muestra
           únicamente el título del curso.
@@ -53,25 +67,13 @@ export function AppearanceSection() {
       <fieldset className="ed-group">
         <legend>Animaciones</legend>
         <div className="ed-row">
-          <label className="ed-field">
-            <span>Nivel de animación</span>
-            <select value={shell.motion} onChange={(e) => updateShell({ motion: e.target.value as any })}>
-              <option value="subtle">Sutiles (por defecto) — transiciones básicas</option>
-              <option value="rich">Llamativas — revelado progresivo del contenido y microanimaciones</option>
-              <option value="none">Sin animaciones</option>
-            </select>
-          </label>
-          <label className="ed-field ed-field-narrow">
-            <span>Velocidad</span>
-            <select value={shell.motion_speed} disabled={shell.motion === 'none'}
-              onChange={(e) => updateShell({ motion_speed: e.target.value as any })}>
-              <option value="fast">Rápida</option>
-              <option value="normal">Normal (por defecto)</option>
-              <option value="slow">Lenta</option>
-            </select>
-          </label>
+          <SegIcons label="Nivel de animación" value={shell.motion} options={MOTION_SEGS}
+            onChange={(v) => updateShell({ motion: v as any })} />
+          <SegIcons label="Velocidad" value={shell.motion_speed} options={SPEED_SEGS}
+            disabled={shell.motion === 'none'}
+            onChange={(v) => updateShell({ motion_speed: v as any })} />
         </div>
-        <p style={{ margin: 0, fontSize: '.85rem', color: 'var(--c-muted)' }}>
+        <p className="ed-hint">
           En «Llamativas», el contenido de cada pantalla aparece en cascada la primera vez y el
           resto se revela al hacer scroll; las pantallas ya vistas no se re-animan. La velocidad
           alarga o acorta las entradas del nivel elegido. Si el alumno tiene activada la
@@ -108,7 +110,7 @@ export function CourseSettingsSection() {
 
   return (
     <>
-      <p style={{ margin: '0 0 .75rem', color: 'var(--c-muted)', fontSize: '.9rem' }}>
+      <p className="ed-hint ed-hint-lead">
         Deciden cuándo el alumno queda <strong>completado</strong> y si resulta{' '}
         <strong>APTO / NO APTO</strong>. Se aplican en la Vista estudiante y en el manifiesto SCORM.
       </p>
@@ -136,7 +138,7 @@ export function CourseSettingsSection() {
           </label>
         </div>
         {r.score_source === 'final_test' && !hasFinal && (
-          <p style={{ color: '#b3261e', fontSize: '.85rem', margin: '.25rem 0 0' }}>
+          <p className="ed-hint-warn">
             ⚠ La nota sale del test final, pero no hay test final. Créalo en «Evaluación → Test final».
           </p>
         )}
@@ -147,7 +149,7 @@ export function CourseSettingsSection() {
               <input type="number" min={0} max={100} value={r.mixed_final_weight}
                 onChange={(e) => setRule({ mixed_final_weight: Number(e.target.value) })} />
             </label>
-            <p style={{ fontSize: '.85rem', color: 'var(--c-muted)', alignSelf: 'center', margin: 0 }}>
+            <p className="ed-hint" style={{ alignSelf: 'center' }}>
               Test final <strong>{r.mixed_final_weight}%</strong> · práctica <strong>{100 - r.mixed_final_weight}%</strong>.
               Cada bloque se calcula sobre su propio total y se combinan con este peso.
             </p>
@@ -188,7 +190,7 @@ export function CourseSettingsSection() {
             Aplicar a todas las pantallas
           </button>
         </div>
-        <p style={{ margin: 0, fontSize: '.85rem', color: 'var(--c-muted)' }}>
+        <p className="ed-hint">
           Pone el mismo «Tiempo mín. (s)» en las {screenCount} pantallas del curso (el alumno no
           puede avanzar hasta agotarlo). Sustituye el valor individual de cada pantalla; después
           puedes afinar pantallas concretas en su editor.
