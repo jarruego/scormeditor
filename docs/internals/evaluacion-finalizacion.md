@@ -42,6 +42,32 @@ ilimitados, donde hay que acertar). `SCORM.setStatus`: `incomplete` / `passed` /
   calificado puede repasar el curso sin machacar su estado ni su nota. La guarda vive en
   el wrapper a propósito: ninguna llamada de `app.js` puede saltársela.
 
+## Salir y Reintentar en Resultados (jul 2026)
+`renderResults()` añade acciones al pie:
+- **Salir del curso** (siempre visible; botón centrado con el color de acento):
+  `finishSession()` (nota/tiempo/exit registrados) + intento de `window.close()`; si el
+  navegador no deja cerrar (ventana no abierta por script), se muestra una **despedida
+  a pantalla completa** (`.me-exit-done`: «Sesión finalizada… cierra la pestaña») que
+  cubre la carcasa — la sesión SCORM ya está cerrada (LMSFinish) y navegar detrás no
+  persistiría nada. Con el curso **incompleto** pide confirmación primero
+  (`confirmExitIncomplete`, modal propia con clases `.me-modal`): avisa de que no habrá
+  calificación y de que el progreso queda guardado para reanudar (mensaje adaptado si
+  `allow_resume: false`).
+- El **desglose de calificaciones** va plegado en un accordion (`foldHtml`/`wireFolds`,
+  app.js — mismas clases `.me-acc-*` que las interacciones, así `setupPrint` lo expande
+  al imprimir). El informe de progreso pliega igual su «Detalle de actividades».
+- **Reintentar el curso** (solo **NO APTO** y si quedan intentos): `retryCourse()` limpia
+  `STATE.interactions`/`results`/`finalScore` (práctica Y test final) pero **conserva
+  `visited`** (el contenido ya se estudió; lo que se repite es la evaluación), vuelve a
+  la primera pantalla y marca `incomplete`. `rules.attempts_allowed` (0 = ilimitados)
+  se compara con `STATE.attempts` (intentos consumidos, persistido en `suspend_data`);
+  se muestra cuántos quedan o que se agotaron.
+
+## Informe de progreso (`progress_report`)
+El snapshot que consume la interacción (`progressSnapshot()` en app.js, expuesto vía
+`ctx.progress`) vive aquí porque reutiliza `computeScore`/`requiredScreens`/`isRequired`.
+Detalle de qué muestra: `interacciones.md`.
+
 ## Pantallas sintéticas (no están en `course.json`)
 `flatten()` añade al final de `SCREENS`:
 - **Test final** `__final__` (si `assessments.final_test` tiene preguntas):

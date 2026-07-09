@@ -174,8 +174,11 @@ export function InteractionConfigEditor({
       )
     }
 
-    // ---- Vídeo -------------------------------------------------------------
-    case 'video':
+    // ---- Vídeo (con preguntas opcionales en timestamps) ---------------------
+    case 'video': {
+      type IvOption = { text: string; correct?: boolean; feedback?: string }
+      type IvQuestion = { time: number; prompt: string; options: IvOption[] }
+      const questions: IvQuestion[] = cfg.questions || []
       return (
         <div className="ed-stack">
           <label className="ed-field"><span>ID de YouTube (o deja vacío y usa archivo)</span>
@@ -184,8 +187,46 @@ export function InteractionConfigEditor({
             <input value={cfg.src || ''} onChange={(e) => setConfig({ src: e.target.value })} /></label>
           <label className="ed-field"><span>Transcripción</span>
             <textarea rows={3} value={cfg.transcript || ''} onChange={(e) => setConfig({ transcript: e.target.value })} /></label>
+          <ListEditor
+            title="Preguntas del vídeo (pausan la reproducción en su segundo)"
+            items={questions}
+            onChange={(next) => setConfig({ questions: next })}
+            create={(): IvQuestion => ({ time: 0, prompt: '', options: [{ text: '', correct: true }, { text: '' }] })}
+            render={(q, update) => (
+              <div className="ed-stack">
+                <div className="ed-row">
+                  <label className="ed-field ed-field-narrow"><span>Segundo</span>
+                    <input type="number" min={0} value={q.time}
+                      onChange={(e) => update({ ...q, time: Math.max(0, Number(e.target.value)) })} /></label>
+                  <input value={q.prompt} placeholder="Enunciado de la pregunta"
+                    onChange={(e) => update({ ...q, prompt: e.target.value })} />
+                </div>
+                <ListEditor
+                  title="Opciones"
+                  items={q.options || []}
+                  onChange={(options) => update({ ...q, options })}
+                  create={(): IvOption => ({ text: '' })}
+                  render={(o, uo) => (
+                    <>
+                      <input value={o.text} placeholder="Texto de la opción" onChange={(e) => uo({ ...o, text: e.target.value })} />
+                      <label className="ed-check"><input type="checkbox" checked={!!o.correct} onChange={(e) => uo({ ...o, correct: e.target.checked })} /><span>Correcta</span></label>
+                      <input value={o.feedback || ''} placeholder="Feedback (opcional)" onChange={(e) => uo({ ...o, feedback: e.target.value })} />
+                    </>
+                  )}
+                />
+              </div>
+            )}
+          />
+          {questions.length > 0 && (
+            <p className="ed-hint">
+              Con preguntas, la actividad se completa al responderlas todas y puede puntuar
+              (cada acierto suma su parte). Una pregunta por segundo indicado; el alumno tiene
+              un intento por pregunta.
+            </p>
+          )}
         </div>
       )
+    }
 
     // ---- Hotspots ----------------------------------------------------------
     case 'hotspots': {
@@ -371,6 +412,145 @@ export function InteractionConfigEditor({
         </>
       )
     }
+
+    // ---- Crucigrama ----------------------------------------------------------
+    case 'crossword': {
+      const entries: { word: string; clue: string }[] = cfg.entries || []
+      return (
+        <>
+          <ListEditor
+            title="Palabras y pistas (3–12 letras; el crucigrama se monta solo con los cruces posibles)"
+            items={entries}
+            onChange={(next) => setConfig({ entries: next })}
+            create={() => ({ word: '', clue: '' })}
+            render={(en, update) => (
+              <>
+                <input style={{ maxWidth: 160 }} value={en.word} placeholder="Palabra"
+                  onChange={(e) => update({ ...en, word: e.target.value })} />
+                <input value={en.clue} placeholder="Pista / definición"
+                  onChange={(e) => update({ ...en, clue: e.target.value })} />
+              </>
+            )}
+          />
+          <p className="ed-hint">
+            Una palabra que no cruce con ninguna otra se descarta del tablero. Conviene que
+            compartan letras entre sí.
+          </p>
+        </>
+      )
+    }
+
+    // ---- Imagen oculta ---------------------------------------------------------
+    case 'hidden_image': {
+      type HiOption = { text: string; correct?: boolean; feedback?: string }
+      const hiQuestions: { prompt: string; options: HiOption[] }[] = cfg.questions || []
+      return (
+        <>
+          <div className="ed-row">
+            <input value={cfg.image || ''} placeholder="Imagen a desvelar (assets/img/…)"
+              onChange={(e) => setConfig({ image: e.target.value })} />
+            <FileButton accept="image/*" label="Subir imagen…" currentPath={cfg.image || undefined}
+              makePath={(ext) => `assets/img/${it.id}-hi.${ext}`}
+              onUploaded={(p) => setConfig({ image: p })} />
+          </div>
+          <input value={cfg.alt || ''} placeholder="Texto alternativo de la imagen (obligatorio)"
+            onChange={(e) => setConfig({ alt: e.target.value })} />
+          <ListEditor
+            title="Preguntas (cada acierto destapa parte de la imagen; un intento por pregunta)"
+            items={hiQuestions}
+            onChange={(next) => setConfig({ questions: next })}
+            create={(): { prompt: string; options: HiOption[] } => ({ prompt: '', options: [{ text: '', correct: true }, { text: '' }] })}
+            render={(q, update) => (
+              <div className="ed-stack">
+                <input value={q.prompt} placeholder="Enunciado de la pregunta"
+                  onChange={(e) => update({ ...q, prompt: e.target.value })} />
+                <ListEditor
+                  title="Opciones"
+                  items={q.options || []}
+                  onChange={(options) => update({ ...q, options })}
+                  create={(): HiOption => ({ text: '' })}
+                  render={(o, uo) => (
+                    <>
+                      <input value={o.text} placeholder="Texto de la opción" onChange={(e) => uo({ ...o, text: e.target.value })} />
+                      <label className="ed-check"><input type="checkbox" checked={!!o.correct} onChange={(e) => uo({ ...o, correct: e.target.checked })} /><span>Correcta</span></label>
+                      <input value={o.feedback || ''} placeholder="Feedback (opcional)" onChange={(e) => uo({ ...o, feedback: e.target.value })} />
+                    </>
+                  )}
+                />
+              </div>
+            )}
+          />
+        </>
+      )
+    }
+
+    // ---- Rosco A-Z (pasapalabra) ------------------------------------------------
+    case 'az_quiz': {
+      const azItems: { clue: string; answer: string }[] = cfg.items || []
+      const letterOf = (answer: string) =>
+        (answer || '').trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').charAt(0) || '?'
+      return (
+        <>
+          <ListEditor
+            title="Definiciones del rosco (la letra es la inicial de la respuesta)"
+            items={azItems}
+            onChange={(next) => setConfig({ items: next })}
+            create={() => ({ clue: '', answer: '' })}
+            render={(q, update) => (
+              <>
+                <span className="ed-az-letter">{letterOf(q.answer)}</span>
+                <input value={q.clue} placeholder="Definición / pista"
+                  onChange={(e) => update({ ...q, clue: e.target.value })} />
+                <input style={{ maxWidth: 180 }} value={q.answer} placeholder="Respuesta"
+                  onChange={(e) => update({ ...q, answer: e.target.value })} />
+              </>
+            )}
+          />
+          <p className="ed-hint">
+            El alumno escribe la respuesta o pasa palabra (la letra vuelve en la siguiente
+            vuelta). Mayúsculas, acentos y espacios extra no cuentan al corregir.
+          </p>
+        </>
+      )
+    }
+
+    // ---- Puzzle de imagen ---------------------------------------------------------
+    case 'puzzle':
+      return (
+        <div className="ed-stack">
+          <div className="ed-row">
+            <input value={cfg.image || ''} placeholder="Imagen del puzzle (assets/img/…)"
+              onChange={(e) => setConfig({ image: e.target.value })} />
+            <FileButton accept="image/*" label="Subir imagen…" currentPath={cfg.image || undefined}
+              makePath={(ext) => `assets/img/${it.id}-pz.${ext}`}
+              onUploaded={(p) => setConfig({ image: p })} />
+          </div>
+          <input value={cfg.alt || ''} placeholder="Texto alternativo de la imagen (obligatorio)"
+            onChange={(e) => setConfig({ alt: e.target.value })} />
+          <div className="ed-row">
+            <label className="ed-field ed-field-narrow"><span>Columnas</span>
+              <select value={cfg.cols ?? 3} onChange={(e) => setConfig({ cols: Number(e.target.value) })}>
+                {[2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select></label>
+            <label className="ed-field ed-field-narrow"><span>Filas</span>
+              <select value={cfg.rows ?? 3} onChange={(e) => setConfig({ rows: Number(e.target.value) })}>
+                {[2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select></label>
+          </div>
+          <p className="ed-hint">El alumno toca dos piezas para intercambiarlas hasta recomponer la imagen.</p>
+        </div>
+      )
+
+    // ---- Informe de progreso --------------------------------------------------------
+    case 'progress_report':
+      return (
+        <p className="ed-hint">
+          Sin configuración: el panel se genera solo con el estado del alumno en cada
+          momento — nota actual, mínimo para APTO, pantallas requeridas vistas,
+          actividades pendientes/correctas con su peso en la nota y el test final.
+          Puedes insertarlo en cualquier pantalla (p. ej. al cierre de cada tema).
+        </p>
+      )
 
     // ---- HTML a medida (iframe sandbox) ------------------------------------
     case 'html_embed':

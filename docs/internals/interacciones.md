@@ -67,8 +67,9 @@ ese contrato; no conoce el tipo concreto.
   vez; «Repetir repaso» no la des-completa, se persiste `done: true`). Con la regla
   `require_interactions` activa y la pantalla `required`, el gating de navegación
   (`interactionOk`, app.js) no deja avanzar hasta entonces. Siguen sin puntuar
-  (`scored: false`). `video`, `case_practice` y `html_embed` completan al renderizarse
-  (no hay señal fiable de «visto entero»).
+  (`scored: false`). `video` **sin preguntas**, `case_practice` y `html_embed` completan
+  al renderizarse (no hay señal fiable de «visto entero»); `video` **con preguntas**
+  completa al responderlas todas (ver su sección).
 - **`hotspots`: solo imagen + glow permanente (jul 2026)**: se retiró la lista de
   botones equivalentes bajo la imagen — duplicaba las zonas para el lector de pantalla
   (cada zona ya es un `<button>` con `aria-label`) y desvelaba las etiquetas. Las zonas
@@ -193,6 +194,70 @@ hotspots). `config: { words: [string] }` (3–12 letras útiles; se filtran las 
 - Validadores: `WS_EMPTY`, `WS_WORD_LONG` (>12 letras), `WS_WORD_SHORT` (<3 útiles).
   No se narra en TTS (es juego, como las evaluables).
 
+## `video` con preguntas en timestamps (jul 2026, inspirado en eXeLearning)
+`config.questions: [{ time (segundos), prompt, options: [{text, correct, feedback?}] }]`
+— opcional; sin preguntas el tipo se comporta como siempre. Con preguntas, el vídeo se
+**pausa** en cada `time` y muestra la pregunta en un overlay sobre el vídeo
+(`.me-iv-overlay`); al responder (1 intento por pregunta, sin campo `attempts`) se ve el
+feedback y «Continuar» reanuda. Estado `{answered: {idx: {choice, correct}}}` persistido;
+las respondidas no se re-disparan (tampoco al hacer seek).
+- **video_file**: nativo (`timeupdate`/`seeked`).
+- **YouTube**: puente postMessage del IFrame API (`?enablejsapi=1`, mensajes
+  `listening`/`command`/`infoDelivery`) **sin cargar JS externo** — verificado
+  funcionando en vivo. Si el puente no entrega tiempo en 6 s (LMS que bloquea la
+  comunicación), **fallback**: las preguntas aparecen como lista visible bajo el vídeo,
+  siempre respondibles (validador `IV_YT_BRIDGE`, info).
+- Completa al responder **todas**; puntuación **proporcional** a los aciertos
+  (`points × aciertos/total`). La tarjeta de pregunta es el helper compartido
+  `questionCard()` (lo reutiliza `hidden_image`).
+- Validadores: `IV_Q_NO_PROMPT`, `IV_Q_FEW_OPTIONS`, `IV_Q_NO_CORRECT`.
+
+## Juegos didácticos (jul 2026, inspirados en el catálogo de eXeLearning)
+Cuatro tipos con **crédito parcial** (los tres primeros: `score = points ×
+aciertos/total`) y helpers compartidos: `normLetters()` (mayúsculas, sin acentos, Ñ
+preservada) y `seededRandom()` (mulberry32; tablero determinista por `data.id`, clave
+para restaurar desde `suspend_data`).
+- **`crossword`** (evaluable, Comprobar + `attempts` como fill_blanks):
+  `config.entries [{word, clue}]` (3–12 letras). El layout se autocalcula: la palabra más
+  larga horizontal y el resto buscando **cruces** con las colocadas (sin adyacencias
+  laterales ni prolongaciones); una palabra sin cruce posible **se descarta** del tablero
+  y de las pistas. Casillas `<input>` de una letra con numeración y listas
+  Horizontales/Verticales; al comprobar, cada palabra marca sus casillas
+  `.is-right`/`.is-wrong` (una casilla de cruce solo va en verde si TODAS sus palabras
+  están bien). Estado `{values: {'r,c': letra}, attempts, correct}`. Validadores:
+  `CW_EMPTY`, `CW_FEW` (1 palabra), `CW_INCOMPLETE`.
+- **`hidden_image`** (evaluable, autovalidante): `config {image, alt, questions}` (mismas
+  preguntas que `video`). La imagen se cubre con 12 losetas; cada **acierto** destapa su
+  parte (orden de revelado aleatorio determinista) y al responder todas se desvela
+  entera. Una pregunta cada vez bajo la imagen (`questionCard`), 1 intento por pregunta.
+  Validadores: `HI_NO_IMAGE`, `HI_NO_QUESTIONS`, `HI_Q_*`.
+- **`az_quiz`** (evaluable, autovalidante, tipo pasapalabra): `config.items [{clue,
+  answer}]` — la **letra se deriva de la inicial de la respuesta** (también en el editor,
+  chip `.ed-az-letter`). Chips del rosco con estados (actual con pulso / acierto verde /
+  fallo rojo); respuesta escrita (Enter envía) comparada con `normLetters` y
+  **Pasapalabra** deja la letra para la siguiente vuelta. Al fallar se muestra la
+  respuesta correcta. Estado `{res: {idx: {given, correct}, __last}}`. Validadores:
+  `AZ_EMPTY`, `AZ_INCOMPLETE`, `AZ_DUP_LETTER` (warning).
+- **`puzzle`** (completable; puntúa solo si el autor lo marca): `config {image, alt,
+  cols?, rows?}` (2–5, def. 3×3). Piezas por `background-position`, barajadas
+  deterministas (nunca nace resuelto); **tocar dos piezas las intercambia** (mismo
+  criterio accesible del drag&drop). `completed` solo al resolverlo (persistido
+  `{order, solved}`). Validador: `PZ_NO_IMAGE`.
+
+## `progress_report` — informe de progreso insertable (jul 2026)
+Panel **en vivo** del avance: nota actual, mínimo para APTO, pantallas requeridas
+vistas, nº de actividades pendientes, tabla de actividades (estado
+Pendiente/Hecha/Correcta/Parcial/Incorrecta + puntos + **peso en la nota**) y fila del
+test final. Sin configuración; insertable en cualquier pantalla (p. ej. al cierre de
+cada tema).
+- Los datos los expone `app.js` vía **`ctx.progress()`** (`progressSnapshot()`): la
+  interacción no tiene acceso directo a `STATE`/`SCREENS`. Se repinta al entrar en la
+  pantalla, así siempre está al día. Los **pesos** son los del curso completo
+  (puntos de todas las evaluables normalizados a su bloque × peso del bloque según
+  `score_source`/`mixed_final_weight`), no solo de las ya visitadas.
+- No se lista a sí mismo en la tabla. Siempre `completed: true`, nunca puntúa
+  (`PR_SCORED` avisa). Nota al pie explica el reparto práctica/test final.
+
 ## Imagen en el markdown ligero (jul 2026)
 `![alt](assets/img/… | https://…)` en **línea propia** → `<figure class="me-md-img">`
 con `.me-zoomable` (lightbox gratis). Ancho opcional en % del ancho de la diapositiva:
@@ -209,3 +274,8 @@ rutas `assets/` o http(s) (anti-inyección). Piezas relacionadas:
 - **Animación secuencial** del contenido: revelar bloques en cascada. Encaja porque cada
   bloque (`<p>`, `<li>`, callout) ya sale como elemento independiente; se marcarían con
   `data-reveal` y se revelarían desde `app.js`.
+- **Candado** (jul 2026, idea del catálogo de eXeLearning; el autor lo pospuso
+  explícitamente): introducir un código que se obtiene resolviendo las actividades de la
+  pantalla/tema. Es la única candidata que tocaría el gating/finalización además del
+  catálogo (ver `evaluacion-finalizacion.md`); la alternativa simple es implementarlo
+  como interacción puntuable normal (código correcto = completada) sin tocar el gating.

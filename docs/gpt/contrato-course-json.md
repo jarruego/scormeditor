@@ -371,7 +371,8 @@ Estructura común a TODAS:
   `sort_steps`, `single_choice`, `true_false`, `classification`,
   `scenario_decision`, `case_practice`, `hotspots`, `video`, `fill_blanks`,
   `timeline`, `flashcards`, `html_embed`, `image_cards`, `before_after`,
-  `word_search`.
+  `word_search`, `crossword`, `hidden_image`, `az_quiz`, `puzzle`,
+  `progress_report`.
 - `retries`: `0` = ilimitados.
 - `learning_objective`: rellénalo siempre (el validador lo pide).
 - Reglas del validador para preguntas evaluables: deben tener **respuesta
@@ -478,15 +479,25 @@ al cierre de un tema; `flip_cards` para explorar contenido:
 "config": { "cards": [ { "front": "¿Qué es cmi.core.lesson_status?", "back": "El estado del alumno..." } ] }
 ```
 
-**`video`** (interacción con transcripción/subtítulos):
+**`video`** (interacción con transcripción/subtítulos y, opcionalmente, **preguntas
+que pausan el vídeo** en el segundo indicado — vídeo interactivo):
 ```json
 "config": {
   "youtube": "VIDEOID",
   "transcript": "Transcripción completa del vídeo.",
-  "tracks": [ { "kind": "subtitles", "src": "assets/media/v.es.vtt", "lang": "es", "label": "Español" } ]
+  "tracks": [ { "kind": "subtitles", "src": "assets/media/v.es.vtt", "lang": "es", "label": "Español" } ],
+  "questions": [
+    { "time": 45, "prompt": "¿Qué EPI se muestra?", "options": [
+      { "text": "Casco", "correct": true, "feedback": "..." },
+      { "text": "Guantes" }
+    ] }
+  ]
 }
 ```
 (usa `"src": "assets/media/v.mp4"` en vez de `youtube` si es vídeo propio.)
+`questions` es opcional; con preguntas la actividad se completa al responderlas todas,
+puede puntuar (`scored: true`; cada acierto suma su parte) y el alumno tiene un intento
+por pregunta. Solo pon `time` en momentos que el vídeo ya haya mostrado la respuesta.
 
 **`image_cards`** — tarjetas de imagen (informativa, no puntúa): rejilla de tarjetas
 con imagen y título; al clicar una se abre una modal con el texto a la izquierda y la
@@ -522,6 +533,55 @@ botón Comprobar ni intentos. Si puntúa, cada palabra encontrada suma su parte
 proporcional de `points`. Úsala para afianzar vocabulario clave del tema:
 ```json
 "config": { "words": ["SCORM", "Moodle", "Prevención", "Extintor"] }
+```
+
+**`crossword`** — crucigrama (evaluable, con Comprobar e intentos). El tablero se
+autocalcula buscando cruces entre las palabras: elige palabras que **compartan
+letras**; una palabra sin cruce posible se descarta. 3–12 letras por palabra:
+```json
+"config": { "entries": [
+  { "word": "EXTINTOR", "clue": "Equipo para sofocar un conato de incendio" },
+  { "word": "RIESGO", "clue": "Probabilidad de que un peligro cause daño" }
+] }
+```
+
+**`hidden_image`** — imagen oculta (evaluable): la imagen se cubre con losetas y cada
+respuesta correcta destapa una parte; al responder todas se desvela entera. Preguntas
+de opción única (mismo shape que las del vídeo), un intento por pregunta. Como las
+imágenes las sube el autor, deja `image` vacío y descríbela en una `editor_note`:
+```json
+"config": {
+  "image": "assets/img/senal.png", "alt": "Señal de evacuación",
+  "questions": [ { "prompt": "¿Qué indica el color verde?", "options": [
+    { "text": "Salvamento o socorro", "correct": true }, { "text": "Prohibición" }
+  ] } ]
+}
+```
+
+**`az_quiz`** — rosco A-Z tipo pasapalabra (evaluable): una definición por letra, el
+alumno **escribe** la respuesta o pasa palabra (la letra vuelve en la siguiente
+vuelta). La letra del rosco es la **inicial de la respuesta** (elige respuestas con
+iniciales variadas); mayúsculas/acentos no cuentan al corregir:
+```json
+"config": { "items": [
+  { "clue": "Equipo de protección individual de la cabeza", "answer": "Casco" },
+  { "clue": "Documento que evalúa los riesgos del puesto", "answer": "Evaluación" }
+] }
+```
+
+**`puzzle`** — puzzle de imagen (informativa por defecto): la imagen se trocea y el
+alumno intercambia piezas tocándolas hasta recomponerla. `cols`/`rows` opcionales
+(2–5, por defecto 3×3). Deja `image` vacío + `editor_note` (la sube el autor):
+```json
+"config": { "image": "assets/img/mapa-evacuacion.png", "alt": "Mapa de evacuación de la planta", "cols": 3, "rows": 3 }, "scored": false
+```
+
+**`progress_report`** — informe de progreso (informativa, sin configuración): panel
+que se genera solo con el estado del alumno — nota actual, mínimo para APTO,
+pantallas requeridas vistas, actividades pendientes/correctas con su peso en la nota
+y test final. Insertable en cualquier pantalla (típicamente al cierre de cada tema):
+```json
+"config": {}, "scored": false
 ```
 
 **`html_embed`** — animación o interactivo a medida en HTML/CSS/JS que el **autor

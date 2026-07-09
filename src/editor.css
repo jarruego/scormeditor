@@ -354,6 +354,13 @@ button.ed-pill { cursor: pointer; }
 .ed-obj-add-form input { flex: 2 1 220px; }
 .ed-obj-add-form select { flex: 1 1 180px; min-width: 0; }
 
+/* Letra derivada de cada entrada del rosco A-Z */
+.ed-az-letter {
+  flex: 0 0 auto; width: 1.9rem; height: 1.9rem; display: grid; place-items: center;
+  border-radius: 50%; border: 2px solid var(--c-border); font-weight: 700; font-size: .85rem;
+  color: var(--c-muted); background: var(--c-surface);
+}
+
 /* Editor visual de zonas de hotspots (modal) */
 .ed-hz-open { align-self: flex-start; border: 1px solid var(--c-primary); color: var(--c-primary); background: var(--c-surface); border-radius: 6px; padding: .45rem .7rem; cursor: pointer; }
 .ed-hz-open:hover:not(:disabled) { background: #f4f7ff; }

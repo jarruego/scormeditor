@@ -688,12 +688,27 @@
   });
 
   // --- 12. Video con transcripción y subtítulos VTT --------------------------
+  // Vídeo con preguntas opcionales en timestamps (config.questions:
+  // [{ time (segundos), prompt, options: [{text, correct, feedback?}] }]).
+  // El vídeo se PAUSA al llegar al timestamp y muestra la pregunta en overlay;
+  // al responder (1 intento por pregunta) se ve el feedback y se reanuda.
+  // - video_file: nativo (timeupdate/pause/play).
+  // - YouTube: puente postMessage del IFrame API (enablejsapi=1, sin cargar JS
+  //   externo). Si el puente no entrega tiempo (bloqueado), las preguntas
+  //   aparecen como lista visible bajo el vídeo: siempre son respondibles.
+  // Sin preguntas se comporta como siempre (informativa, completa al render).
   register('video', function (el, data, ctx) {
     var c = data.config || {};
-    var html = header(data);
+    var questions = (c.questions || []).filter(function (q) {
+      return q && String(q.prompt || '').trim() && (q.options || []).length >= 2;
+    });
+    var answered = (ctx.state && ctx.state.answered) || {}; // idx -> {choice, correct}
+
+    var html = header(data) + '<div class="me-iv-box">';
     if (c.youtube) {
       html += '<div class="me-video"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(c.youtube) +
-        '" title="' + esc(data.prompt || 'Vídeo') + '" allowfullscreen loading="lazy"></iframe></div>';
+        (questions.length ? '?enablejsapi=1' : '') +
+        '" title="' + esc(stripTags(data.prompt) || 'Vídeo') + '" allow="autoplay" allowfullscreen loading="lazy"></iframe></div>';
     } else if (c.src) {
       html += '<video class="me-video" controls preload="metadata"' + (c.poster ? ' poster="' + esc(assetUrl(c.poster)) + '"' : '') + '>' +
         '<source src="' + esc(assetUrl(c.src)) + '">';
@@ -702,11 +717,165 @@
       });
       html += '</video>';
     }
+    html += '<div class="me-iv-overlay" hidden></div></div>';
+    if (questions.length) {
+      html += '<p class="me-iv-progress" aria-live="polite"></p>';
+      // Contenedor del modo lista (fallback YouTube sin puente): oculto de serie.
+      html += '<div class="me-iv-list" hidden></div>';
+    }
     if (c.transcript) {
       html += '<details class="me-transcript"><summary>Ver transcripción</summary><div>' + esc(c.transcript) + '</div></details>';
     }
     el.innerHTML = html;
-    return { result: function () { return { completed: true, scored: false }; } };
+
+    if (!questions.length) {
+      return { result: function () { return { completed: true, scored: false }; } };
+    }
+
+    var overlay = el.querySelector('.me-iv-overlay');
+    var progress = el.querySelector('.me-iv-progress');
+    var videoEl = el.querySelector('video');
+    var iframeEl = el.querySelector('iframe');
+    var listBox = el.querySelector('.me-iv-list');
+
+    function answeredCount() { return Object.keys(answered).length; }
+    function refreshProgress() {
+      progress.textContent = 'Preguntas del vídeo: ' + answeredCount() + ' de ' + questions.length + ' respondidas.';
+    }
+    refreshProgress();
+
+    // --- Control de reproducción (nativo o puente YouTube) -----------------
+    var yt = { ready: false, time: 0 };
+    function ytCmd(func) {
+      if (iframeEl && iframeEl.contentWindow) {
+        iframeEl.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: [] }), '*');
+      }
+    }
+    function pause() { if (videoEl) videoEl.pause(); else ytCmd('pauseVideo'); }
+    function play() { if (videoEl) videoEl.play(); else ytCmd('playVideo'); }
+    function currentTime() { return videoEl ? videoEl.currentTime : yt.time; }
+
+    // --- Pregunta en overlay -------------------------------------------------
+    function renderQuestion(i, box, onDone) {
+      var q = questions[i];
+      var prev = answered[i];
+      var h = '<div class="me-iv-q" role="group" aria-label="Pregunta del vídeo">' +
+        '<p class="me-iv-prompt">' + rich(q.prompt) + '</p><div class="me-iv-opts">';
+      (q.options || []).forEach(function (o, j) {
+        h += '<button type="button" class="me-iv-opt' +
+          (prev && prev.choice === j ? (prev.correct ? ' is-right' : ' is-wrong') : '') +
+          '" data-j="' + j + '"' + (prev ? ' disabled' : '') + '>' + rich(o.text) + '</button>';
+      });
+      h += '</div><div class="me-iv-fb"' + (prev ? '' : ' hidden') + '></div>' +
+        (onDone ? '<button type="button" class="me-btn me-primary me-iv-continue" hidden>Continuar</button>' : '') +
+        '</div>';
+      box.innerHTML = h;
+      var fb = box.querySelector('.me-iv-fb');
+      function showFb(o, ok) {
+        fb.hidden = false;
+        fb.className = 'me-iv-fb ' + (ok ? 'is-ok' : 'is-error');
+        fb.innerHTML = '<strong>' + (ok ? '✔ ' : '✖ ') + '</strong>' +
+          rich(o.feedback || (ok ? (data.feedback.correct || 'Correcto.') : (data.feedback.incorrect || 'No es correcto.')));
+      }
+      if (prev) showFb(q.options[prev.choice] || {}, prev.correct);
+      box.querySelector('.me-iv-opts').addEventListener('click', function (e) {
+        var btn = e.target.closest('.me-iv-opt');
+        if (!btn || answered[i]) return;
+        var j = +btn.getAttribute('data-j');
+        var ok = !!q.options[j].correct;
+        answered[i] = { choice: j, correct: ok };
+        btn.classList.add(ok ? 'is-right' : 'is-wrong');
+        [].slice.call(box.querySelectorAll('.me-iv-opt')).forEach(function (b) { b.disabled = true; });
+        showFb(q.options[j], ok);
+        ctx.save({ answered: answered });
+        refreshProgress();
+        ctx.announce(ok ? 'Respuesta correcta.' : 'Respuesta incorrecta.');
+        var cont = box.querySelector('.me-iv-continue');
+        if (cont) { cont.hidden = false; cont.focus(); }
+      });
+      var cont = box.querySelector('.me-iv-continue');
+      if (cont) cont.addEventListener('click', function () { onDone(); });
+    }
+
+    var showing = false;
+    function pendingAt(t) {
+      for (var i = 0; i < questions.length; i++) {
+        if (!answered[i] && t >= (questions[i].time || 0)) return i;
+      }
+      return -1;
+    }
+    function maybeAsk() {
+      if (showing) return;
+      var i = pendingAt(currentTime());
+      if (i === -1) return;
+      showing = true;
+      pause();
+      overlay.hidden = false;
+      renderQuestion(i, overlay, function () {
+        overlay.hidden = true;
+        showing = false;
+        // Otra pregunta en el mismo punto: se muestra antes de reanudar.
+        if (pendingAt(currentTime()) !== -1) { maybeAsk(); return; }
+        play();
+      });
+      overlay.querySelector('.me-iv-opt').focus();
+    }
+
+    if (videoEl) {
+      videoEl.addEventListener('timeupdate', maybeAsk);
+      videoEl.addEventListener('seeked', maybeAsk);
+    } else if (iframeEl) {
+      // Puente YouTube: pedir escucha hasta recibir infoDelivery con el tiempo.
+      var gotInfo = false;
+      var onMsg = function (e) {
+        if (!iframeEl.isConnected) { global.removeEventListener('message', onMsg); return; }
+        if (e.source !== iframeEl.contentWindow) return;
+        var d;
+        try { d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch (err) { return; }
+        if (d && d.info && typeof d.info.currentTime === 'number') {
+          gotInfo = true;
+          yt.time = d.info.currentTime;
+          maybeAsk();
+        }
+      };
+      global.addEventListener('message', onMsg);
+      var listenTries = 0;
+      var listener = setInterval(function () {
+        if (!iframeEl.isConnected || gotInfo || listenTries++ > 20) { clearInterval(listener); return; }
+        if (iframeEl.contentWindow) {
+          iframeEl.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: String(data.id) }), '*');
+        }
+      }, 500);
+      // Fallback: sin señal de tiempo en 6 s, preguntas como lista visible.
+      setTimeout(function () {
+        if (gotInfo || !iframeEl.isConnected) return;
+        listBox.hidden = false;
+        listBox.innerHTML = '<p class="me-iv-list-head">Preguntas del vídeo</p>';
+        questions.forEach(function (_, i) {
+          var slot = document.createElement('div');
+          listBox.appendChild(slot);
+          renderQuestion(i, slot, null);
+        });
+      }, 6000);
+    }
+
+    return {
+      result: function () {
+        var total = questions.length;
+        var okCount = 0;
+        questions.forEach(function (_, i) { if (answered[i] && answered[i].correct) okCount++; });
+        var all = answeredCount() >= total;
+        var pts = data.points || 1;
+        return {
+          completed: all,
+          scored: !!data.scored,
+          correct: all && okCount === total,
+          score: Math.round(pts * (okCount / total) * 100) / 100,
+          maxScore: pts,
+        };
+      },
+      hasAnswer: function () { return answeredCount() > 0; },
+    };
   });
 
   // --- 13. Rellenar huecos (fill_blanks) --------------------------------------
@@ -1273,6 +1442,641 @@
       },
       hasAnswer: function () { return found.length > 0; },
     };
+  });
+
+  // Normalización compartida de respuestas/letras: mayúsculas, sin acentos
+  // (la enye se preserva), solo A-Z + enye. Misma regla que la sopa de letras.
+  var NTILDE = String.fromCharCode(209);
+  var normLetters = (function () {
+    var MARK = String.fromCharCode(1);
+    var DIACRITICS = new RegExp('[' + String.fromCharCode(0x300) + '-' + String.fromCharCode(0x36f) + ']', 'g');
+    return function (s) {
+      return String(s || '').toUpperCase()
+        .split(NTILDE).join(MARK)
+        .normalize('NFD').replace(DIACRITICS, '')
+        .split(MARK).join(NTILDE)
+        .replace(new RegExp('[^A-Z' + NTILDE + '0-9 ]', 'g'), '')
+        .replace(/\s+/g, ' ').trim();
+    };
+  })();
+  // PRNG determinista compartido (mismo tablero en cada sesión por id).
+  function seededRandom(seedStr) {
+    var h = 1779033703 ^ seedStr.length;
+    for (var i = 0; i < seedStr.length; i++) { h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+    var a = h >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  // Tarjeta de pregunta de opción única reutilizable (vídeo interactivo, imagen
+  // oculta): pinta enunciado + opciones, 1 intento, feedback, persiste vía cb.
+  function questionCard(box, q, prev, fallbackFb, onAnswer) {
+    var h = '<div class="me-iv-q" role="group" aria-label="Pregunta">' +
+      '<p class="me-iv-prompt">' + rich(q.prompt) + '</p><div class="me-iv-opts">';
+    (q.options || []).forEach(function (o, j) {
+      h += '<button type="button" class="me-iv-opt' +
+        (prev && prev.choice === j ? (prev.correct ? ' is-right' : ' is-wrong') : '') +
+        '" data-j="' + j + '"' + (prev ? ' disabled' : '') + '>' + rich(o.text) + '</button>';
+    });
+    h += '</div><div class="me-iv-fb"' + (prev ? '' : ' hidden') + '></div></div>';
+    box.innerHTML = h;
+    var fb = box.querySelector('.me-iv-fb');
+    function showFb(o, ok) {
+      fb.hidden = false;
+      fb.className = 'me-iv-fb ' + (ok ? 'is-ok' : 'is-error');
+      fb.innerHTML = '<strong>' + (ok ? '✔ ' : '✖ ') + '</strong>' +
+        rich(o.feedback || (ok ? (fallbackFb.correct || 'Correcto.') : (fallbackFb.incorrect || 'No es correcto.')));
+    }
+    if (prev) showFb(q.options[prev.choice] || {}, prev.correct);
+    box.querySelector('.me-iv-opts').addEventListener('click', function (e) {
+      var btn = e.target.closest('.me-iv-opt');
+      if (!btn || btn.disabled) return;
+      var j = +btn.getAttribute('data-j');
+      var ok = !!q.options[j].correct;
+      btn.classList.add(ok ? 'is-right' : 'is-wrong');
+      [].slice.call(box.querySelectorAll('.me-iv-opt')).forEach(function (b) { b.disabled = true; });
+      showFb(q.options[j], ok);
+      onAnswer(j, ok);
+    });
+  }
+
+  // --- 20. Crucigrama (crossword) ----------------------------------------------
+  // config.entries: [{ word, clue }]. Evaluable con Comprobar + intentos (como
+  // fill_blanks). El layout se autocalcula con cruces, determinista por id; las
+  // palabras sin encaje se descartan (nunca una pista sin casillas).
+  register('crossword', function (el, data, ctx) {
+    var entries = ((data.config || {}).entries || []).map(function (en) {
+      // Solo letras: normLetters conserva dígitos y espacios, aquí sobran.
+      return { word: normLetters(en.word || '').replace(/[0-9 ]/g, ''), clue: String(en.clue || '').trim() };
+    }).filter(function (en) { return en.word.length >= 3 && en.word.length <= 12 && en.clue; });
+    // Dedup
+    var seenW = {};
+    entries = entries.filter(function (en) { if (seenW[en.word]) return false; seenW[en.word] = 1; return true; });
+
+    if (!entries.length) {
+      el.innerHTML = header(data) + '<p class="me-warn">Crucigrama sin palabras válidas (3–12 letras con pista).</p>';
+      return { result: function () { return { completed: true, scored: false }; } };
+    }
+
+    // Colocación con cruces sobre un grid disperso {'r,c': letra}.
+    var grid = {}, placed = [];
+    function cellsOf(word, r, c, dr, dc) {
+      var cells = [];
+      for (var k = 0; k < word.length; k++) cells.push([r + dr * k, c + dc * k]);
+      return cells;
+    }
+    function fits(word, r, c, dr, dc) {
+      // Casilla previa y posterior libres (no alargar otra palabra).
+      if (grid[(r - dr) + ',' + (c - dc)] != null) return false;
+      if (grid[(r + dr * word.length) + ',' + (c + dc * word.length)] != null) return false;
+      var crosses = 0;
+      for (var k = 0; k < word.length; k++) {
+        var rr = r + dr * k, cc = c + dc * k;
+        var cur = grid[rr + ',' + cc];
+        if (cur != null) {
+          if (cur !== word[k]) return false;
+          crosses++;
+        } else {
+          // Sin vecinos laterales (evita palabras pegadas ilegibles).
+          if (grid[(rr + dc) + ',' + (cc + dr)] != null) return false;
+          if (grid[(rr - dc) + ',' + (cc - dr)] != null) return false;
+        }
+      }
+      return placed.length === 0 || crosses > 0;
+    }
+    function put(word, clue, r, c, dr, dc) {
+      cellsOf(word, r, c, dr, dc).forEach(function (rc, k) { grid[rc[0] + ',' + rc[1]] = word[k]; });
+      placed.push({ word: word, clue: clue, r: r, c: c, dr: dr, dc: dc });
+    }
+    var sorted = entries.slice().sort(function (a, b) { return b.word.length - a.word.length; });
+    put(sorted[0].word, sorted[0].clue, 0, 0, 0, 1); // la más larga, horizontal
+    sorted.slice(1).forEach(function (en) {
+      var w = en.word;
+      for (var pi = 0; pi < placed.length; pi++) {
+        var p = placed[pi];
+        var pdr = p.dr === 0 ? 1 : 0, pdc = p.dc === 0 ? 1 : 0; // perpendicular
+        for (var k = 0; k < w.length; k++) {
+          for (var m = 0; m < p.word.length; m++) {
+            if (p.word[m] !== w[k]) continue;
+            var cr = p.r + p.dr * m, cc = p.c + p.dc * m; // celda de cruce
+            var r0 = cr - pdr * k, c0 = cc - pdc * k;
+            if (fits(w, r0, c0, pdr, pdc)) { put(w, en.clue, r0, c0, pdr, pdc); return; }
+          }
+        }
+      }
+      // sin encaje: descartada
+    });
+
+    // Bounding box y numeración en orden de lectura.
+    var minR = Infinity, minC = Infinity, maxR = -Infinity, maxC = -Infinity;
+    Object.keys(grid).forEach(function (key) {
+      var p2 = key.split(',');
+      minR = Math.min(minR, +p2[0]); maxR = Math.max(maxR, +p2[0]);
+      minC = Math.min(minC, +p2[1]); maxC = Math.max(maxC, +p2[1]);
+    });
+    placed.forEach(function (p) { p.r -= minR; p.c -= minC; });
+    var rows = maxR - minR + 1, cols = maxC - minC + 1;
+    placed.sort(function (a, b) { return (a.r - b.r) || (a.c - b.c) || (a.dr - b.dr); });
+    var numAt = {}, nextNum = 1;
+    placed.forEach(function (p) {
+      var key = p.r + ',' + p.c;
+      if (!numAt[key]) numAt[key] = nextNum++;
+      p.num = numAt[key];
+    });
+
+    var values = (ctx.state && ctx.state.values) || {}; // 'r,c' -> letra
+    var maxAtt = attemptsOf(data);
+
+    var html = header(data) + '<div class="me-cw">' +
+      '<div class="me-cw-grid" style="--me-cw-cols:' + cols + '" role="group" aria-label="Casillas del crucigrama">';
+    for (var r = 0; r < rows; r++) for (var c2 = 0; c2 < cols; c2++) {
+      var key2 = (r + minR) + ',' + (c2 + minC);
+      if (grid[key2] == null) { html += '<span class="me-cw-void"></span>'; continue; }
+      var k2 = r + ',' + c2;
+      html += '<span class="me-cw-box">' + (numAt[k2] ? '<i class="me-cw-num">' + numAt[k2] + '</i>' : '') +
+        '<input class="me-cw-cell" maxlength="2" data-k="' + k2 + '" value="' + esc(values[k2] || '') + '"' +
+        ' aria-label="Casilla fila ' + (r + 1) + ', columna ' + (c2 + 1) + '"></span>';
+    }
+    html += '</div><div class="me-cw-clues">';
+    ['Horizontales', 'Verticales'].forEach(function (title, v) {
+      var list = placed.filter(function (p) { return (v === 0 ? p.dc === 1 : p.dr === 1); });
+      if (!list.length) return;
+      html += '<p class="me-cw-clues-head">' + title + '</p><ol class="me-cw-clue-list">';
+      list.forEach(function (p) {
+        html += '<li value="' + p.num + '" data-w="' + esc(p.word) + '">' + rich(p.clue) + ' <span class="me-cw-len">(' + p.word.length + ')</span></li>';
+      });
+      html += '</ol>';
+    });
+    html += '</div></div><button class="me-btn me-check">Comprobar</button>' + feedbackBox(data);
+    el.innerHTML = html;
+
+    var inputs = [].slice.call(el.querySelectorAll('.me-cw-cell'));
+    var attempts = 0, done = false, correct = false;
+    var refreshCheck = wireCheck(el, function () {
+      return inputs.every(function (inp) { return normLetters(inp.value).length === 1; });
+    });
+    el.addEventListener('input', function (e) {
+      var inp = e.target.closest('.me-cw-cell');
+      if (!inp || done) return;
+      var ch = normLetters(inp.value).slice(-1);
+      inp.value = ch;
+      refreshCheck(true);
+    });
+
+    function wordOk(p) {
+      return cellsOf(p.word, p.r, p.c, p.dr, p.dc).every(function (rc, k) {
+        var inp = el.querySelector('.me-cw-cell[data-k="' + rc[0] + ',' + rc[1] + '"]');
+        return inp && normLetters(inp.value) === p.word[k];
+      });
+    }
+    function markWords() {
+      inputs.forEach(function (inp) { inp.classList.remove('is-right', 'is-wrong'); });
+      placed.forEach(function (p) {
+        var ok = wordOk(p);
+        cellsOf(p.word, p.r, p.c, p.dr, p.dc).forEach(function (rc) {
+          var inp = el.querySelector('.me-cw-cell[data-k="' + rc[0] + ',' + rc[1] + '"]');
+          // Una casilla de cruce solo se marca bien si TODAS sus palabras lo están.
+          if (!ok) inp.classList.add('is-wrong');
+          else if (!inp.classList.contains('is-wrong')) inp.classList.add('is-right');
+        });
+      });
+    }
+    function okCount() { return placed.filter(wordOk).length; }
+    function lock() {
+      inputs.forEach(function (inp) { inp.disabled = true; });
+      var cb = el.querySelector('.me-check'); if (cb) cb.disabled = true;
+    }
+    function saveState() {
+      var vals = {};
+      inputs.forEach(function (inp) { if (inp.value) vals[inp.getAttribute('data-k')] = inp.value; });
+      ctx.save({ values: vals, attempts: attempts, correct: correct });
+    }
+    function hasAnswer() { return inputs.some(function (inp) { return !!inp.value; }); }
+    function check() {
+      if (done) return { resolved: true, correct: correct };
+      if (inputs.some(function (inp) { return !inp.value; })) {
+        ctx.announce('Rellena todas las casillas.');
+        return { resolved: false, correct: false };
+      }
+      attempts++;
+      correct = okCount() === placed.length;
+      markWords();
+      showFeedback(el, correct, data);
+      done = correct || (maxAtt > 0 && attempts >= maxAtt);
+      if (done) lock();
+      saveState();
+      ctx.announce(correct ? 'Crucigrama correcto.' : okCount() + ' de ' + placed.length + ' palabras correctas.' + (done ? ' Sin más intentos.' : ''));
+      return { resolved: done, correct: correct };
+    }
+    el.querySelector('.me-check').addEventListener('click', check);
+
+    if (ctx.state && typeof ctx.state.correct === 'boolean') {
+      attempts = ctx.state.attempts || 0;
+      correct = ctx.state.correct;
+      markWords();
+      showFeedback(el, correct, data);
+      if (correct || (maxAtt > 0 && attempts >= maxAtt)) { done = true; lock(); }
+    }
+    if (!done) refreshCheck(false);
+
+    return {
+      result: function () {
+        var pts = data.points || 1;
+        return {
+          completed: done, scored: !!data.scored, correct: correct,
+          score: Math.round(pts * (okCount() / placed.length) * 100) / 100,
+          maxScore: pts,
+        };
+      },
+      check: check,
+      hasAnswer: hasAnswer,
+    };
+  });
+
+  // --- 21. Imagen oculta (hidden_image) ----------------------------------------
+  // config: { image, alt, questions: [{prompt, options}] }. Cada acierto destapa
+  // su parte de la imagen (losetas en orden aleatorio determinista); al terminar
+  // todas las preguntas la imagen se muestra entera. 1 intento por pregunta.
+  register('hidden_image', function (el, data, ctx) {
+    var c = data.config || {};
+    var questions = (c.questions || []).filter(function (q) {
+      return q && String(q.prompt || '').trim() && (q.options || []).length >= 2;
+    });
+    var answers = (ctx.state && ctx.state.answers) || {}; // idx -> {choice, correct}
+    var TILES = 12; // 4x3
+
+    if (!questions.length || !c.image) {
+      el.innerHTML = header(data) + '<p class="me-warn">Imagen oculta sin imagen o sin preguntas.</p>';
+      return { result: function () { return { completed: true, scored: false }; } };
+    }
+
+    var html = header(data) + '<div class="me-hi">' +
+      '<div class="me-hi-stage"><img src="' + esc(assetUrl(c.image)) + '" alt="' + esc(c.alt || '') + '">' +
+      '<div class="me-hi-tiles" aria-hidden="true">';
+    for (var t = 0; t < TILES; t++) html += '<span class="me-hi-tile" data-t="' + t + '"></span>';
+    html += '</div></div>' +
+      '<p class="me-hi-progress" aria-live="polite"></p>' +
+      '<div class="me-hi-q"></div></div>';
+    el.innerHTML = html;
+
+    var rnd = seededRandom(String(data.id));
+    var order = [];
+    for (var i2 = 0; i2 < TILES; i2++) order.push(i2);
+    order.sort(function () { return rnd() - 0.5; });
+
+    var qBox = el.querySelector('.me-hi-q');
+    var progressEl = el.querySelector('.me-hi-progress');
+
+    function counts() {
+      var done2 = 0, ok = 0;
+      questions.forEach(function (_, i) { if (answers[i]) { done2++; if (answers[i].correct) ok++; } });
+      return { done: done2, ok: ok };
+    }
+    function refreshTiles() {
+      var st = counts();
+      var reveal = st.done >= questions.length ? TILES : Math.floor(TILES * (st.ok / questions.length));
+      order.forEach(function (tileIdx, pos) {
+        var tile = el.querySelector('.me-hi-tile[data-t="' + tileIdx + '"]');
+        tile.classList.toggle('is-open', pos < reveal);
+      });
+      progressEl.textContent = st.done >= questions.length
+        ? 'Imagen desvelada: ' + st.ok + ' de ' + questions.length + ' aciertos.'
+        : 'Preguntas: ' + st.done + ' de ' + questions.length + ' · cada acierto destapa la imagen.';
+    }
+    function nextPending() {
+      for (var i = 0; i < questions.length; i++) if (!answers[i]) return i;
+      return -1;
+    }
+    function renderCurrent() {
+      var i = nextPending();
+      refreshTiles();
+      if (i === -1) {
+        var st = counts();
+        qBox.innerHTML = '<p class="me-hi-end">' + (st.ok === questions.length
+          ? rich(data.feedback.correct || '¡Imagen desvelada al completo!')
+          : 'Actividad terminada: ' + st.ok + ' de ' + questions.length + ' aciertos.') + '</p>';
+        return;
+      }
+      questionCard(qBox, questions[i], null, data.feedback, function (j, ok) {
+        answers[i] = { choice: j, correct: ok };
+        ctx.save({ answers: answers });
+        ctx.announce(ok ? 'Correcto: se destapa parte de la imagen.' : 'Incorrecto.');
+        setTimeout(renderCurrent, 1200); // deja leer el feedback antes de avanzar
+      });
+    }
+    renderCurrent();
+
+    return {
+      result: function () {
+        var st = counts();
+        var pts = data.points || 1;
+        return {
+          completed: st.done >= questions.length,
+          scored: !!data.scored,
+          correct: st.ok === questions.length,
+          score: Math.round(pts * (st.ok / questions.length) * 100) / 100,
+          maxScore: pts,
+        };
+      },
+      hasAnswer: function () { return counts().done > 0; },
+    };
+  });
+
+  // --- 22. Rosco A-Z (az_quiz, tipo pasapalabra) --------------------------------
+  // config.items: [{ clue, answer }] — la letra se deriva de la respuesta. El
+  // alumno escribe la respuesta o pasa palabra (la letra vuelve en la siguiente
+  // vuelta). Autovalidante: sin Comprobar ni attempts; 1 oportunidad por letra.
+  register('az_quiz', function (el, data, ctx) {
+    var items = ((data.config || {}).items || []).map(function (q) {
+      var answer = String(q.answer || '').trim();
+      return { clue: String(q.clue || '').trim(), answer: answer, letter: normLetters(answer).charAt(0) };
+    }).filter(function (q) { return q.clue && q.answer && q.letter; });
+    items.sort(function (a, b) { return a.letter < b.letter ? -1 : a.letter > b.letter ? 1 : 0; });
+
+    if (!items.length) {
+      el.innerHTML = header(data) + '<p class="me-warn">Rosco sin definiciones válidas.</p>';
+      return { result: function () { return { completed: true, scored: false }; } };
+    }
+
+    var res = (ctx.state && ctx.state.res) || {}; // idx -> {given, correct}
+
+    var html = header(data) + '<div class="me-az">' +
+      '<div class="me-az-letters" role="group" aria-label="Letras del rosco">';
+    items.forEach(function (q, i) {
+      html += '<span class="me-az-letter" data-i="' + i + '">' + esc(q.letter) + '</span>';
+    });
+    html += '</div><div class="me-az-play"></div></div>';
+    el.innerHTML = html;
+
+    var playBox = el.querySelector('.me-az-play');
+    function chip(i) { return el.querySelector('.me-az-letter[data-i="' + i + '"]'); }
+    function refreshChips(currentI) {
+      items.forEach(function (_, i) {
+        var cEl = chip(i);
+        cEl.className = 'me-az-letter' +
+          (res[i] ? (res[i].correct ? ' is-right' : ' is-wrong') : '') +
+          (i === currentI ? ' is-current' : '');
+      });
+    }
+    function nextPending(from) {
+      for (var k = 1; k <= items.length; k++) {
+        var i = (from + k) % items.length;
+        if (!res[i]) return i;
+      }
+      return -1;
+    }
+    var current = res.__last != null ? nextPending(res.__last) : (function () {
+      for (var i = 0; i < items.length; i++) if (!res[i]) return i;
+      return -1;
+    })();
+
+    function counts() {
+      var done2 = 0, ok = 0;
+      items.forEach(function (_, i) { if (res[i]) { done2++; if (res[i].correct) ok++; } });
+      return { done: done2, ok: ok };
+    }
+    function renderPlay() {
+      refreshChips(current);
+      if (current === -1) {
+        var st = counts();
+        playBox.innerHTML = '<p class="me-az-end">Rosco terminado: <strong>' + st.ok + ' de ' + items.length + '</strong> aciertos.</p>';
+        return;
+      }
+      var q = items[current];
+      playBox.innerHTML =
+        '<p class="me-az-clue"><span class="me-az-starts">Empieza por ' + esc(q.letter) + '</span> ' + rich(q.clue) + '</p>' +
+        '<div class="me-az-controls">' +
+        '<input class="me-az-input" type="text" autocomplete="off" aria-label="Tu respuesta">' +
+        '<button type="button" class="me-btn me-primary me-az-send">Responder</button>' +
+        '<button type="button" class="me-btn me-az-pass">Pasapalabra</button></div>' +
+        '<div class="me-iv-fb" hidden></div>';
+      var input = playBox.querySelector('.me-az-input');
+      var fb = playBox.querySelector('.me-iv-fb');
+      input.focus();
+      function advance() {
+        current = nextPending(current);
+        renderPlay();
+      }
+      function answer() {
+        var given = input.value.trim();
+        if (!given) { ctx.announce('Escribe una respuesta o pulsa Pasapalabra.'); return; }
+        var ok = normLetters(given) === normLetters(items[current].answer);
+        res[current] = { given: given, correct: ok };
+        res.__last = current;
+        ctx.save({ res: res });
+        fb.hidden = false;
+        fb.className = 'me-iv-fb ' + (ok ? 'is-ok' : 'is-error');
+        fb.innerHTML = '<strong>' + (ok ? '✔ ' : '✖ ') + '</strong>' +
+          (ok ? 'Correcto.' : 'La respuesta era «' + rich(items[current].answer) + '».');
+        refreshChips(-1);
+        ctx.announce(ok ? 'Correcto.' : 'Incorrecto. La respuesta era ' + items[current].answer + '.');
+        playBox.querySelector('.me-az-send').disabled = true;
+        playBox.querySelector('.me-az-pass').disabled = true;
+        input.disabled = true;
+        setTimeout(advance, 1400);
+      }
+      playBox.querySelector('.me-az-send').addEventListener('click', answer);
+      input.addEventListener('keydown', function (e) { if (e.key === 'Enter') answer(); });
+      playBox.querySelector('.me-az-pass').addEventListener('click', function () {
+        ctx.announce('Pasapalabra. La letra ' + items[current].letter + ' volverá después.');
+        advance();
+      });
+    }
+    renderPlay();
+
+    return {
+      result: function () {
+        var st = counts();
+        var pts = data.points || 1;
+        return {
+          completed: st.done >= items.length,
+          scored: !!data.scored,
+          correct: st.ok === items.length,
+          score: Math.round(pts * (st.ok / items.length) * 100) / 100,
+          maxScore: pts,
+        };
+      },
+      hasAnswer: function () { return counts().done > 0; },
+    };
+  });
+
+  // --- 23. Puzzle de imagen ------------------------------------------------------
+  // config: { image, alt, cols?, rows? } (def. 3×3). Piezas barajadas de forma
+  // determinista; tocar dos piezas las intercambia (mismo criterio accesible
+  // «tocar y colocar»). Completa al resolverse.
+  register('puzzle', function (el, data, ctx) {
+    var c = data.config || {};
+    var cols = Math.min(5, Math.max(2, +c.cols || 3));
+    var rows = Math.min(5, Math.max(2, +c.rows || 3));
+    var n = cols * rows;
+
+    if (!c.image) {
+      el.innerHTML = header(data) + '<p class="me-warn">Puzzle sin imagen.</p>';
+      return { result: function () { return { completed: true, scored: false }; } };
+    }
+
+    var order = (ctx.state && ctx.state.order) || null; // posición -> pieza
+    var solvedOnce = !!(ctx.state && ctx.state.solved);
+    if (!order || order.length !== n) {
+      var rnd = seededRandom(String(data.id));
+      order = [];
+      for (var i = 0; i < n; i++) order.push(i);
+      do {
+        order.sort(function () { return rnd() - 0.5; });
+      } while (order.every(function (p, i3) { return p === i3; }));
+    }
+
+    var html = header(data) + '<div class="me-pz" role="group" aria-label="Puzzle">' +
+      '<div class="me-pz-grid" style="--me-pz-cols:' + cols + '; --me-pz-rows:' + rows + '">';
+    for (var pos = 0; pos < n; pos++) html += '<button type="button" class="me-pz-piece" data-pos="' + pos + '"></button>';
+    html += '</div><p class="me-pz-status" aria-live="polite"></p></div>';
+    el.innerHTML = html;
+
+    var gridEl = el.querySelector('.me-pz-grid');
+    var statusEl = el.querySelector('.me-pz-status');
+    var pieces = [].slice.call(el.querySelectorAll('.me-pz-piece'));
+    var url = assetUrl(c.image);
+
+    function paint() {
+      pieces.forEach(function (btn, pos2) {
+        var piece = order[pos2];
+        var pr = Math.floor(piece / cols), pc = piece % cols;
+        btn.style.backgroundImage = 'url("' + url + '")';
+        btn.style.backgroundPosition = (cols > 1 ? (pc / (cols - 1)) * 100 : 0) + '% ' + (rows > 1 ? (pr / (rows - 1)) * 100 : 0) + '%';
+        btn.setAttribute('aria-label', 'Pieza en posición ' + (pos2 + 1));
+        btn.classList.toggle('is-home', piece === pos2);
+      });
+    }
+    function solved() { return order.every(function (p, i4) { return p === i4; }); }
+    function refreshStatus() {
+      var okN = order.filter(function (p, i5) { return p === i5; }).length;
+      statusEl.textContent = solved()
+        ? '¡Puzzle resuelto!'
+        : okN + ' de ' + n + ' piezas en su sitio. Toca dos piezas para intercambiarlas.';
+    }
+
+    var picked = -1;
+    function finish() {
+      gridEl.classList.add('is-solved');
+      pieces.forEach(function (b) { b.disabled = true; });
+      ctx.announce('Puzzle resuelto.');
+    }
+    gridEl.addEventListener('click', function (e) {
+      var btn = e.target.closest('.me-pz-piece');
+      if (!btn || solved()) return;
+      var pos3 = +btn.getAttribute('data-pos');
+      if (picked === -1) {
+        picked = pos3;
+        btn.classList.add('is-picked');
+        return;
+      }
+      var a = picked; picked = -1;
+      pieces[a].classList.remove('is-picked');
+      if (a === pos3) return;
+      var tmp = order[a]; order[a] = order[pos3]; order[pos3] = tmp;
+      paint();
+      refreshStatus();
+      if (solved()) { solvedOnce = true; finish(); }
+      ctx.save({ order: order, solved: solvedOnce });
+    });
+
+    paint();
+    refreshStatus();
+    if (solved()) finish();
+
+    return {
+      result: function () {
+        var ok = solvedOnce || solved();
+        return {
+          completed: ok, scored: !!data.scored, correct: ok,
+          score: ok ? (data.points || 1) : 0, maxScore: data.points || 1,
+        };
+      },
+      hasAnswer: function () { return solvedOnce || solved(); },
+    };
+  });
+
+  // --- 24. Informe de progreso (progress_report) ---------------------------------
+  // Panel en vivo del avance del curso: actividades pendientes/correctas con su
+  // peso en la nota, test final, nota actual y umbral APTO. Los datos los expone
+  // app.js vía ctx.progress() (no hay acceso directo a STATE desde aquí).
+  // Informativa: siempre completed, nunca puntúa. Se repinta al entrar en la
+  // pantalla, así siempre refleja el estado actual.
+  register('progress_report', function (el, data, ctx) {
+    if (typeof ctx.progress !== 'function') {
+      el.innerHTML = header(data) + '<p class="me-warn">El informe de progreso no está disponible en este contexto.</p>';
+      return { result: function () { return { completed: true, scored: false }; } };
+    }
+    var p = ctx.progress();
+    var STATE_LABELS = {
+      pending: ['⏳', 'Pendiente', 'is-pending'],
+      done: ['✔', 'Hecha', 'is-done'],
+      correct: ['✔', 'Correcta', 'is-ok'],
+      partial: ['◐', 'Parcial', 'is-partial'],
+      incorrect: ['✖', 'Incorrecta', 'is-ko'],
+    };
+
+    var pendingCount = p.items.filter(function (it) { return it.state === 'pending' && it.required; }).length;
+    if (p.finalRow && !p.finalRow.done) pendingCount++;
+
+    var html = header(data) + '<div class="me-pr">' +
+      '<div class="me-pr-hero">' +
+      '<div class="me-pr-cell"><span class="me-pr-big">' + p.score + '%</span><span class="me-pr-cap">Nota actual</span></div>' +
+      '<div class="me-pr-cell"><span class="me-pr-big">' + p.minScore + '%</span><span class="me-pr-cap">Mínimo para APTO</span></div>' +
+      '<div class="me-pr-cell"><span class="me-pr-big">' + p.seenReq + '/' + p.totalReq + '</span><span class="me-pr-cap">Pantallas requeridas vistas</span></div>' +
+      '<div class="me-pr-cell"><span class="me-pr-big">' + pendingCount + '</span><span class="me-pr-cap">Actividades pendientes</span></div>' +
+      '</div>';
+
+    var rows = p.items.slice();
+    if (rows.length || p.finalRow) {
+      // Detalle plegado (mismo patrón/clases que el accordion: la impresión lo
+      // expande vía setupPrint y print.css muestra .me-acc-body[hidden]).
+      var tbl = '<table class="me-pr-table"><thead><tr><th scope="col">Actividad</th><th scope="col">Estado</th>' +
+        '<th scope="col">Puntos</th><th scope="col">Peso en la nota</th></tr></thead><tbody>';
+      rows.forEach(function (it) {
+        var lbl = STATE_LABELS[it.state] || STATE_LABELS.pending;
+        tbl += '<tr><th scope="row">' + esc(it.title) + (it.unit ? ' <span class="me-pr-unit">' + esc(it.unit) + '</span>' : '') + '</th>' +
+          '<td class="me-pr-state ' + lbl[2] + '">' + lbl[0] + ' ' + lbl[1] + '</td>' +
+          '<td>' + (it.scored ? (it.state === 'pending' ? '—' : it.score) + '/' + it.maxScore : '—') + '</td>' +
+          '<td>' + (it.weightPct ? it.weightPct + '%' : '—') + '</td></tr>';
+      });
+      if (p.finalRow) {
+        var f = p.finalRow;
+        tbl += '<tr class="me-pr-final"><th scope="row">' + esc(f.title) + '</th>' +
+          '<td class="me-pr-state ' + (f.done ? 'is-ok' : 'is-pending') + '">' + (f.done ? '✔ Realizado' : '⏳ Pendiente') + '</td>' +
+          '<td>' + (f.done ? f.score + '/' + f.maxScore : '—') + '</td>' +
+          '<td>' + f.weightPct + '%</td></tr>';
+      }
+      tbl += '</tbody></table>';
+      var foldId = 'me-pr-fold-' + String(data.id).replace(/[^a-zA-Z0-9_-]/g, '');
+      html += '<div class="me-fold me-acc-item">' +
+        '<button class="me-acc-head" aria-expanded="false" aria-controls="' + foldId + '">' +
+        '<span class="me-acc-title">Detalle de actividades (' + (rows.length + (p.finalRow ? 1 : 0)) + ')</span></button>' +
+        '<div class="me-acc-body" id="' + foldId + '" role="region" hidden>' + tbl + '</div></div>';
+    }
+
+    if (p.source === 'mixed' && p.finalRow) {
+      html += '<p class="me-pr-note">La nota combina la práctica (' + (100 - p.finalRow.weightPct) + '%) y el test final (' + p.finalRow.weightPct + '%).</p>';
+    } else if (p.source === 'final_test') {
+      html += '<p class="me-pr-note">La nota del curso es la del test final; las actividades son práctica y requisito para terminar.</p>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
+
+    var foldHead = el.querySelector('.me-fold > .me-acc-head');
+    if (foldHead) {
+      foldHead.addEventListener('click', function () {
+        var open = foldHead.getAttribute('aria-expanded') === 'true';
+        foldHead.setAttribute('aria-expanded', String(!open));
+        var body = document.getElementById(foldHead.getAttribute('aria-controls'));
+        if (body) body.hidden = open;
+      });
+    }
+
+    return { result: function () { return { completed: true, scored: false }; } };
   });
 
   global.Interactions = { register: register, render: function (el, data, ctx) {

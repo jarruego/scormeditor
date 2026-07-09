@@ -513,6 +513,133 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
   .me-ws { grid-template-columns: 1fr; }
   .me-ws-words { flex-direction: row; flex-wrap: wrap; }
 }
+
+/* --- Vídeo interactivo (preguntas en timestamps) ---------------------------- */
+.me-iv-box { position: relative; }
+.me-iv-overlay {
+  position: absolute; inset: 0; z-index: 2; display: grid; place-items: center;
+  background: rgba(15, 20, 26, .82); border-radius: var(--me-radius); padding: 1rem;
+  overflow: auto;
+}
+.me-iv-overlay[hidden] { display: none; }
+.me-iv-q { background: var(--me-surface); border-radius: 10px; padding: 1rem 1.1rem; max-width: 560px; width: 100%; box-shadow: var(--me-shadow-2); }
+.me-iv-prompt { margin: 0 0 .6rem; font-weight: 600; }
+.me-iv-opts { display: flex; flex-direction: column; gap: .45rem; }
+.me-iv-opt {
+  text-align: left; padding: .5rem .8rem; border: 1px solid var(--me-border);
+  border-radius: 8px; background: var(--me-surface); font: inherit; cursor: pointer;
+}
+.me-iv-opt:hover:not(:disabled) { border-color: var(--me-primary); }
+.me-iv-opt.is-right { border-color: var(--me-ok); background: color-mix(in srgb, var(--me-ok) 12%, white); }
+.me-iv-opt.is-wrong { border-color: var(--me-error); background: color-mix(in srgb, var(--me-error) 10%, white); }
+.me-iv-fb { margin-top: .6rem; font-size: .95rem; }
+.me-iv-fb.is-ok { color: var(--me-ok); }
+.me-iv-fb.is-error { color: var(--me-error); }
+.me-iv-continue { margin-top: .7rem; }
+.me-iv-progress { color: var(--me-muted); font-size: .85rem; margin: .4rem 0 0; }
+.me-iv-list { display: flex; flex-direction: column; gap: .7rem; margin-top: .6rem; }
+.me-iv-list-head { font-weight: 600; margin: 0; }
+.me-iv-list .me-iv-q { box-shadow: var(--me-shadow-1); border: 1px solid var(--me-border); }
+
+/* --- Crucigrama -------------------------------------------------------------- */
+.me-cw { display: grid; grid-template-columns: minmax(0, auto) minmax(200px, 1fr); gap: 1.2rem; margin-top: .5rem; align-items: start; }
+.me-cw-grid { display: grid; grid-template-columns: repeat(var(--me-cw-cols, 8), 2.1rem); gap: 2px; }
+.me-cw-void { aspect-ratio: 1; }
+.me-cw-box { position: relative; aspect-ratio: 1; }
+.me-cw-num { position: absolute; top: 1px; left: 3px; font-size: .55rem; font-style: normal; color: var(--me-muted); z-index: 1; pointer-events: none; }
+.me-cw-cell {
+  width: 100%; height: 100%; text-align: center; padding: 0; text-transform: uppercase;
+  border: 1px solid var(--me-border); border-radius: 4px; background: var(--me-surface);
+  font: inherit; font-weight: 600; font-size: .95rem; color: var(--me-text);
+}
+.me-cw-cell.is-right { border-color: var(--me-ok); background: color-mix(in srgb, var(--me-ok) 14%, white); }
+.me-cw-cell.is-wrong { border-color: var(--me-error); background: color-mix(in srgb, var(--me-error) 10%, white); }
+.me-cw-clues-head { font-weight: 700; margin: 0 0 .2rem; }
+.me-cw-clue-list { margin: 0 0 .8rem; padding-left: 1.4rem; }
+.me-cw-len { color: var(--me-muted); font-size: .85em; }
+@media (max-width: 640px) {
+  .me-cw { grid-template-columns: 1fr; }
+  .me-cw-grid { grid-template-columns: repeat(var(--me-cw-cols, 8), minmax(0, 2.1rem)); justify-content: center; }
+}
+
+/* --- Imagen oculta ------------------------------------------------------------ */
+.me-hi-stage { position: relative; border-radius: 10px; overflow: hidden; line-height: 0; box-shadow: var(--me-shadow-1); }
+.me-hi-stage img { width: 100%; display: block; }
+.me-hi-tiles { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); }
+.me-hi-tile { background: color-mix(in srgb, var(--me-primary) 78%, black); border: 1px solid rgba(255, 255, 255, .18); transition: opacity .5s ease; }
+.me-hi-tile.is-open { opacity: 0; }
+.me-hi-progress { color: var(--me-muted); font-size: .85rem; margin: .45rem 0; }
+.me-hi-q { max-width: 620px; }
+.me-hi-end { font-weight: 600; }
+
+/* --- Rosco A-Z (pasapalabra) --------------------------------------------------- */
+.me-az-letters { display: flex; flex-wrap: wrap; gap: .35rem; margin: .5rem 0 .8rem; }
+.me-az-letter {
+  width: 2.1rem; height: 2.1rem; display: grid; place-items: center; border-radius: 50%;
+  background: var(--me-surface); border: 2px solid var(--me-border); font-weight: 700;
+}
+.me-az-letter.is-current { border-color: var(--me-primary); color: var(--me-primary); animation: me-pulse-glow 1.6s ease-out infinite; }
+.me-az-letter.is-right { background: var(--me-ok); border-color: var(--me-ok); color: #fff; }
+.me-az-letter.is-wrong { background: var(--me-error); border-color: var(--me-error); color: #fff; }
+.me-az-clue { margin: 0 0 .5rem; }
+.me-az-starts { display: inline-block; background: var(--me-primary); color: #fff; border-radius: 99px; padding: .05rem .6rem; font-size: .8rem; font-weight: 600; margin-right: .4rem; }
+.me-az-controls { display: flex; gap: .5rem; flex-wrap: wrap; }
+.me-az-input { flex: 1 1 180px; padding: .45rem .7rem; border: 1px solid var(--me-border); border-radius: 8px; font: inherit; }
+.me-az-end { font-weight: 600; }
+
+/* --- Puzzle de imagen ----------------------------------------------------------- */
+.me-pz-grid {
+  display: grid; grid-template-columns: repeat(var(--me-pz-cols, 3), 1fr);
+  gap: 2px; border-radius: 10px; overflow: hidden; box-shadow: var(--me-shadow-1);
+}
+.me-pz-piece {
+  aspect-ratio: 1; padding: 0; border: none; cursor: pointer;
+  background-size: calc(var(--me-pz-cols, 3) * 100%) calc(var(--me-pz-rows, 3) * 100%);
+  background-repeat: no-repeat;
+}
+.me-pz-piece.is-picked { outline: 3px solid var(--me-primary); outline-offset: -3px; z-index: 1; }
+.me-pz-grid.is-solved { gap: 0; }
+.me-pz-grid.is-solved .me-pz-piece { cursor: default; }
+.me-pz-status { color: var(--me-muted); font-size: .85rem; margin: .45rem 0 0; }
+
+/* --- Informe de progreso --------------------------------------------------------- */
+.me-pr-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .6rem; margin: .5rem 0 .9rem; }
+.me-pr-cell { background: var(--me-surface); border: 1px solid var(--me-border); border-radius: 10px; padding: .7rem .5rem; text-align: center; box-shadow: var(--me-shadow-1); }
+.me-pr-big { display: block; font-size: 1.5rem; font-weight: 700; color: var(--me-primary); }
+.me-pr-cap { display: block; font-size: .78rem; color: var(--me-muted); margin-top: .15rem; }
+.me-pr-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.me-pr-table th, .me-pr-table td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid var(--me-border); }
+.me-pr-table thead th { font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; color: var(--me-muted); }
+.me-pr-unit { display: block; font-weight: 400; font-size: .78rem; color: var(--me-muted); }
+.me-pr-state { white-space: nowrap; }
+.me-pr-state.is-ok { color: var(--me-ok); }
+.me-pr-state.is-ko { color: var(--me-error); }
+.me-pr-state.is-partial { color: #9a6a00; }
+.me-pr-state.is-pending, .me-pr-state.is-done { color: var(--me-muted); }
+.me-pr-state.is-done { color: var(--me-ok); }
+.me-pr-final th, .me-pr-final td { border-top: 2px solid var(--me-border); font-weight: 600; }
+.me-pr-note { color: var(--me-muted); font-size: .85rem; margin-top: .6rem; }
+
+/* --- Acciones de la pantalla de resultados ---------------------------------------- */
+.me-result-actions { display: flex; align-items: center; justify-content: center; gap: .8rem; flex-wrap: wrap; margin-top: 1.3rem; }
+.me-result-retries { color: var(--me-muted); font-size: .85rem; }
+#me-btn-exit {
+  background: var(--me-accent); border-color: var(--me-accent); color: #123b39;
+  font-weight: 700; padding: .55rem 1.9rem;
+}
+#me-btn-exit:hover { background: color-mix(in srgb, var(--me-accent) 82%, black); border-color: color-mix(in srgb, var(--me-accent) 82%, black); color: #fff; }
+/* Secciones plegables reutilizando el accordion (desglose, detalle del informe) */
+.me-fold { margin-top: 1rem; }
+/* Confirmación de salida con el curso incompleto */
+.me-exit-card { max-width: 480px; padding: 1.1rem 1.25rem; }
+.me-exit-msg { margin: .4rem 0 1rem; line-height: 1.5; }
+.me-exit-actions { display: flex; justify-content: flex-end; gap: .6rem; flex-wrap: wrap; }
+/* Despedida a pantalla completa tras Salir (la sesión SCORM ya está cerrada) */
+.me-exit-done { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: var(--me-bg); padding: 1rem; }
+.me-exit-done-card { text-align: center; max-width: 460px; }
+.me-exit-done-icon { width: 64px; height: 64px; margin: 0 auto .9rem; display: grid; place-items: center; border-radius: 50%; background: var(--me-ok); color: #fff; font-size: 1.9rem; }
+.me-exit-done h1 { margin: 0 0 .5rem; }
+.me-exit-done p { color: var(--me-muted); line-height: 1.6; margin: 0; }
 /* Modal de tarjeta: texto a la izquierda, imagen a la derecha (apilada en móvil) */
 .me-icmodal-card { max-width: 860px; }
 .me-icmodal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; padding: 1rem; align-items: start; }

@@ -399,16 +399,18 @@
         // La etiqueta «Evaluable» solo tiene sentido si las actividades cuentan
         // para la nota; con score_source 'final_test' puntúa solo el test final.
         showScoredBadge: (COURSE.scorm.rules || {}).score_source !== 'final_test',
+        // Snapshot de progreso en vivo (lo consume la interacción progress_report).
+        progress: progressSnapshot,
       };
       var rendered = Renderer.render(content, sc, ctx);
       activeController = rendered.interaction;
       applyReveal(sc.id, content);
       // Captura el estado inicial. Las de exploración (accordion, tabs,
       // flip_cards, timeline, flashcards) devuelven completed solo cuando se ha
-      // visto TODO su contenido; video, case_practice y html_embed se consideran
-      // completadas al renderizarse. Las evaluables devuelven completed:false
-      // hasta que el usuario las resuelve. No se sobrescribe un resultado ya
-      // guardado (reanudación de sesión).
+      // visto TODO su contenido; video SIN preguntas, case_practice y html_embed
+      // se consideran completadas al renderizarse. Las evaluables (y video con
+      // preguntas) devuelven completed:false hasta que el usuario las resuelve.
+      // No se sobrescribe un resultado ya guardado (reanudación de sesión).
       if (activeController && sc.interaction && !STATE.results[sc.interaction.id]) {
         STATE.results[sc.interaction.id] = activeController.result();
       }
@@ -490,6 +492,72 @@
     bar.style.width = posPct + '%';
     document.getElementById('me-progress-done').style.width = donePct + '%';
     bar.parentElement.setAttribute('aria-valuenow', String(donePct));
+  }
+
+  // Snapshot del estado del curso para el informe de progreso (progress_report).
+  // Los pesos son los del curso COMPLETO (puntos de todas las evaluables, no solo
+  // las ya visitadas): así el alumno ve cuánto valdrá cada actividad al terminar.
+  function progressSnapshot() {
+    var rules = COURSE.scorm.rules || {};
+    var src = rules.score_source || 'final_test';
+    var w = Math.min(100, Math.max(0, rules.mixed_final_weight == null ? 70 : rules.mixed_final_weight));
+    var practiceWeight = src === 'final_test' ? 0 : (src === 'unit_tests' ? 100 : 100 - w);
+    var finalWeight = src === 'final_test' ? 100 : (src === 'unit_tests' ? 0 : w);
+
+    var totalPts = 0;
+    SCREENS.forEach(function (e) {
+      if (e.isFinalTest || e.isResults || !e.screen.interaction) return;
+      if (e.screen.interaction.scored) totalPts += (e.screen.interaction.points || 1);
+    });
+
+    var items = [];
+    SCREENS.forEach(function (e, i) {
+      if (e.isFinalTest || e.isResults || !e.screen.interaction) return;
+      var it = e.screen.interaction;
+      if (it.type === 'progress_report') return; // el informe no se lista a sí mismo
+      var r = STATE.results[it.id];
+      var state;
+      if (!r || !r.completed) state = 'pending';
+      else if (!it.scored || !r.scored) state = 'done';
+      else if (r.correct) state = 'correct';
+      else state = (r.score || 0) > 0 ? 'partial' : 'incorrect';
+      items.push({
+        title: e.screen.title || 'Actividad',
+        unit: e.unit ? (e.unit.title || '') : '',
+        scored: !!it.scored,
+        required: isRequired(i),
+        state: state,
+        score: r ? (r.score || 0) : 0,
+        maxScore: it.scored ? (it.points || 1) : 0,
+        weightPct: (it.scored && totalPts > 0 && practiceWeight > 0)
+          ? Math.round(((it.points || 1) / totalPts) * practiceWeight) : 0,
+      });
+    });
+
+    var ft = COURSE.assessments && COURSE.assessments.final_test;
+    var finalRow = null;
+    if (ft && (ft.questions || []).length && finalWeight > 0) {
+      var fr = STATE.results.__final__;
+      finalRow = {
+        title: ft.title || 'Test final',
+        done: !!fr,
+        score: fr ? (fr.score || 0) : 0,
+        maxScore: fr ? (fr.maxScore || 0) : (ft.questions || []).length,
+        weightPct: finalWeight,
+      };
+    }
+
+    var req = requiredScreens();
+    var seenReq = req.filter(function (e) { return STATE.visited[e.screen.id]; }).length;
+    return {
+      score: computeScore(),
+      minScore: rules.min_score || 0,
+      source: src,
+      items: items,
+      finalRow: finalRow,
+      seenReq: seenReq,
+      totalReq: req.length,
+    };
   }
 
   function computeScore() {
@@ -833,21 +901,143 @@
       '<div class="me-result-state">' + estado + '</div>' +
       '<div class="me-result-min">Nota mínima para aprobar: ' + min + '%</div></div>';
     if (rows.length) {
-      html += '<table class="me-result-table"><caption>Desglose de calificaciones</caption><tbody>';
+      var tbl = '<table class="me-result-table"><tbody>';
       rows.forEach(function (r) {
-        html += '<tr><th scope="row">' + esc(r.label) + '</th><td>' + esc(r.detail) + '</td></tr>';
+        tbl += '<tr><th scope="row">' + esc(r.label) + '</th><td>' + esc(r.detail) + '</td></tr>';
       });
-      html += '</tbody></table>';
+      tbl += '</tbody></table>';
+      html += foldHtml('me-fold-results', 'Desglose de calificaciones', tbl);
     }
     if (incomplete) html += '<p class="me-instructions">Completa todas las pantallas y actividades requeridas para obtener la calificación final.</p>';
-    html += '</article>';
+
+    // Acciones finales: Reintentar (solo NO APTO y si quedan intentos) y Salir.
+    // attempts_allowed: 0 = ilimitados; STATE.attempts cuenta los ya consumidos.
+    var allowed = rules.attempts_allowed == null ? 0 : rules.attempts_allowed;
+    var canRetry = !incomplete && !pass && (allowed === 0 || (STATE.attempts + 1) < allowed);
+    var retriesLeft = allowed === 0 ? null : allowed - STATE.attempts - 1;
+    html += '<div class="me-result-actions">';
+    if (canRetry) {
+      html += '<button type="button" class="me-btn me-primary" id="me-btn-retry">↺ Reintentar el curso</button>' +
+        (retriesLeft != null ? '<span class="me-result-retries">' +
+          (retriesLeft === 1 ? 'Te queda 1 intento.' : 'Te quedan ' + retriesLeft + ' intentos.') + '</span>' : '');
+    }
+    if (!incomplete && !pass && !canRetry && allowed > 0) {
+      html += '<span class="me-result-retries">Has agotado los ' + allowed + ' intentos permitidos.</span>';
+    }
+    // Salir se ofrece SIEMPRE: con calificación cierra el intento; con el curso
+    // incompleto pide confirmación (el progreso queda guardado para reanudar).
+    html += '<button type="button" class="me-btn" id="me-btn-exit">Salir del curso</button>';
+    html += '</div></article>';
     content.innerHTML = html;
+
+    wireFolds(content);
+    var retryBtn = content.querySelector('#me-btn-retry');
+    if (retryBtn) retryBtn.addEventListener('click', retryCourse);
+    var exitBtn = content.querySelector('#me-btn-exit');
+    if (exitBtn) exitBtn.addEventListener('click', function () {
+      if (incomplete) confirmExitIncomplete();
+      else exitCourse();
+    });
 
     // Refuerzo del logro: la nota sube animada y, si está APTO, confeti (una
     // vez por sesión). Con prefers-reduced-motion no se anima nada.
     var scoreEl = content.querySelector('.me-result-score');
     if (scoreEl) animateNumber(scoreEl, score, '%');
     if (pass && !incomplete) celebrate();
+  }
+
+  // Sección plegable genérica (mismo patrón/clases que el accordion de las
+  // interacciones: setupPrint la expande al imprimir y print.css la muestra).
+  function foldHtml(id, title, inner, open) {
+    return '<div class="me-fold me-acc-item">' +
+      '<button class="me-acc-head" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="' + id + '">' +
+      '<span class="me-acc-title">' + esc(title) + '</span></button>' +
+      '<div class="me-acc-body" id="' + id + '" role="region"' + (open ? '' : ' hidden') + '>' + inner + '</div></div>';
+  }
+  function wireFolds(root) {
+    root.querySelectorAll('.me-fold > .me-acc-head').forEach(function (head) {
+      head.addEventListener('click', function () {
+        var open = head.getAttribute('aria-expanded') === 'true';
+        head.setAttribute('aria-expanded', String(!open));
+        var body = document.getElementById(head.getAttribute('aria-controls'));
+        if (body) body.hidden = open;
+      });
+    });
+  }
+
+  // Nuevo intento: se limpian respuestas y resultados (práctica y test final)
+  // pero NO las pantallas vistas — el contenido ya se estudió; lo que se repite
+  // es la evaluación. El contador de intentos viaja en suspend_data.
+  function retryCourse() {
+    STATE.attempts = (STATE.attempts || 0) + 1;
+    STATE.interactions = {};
+    STATE.results = {};
+    STATE.finalScore = 0;
+    SCORM.setStatus('incomplete');
+    recomputeAndPersist();
+    refreshMenuChecks();
+    A11Y.announce('Nuevo intento iniciado. Las actividades se han reiniciado.');
+    goTo(0, true);
+  }
+
+  // Confirmación al salir con el curso incompleto: el progreso queda guardado
+  // (exit=suspend) y al volver se reanuda donde se dejó — o se empieza de nuevo
+  // si el curso desactiva la reanudación. Modal propia (mismas clases .me-modal
+  // que glosario/recursos) con foco inicial en la opción segura.
+  function confirmExitIncomplete() {
+    var rules = COURSE.scorm.rules || {};
+    var resumeMsg = rules.allow_resume !== false
+      ? 'Tu progreso queda guardado: al volver al curso continuarás donde lo dejaste, o podrás comenzar un nuevo intento si el campus lo permite.'
+      : 'Este curso no guarda la reanudación: al volver a entrar comenzarás un nuevo intento desde el principio.';
+    var overlay = document.createElement('div');
+    overlay.className = 'me-modal me-exit-confirm';
+    overlay.setAttribute('role', 'alertdialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Confirmar salida del curso');
+    overlay.innerHTML = '<div class="me-modal-card me-exit-card">' +
+      '<div class="me-modal-head"><h2 class="me-modal-title">⚠ El curso está incompleto</h2></div>' +
+      '<p class="me-exit-msg">Todavía te quedan pantallas o actividades por completar, así que no se registrará una calificación. ' + resumeMsg + '</p>' +
+      '<div class="me-exit-actions">' +
+      '<button type="button" class="me-btn me-primary me-exit-stay">Seguir en el curso</button>' +
+      '<button type="button" class="me-btn me-exit-go">Salir de todos modos</button>' +
+      '</div></div>';
+    var last = document.activeElement;
+    function close() {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+      if (last && last.focus) last.focus();
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+    overlay.querySelector('.me-exit-stay').addEventListener('click', close);
+    overlay.querySelector('.me-exit-go').addEventListener('click', function () {
+      close();
+      exitCourse();
+    });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(overlay);
+    overlay.querySelector('.me-exit-stay').focus();
+  }
+
+  // Salir: cierra la comunicación SCORM (nota y tiempo quedan registrados) e
+  // intenta cerrar la ventana. Si el navegador no lo permite (lo habitual si la
+  // ventana no la abrió un script), se muestra una DESPEDIDA a pantalla completa
+  // que cubre la carcasa: la sesión ya está cerrada y seguir navegando no
+  // persistiría nada, así que no se deja el curso interactivo detrás.
+  function exitCourse() {
+    finishSession();
+    global.close();
+    setTimeout(function () {
+      var bye = document.createElement('div');
+      bye.className = 'me-exit-done';
+      bye.setAttribute('role', 'status');
+      bye.innerHTML = '<div class="me-exit-done-card">' +
+        '<div class="me-exit-done-icon" aria-hidden="true">✔</div>' +
+        '<h1>Sesión finalizada</h1>' +
+        '<p>Tu progreso ha quedado registrado.<br>Ya puedes cerrar esta pestaña para volver al campus.</p>' +
+        '</div>';
+      document.body.appendChild(bye);
+    }, 400);
   }
 
   function prefersReducedMotion() {

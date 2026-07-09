@@ -14,6 +14,15 @@ guardar → Ctrl+S → Guardado».
   `loadProjectFromBlob()` lee el ZIP, exige `course.json` (si falta, error), llama a
   `importJson` (parsea+migra+valida) y vuelca el resto de entradas a `AssetMap` por su
   `entry.name` (las claves ya incluyen `assets/`).
+- **Abrir desde ZIP SCORM** (jul 2026, misma decisión que eXeLearning con su
+  `content.xml`): `loadProjectFromBlob` acepta también un **paquete SCORM exportado**
+  (detectado por `data/course.json`); los pickers admiten `.zip`. Del paquete solo se
+  importan los assets **referenciados** por el curso (`collectAssetPaths`) — en el ZIP
+  conviven con la carcasa (`assets/css`, `assets/js`) que no debe entrar como asset.
+  **Invariante: el ZIP SCORM se importa, nunca se vincula** (`projectHandle = null`,
+  sin `linkedFileName`, `dirty: true`): si se guardara encima, el paquete perdería
+  manifiesto y carcasa y dejaría de ser SCORM. El primer Ctrl+S pide destino
+  `.scormproj`.
 - **MIME por extensión al abrir** (jul 2026): JSZip devuelve los blobs de las entradas
   **sin tipo**, y los object URLs de la vista previa (`StudentPreview`, `useObjectUrl`,
   `cmMarkdown`) heredan ese vacío. PNG/JPEG sobreviven porque el navegador los detecta

@@ -136,7 +136,7 @@ export function Toolbar() {
         <button onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)" aria-label="Deshacer">↶ Deshacer</button>
         <button onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Mayús+Z)" aria-label="Rehacer">↷ Rehacer</button>
 
-        <input ref={fileRef} type="file" accept=".scormproj,application/zip" hidden onChange={onImportFile} />
+        <input ref={fileRef} type="file" accept=".scormproj,.zip,application/zip" hidden onChange={onImportFile} />
         <div className="ed-menu" ref={menuRef}>
           <button
             className="ed-menu-trigger"

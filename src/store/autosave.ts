@@ -4,6 +4,7 @@ import { safeParseCourse } from '../schema/course.schema'
 import { migrate } from '../schema/migrations'
 import { kvGet, kvSet } from './persistence'
 import type { AssetMap } from '../export/exportScorm'
+import { collectAssetPaths } from '../schema/assetRefs'
 
 /**
  * Persistencia en dos niveles:
@@ -107,23 +108,42 @@ function typedBlob(name: string, blob: Blob): Blob {
   return mime ? new Blob([blob], { type: mime }) : blob
 }
 
-/** Carga un proyecto desde un Blob/File `.scormproj` al store. */
-async function loadProjectFromBlob(blob: Blob): Promise<boolean> {
+/**
+ * Carga un proyecto al store desde un Blob/File. Acepta dos formatos:
+ * - `.scormproj` (course.json en la raíz + assets/): el documento nativo.
+ * - **ZIP SCORM exportado** (data/course.json): el paquete lleva el curso y sus
+ *   assets dentro, así que se puede re-editar aunque solo se conserve el ZIP
+ *   (misma decisión que eXeLearning con su content.xml). De la carcasa no se
+ *   importa nada: solo entran los assets que el curso referencia.
+ * Devuelve el formato detectado ('project' | 'scorm') o false si el JSON no valida.
+ */
+async function loadProjectFromBlob(blob: Blob): Promise<'project' | 'scorm' | false> {
   const zip = await JSZip.loadAsync(blob)
-  const courseFile = zip.file('course.json')
-  if (!courseFile) throw new Error('El archivo no es un proyecto válido (falta course.json).')
+  const courseFile = zip.file('course.json') || zip.file('data/course.json')
+  if (!courseFile)
+    throw new Error('El archivo no es un proyecto ni un SCORM de SCORMEditor (falta course.json).')
+  const isScormZip = courseFile.name === 'data/course.json'
   const text = await courseFile.async('string')
   const ok = useCourseStore.getState().importJson(text) // parsea, migra y valida
   if (!ok) return false
 
+  // En un ZIP SCORM conviven curso y carcasa (assets/css, assets/js…): se
+  // importa solo lo que el curso referencia. En un .scormproj, todo (los
+  // huérfanos son decisión del autor; hay purga manual).
+  const referenced = isScormZip ? collectAssetPaths(useCourseStore.getState().course) : null
   const assets: AssetMap = {}
   for (const entry of Object.values(zip.files) as any[]) {
-    if (entry.dir || entry.name === 'course.json') continue
+    if (entry.dir || entry.name === courseFile.name) continue
+    if (referenced && !referenced.has(entry.name)) continue
+    if (!referenced && entry.name === 'course.json') continue
     assets[entry.name] = typedBlob(entry.name, await entry.async('blob'))
   }
   useCourseStore.getState().replaceAssets(assets)
-  useCourseStore.getState().setProjectDirty(false)
-  return true
+  // Un ZIP SCORM se IMPORTA, no se vincula: si se guardara encima, el paquete
+  // dejaría de ser SCORM (perdería manifiesto y carcasa). Queda «Sin guardar»
+  // para que el primer Ctrl+S pida un destino .scormproj nuevo.
+  useCourseStore.getState().setProjectDirty(isScormZip)
+  return isScormZip ? 'scorm' : 'project'
 }
 
 // --- Abrir / Guardar proyecto ------------------------------------------------
@@ -134,31 +154,37 @@ export async function openProject(): Promise<boolean> {
   let handle: any
   try {
     ;[handle] = await (window as any).showOpenFilePicker({
-      types: [{ description: 'Proyecto SCORMEditor', accept: { 'application/zip': [PROJECT_EXT] } }],
+      types: [{ description: 'Proyecto SCORMEditor o ZIP SCORM', accept: { 'application/zip': [PROJECT_EXT, '.zip'] } }],
     })
   } catch {
     return false // el usuario canceló
   }
   const file = await handle.getFile()
-  const ok = await loadProjectFromBlob(file)
-  if (ok) {
+  const kind = await loadProjectFromBlob(file)
+  if (kind === 'project') {
     projectHandle = handle
     await kvSet('projectHandle', handle)
     useCourseStore.getState().setLinked(handle.name)
     await persistToIndexedDb()
+  } else if (kind === 'scorm') {
+    // Importado desde un ZIP SCORM: sin vincular (ver loadProjectFromBlob).
+    projectHandle = null
+    await kvSet('projectHandle', null)
+    useCourseStore.getState().setLinked('')
+    await persistToIndexedDb()
   }
-  return ok
+  return kind !== false
 }
 
 /** Carga un proyecto desde un File (fallback sin File System Access). */
 export async function openProjectFromFile(file: File): Promise<boolean> {
-  const ok = await loadProjectFromBlob(file)
-  if (ok) {
+  const kind = await loadProjectFromBlob(file)
+  if (kind !== false) {
     projectHandle = null // sin handle no podemos reescribir: Guardar descargará
-    useCourseStore.getState().setLinked(file.name)
+    useCourseStore.getState().setLinked(kind === 'scorm' ? '' : file.name)
     await persistToIndexedDb()
   }
-  return ok
+  return kind !== false
 }
 
 /**

@@ -124,6 +124,17 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
           add('IMG_NO_ALT', 'error', `La tarjeta de imagen ${i + 1} no tiene texto alternativo (alt).`)
       })
     }
+    if (it.type === 'video') {
+      const qs = (((it.config as any)?.questions || []) as { time?: number; prompt?: string; options?: { correct?: boolean }[] }[])
+      qs.forEach((q, i) => {
+        const tag = `La pregunta ${i + 1} del vídeo`
+        if (!String(q.prompt || '').trim()) add('IV_Q_NO_PROMPT', 'error', `${tag} no tiene enunciado.`)
+        if ((q.options || []).length < 2) add('IV_Q_FEW_OPTIONS', 'error', `${tag} necesita al menos 2 opciones.`)
+        else if (!(q.options || []).some((o) => o.correct)) add('IV_Q_NO_CORRECT', 'error', `${tag} no tiene opción correcta.`)
+      })
+      if (qs.length > 0 && !(it.config as any)?.src && (it.config as any)?.youtube)
+        add('IV_YT_BRIDGE', 'info', 'Preguntas sobre vídeo de YouTube: si el LMS bloquea la comunicación con el reproductor, se mostrarán como lista bajo el vídeo.')
+    }
     if (it.type === 'before_after') {
       const c = (it.config as any) || {}
       if (!String(c.before_image || '').trim() || !String(c.after_image || '').trim())
@@ -150,6 +161,49 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
         else if (n.length < 3) add('WS_WORD_SHORT', 'error', `«${w}» se queda en menos de 3 letras útiles: demasiado corta para el tablero.`)
       })
     }
+    if (it.type === 'crossword') {
+      const entries = (((it.config as any)?.entries || []) as { word?: string; clue?: string }[])
+      if (entries.length === 0) add('CW_EMPTY', 'error', 'Crucigrama sin palabras.')
+      else if (entries.length < 2) add('CW_FEW', 'warning', 'Crucigrama con una sola palabra: no habrá cruces.')
+      entries.forEach((en, i) => {
+        if (!String(en.word || '').trim() || !String(en.clue || '').trim())
+          add('CW_INCOMPLETE', 'error', `La entrada ${i + 1} del crucigrama necesita palabra y pista.`)
+      })
+    }
+    if (it.type === 'hidden_image') {
+      const c = (it.config as any) || {}
+      if (!String(c.image || '').trim()) add('HI_NO_IMAGE', 'error', 'Imagen oculta sin imagen.')
+      else if (!String(c.alt || '').trim()) add('IMG_NO_ALT', 'error', 'La imagen oculta no tiene texto alternativo (alt).')
+      const qs = ((c.questions || []) as { prompt?: string; options?: { correct?: boolean }[] }[])
+      if (qs.length === 0) add('HI_NO_QUESTIONS', 'error', 'Imagen oculta sin preguntas: nada la destapa.')
+      qs.forEach((q, i) => {
+        const tag = `La pregunta ${i + 1} de la imagen oculta`
+        if (!String(q.prompt || '').trim()) add('HI_Q_NO_PROMPT', 'error', `${tag} no tiene enunciado.`)
+        if ((q.options || []).length < 2) add('HI_Q_FEW_OPTIONS', 'error', `${tag} necesita al menos 2 opciones.`)
+        else if (!(q.options || []).some((o) => o.correct)) add('HI_Q_NO_CORRECT', 'error', `${tag} no tiene opción correcta.`)
+      })
+    }
+    if (it.type === 'az_quiz') {
+      const azItems = (((it.config as any)?.items || []) as { clue?: string; answer?: string }[])
+      if (azItems.length === 0) add('AZ_EMPTY', 'error', 'Rosco sin definiciones.')
+      const seenLetters = new Map<string, number>()
+      azItems.forEach((q, i) => {
+        if (!String(q.clue || '').trim() || !String(q.answer || '').trim())
+          add('AZ_INCOMPLETE', 'error', `La entrada ${i + 1} del rosco necesita definición y respuesta.`)
+        const letter = String(q.answer || '').trim().charAt(0).toUpperCase()
+        if (letter) seenLetters.set(letter, (seenLetters.get(letter) || 0) + 1)
+      })
+      for (const [letter, n] of seenLetters) {
+        if (n > 1) add('AZ_DUP_LETTER', 'warning', `Hay ${n} respuestas que empiezan por «${letter}»: el rosco tendrá letras repetidas.`)
+      }
+    }
+    if (it.type === 'puzzle') {
+      const c = (it.config as any) || {}
+      if (!String(c.image || '').trim()) add('PZ_NO_IMAGE', 'error', 'Puzzle sin imagen.')
+      else if (!String(c.alt || '').trim()) add('IMG_NO_ALT', 'error', 'El puzzle no tiene texto alternativo (alt).')
+    }
+    if (it.type === 'progress_report' && it.scored)
+      add('PR_SCORED', 'warning', 'El informe de progreso es un panel informativo: no debería puntuar (scored: false).')
     if (it.type === 'flashcards') {
       if (((it.config as any)?.cards || []).length === 0)
         add('FC_EMPTY', 'error', 'Tarjetas de repaso sin tarjetas.')
