@@ -483,6 +483,9 @@
   }
   function blockReason(idx) {
     if (!minTimeOk(idx)) return 'Permanece un poco más en esta pantalla antes de continuar.';
+    // Solo se llega aquí con la pantalla sin satisfacer: en el test final eso
+    // significa que aún no se ha comprobado.
+    if (SCREENS[idx].isFinalTest) return 'Comprueba el test para continuar.';
     if (!interactionOk(idx)) return 'Completa la actividad de esta pantalla para continuar.';
     return 'Pantalla no disponible.';
   }
@@ -909,11 +912,13 @@
     var qCurrent = 0;
     var mode = 'questions'; // 'questions' | 'summary' (vista de resultado, solo paginado)
     var verdicts = {}; // q.id → true/false tras corregir; se borra al re-responder
+    var dirty = false;  // respuestas cambiadas desde la última comprobación
 
-    function allAnswered() {
-      return questions.every(function (q) {
-        return !!content.querySelector('input[name="q-' + q.id + '"]:checked');
-      });
+    // Salta a la primera pregunta fallada (o a la 1ª si no consta ninguna).
+    function goFirstWrong() {
+      var fw = -1;
+      questions.forEach(function (q, qi) { if (fw < 0 && verdicts[q.id] === false) fw = qi; });
+      showQ(fw < 0 ? 0 : fw);
     }
 
     function refreshQnav() {
@@ -940,9 +945,10 @@
         fs.hidden = Number(fs.getAttribute('data-qi')) !== qCurrent;
       });
       content.querySelector('.me-final-prog').textContent = 'Pregunta ' + (qCurrent + 1) + ' de ' + questions.length;
-      // «Comprobar test» se ve en la última pregunta y, esté donde esté el
-      // estudiante, en cuanto todas estén respondidas.
-      content.querySelector('#me-final button[type=submit]').hidden = qCurrent !== questions.length - 1 && !allAnswered();
+      // En paginado el formulario no tiene botón visible: «Comprobar test» vive
+      // en la pantalla de resultado, tras la última pregunta (verlo en una
+      // pregunta suelta confundía: parecía comprobar solo esa pregunta).
+      content.querySelector('#me-final button[type=submit]').hidden = true;
       refreshQnav();
       refreshNavState();
     }
@@ -956,8 +962,31 @@
       if (!paged) return;
       mode = 'summary';
       content.querySelectorAll('fieldset.me-q').forEach(function (fs) { fs.hidden = true; });
-      content.querySelector('.me-final-prog').textContent = 'Resultado del test';
       content.querySelector('#me-final button[type=submit]').hidden = true;
+      // Por comprobar (primer intento sin corregir, o respuestas cambiadas desde
+      // la última comprobación): aquí el mensaje es la acción de comprobar, no
+      // un resultado viejo. Este es el ÚNICO sitio con «Comprobar test» en paginado.
+      var checked = !!STATE.results.__final__;
+      if (dirty || !checked) {
+        content.querySelector('.me-final-prog').textContent = 'Fin del test';
+        var pending = document.getElementById('me-final-summary');
+        pending.innerHTML =
+          '<div class="me-result-hero"><strong>' + (checked ? 'Respuestas modificadas' : 'Fin del test') + '</strong>' +
+          '<p>' + (checked
+            ? 'Has cambiado respuestas desde la última comprobación. Comprueba el test para ver tu nuevo resultado.'
+            : 'Has llegado al final. Comprueba tus respuestas para ver tu resultado.') + '</p></div>' +
+          '<div class="me-final-nav">' +
+          '<button type="button" class="me-btn me-primary" id="me-final-check">Comprobar test</button>' +
+          '<button type="button" class="me-btn" id="me-final-review">Revisar las respuestas</button></div>';
+        pending.hidden = false;
+        document.getElementById('me-final-check').addEventListener('click', comprobar);
+        document.getElementById('me-final-review').addEventListener('click', function () { showQ(0); });
+        refreshQnav();
+        refreshNavState();
+        A11Y.announce('Comprueba el test para ver tu resultado.');
+        return;
+      }
+      content.querySelector('.me-final-prog').textContent = 'Resultado del test';
       var r = STATE.results.__final__;
       var pct = r && r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
       var pass = pct >= minScore;
@@ -979,11 +1008,7 @@
         '</div>';
       box.hidden = false;
       var retry = document.getElementById('me-final-retry');
-      if (retry) retry.addEventListener('click', function () {
-        var firstWrong = -1;
-        questions.forEach(function (q, qi) { if (firstWrong < 0 && verdicts[q.id] === false) firstWrong = qi; });
-        showQ(firstWrong < 0 ? 0 : firstWrong);
-      });
+      if (retry) retry.addEventListener('click', goFirstWrong);
       document.getElementById('me-final-review').addEventListener('click', function () { showQ(0); });
       refreshQnav();
       refreshNavState();
@@ -993,12 +1018,9 @@
     if (paged) {
       finalNav = {
         atFirst: function () { return mode === 'questions' && qCurrent === 0; },
-        // «Siguiente» aún tiene recorrido interno salvo en la vista de resultado
-        // o en la última pregunta con el test sin comprobar.
-        atLast: function () {
-          if (mode === 'summary') return true;
-          return qCurrent === questions.length - 1 && !STATE.results.__final__;
-        },
+        // «Siguiente» siempre tiene recorrido interno hasta desembocar en la
+        // pantalla final (por comprobar o resultado); solo desde ella se sale.
+        atLast: function () { return mode === 'summary'; },
         prev: function () {
           if (mode === 'summary') { showQ(questions.length - 1); return true; }
           if (qCurrent === 0) return false;
@@ -1007,8 +1029,7 @@
         next: function () {
           if (mode === 'summary') return false;
           if (qCurrent < questions.length - 1) { showQ(qCurrent + 1); return true; }
-          if (STATE.results.__final__) { showSummary(); return true; }
-          return false;
+          showSummary(); return true;
         },
       };
       content.querySelector('.me-qnav').addEventListener('click', function (e) {
@@ -1025,7 +1046,24 @@
       if (!r || !r.scored || !r.maxScore) return false;
       var pct = Math.round((r.score / r.maxScore) * 100);
       var remaining = allowed > 0 ? allowed - (STATE.attempts || 0) : -1;
+      // Con 100% o sin intentos restantes se sale sin estorbar.
       if (pct >= 100 || remaining === 0) return false;
+      // Suspenso con intentos: NO se avanza (sin botón «Continuar»). En modo
+      // autor se degrada al aviso para conservar la navegación libre del preview.
+      if (showVerdict && pct < minScore && !AUTHOR) {
+        testDialog({
+          title: '✖ Test no superado',
+          confirm: true,
+          body: 'Tu resultado actual es del ' + pct + '% y necesitas un ' + minScore +
+            '% para aprobar. ' + attemptsMsg(remaining),
+          actions: [
+            { label: 'Repetir el test', primary: true, onClick: goFirstWrong },
+            { label: 'Seguir revisando' },
+          ],
+        });
+        return true;
+      }
+      // Aprobado (o sin veredicto propio) pero mejorable: avisa y deja continuar.
       testDialog({
         title: '⚠ Puedes mejorar el test',
         confirm: true,
@@ -1088,17 +1126,17 @@
       if (box) { box.hidden = true; }
       var q = questions[Number(fs.getAttribute('data-qi'))];
       if (q) delete verdicts[q.id];
+      dirty = true;
       document.getElementById('me-final-result').innerHTML = '';
       if (paged) showQ(qCurrent); // refresca cuadritos y visibilidad de «Comprobar test»
       else refreshQnav();
     });
 
-    document.getElementById('me-final').addEventListener('submit', function (ev) {
-      ev.preventDefault();
-      if (exhausted) return;
-      // Envío implícito con Enter antes de la última pregunta y con el test aún
-      // incompleto: avanza en vez de comprobar.
-      if (paged && qCurrent < questions.length - 1 && !allAnswered()) { showQ(qCurrent + 1); return; }
+    // Corrige el intento actual (desde el botón del formulario o desde la vista
+    // de resultado con respuestas modificadas). Con preguntas sin responder,
+    // avisa y salta a la primera pendiente.
+    function comprobar() {
+      if (allowed > 0 && (STATE.attempts || 0) >= allowed) return;
       var answers = {}, answered = 0, firstMissing = -1;
       questions.forEach(function (q, qi) {
         var sel = content.querySelector('input[name="q-' + q.id + '"]:checked');
@@ -1112,6 +1150,7 @@
       STATE.attempts = attemptsUsed = (STATE.attempts || 0) + 1;
       var res = paint(answers);
       STATE.finalAnswers = answers;
+      dirty = false;
       STATE.results.__final__ = { completed: true, scored: true, correct: res.pass, score: res.got, maxScore: res.max };
       A11Y.announce('Puntuación ' + res.score + ' por ciento.' + (showVerdict ? (res.pass ? ' Apto.' : ' No apto.') : ''));
 
@@ -1120,12 +1159,24 @@
       if (paged) showSummary();
 
       if (allowed > 0 && attemptsUsed >= allowed) {
-        content.querySelector('button[type=submit]').disabled = true;
+        content.querySelector('#me-final button[type=submit]').disabled = true;
         content.querySelectorAll('#me-final input').forEach(function (i) { i.disabled = true; });
       }
       recomputeAndPersist();
       refreshMenuChecks();
       refreshNavState();
+    }
+
+    document.getElementById('me-final').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      // En paginado, Enter navega (nunca comprueba directamente): siguiente
+      // pregunta o, tras la última, la pantalla final con su «Comprobar test».
+      if (paged) {
+        if (qCurrent < questions.length - 1) showQ(qCurrent + 1);
+        else showSummary();
+        return;
+      }
+      comprobar();
     });
   }
 

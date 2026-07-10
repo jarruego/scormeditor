@@ -30,22 +30,41 @@ se inyecta en el DOM de la carcasa (ver `docs/internals/interacciones.md`).
 
 ## Índice de documentación interna (`docs/internals/`)
 Lee el que corresponda al tocar esa área:
-- `arquitectura-runtime.md` — carcasa/runtime, render markdown ligero, callouts + paleta,
-  bloque personalizado, recursos visuales/lightbox, responsive, renombrado histórico.
-- `editor-ui.md` — árbol (`CourseTree`), superficies de edición (ScreenEditor /
-  FinalTestEditor / modal de Ajustes), sync Editor↔Vista, historial deshacer/rehacer,
-  pestañas y toolbar.
-- `interacciones.md` — motor `interactions.js` (factory/contrato, restauración, Comprobar/
-  intentos, drag&drop, render en bloque de accordion/tabs, `interaction_layout`).
+- `arquitectura-runtime.md` — carcasa (`src/runtime/`): render markdown ligero, callouts
+  + paleta, bloque personalizado, recursos visuales/lightbox, lenguaje visual y
+  animaciones, impresión, responsive, manifiesto SCORM.
+- `editor-ui.md` — lo transversal del editor: superficies de edición, iconos, ⚙ Ajustes,
+  sync Editor↔Vista, historial deshacer/rehacer, pestañas y toolbar.
+- `editor-pantallas.md` — árbol (`CourseTree`), recetas de creación, `ScreenEditor`
+  (formulario por tipo, sección Interacción, `ListEditor`), objetivos, `FinalTestEditor`.
+- `editor-richtext.md` — `RichTextArea` + `cmMarkdown` (vista viva, barras contextuales,
+  imágenes en el texto).
+- `interacciones.md` — motor `interactions.js` (factory/contrato, restauración,
+  Comprobar/intentos, drag&drop, `interaction_layout`) y notas por tipo.
 - `evaluacion-finalizacion.md` — navegación/gating, `computeScore` por `score_source`
   (incl. `mixed_final_weight`), finalización, pantallas sintéticas `__final__`/
   `__results__`.
 - `persistencia-scormproj.md` — el documento `.scormproj`, autosave/IndexedDB, File System
-  Access, indicador de guardado.
+  Access, ciclo de vida de los assets, indicador de guardado.
 - `tts-narracion.md` — transcripción, `audio_src`, generación TTS (panel y por pantalla).
 - `informes-validacion.md` — `validators.ts` (errores/avisos) y el informe (`report.ts`).
 - `ingesta-gpt.md` — el GPT generador y los **6 docs de conocimiento** de `docs/gpt/` (los
   que se suben a ChatGPT), la invariante de ingesta y los criterios de contenido acordados.
+
+### Flujos típicos (qué leer según la tarea)
+- **Añadir/cambiar un tipo de interacción** → `interacciones.md` +
+  `editor-pantallas.md` (catálogo `interactionRecipes`) + `informes-validacion.md`
+  (validadores) + `ingesta-gpt.md` si cambia el contrato + actualizar el proyecto demo.
+- **UX del editor** (árbol, formularios, modales) → `editor-pantallas.md`; añade
+  `editor-ui.md` si toca Ajustes/toolbar/sync y `editor-richtext.md` si toca la caja de
+  texto.
+- **Comportamiento o aspecto del SCORM/carcasa** → `arquitectura-runtime.md`
+  (+ `interacciones.md` si es una interacción; + `evaluacion-finalizacion.md` si toca
+  nota/gating).
+- **Guardar/abrir/exportar/assets** → `persistencia-scormproj.md`.
+- **Contenido generado por GPT / criterios de ingesta** → `ingesta-gpt.md`.
+- **Preguntas conceptuales** (sin tocar código) → normalmente basta un doc; no cargues
+  varios «por si acaso».
 
 > `docs/gpt/*.md` son **externos**: material de conocimiento que se sube al GPT de ChatGPT.
 > `docs/internals/*.md` es doc interna del código. No mezclar.
@@ -69,3 +88,10 @@ un área). Mantén cada fichero centrado en su tema; el detalle exhaustivo está
 `.scormproj`/`course.json`, sincroniza también los docs del GPT (`ingesta-gpt.md`) y la
 copia del contrato en `Downloads`. Ante trabajo largo, actualiza al cierre de cada tarea,
 no lo dejes acumular.
+
+**Estilo de los docs** (para que no vuelvan a engordar): describen el **estado actual, en
+presente**, sin fechas, fases ni «antes era…» — la cronología ya la cuenta git; el
+**porqué** de cada decisión sí se conserva (es lo no deducible del código). Al actualizar
+una sección, **consolida** en vez de añadir un apéndice. Si un doc pasa de ~300 líneas,
+divídelo por flujo de trabajo (y actualiza este índice) o poda detalle que ya cuenta el
+código.

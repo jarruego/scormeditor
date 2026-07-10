@@ -30,12 +30,12 @@ Reglas por pantalla / unidad / curso, p. ej.:
   `score_source: 'final_test'` → no contarán; hace visible que «puntúa o no» se decide
   en Ajustes, no en la pantalla). El curso de ejemplo usa `score_source: 'mixed'`
   precisamente para arrancar sin este aviso.
-- **Narración pendiente** (jul 2026): solo se activa en **cursos narrados**
-  (`Ctx.narrated`). Manda el ajuste explícito **`course.narration.mode`** (`'on'`/`'off'`,
-  editable en Ajustes → Narración, se guarda en el proyecto); su default `'auto'` mantiene
-  la heurística: narrado si alguna pantalla tiene `audio_src` (sin locución un curso
-  sin transcripciones es legítimo y no genera ruido). El campo es **opcional en
-  `course.json`** y el GPT debe omitirlo (anotado en `contrato-course-json.md`). En pantallas sin `audio_src` (los
+- **Narración pendiente**: solo se activa en **cursos narrados** (`Ctx.narrated`). Manda
+  el ajuste explícito **`course.narration.mode`** (`'on'`/`'off'`, editable en Ajustes →
+  Narración, se guarda en el proyecto); su default `'auto'` mantiene la heurística:
+  narrado si alguna pantalla tiene `audio_src` (sin locución un curso sin transcripciones
+  es legítimo y no genera ruido). El campo es **opcional en `course.json`** y el GPT debe
+  omitirlo (anotado en `contrato-course-json.md`). En pantallas sin `audio_src` (los
   casos con audio/vídeo sin transcripción ya son errores) y que no sean esqueleto:
   `NARR_NO_TRANSCRIPT` (`warning`) si falta transcripción y la pantalla tiene **contenido
   narrable** — mismo criterio que el botón «Generar transcripción»: `buildTranscript(s)`
@@ -43,9 +43,9 @@ Reglas por pantalla / unidad / curso, p. ej.:
   falta el audio. No se duplican: el info solo salta con la transcripción ya resuelta,
   creando el flujo «primero transcripciones (warnings), luego narrar (infos como lista de
   pendientes del TTS)».
-- **Congruencia tipo ↔ recurso ↔ interacción** (jul 2026, complemento de las recetas de
-  creación; ver `editor-ui.md`): avisos —nunca errores— para combinaciones que casi
-  siempre son un despiste. `COVER_INTERACTION` (portada con actividad), `VIDEO_NO_MEDIA`
+- **Congruencia tipo ↔ recurso ↔ interacción** (complemento de las recetas de creación;
+  ver `editor-pantallas.md`): avisos —nunca errores— para combinaciones que casi siempre
+  son un despiste. `COVER_INTERACTION` (portada con actividad), `VIDEO_NO_MEDIA`
   (pantalla `video` sin recurso de vídeo **ni** interacción `video`), `QUIZ_NO_SCORED`
   (`unit_quiz` sin interacción `scored`), `FORUM_SCORED` (`forum_prompt` con interacción
   puntuable — el foro es actividad externa del campus). La filosofía: las recetas guían
@@ -68,11 +68,11 @@ Validación e Informe):
 - `screenId` → `goToScreen(id)` del store (= `selectScreen` **+** `activeTab: 'editor'`);
   `'__final__'` abre el `FinalTestEditor`.
 - `unitId` → primera pantalla de la unidad (no hay editor de unidad).
-- Códigos de origen de la nota (`SCORM_NO_ACTIVITIES`, `SCORM_MIXED_*`) → abren el modal
-  de Ajustes; su estado (`settingsModal`) vive en el store para poder abrirse desde aquí
-  (antes era estado local de `Toolbar`).
-- Sin superficie de edición en la UI (glosario, bibliografía, `scorm.identifier`) → sin
-  enlace: solo se editan vía JSON/GPT.
+- Códigos de origen de la nota (`SCORM_NO_ACTIVITIES`, `SCORM_MIXED_*`) → abren la
+  ventana de Ajustes correspondiente; su estado (`settingsModal`) vive en el store para
+  poder abrirse desde aquí.
+- Sin superficie de edición en la UI (`scorm.identifier`…) → sin enlace: solo se editan
+  vía JSON/GPT.
 
 ## Informe (`src/report/report.ts`, `ReportPanel`)
 Pestaña «report». `buildReport(course)` devuelve el **modelo estructurado** (`ReportData`):
@@ -84,7 +84,7 @@ final; los tests de unidad enlazan a la primera pantalla de su unidad.
 Ese modelo alimenta **dos renderizadores** (única fuente):
 - `ReportPanel` (`src/components/ReportPanel.tsx`): render **nativo React** con enlaces al
   editor en matriz, preguntas, riesgos y pendientes (reutiliza `IssueItem`), y «ver en
-  Validación» en los criterios fallidos de las checklists. Ya no usa iframe.
+  Validación» en los criterios fallidos de las checklists. No usa iframe.
 - `generateReportMarkdown` / `generateReportHtml`: exportaciones (descarga MD/HTML e
   Imprimir/PDF), sin enlaces. Las celdas pasan por `mdCell()` (sustituye `|` por `¦` y
   aplana saltos de línea) porque el conversor MD→HTML propio parte las filas por `|`.

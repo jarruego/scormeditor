@@ -8,7 +8,7 @@ la **base de la narración**. En el runtime se muestra como **botón fuera del c
 (`toggleTranscript` en `app.js`), nunca duplicado dentro del cuerpo. No se genera solo:
 lo que no esté en `transcript` no aparece ahí (regla de contenido del GPT).
 
-### Regenerar desde el contenido (jul 2026)
+### Regenerar desde el contenido
 `buildTranscript(screen)` (`src/tts/buildTranscript.ts`) reconstruye la transcripción a
 partir de `student_text` (markdown ligero → texto plano: quita `**`/`*`/enlaces, aplana
 listas, y sustituye los fences `:::` por la **etiqueta hablada** del callout — mismas
@@ -24,9 +24,9 @@ Además, al **editar el contenido** de una pantalla que ya tiene `audio_src` (te
 estudiante, una interacción informativa — `INFORMATIVE` exportado por
 `buildTranscript.ts` — o la propia transcripción a mano), salta un aviso informativo
 (modal `hideCancel`) de que los cambios no se aplican al audio hasta regenerar
-transcripción y audio (al editar la transcripción, solo el audio). Es **único por pantalla y
-sesión** (`audioStaleWarned`, `Set` a nivel de módulo en `ScreenEditor`) y se re-arma al
-regenerar el audio con TTS.
+transcripción y audio (al editar la transcripción, solo el audio). Es **único por
+pantalla y sesión** (`audioStaleWarned`, `Set` a nivel de módulo en `ScreenEditor`) y se
+re-arma al regenerar el audio con TTS.
 
 En cursos **narrados**, la validación señala el trabajo pendiente por pantalla:
 `NARR_NO_TRANSCRIPT` (aviso) y `NARR_NO_AUDIO` (info, lista de «pendientes de narrar»).
@@ -34,16 +34,6 @@ En cursos **narrados**, la validación señala el trabajo pendiente por pantalla
 (`course.narration.mode`: `auto` = si alguna pantalla tiene `audio_src` | `on` | `off`;
 se guarda en el proyecto, no en localStorage; helper compartido `isNarrated()` en
 `validators.ts`). Detalle en `informes-validacion.md`.
-
-El panel de generación masiva **respeta ese ajuste** (jul 2026): con `off` la generación
-(audios y transcripciones) queda deshabilitada con una nota — probable despiste y coste
-de API. Los contadores incluyen las pantallas **con contenido narrable sin transcripción**
-(mismo criterio que `NARR_NO_TRANSCRIPT`: `hasContent`/`skeleton` en `listNarratable`),
-y hay un paso previo masivo «↻ Generar transcripciones desde el contenido»
-(`fillMissingTranscripts` en el store): **solo rellena las vacías** — nunca sobrescribe
-una editada a mano, por eso no pide confirmación — y hace un único snapshot (un solo
-deshacer). El flujo completo queda: marcar curso narrado → transcripciones en bloque →
-revisarlas → audios en bloque, con los números cuadrando con la pestaña Validación.
 
 ## Narración por diapositiva (`screen.audio_src`)
 Audio propio de la pantalla (ruta en `assets/media`), **separado del media visual**. El
@@ -54,20 +44,28 @@ la reproducción automática al entrar en la pantalla (persistida en `localStora
 
 ## TTS (texto→voz): generación del audio
 Módulo `src/tts/tts.ts` + sección `NarrationSection` (`src/components/TtsPanel.tsx`),
-mostrada en su propia ventana `NarrationModal`, que abre la opción **Narración por voz…**
-del menú **⚙ Ajustes** (`SettingsModal.tsx` / `Toolbar`).
+mostrada en su propia ventana `NarrationModal`, que abre la opción **Narración** del menú
+**⚙ Ajustes** de la `Toolbar` (no hay botón de narración suelto en la barra). La sección
+informa de `busy` para que la ventana no se cierre mientras genera.
 - **Config compartida** (`getTtsConfig`/`setTtsConfig`, claves de API vía
   `setProviderKey`) en `localStorage`; varios `PROVIDERS` con sus `voicesFor`/`modelsFor`/
   `providerDefaults`.
-- **Por pantalla**: `generateForScreen(id)` sintetiza el audio **desde la
-  `transcript`** y lo guarda en `audio_src`. Disparador en `ScreenEditor` (botón «Generar
-  audio»); requiere clave de API configurada.
-- **Masivo**: `generateAll` (con `onlyMissing`) genera el audio de todas las pantallas con
-  transcripción de una vez. Vive en `NarrationSection` (ventana `NarrationModal`), que abre la
-  opción **Narración por voz…** del menú **⚙ Ajustes** de la `Toolbar` (ya no hay botón
-  «🔊 Narración» suelto). La generación individual está en el editor de cada pantalla; la
-  sección tiene la config (compartida) y la generación en lote, e informa de `busy` para que
-  la ventana no cierre mientras genera.
+- **Por pantalla**: `generateForScreen(id)` sintetiza el audio **desde la `transcript`**
+  y lo guarda en `audio_src`. Disparador en `ScreenEditor` (botón «Generar audio»);
+  requiere clave de API configurada.
+- **Masivo**: `generateAll` (con `onlyMissing`) genera el audio de todas las pantallas
+  con transcripción de una vez.
+
+El panel de generación masiva **respeta el ajuste «Curso narrado»**: con `off` la
+generación (audios y transcripciones) queda deshabilitada con una nota — probable
+despiste y coste de API. Los contadores incluyen las pantallas **con contenido narrable
+sin transcripción** (mismo criterio que `NARR_NO_TRANSCRIPT`: `hasContent`/`skeleton` en
+`listNarratable`), y hay un paso previo masivo «↻ Generar transcripciones desde el
+contenido» (`fillMissingTranscripts` en el store): **solo rellena las vacías** — nunca
+sobrescribe una editada a mano, por eso no pide confirmación — y hace un único snapshot
+(un solo deshacer). El flujo completo queda: marcar curso narrado → transcripciones en
+bloque → revisarlas → audios en bloque, con los números cuadrando con la pestaña
+Validación.
 
 Consecuencia: un `transcript` completo (incluido el texto de las interacciones si así se
 decide) ⇒ una narración completa. Ver criterios de contenido en `ingesta-gpt.md`.
