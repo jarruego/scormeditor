@@ -14,6 +14,7 @@ import { ShortcutsModal } from './ShortcutsModal'
 import { InlineRename } from './InlineRename'
 import { confirmDialog } from '../store/confirm'
 import { orphanAssetPaths } from '../schema/assetRefs'
+import { Icon } from './Icon'
 
 // Confirmación de descarte con el modal propio (no window.confirm), como el
 // resto de confirmaciones del editor.
@@ -140,12 +141,15 @@ export function Toolbar() {
             : 'Cambios sin guardar. Pulsa para guardar el proyecto (Ctrl+S). Tus cambios se conservan automáticamente por si cierras sin guardar.'
         }
       >
-        {isSaved ? `✓ Guardado · ${linkedFileName}` : `● Sin guardar${linkedFileName ? ` · ${linkedFileName}` : ''}`}
+        <Icon name={isSaved ? 'check' : 'dot'} size={12} />{' '}
+        {isSaved ? `Guardado · ${linkedFileName}` : `Sin guardar${linkedFileName ? ` · ${linkedFileName}` : ''}`}
       </button>
 
       <div className="ed-toolbar-actions">
-        <button onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)" aria-label="Deshacer">↶ Deshacer</button>
-        <button onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Mayús+Z)" aria-label="Rehacer">↷ Rehacer</button>
+        <button onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)" aria-label="Deshacer">
+          <Icon name="undo" size={14} /> Deshacer</button>
+        <button onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Mayús+Z)" aria-label="Rehacer">
+          <Icon name="redo" size={14} /> Rehacer</button>
 
         <input ref={fileRef} type="file" accept=".scormproj,.zip,application/zip" hidden onChange={onImportFile} />
         <div className="ed-menu" ref={menuRef}>
@@ -155,7 +159,7 @@ export function Toolbar() {
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((o) => !o)}
           >
-            {busy ? 'Generando…' : 'Archivo ▾'}
+            {busy ? 'Generando…' : <>Archivo <Icon name="chevron-down" size={12} /></>}
           </button>
           {menuOpen && (
             <div className="ed-menu-list" role="menu">
@@ -198,7 +202,7 @@ export function Toolbar() {
             onClick={() => setSettingsMenuOpen((o) => !o)}
             title="Ajustes del curso y de narración"
           >
-            ⚙ Ajustes ▾
+            <Icon name="settings" size={14} /> Ajustes <Icon name="chevron-down" size={12} />
           </button>
           {settingsMenuOpen && (
             <div className="ed-menu-list" role="menu">
@@ -229,7 +233,7 @@ export function Toolbar() {
 
       </div>
 
-      {importError && <div className="ed-import-error">⛔ {importError}</div>}
+      {importError && <div className="ed-import-error"><Icon name="alert-octagon" size={14} /> {importError}</div>}
 
       {settingsModal === 'shortcuts' && <ShortcutsModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'course' && <CourseSettingsModal onClose={() => setSettingsModal(null)} />}

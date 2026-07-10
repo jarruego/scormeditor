@@ -357,6 +357,13 @@
   }
 
   function goRelative(delta) {
+    // Dentro del test final paginado los botones de la carcasa mueven primero
+    // las preguntas; solo en los extremos cambian de diapositiva (así no hay
+    // dos pares de botones Anterior/Siguiente compitiendo).
+    if (finalNav && (delta > 0 ? finalNav.next() : finalNav.prev())) return;
+    // Al salir del test hacia delante con fallos e intentos restantes, avisa
+    // antes (modal); «Continuar» reintenta el avance ya sin interceptar.
+    if (delta > 0 && finalLeave && finalLeave(function () { finalLeave = null; goRelative(delta); })) return;
     var t = current + delta;
     if (t < 0 || t >= SCREENS.length) return;
     if (delta > 0 && !AUTHOR && !screenSatisfied(current)) { A11Y.announce(blockReason(current)); return; }
@@ -379,6 +386,7 @@
     }
     var content = document.getElementById('me-content');
 
+    finalNav = null; finalLeave = null; // renderFinalTest los repone si toca
     if (entry.isResults) {
       renderResults(content);
     } else if (entry.isFinalTest) {
@@ -401,6 +409,11 @@
         showScoredBadge: (COURSE.scorm.rules || {}).score_source !== 'final_test',
         // Snapshot de progreso en vivo (lo consume la interacción progress_report).
         progress: progressSnapshot,
+        // Ubicación de la pantalla en el curso (miga «Módulo › Unidad» de la tarjeta).
+        crumb: {
+          module: entry.module ? (entry.module.title || '') : '',
+          unit: entry.unit ? (entry.unit.title || '') : '',
+        },
       };
       var rendered = Renderer.render(content, sc, ctx);
       activeController = rendered.interaction;
@@ -743,9 +756,12 @@
   function refreshNavState() {
     var prev = document.getElementById('me-prev');
     var next = document.getElementById('me-next');
-    prev.disabled = current <= 0;
+    // Con el test paginado en pantalla, los botones también mueven preguntas:
+    // solo se bloquean cuando ni la pregunta ni la diapositiva pueden avanzar.
+    prev.disabled = current <= 0 && !(finalNav && !finalNav.atFirst());
     var last = current >= SCREENS.length - 1;
-    next.disabled = last || (!AUTHOR && !screenSatisfied(current));
+    var blocked = last || (!AUTHOR && !screenSatisfied(current));
+    next.disabled = blocked && !(finalNav && !finalNav.atLast());
     next.textContent = last ? 'Fin' : 'Siguiente ▸';
   }
   // El menú lateral está visible cuando #me-app NO lleva la clase me-menu-hidden
@@ -788,32 +804,246 @@
   }
 
   // ---- Test final --------------------------------------------------------
+  // Puentes entre el test final y la navegación de la carcasa: finalNav mueve
+  // las preguntas del test paginado; finalLeave avisa antes de abandonar el
+  // test con fallos e intentos restantes. goTo los limpia y renderFinalTest
+  // los repone mientras el test esté en pantalla.
+  var finalNav = null;
+  var finalLeave = null;
+
+  // Modal del test final (informativa o de confirmación). Reutiliza las clases
+  // .me-modal/.me-exit-* de la confirmación de salida para heredar sus estilos.
+  function testDialog(opts) {
+    var overlay = document.createElement('div');
+    overlay.className = 'me-modal me-exit-confirm';
+    overlay.setAttribute('role', opts.confirm ? 'alertdialog' : 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', opts.label || opts.title);
+    var btns = opts.actions.map(function (a, i) {
+      return '<button type="button" class="me-btn' + (a.primary ? ' me-primary' : '') + '" data-act="' + i + '">' + a.label + '</button>';
+    }).join('');
+    overlay.innerHTML = '<div class="me-modal-card me-exit-card">' +
+      '<div class="me-modal-head"><h2 class="me-modal-title">' + opts.title + '</h2></div>' +
+      '<p class="me-exit-msg">' + opts.body + '</p>' +
+      '<div class="me-exit-actions">' + btns + '</div></div>';
+    var last = document.activeElement;
+    function close() {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+      if (last && last.focus) last.focus();
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+    overlay.querySelectorAll('button[data-act]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        close();
+        var a = opts.actions[Number(b.getAttribute('data-act'))];
+        if (a.onClick) a.onClick();
+      });
+    });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(overlay);
+    var first = overlay.querySelector('.me-primary') || overlay.querySelector('button[data-act]');
+    if (first) first.focus();
+  }
+
+  // «Te quedan N intentos…» / «Puedes repetir el test…» (remaining -1 = sin límite).
+  function attemptsMsg(remaining) {
+    if (remaining < 0) return 'Puedes repetir el test tantas veces como necesites para mejorar la nota.';
+    if (remaining === 0) return 'Has agotado los intentos.';
+    return 'Te ' + (remaining === 1 ? 'queda 1 intento' : 'quedan ' + remaining + ' intentos') + ' para mejorar el test.';
+  }
+
   function renderFinalTest(content, screen) {
     var test = COURSE.assessments.final_test;
     var saved = STATE.finalAnswers || {};
-    var allowed = (COURSE.scorm.rules || {}).attempts_allowed || 0;
+    var rules = COURSE.scorm.rules || {};
+    var allowed = rules.attempts_allowed || 0;
     var attemptsUsed = STATE.attempts || 0;
     var exhausted = allowed > 0 && attemptsUsed >= allowed;
+    var questions = test.questions || [];
+    // Modo «una pregunta por pantalla»: todas las preguntas siguen en el DOM
+    // (paint() y la restauración no cambian), solo se muestra la actual. Las
+    // preguntas se mueven con los botones Anterior/Siguiente de la carcasa
+    // (vía finalNav) y con el navegador de cuadritos.
+    var paged = !!test.one_question_per_screen && questions.length > 1;
+    // Nota mínima única: el APTO/NO APTO usa rules.min_score. Si la nota del
+    // curso no sale solo del test (score_source mixto/práctica), el test no
+    // dicta veredicto: muestra la puntuación y remite a «Resultados».
+    var showVerdict = (rules.score_source || 'final_test') === 'final_test';
+    var minScore = rules.min_score || 0;
 
+    // Sin texto fijo: solo las instrucciones configurables del test (vacías por
+    // defecto = no se pinta nada) y el contador de intentos si hay límite.
     var html = '<article class="me-screen"><h1>' + esc(screen.title) + '</h1>' +
-      '<p class="me-instructions">Responde a todas las preguntas y pulsa «Enviar test».' +
-      (allowed > 0 ? ' Intentos: ' + Math.min(attemptsUsed, allowed) + '/' + allowed + '.' : '') + '</p><form id="me-final">';
-    (test.questions || []).forEach(function (q, qi) {
-      html += '<fieldset class="me-q"><legend>' + (qi + 1) + '. ' + rich(q.prompt) + '</legend>';
+      (test.instructions ? '<p class="me-instructions">' + rich(test.instructions) + '</p>' : '') +
+      (allowed > 0 ? '<p class="me-instructions">Intentos: ' + Math.min(attemptsUsed, allowed) + '/' + allowed + '.</p>' : '') +
+      '<form id="me-final">';
+    if (paged) {
+      // Navegador de preguntas: un cuadrito numerado por pregunta con su estado
+      // (sin responder / respondida / acertada / fallada) y salto directo al clic.
+      // Rótulo «Preguntas:» + cuadritos; el contador «Pregunta X de N» ya es
+      // redundante en pantalla y queda solo como región viva para lectores.
+      html += '<div class="me-qnav-row"><span class="me-qnav-label" aria-hidden="true">Preguntas:</span>' +
+        '<div class="me-qnav" role="group" aria-label="Preguntas del test">';
+      questions.forEach(function (q, qi) {
+        html += '<button type="button" class="me-qnav-btn" data-qi="' + qi + '" aria-label="Pregunta ' + (qi + 1) + '">' + (qi + 1) + '</button>';
+      });
+      html += '</div></div><p class="me-final-prog sr-only" aria-live="polite"></p>';
+    }
+    questions.forEach(function (q, qi) {
+      html += '<fieldset class="me-q" data-qi="' + qi + '"' + (paged && qi > 0 ? ' hidden' : '') + '><legend>' + (qi + 1) + '. ' + rich(q.prompt) + '</legend>';
       (q.options || []).forEach(function (o) {
         var checked = saved[q.id] === o.id ? ' checked' : '';
         html += '<label class="me-choice"><input type="radio" name="q-' + esc(q.id) + '" value="' + esc(o.id) + '"' + checked + (exhausted ? ' disabled' : '') + '> <span>' + rich(o.text) + '</span></label>';
       });
       html += '<div class="me-feedback" data-q="' + esc(q.id) + '" role="status" aria-live="polite" hidden></div></fieldset>';
     });
-    html += '<button type="submit" class="me-btn me-primary"' + (exhausted ? ' disabled' : '') + '>Enviar test</button>' +
-      '</form><div id="me-final-result" aria-live="polite"></div></article>';
+    html += '<div class="me-final-nav">' +
+      '<button type="submit" class="me-btn me-primary"' + (exhausted ? ' disabled' : '') + (paged ? ' hidden' : '') + '>Comprobar test</button>' +
+      '</div></form>' +
+      '<div id="me-final-summary" class="me-final-summary" hidden></div>' +
+      '<div id="me-final-result" aria-live="polite"></div></article>';
     content.innerHTML = html;
+
+    var qCurrent = 0;
+    var mode = 'questions'; // 'questions' | 'summary' (vista de resultado, solo paginado)
+    var verdicts = {}; // q.id → true/false tras corregir; se borra al re-responder
+
+    function allAnswered() {
+      return questions.every(function (q) {
+        return !!content.querySelector('input[name="q-' + q.id + '"]:checked');
+      });
+    }
+
+    function refreshQnav() {
+      if (!paged) return;
+      content.querySelectorAll('.me-qnav-btn').forEach(function (b) {
+        var qi = Number(b.getAttribute('data-qi'));
+        var q = questions[qi];
+        var answered = !!content.querySelector('input[name="q-' + q.id + '"]:checked');
+        var v = verdicts[q.id];
+        b.className = 'me-qnav-btn' +
+          (mode === 'questions' && qi === qCurrent ? ' is-current' : '') +
+          (v === true ? ' is-ok' : v === false ? ' is-error' : answered ? ' is-answered' : '');
+        if (qi === qCurrent) b.setAttribute('aria-current', 'true');
+        else b.removeAttribute('aria-current');
+      });
+    }
+
+    function showQ(i) {
+      if (!paged) return;
+      mode = 'questions';
+      document.getElementById('me-final-summary').hidden = true;
+      qCurrent = Math.max(0, Math.min(questions.length - 1, i));
+      content.querySelectorAll('fieldset.me-q').forEach(function (fs) {
+        fs.hidden = Number(fs.getAttribute('data-qi')) !== qCurrent;
+      });
+      content.querySelector('.me-final-prog').textContent = 'Pregunta ' + (qCurrent + 1) + ' de ' + questions.length;
+      // «Comprobar test» se ve en la última pregunta y, esté donde esté el
+      // estudiante, en cuanto todas estén respondidas.
+      content.querySelector('#me-final button[type=submit]').hidden = qCurrent !== questions.length - 1 && !allAnswered();
+      refreshQnav();
+      refreshNavState();
+    }
+
+    // Vista de resultado del test (solo paginado): estado, aciertos, intentos
+    // restantes y acciones. Se muestra al comprobar y al volver a la pantalla
+    // con el test ya comprobado; desde aquí «Siguiente» sale de la pantalla
+    // (con el aviso de finalLeave si hay fallos e intentos) y «Anterior» o los
+    // cuadritos vuelven a las preguntas para revisarlas o corregirlas.
+    function showSummary() {
+      if (!paged) return;
+      mode = 'summary';
+      content.querySelectorAll('fieldset.me-q').forEach(function (fs) { fs.hidden = true; });
+      content.querySelector('.me-final-prog').textContent = 'Resultado del test';
+      content.querySelector('#me-final button[type=submit]').hidden = true;
+      var r = STATE.results.__final__;
+      var pct = r && r.maxScore ? Math.round((r.score / r.maxScore) * 100) : 0;
+      var pass = pct >= minScore;
+      var aciertos = questions.filter(function (q) { return verdicts[q.id] === true; }).length;
+      var remaining = allowed > 0 ? Math.max(0, allowed - (STATE.attempts || 0)) : -1;
+      var mejorable = pct < 100 && remaining !== 0;
+      var box = document.getElementById('me-final-summary');
+      box.innerHTML =
+        '<div class="me-result-hero ' + (showVerdict ? (pass ? 'is-ok' : 'is-error') : '') + '">' +
+        '<strong>' + (showVerdict
+          ? 'Puntuación: ' + pct + '% — ' + (pass ? 'APTO' : 'NO APTO')
+          : 'Puntuación del test: ' + pct + '%') + '</strong>' +
+        '<p>Has acertado ' + aciertos + ' de ' + questions.length + ' preguntas.' +
+        (showVerdict ? '' : ' La calificación del curso se muestra en «Resultados».') +
+        (pct < 100 ? ' ' + attemptsMsg(remaining) : '') + '</p></div>' +
+        '<div class="me-final-nav">' +
+        (mejorable ? '<button type="button" class="me-btn me-primary" id="me-final-retry">Repetir el test</button>' : '') +
+        '<button type="button" class="me-btn" id="me-final-review">Revisar las respuestas</button>' +
+        '</div>';
+      box.hidden = false;
+      var retry = document.getElementById('me-final-retry');
+      if (retry) retry.addEventListener('click', function () {
+        var firstWrong = -1;
+        questions.forEach(function (q, qi) { if (firstWrong < 0 && verdicts[q.id] === false) firstWrong = qi; });
+        showQ(firstWrong < 0 ? 0 : firstWrong);
+      });
+      document.getElementById('me-final-review').addEventListener('click', function () { showQ(0); });
+      refreshQnav();
+      refreshNavState();
+      A11Y.announce('Resultado del test: ' + pct + ' por ciento.');
+    }
+
+    if (paged) {
+      finalNav = {
+        atFirst: function () { return mode === 'questions' && qCurrent === 0; },
+        // «Siguiente» aún tiene recorrido interno salvo en la vista de resultado
+        // o en la última pregunta con el test sin comprobar.
+        atLast: function () {
+          if (mode === 'summary') return true;
+          return qCurrent === questions.length - 1 && !STATE.results.__final__;
+        },
+        prev: function () {
+          if (mode === 'summary') { showQ(questions.length - 1); return true; }
+          if (qCurrent === 0) return false;
+          showQ(qCurrent - 1); return true;
+        },
+        next: function () {
+          if (mode === 'summary') return false;
+          if (qCurrent < questions.length - 1) { showQ(qCurrent + 1); return true; }
+          if (STATE.results.__final__) { showSummary(); return true; }
+          return false;
+        },
+      };
+      content.querySelector('.me-qnav').addEventListener('click', function (e) {
+        var b = e.target.closest('.me-qnav-btn'); if (!b) return;
+        showQ(Number(b.getAttribute('data-qi')));
+      });
+      showQ(0);
+    }
+
+    // Aviso antes de avanzar de diapositiva con el test corregido pero mejorable
+    // (hay fallos) y margen para reintentar; lo consulta goRelative.
+    finalLeave = function (proceed) {
+      var r = STATE.results.__final__;
+      if (!r || !r.scored || !r.maxScore) return false;
+      var pct = Math.round((r.score / r.maxScore) * 100);
+      var remaining = allowed > 0 ? allowed - (STATE.attempts || 0) : -1;
+      if (pct >= 100 || remaining === 0) return false;
+      testDialog({
+        title: '⚠ Puedes mejorar el test',
+        confirm: true,
+        body: 'Tu resultado actual es del ' + pct + '%' +
+          (showVerdict && pct < minScore ? ' (NO APTO)' : '') + '. ' +
+          attemptsMsg(remaining) + ' ¿Quieres continuar de todos modos?',
+        actions: [
+          { label: 'Quedarme en el test', primary: true },
+          { label: 'Continuar', onClick: proceed },
+        ],
+      });
+      return true;
+    };
 
     // Pinta el feedback por pregunta y la nota a partir de un mapa de respuestas.
     function paint(answers) {
       var got = 0, max = 0;
-      (test.questions || []).forEach(function (q) {
+      questions.forEach(function (q) {
         max += q.points || 1;
         var chosen = answers[q.id];
         var box = content.querySelector('.me-feedback[data-q="' + q.id + '"]');
@@ -821,6 +1051,7 @@
           var opt = (q.options || []).filter(function (o) { return o.id === chosen; })[0];
           var ok = !!(opt && opt.correct);
           if (ok) got += q.points || 1;
+          verdicts[q.id] = ok;
           box.className = 'me-feedback ' + (ok ? 'is-ok' : 'is-error');
           box.innerHTML = '<strong>' + (ok ? '✔ ' : '✖ ') + rich(ok ? q.feedback.correct : q.feedback.incorrect) + '</strong>' +
             (q.feedback.explanation ? '<p class="me-expl">' + rich(q.feedback.explanation) + '</p>' : '');
@@ -828,30 +1059,65 @@
         }
       });
       var score = max ? Math.round((got / max) * 100) : 0;
-      var pass = score >= (test.pass_score || 60);
-      document.getElementById('me-final-result').innerHTML =
-        '<div class="me-feedback ' + (pass ? 'is-ok' : 'is-error') + '"><strong>Puntuación: ' + score + '% — ' + (pass ? 'APTO' : 'NO APTO') + '</strong></div>';
+      var pass = score >= minScore;
+      // En paginado el estado lo da la vista de resultado (showSummary); el
+      // banner inline solo se usa en el modo clásico, con los intentos.
+      if (!paged) {
+        var remaining = allowed > 0 ? Math.max(0, allowed - (STATE.attempts || 0)) : -1;
+        var extra = score < 100 ? ' ' + attemptsMsg(remaining) : '';
+        document.getElementById('me-final-result').innerHTML = showVerdict
+          ? '<div class="me-feedback ' + (pass ? 'is-ok' : 'is-error') + '"><strong>Puntuación: ' + score + '% — ' + (pass ? 'APTO' : 'NO APTO') + '.</strong>' + extra + '</div>'
+          : '<div class="me-feedback"><strong>Puntuación del test: ' + score + '%.</strong> La calificación del curso se muestra en «Resultados».' + extra + '</div>';
+      }
+      refreshQnav();
       return { got: got, max: max, score: score, pass: pass };
     }
 
-    // Restaura el resultado si ya se había enviado (mismo intento u otra sesión).
-    if (STATE.results.__final__ && Object.keys(saved).length) paint(saved);
+    // Restaura el resultado si ya se había enviado (mismo intento u otra sesión):
+    // en paginado se entra directamente por la vista de resultado.
+    if (STATE.results.__final__ && Object.keys(saved).length) {
+      paint(saved);
+      if (paged) showSummary();
+    }
+
+    // Al cambiar una respuesta, el feedback de esa pregunta y la nota del envío
+    // anterior dejan de describir la selección actual: se retiran.
+    document.getElementById('me-final').addEventListener('change', function (e) {
+      var fs = e.target.closest('fieldset.me-q'); if (!fs) return;
+      var box = fs.querySelector('.me-feedback');
+      if (box) { box.hidden = true; }
+      var q = questions[Number(fs.getAttribute('data-qi'))];
+      if (q) delete verdicts[q.id];
+      document.getElementById('me-final-result').innerHTML = '';
+      if (paged) showQ(qCurrent); // refresca cuadritos y visibilidad de «Comprobar test»
+      else refreshQnav();
+    });
 
     document.getElementById('me-final').addEventListener('submit', function (ev) {
       ev.preventDefault();
       if (exhausted) return;
-      var answers = {}, answered = 0;
-      (test.questions || []).forEach(function (q) {
+      // Envío implícito con Enter antes de la última pregunta y con el test aún
+      // incompleto: avanza en vez de comprobar.
+      if (paged && qCurrent < questions.length - 1 && !allAnswered()) { showQ(qCurrent + 1); return; }
+      var answers = {}, answered = 0, firstMissing = -1;
+      questions.forEach(function (q, qi) {
         var sel = content.querySelector('input[name="q-' + q.id + '"]:checked');
         if (sel) { answers[q.id] = sel.value; answered++; }
+        else if (firstMissing < 0) firstMissing = qi;
       });
-      if (answered < (test.questions || []).length) { A11Y.announce('Responde a todas las preguntas.'); return; }
+      if (answered < questions.length) { A11Y.announce('Responde a todas las preguntas.'); showQ(firstMissing); return; }
 
-      var res = paint(answers);
+      // El intento se consume antes de pintar: así banner y vista de resultado
+      // calculan los intentos restantes ya descontado este.
       STATE.attempts = attemptsUsed = (STATE.attempts || 0) + 1;
+      var res = paint(answers);
       STATE.finalAnswers = answers;
       STATE.results.__final__ = { completed: true, scored: true, correct: res.pass, score: res.got, maxScore: res.max };
-      A11Y.announce('Puntuación ' + res.score + ' por ciento. ' + (res.pass ? 'Apto.' : 'No apto.'));
+      A11Y.announce('Puntuación ' + res.score + ' por ciento.' + (showVerdict ? (res.pass ? ' Apto.' : ' No apto.') : ''));
+
+      // Al comprobar, el test paginado aterriza en la vista de resultado (estado,
+      // intentos restantes y acciones); el clásico mantiene su banner inline.
+      if (paged) showSummary();
 
       if (allowed > 0 && attemptsUsed >= allowed) {
         content.querySelector('button[type=submit]').disabled = true;
@@ -870,7 +1136,7 @@
     var score = STATE.finalScore;
     var src = rules.score_source || 'final_test';
     var ft = COURSE.assessments && COURSE.assessments.final_test;
-    var min = rules.min_score || (ft && ft.pass_score) || 0;
+    var min = rules.min_score || 0;
     var incomplete = status === 'incomplete';
     var pass = status === 'passed';
     function pct(g, m) { return m ? Math.round((g / m) * 100) : 0; }

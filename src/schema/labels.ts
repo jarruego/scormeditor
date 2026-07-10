@@ -1,4 +1,5 @@
 import type { ScreenType, InteractionType } from './course.schema'
+import type { IconName } from '../components/Icon'
 
 /**
  * Etiquetas en español para los valores internos del esquema. La UI del editor
@@ -46,26 +47,59 @@ export const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
   progress_report: 'Informe de progreso',
 }
 
-/** Icono compacto por tipo de pantalla (árbol del editor). */
-export const SCREEN_TYPE_ICONS: Record<ScreenType, string> = {
-  cover: '🏠',
-  objectives: '🎯',
-  route: '🗺️',
-  content: '📄',
-  summary: '📋',
-  video: '🎬',
-  reflection: '💭',
-  forum_prompt: '💬',
-  unit_quiz: '📝',
-  content_placeholder: '🚧',
+/** Icono compacto por tipo de pantalla (árbol del editor); nombres de `Icon`. */
+export const SCREEN_TYPE_ICONS: Record<ScreenType, IconName> = {
+  cover: 'home',
+  objectives: 'target',
+  route: 'route',
+  content: 'file-text',
+  summary: 'clipboard-list',
+  video: 'film',
+  reflection: 'message-dots',
+  forum_prompt: 'forum',
+  unit_quiz: 'clipboard-check',
+  content_placeholder: 'placeholder',
 }
 
 export function screenTypeLabel(t: string): string {
   return SCREEN_TYPE_LABELS[t as ScreenType] ?? t
 }
 
-export function screenTypeIcon(t: string): string {
-  return SCREEN_TYPE_ICONS[t as ScreenType] ?? '📄'
+export function screenTypeIcon(t: string): IconName {
+  return SCREEN_TYPE_ICONS[t as ScreenType] ?? 'file-text'
+}
+
+/**
+ * Color semántico por tipo de pantalla (árbol y chips del editor). Familias de
+ * la paleta corporativa de teleformación, saturadas para leerse en iconos
+ * pequeños: estructura=índigo, contenido=teal, práctica=ámbar,
+ * evaluación=frambuesa, pendiente=gris.
+ */
+export const TYPE_COLORS = {
+  estructura: '#5265c4',
+  contenido: '#0f9490',
+  practica: '#c27b06',
+  evaluacion: '#c2417e',
+  /** Glosario y Recursos/bibliografía (familia rosa corporativa, saturada a terracota). */
+  materiales: '#bd5d52',
+  otros: '#7d8694',
+} as const
+
+export const SCREEN_TYPE_COLORS: Record<ScreenType, string> = {
+  cover: TYPE_COLORS.estructura,
+  objectives: TYPE_COLORS.estructura,
+  route: TYPE_COLORS.estructura,
+  summary: TYPE_COLORS.estructura,
+  content: TYPE_COLORS.contenido,
+  video: TYPE_COLORS.contenido,
+  reflection: TYPE_COLORS.practica,
+  forum_prompt: TYPE_COLORS.practica,
+  unit_quiz: TYPE_COLORS.evaluacion,
+  content_placeholder: TYPE_COLORS.otros,
+}
+
+export function screenTypeColor(t: string): string {
+  return SCREEN_TYPE_COLORS[t as ScreenType] ?? TYPE_COLORS.contenido
 }
 
 export function interactionTypeLabel(t: string): string {

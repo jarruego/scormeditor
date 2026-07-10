@@ -1,4 +1,5 @@
 import type { Interaction, InteractionType } from './course.schema'
+import type { IconName } from '../components/Icon'
 
 /**
  * Catálogo declarativo de los tipos de interacción, hermano de
@@ -45,6 +46,21 @@ export const INTERACTION_GROUP_LABELS: Record<InteractionGroup, string> = {
   avanzado: 'Avanzado',
 }
 
+/** Color semántico por grupo (mismas familias que `RECIPE_GROUP_COLORS`). */
+export const INTERACTION_GROUP_COLORS: Record<InteractionGroup, string> = {
+  presentar: '#0f9490', // contenido = teal
+  preguntar: '#c27b06', // práctica = ámbar
+  manipular: '#c2570b', // matiz naranja dentro de práctica
+  juegos: '#c2417e', // lúdico/evaluable = frambuesa
+  media: '#5265c4', // índigo
+  avanzado: '#7d8694', // gris
+}
+
+/** Color del grupo de un tipo de interacción (para iconos fuera de las tarjetas). */
+export function interactionColor(type: string): string {
+  return INTERACTION_GROUP_COLORS[interactionRecipe(type).group]
+}
+
 /** Subtítulo del grupo: comunica qué hace el alumno (tono de screenRecipes). */
 export const INTERACTION_GROUP_HINTS: Record<InteractionGroup, string> = {
   presentar: 'El alumno explora: abre, gira o compara. No hay respuestas.',
@@ -60,7 +76,7 @@ export type InteractionFamily = 'options' | 'cards' | 'titled-items' | 'question
 
 export type InteractionRecipe = {
   type: InteractionType
-  icon: string
+  icon: IconName
   /** «Qué hace el alumno», una línea (tono de screenRecipes). */
   description: string
   group: InteractionGroup
@@ -79,7 +95,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   // ---- Presentar contenido -------------------------------------------------
   {
     type: 'accordion',
-    icon: '🪗',
+    icon: 'accordion',
     description: 'Despliega apartados uno a uno para leer su contenido.',
     group: 'presentar',
     gradable: false,
@@ -88,7 +104,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'tabs',
-    icon: '🗂️',
+    icon: 'tabs',
     description: 'Cambia entre pestañas para ver cada bloque de contenido.',
     group: 'presentar',
     gradable: false,
@@ -97,7 +113,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'flip_cards',
-    icon: '🎴',
+    icon: 'flip',
     description: 'Gira tarjetas para descubrir el contenido del reverso.',
     group: 'presentar',
     gradable: false,
@@ -106,7 +122,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'timeline',
-    icon: '📅',
+    icon: 'timeline',
     description: 'Recorre hitos en orden y despliega el detalle de cada uno.',
     group: 'presentar',
     gradable: false,
@@ -114,7 +130,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'image_cards',
-    icon: '🖼️',
+    icon: 'gallery',
     description: 'Abre tarjetas con imagen que muestran su texto en una ventana.',
     group: 'presentar',
     gradable: false,
@@ -122,7 +138,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'before_after',
-    icon: '↔️',
+    icon: 'compare',
     description: 'Desliza un divisor para comparar dos imágenes superpuestas.',
     group: 'presentar',
     gradable: false,
@@ -130,7 +146,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'hotspots',
-    icon: '🎯',
+    icon: 'hotspot',
     description: 'Pulsa zonas de una imagen para explorarla (puede puntuar).',
     group: 'presentar',
     gradable: true,
@@ -140,7 +156,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   // ---- Preguntar -----------------------------------------------------------
   {
     type: 'single_choice',
-    icon: '☑️',
+    icon: 'circle-check',
     description: 'Elige la respuesta correcta entre varias opciones.',
     group: 'preguntar',
     gradable: true,
@@ -155,7 +171,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'true_false',
-    icon: '⚖️',
+    icon: 'true-false',
     description: 'Decide si la afirmación es verdadera o falsa.',
     group: 'preguntar',
     gradable: true,
@@ -170,7 +186,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'scenario_decision',
-    icon: '🎭',
+    icon: 'branch',
     description: 'Lee una situación y decide qué haría; cada decisión tiene su feedback.',
     group: 'preguntar',
     gradable: true,
@@ -179,7 +195,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'fill_blanks',
-    icon: '✍️',
+    icon: 'fill-blanks',
     description: 'Completa los huecos del texto eligiendo la palabra correcta.',
     group: 'preguntar',
     gradable: true,
@@ -187,7 +203,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'case_practice',
-    icon: '📋',
+    icon: 'briefcase',
     description: 'Reflexiona sobre un caso y se autoevalúa con una rúbrica.',
     group: 'preguntar',
     gradable: false,
@@ -197,7 +213,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   // ---- Manipular -----------------------------------------------------------
   {
     type: 'sort_steps',
-    icon: '🔢',
+    icon: 'sort',
     description: 'Arrastra los pasos hasta dejarlos en el orden correcto.',
     group: 'manipular',
     gradable: true,
@@ -205,7 +221,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'match_pairs',
-    icon: '🔗',
+    icon: 'link',
     description: 'Empareja cada elemento con el que le corresponde.',
     group: 'manipular',
     gradable: true,
@@ -213,7 +229,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'classification',
-    icon: '🗃️',
+    icon: 'classify',
     description: 'Coloca cada elemento en su categoría.',
     group: 'manipular',
     gradable: true,
@@ -223,7 +239,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   // ---- Juegos didácticos ---------------------------------------------------
   {
     type: 'word_search',
-    icon: '🔎',
+    icon: 'grid-search',
     description: 'Encuentra las palabras ocultas en la sopa de letras.',
     group: 'juegos',
     gradable: true,
@@ -231,7 +247,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'crossword',
-    icon: '✏️',
+    icon: 'grid',
     description: 'Rellena el crucigrama a partir de las pistas.',
     group: 'juegos',
     gradable: true,
@@ -239,7 +255,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'az_quiz',
-    icon: '🅰️',
+    icon: 'letter-a',
     description: 'Responde una definición por letra, como en el pasapalabra.',
     group: 'juegos',
     gradable: true,
@@ -247,7 +263,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'hidden_image',
-    icon: '🕵️',
+    icon: 'eye',
     description: 'Destapa una imagen oculta acertando preguntas.',
     group: 'juegos',
     gradable: true,
@@ -256,7 +272,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'puzzle',
-    icon: '🧩',
+    icon: 'puzzle',
     description: 'Recompone la imagen intercambiando piezas.',
     group: 'juegos',
     gradable: true,
@@ -265,7 +281,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'flashcards',
-    icon: '🔁',
+    icon: 'cards',
     description: 'Se autoevalúa: intenta responder cada tarjeta y comprueba al girarla.',
     group: 'juegos',
     gradable: false,
@@ -276,7 +292,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   // ---- Vídeo ---------------------------------------------------------------
   {
     type: 'video',
-    icon: '🎬',
+    icon: 'film',
     description: 'Ve un vídeo; con preguntas, se pausa y pregunta en el momento indicado.',
     group: 'media',
     gradable: true,
@@ -287,7 +303,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   // ---- Avanzado ------------------------------------------------------------
   {
     type: 'html_embed',
-    icon: '💻',
+    icon: 'code',
     description: 'Interactivo HTML/CSS/JS a medida, aislado en un sandbox.',
     group: 'avanzado',
     gradable: false,
@@ -295,7 +311,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   },
   {
     type: 'progress_report',
-    icon: '📊',
+    icon: 'chart',
     description: 'Consulta su avance y su nota en un panel que se actualiza solo.',
     group: 'avanzado',
     gradable: false,
@@ -310,7 +326,7 @@ export function interactionRecipe(type: string): InteractionRecipe {
   return (
     BY_TYPE.get(type as InteractionType) ?? {
       type: type as InteractionType,
-      icon: '🧩',
+      icon: 'puzzle',
       description: '',
       group: 'avanzado',
       gradable: true,

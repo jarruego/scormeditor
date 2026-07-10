@@ -133,6 +133,15 @@ body {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
 }
+/* Miga de ubicación «Módulo › Unidad» sobre el título de la pantalla. Discreta
+   (uppercase pequeño en gris atenuado, como los rótulos del menú lateral); el
+   padding-right reserva sitio para la píldora «Evaluable», que es absoluta. */
+.me-crumb {
+  margin: -.4rem 0 .9rem; padding-right: 7rem;
+  font-size: .72rem; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--me-muted);
+}
+.me-crumb-sep { margin: 0 .45em; opacity: .55; }
 .me-screen h1 { margin: 0 0 .9rem; font-size: 1.9rem; font-weight: 800; letter-spacing: -.015em; line-height: 1.2; }
 /* Portada (cover): tratamiento hero — título grande centrado sobre una banda
    degradada del acento corporativo. Primera impresión del curso. */
@@ -446,6 +455,28 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-fc-summary { text-align: center; padding: 1rem; background: color-mix(in srgb, var(--me-accent) 12%, white); border-radius: 10px; }
 .me-q { border: 1px solid var(--me-border); border-radius: 6px; padding: .75rem; margin-bottom: .75rem; }
 .me-q legend { font-weight: 600; padding: 0 .25rem; }
+/* Test final paginado (una pregunta por pantalla) */
+.me-final-prog { color: var(--me-muted); font-weight: 600; margin: 0 0 .5rem; }
+.me-final-nav { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+/* Navegador de preguntas: rótulo «Preguntas:» + un cuadrito por pregunta
+   (gris = sin responder, relleno = respondida, verde/rojo = corregida; borde
+   grueso = actual). En pantallas estrechas el rótulo pasa encima. */
+.me-qnav-row { display: flex; align-items: center; gap: .5rem; margin: 0 0 .6rem; }
+.me-qnav-label { font-weight: 700; font-size: .8rem; color: var(--me-muted); text-transform: uppercase; letter-spacing: .04em; }
+.me-qnav { display: flex; gap: .35rem; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .me-qnav-row { flex-direction: column; align-items: flex-start; gap: .35rem; }
+}
+.me-qnav-btn { width: 2rem; height: 2rem; border: 1px solid var(--me-border); border-radius: 6px; background: #fff; color: var(--me-muted); font-weight: 600; cursor: pointer; padding: 0; transition: border-color .15s ease, background .15s ease; }
+.me-qnav-btn:hover { border-color: var(--me-primary); }
+.me-qnav-btn.is-answered { background: #e8eefc; border-color: var(--me-primary); color: var(--me-primary); }
+.me-qnav-btn.is-ok { background: #e7f6ec; border-color: var(--me-ok); color: var(--me-ok); }
+.me-qnav-btn.is-error { background: #fdecea; border-color: var(--me-error); color: var(--me-error); }
+.me-qnav-btn.is-current { outline: 2px solid var(--me-primary); outline-offset: 1px; }
+/* Vista de resultado del test paginado (tras «Comprobar test») */
+.me-final-summary .me-result-hero { margin-top: 0; }
+.me-final-summary .me-result-hero:not(.is-ok):not(.is-error) { border: 1px solid var(--me-border); background: #f6f8fa; }
+.me-final-summary .me-result-hero strong { font-size: 1.25rem; }
 
 /* Modal */
 .me-modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 50; }

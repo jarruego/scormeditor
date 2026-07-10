@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { validateCourse, type Issue, type Severity } from '../validation/validators'
 import { IssueItem } from './IssueList'
+import { Icon } from './Icon'
 
 const FINAL_GROUP = 'Test final'
 const GLOBAL_GROUP = 'Curso y SCORM'
@@ -82,7 +83,7 @@ export function ValidationPanel() {
       </div>
 
       {result.issues.length === 0 ? (
-        <p>✅ Sin incidencias.</p>
+        <p><Icon name="circle-check" size={14} /> Sin incidencias.</p>
       ) : visible.length === 0 ? (
         <p>Sin incidencias con los filtros activos.</p>
       ) : (

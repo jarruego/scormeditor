@@ -1,5 +1,6 @@
 import type { InteractionType, Screen, ScreenInput, ScreenType, Unit } from './course.schema'
 import { Interaction } from './course.schema'
+import type { IconName } from '../components/Icon'
 
 /**
  * Recetas de creación de pantallas: presets con nombre didáctico que fijan de
@@ -49,6 +50,15 @@ export const RECIPE_GROUP_LABELS: Record<RecipeGroup, string> = {
   otros: 'Otros',
 }
 
+/** Color del chip de icono de las tarjetas, por grupo (ver `TYPE_COLORS` en labels.ts). */
+export const RECIPE_GROUP_COLORS: Record<RecipeGroup, string> = {
+  estructura: '#5265c4',
+  contenido: '#0f9490',
+  practica: '#c27b06',
+  evaluacion: '#c2417e',
+  otros: '#7d8694',
+}
+
 /** Subtítulo del grupo: comunica la intención y el default de puntuación. */
 export const RECIPE_GROUP_HINTS: Record<RecipeGroup, string> = {
   estructura: 'El armazón de la unidad.',
@@ -60,7 +70,7 @@ export const RECIPE_GROUP_HINTS: Record<RecipeGroup, string> = {
 
 export type ScreenRecipe = {
   key: string
-  icon: string
+  icon: IconName
   label: string
   /** Línea breve de la tarjeta: qué hace el alumno (sin promesas de nota). */
   description: string
@@ -83,7 +93,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   // --- Estructura -------------------------------------------------------------
   {
     key: 'cover',
-    icon: '🏠',
+    icon: 'home',
     label: 'Portada',
     description: 'Presentación de la unidad. Se coloca al principio.',
     group: 'estructura',
@@ -94,7 +104,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'objectives',
-    icon: '🎯',
+    icon: 'target',
     label: 'Objetivos',
     description: 'Qué va a aprender el alumno en esta unidad.',
     group: 'estructura',
@@ -105,7 +115,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'route',
-    icon: '🗺️',
+    icon: 'route',
     label: 'Itinerario',
     description: 'Cómo se organiza la unidad y qué camino seguir.',
     group: 'estructura',
@@ -116,7 +126,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'summary',
-    icon: '📋',
+    icon: 'clipboard-list',
     label: 'Resumen',
     description: 'Ideas clave para cerrar la unidad. Se coloca al final.',
     group: 'estructura',
@@ -132,7 +142,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   // --- Contenido (leer, ver, explorar) -----------------------------------------
   {
     key: 'text',
-    icon: '📄',
+    icon: 'file-text',
     label: 'Texto',
     description: 'Texto con formato: encabezados, listas, destacados…',
     group: 'contenido',
@@ -140,7 +150,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'text-image',
-    icon: '🖼️',
+    icon: 'image-text',
     label: 'Texto + imagen',
     description: 'Texto acompañado de una imagen a un lado.',
     group: 'contenido',
@@ -149,7 +159,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'video',
-    icon: '🎬',
+    icon: 'film',
     label: 'Vídeo',
     description: 'Vídeo de YouTube o archivo propio, con transcripción.',
     group: 'contenido',
@@ -158,7 +168,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'accordion',
-    icon: '🗂️',
+    icon: 'accordion',
     label: 'Acordeón',
     description: 'Contenido troceado en secciones desplegables.',
     group: 'contenido',
@@ -167,7 +177,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'tabs',
-    icon: '📑',
+    icon: 'tabs',
     label: 'Pestañas',
     description: 'Contenido organizado en pestañas paralelas.',
     group: 'contenido',
@@ -176,7 +186,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'flip-cards',
-    icon: '🎴',
+    icon: 'flip',
     label: 'Tarjetas giratorias',
     description: 'Tarjetas que se voltean para descubrir el reverso.',
     group: 'contenido',
@@ -185,7 +195,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'timeline',
-    icon: '⏳',
+    icon: 'timeline',
     label: 'Línea de tiempo',
     description: 'Hitos ordenados cronológicamente.',
     group: 'contenido',
@@ -194,7 +204,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'hotspots',
-    icon: '🔍',
+    icon: 'hotspot',
     label: 'Imagen explorable',
     description: 'Imagen con puntos interactivos que amplían información.',
     group: 'contenido',
@@ -203,7 +213,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'image-cards',
-    icon: '🏞️',
+    icon: 'gallery',
     label: 'Tarjetas de imagen',
     description: 'Tarjetas con imagen que se abren en grande con su explicación.',
     group: 'contenido',
@@ -212,7 +222,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'before-after',
-    icon: '↔️',
+    icon: 'compare',
     label: 'Antes / después',
     description: 'Dos imágenes superpuestas con un divisor deslizante para compararlas.',
     group: 'contenido',
@@ -223,7 +233,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   // --- Práctica (hacer y recibir corrección; scored:false de serie) ------------
   {
     key: 'single-choice',
-    icon: '✅',
+    icon: 'circle-check',
     label: 'Pregunta de opciones',
     description: 'El alumno elige la respuesta y recibe feedback.',
     group: 'practica',
@@ -232,7 +242,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'match-pairs',
-    icon: '🧩',
+    icon: 'link',
     label: 'Emparejar',
     description: 'Unir conceptos relacionados entre sí.',
     group: 'practica',
@@ -241,7 +251,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'sort-steps',
-    icon: '🔢',
+    icon: 'sort',
     label: 'Ordenar pasos',
     description: 'Colocar los elementos en su orden correcto.',
     group: 'practica',
@@ -250,7 +260,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'classification',
-    icon: '🗃️',
+    icon: 'classify',
     label: 'Clasificar',
     description: 'Repartir elementos en sus categorías.',
     group: 'practica',
@@ -259,7 +269,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'fill-blanks',
-    icon: '✏️',
+    icon: 'fill-blanks',
     label: 'Rellenar huecos',
     description: 'Completar un texto con las palabras que faltan.',
     group: 'practica',
@@ -268,7 +278,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'scenario',
-    icon: '🎭',
+    icon: 'branch',
     label: 'Escenario con decisiones',
     description: 'Situación simulada donde cada decisión tiene consecuencias.',
     group: 'practica',
@@ -277,7 +287,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'case',
-    icon: '💼',
+    icon: 'briefcase',
     label: 'Caso práctico',
     description: 'Situación real con tarea; la solución va en el feedback.',
     group: 'practica',
@@ -286,7 +296,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'flashcards',
-    icon: '🃏',
+    icon: 'cards',
     label: 'Fichas de repaso',
     description: 'Tarjetas pregunta-respuesta para repasar lo aprendido.',
     group: 'practica',
@@ -295,7 +305,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'word-search',
-    icon: '🔠',
+    icon: 'grid-search',
     label: 'Sopa de letras',
     description: 'Encontrar en el tablero las palabras clave del tema.',
     group: 'practica',
@@ -304,7 +314,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'crossword',
-    icon: '➕',
+    icon: 'grid',
     label: 'Crucigrama',
     description: 'Rellenar el crucigrama generado a partir de palabras y pistas.',
     group: 'practica',
@@ -313,7 +323,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'hidden-image',
-    icon: '🧩',
+    icon: 'eye',
     label: 'Imagen oculta',
     description: 'Cada respuesta correcta destapa parte de una imagen.',
     group: 'practica',
@@ -322,7 +332,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'az-quiz',
-    icon: '🅰️',
+    icon: 'letter-a',
     label: 'Rosco A-Z',
     description: 'Tipo pasapalabra: una definición por letra, respuesta escrita.',
     group: 'practica',
@@ -331,7 +341,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'puzzle',
-    icon: '🖼️',
+    icon: 'puzzle',
     label: 'Puzzle de imagen',
     description: 'Recomponer una imagen intercambiando sus piezas.',
     group: 'practica',
@@ -340,7 +350,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'progress-report',
-    icon: '📊',
+    icon: 'chart',
     label: 'Informe de progreso',
     description: 'Panel en vivo: actividades pendientes, aciertos, pesos y nota.',
     group: 'otros',
@@ -349,7 +359,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'reflection',
-    icon: '💭',
+    icon: 'message-dots',
     label: 'Reflexión',
     description: 'Pregunta abierta para pensar; el enunciado va en el texto.',
     group: 'practica',
@@ -357,7 +367,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'forum',
-    icon: '💬',
+    icon: 'forum',
     label: 'Debate en foro',
     description: 'Enunciado para debatir en el foro del campus.',
     group: 'practica',
@@ -367,7 +377,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   // --- Evaluación (scored:true de serie) ----------------------------------------
   {
     key: 'unit-quiz',
-    icon: '📝',
+    icon: 'clipboard-check',
     label: 'Test de unidad',
     description: 'Pregunta que cierra la unidad. Se coloca al final.',
     group: 'evaluacion',
@@ -381,7 +391,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   // --- Otros ---------------------------------------------------------------------
   {
     key: 'placeholder',
-    icon: '🚧',
+    icon: 'placeholder',
     label: 'Pendiente de desarrollo',
     description: 'Marcador para contenido que se desarrollará más adelante.',
     group: 'otros',
@@ -390,7 +400,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'blank',
-    icon: '⬜',
+    icon: 'square',
     label: 'En blanco',
     description: 'Pantalla sin preconfigurar, para montarla a mano.',
     group: 'otros',

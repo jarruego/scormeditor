@@ -200,7 +200,9 @@ export const sampleCourse: Course = {
       id: 'final',
       unit_id: '',
       title: 'Test final',
+      instructions: '',
       pass_score: 60,
+      one_question_per_screen: false,
       questions: [
         {
           id: 'q1',

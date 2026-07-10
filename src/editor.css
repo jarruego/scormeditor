@@ -8,9 +8,23 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: system-ui, "Segoe UI", Roboto, sans-serif; color: var(--c-text); background: var(--c-bg); }
-button { font: inherit; cursor: pointer; border: 1px solid var(--c-border); background: var(--c-surface); border-radius: 6px; padding: .4rem .7rem; }
-button:hover { border-color: var(--c-primary); }
+/* Botón base unificado: radio 8px, transición suave y hover con tinte primario. */
+button { font: inherit; cursor: pointer; color: inherit; border: 1px solid var(--c-border); background: var(--c-surface); border-radius: 8px; padding: .4rem .75rem;
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease; }
+button:hover:not(:disabled) { border-color: color-mix(in srgb, var(--c-primary) 55%, var(--c-border)); background: color-mix(in srgb, var(--c-primary) 5%, var(--c-surface)); }
+button:active:not(:disabled) { background: color-mix(in srgb, var(--c-primary) 10%, var(--c-surface)); }
 button:disabled { opacity: .45; cursor: default; border-color: var(--c-border); }
+
+/* Iconos SVG del sistema propio (`Icon.tsx`): alineados con el texto. */
+.ed-ico { display: inline-block; vertical-align: -.16em; flex: none; }
+
+/* Botón de solo-icono (fantasma): cuadrado, sin borde, se enciende al pasar. */
+.ed-icobtn { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px; padding: .2rem; border: none; background: none; border-radius: 6px; color: var(--c-muted); }
+.ed-icobtn:hover:not(:disabled) { border: none; background: color-mix(in srgb, var(--c-primary) 10%, white); color: var(--c-text); }
+.ed-icobtn:disabled { opacity: .3; }
+.ed-icobtn .ed-ico { vertical-align: 0; }
+/* Variante destructiva: en hover avisa en rojo. */
+.ed-icobtn-danger:hover:not(:disabled) { background: #fdecea; color: #b3261e; }
 input:disabled { opacity: .5; cursor: not-allowed; }
 input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px solid var(--c-border); border-radius: 6px; width: 100%; background: #fff; }
 :focus-visible { outline: 3px solid var(--c-primary); outline-offset: 1px; }
@@ -23,12 +37,18 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
 .ed-course-name { color: var(--c-muted); }
 .ed-toolbar-actions { margin-left: auto; display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
 .ed-primary { background: var(--c-primary); color: #fff; border-color: var(--c-primary); }
+.ed-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--c-primary) 88%, black); border-color: color-mix(in srgb, var(--c-primary) 88%, black); color: #fff; }
+.ed-primary:active:not(:disabled) { background: color-mix(in srgb, var(--c-primary) 78%, black); }
 .ed-danger { background: #fdecea; border-color: #b3261e; color: #7a1a14; }
+.ed-danger:hover:not(:disabled) { background: #fbdcd8; border-color: #b3261e; color: #7a1a14; }
+.ed-danger:active:not(:disabled) { background: #f8ccc6; }
 /* Estado del documento (guardado / sin guardar) */
 .ed-docstate { font-size: .8rem; padding: .2rem .6rem; border-radius: 99px; border: 1px solid transparent; cursor: pointer; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ed-docstate.is-saved { background: #e7f6ec; color: #0c5a26; }
 .ed-docstate.is-dirty { background: #fff4e0; color: #7a4a00; font-weight: 600; }
-.ed-docstate:hover { filter: brightness(.97); }
+/* Conservar el color del pill también en hover (pisa el hover del botón base) */
+.ed-docstate.is-saved:hover:not(:disabled) { background: #ddf0e3; border-color: transparent; }
+.ed-docstate.is-dirty:hover:not(:disabled) { background: #ffedcc; border-color: transparent; }
 /* Badge de errores/avisos junto a la pestaña «Validación» (solo si hay alguno) */
 .ed-status { font-size: .75rem; padding: .1rem .5rem; margin-left: .4rem; border-radius: 99px; vertical-align: middle; }
 .ed-status.err { background: #fdecea; color: #7a1a14; }
@@ -61,15 +81,22 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
 /* Tree */
 .ed-tree-title, .ed-module-title { font-size: .8rem; text-transform: uppercase; color: var(--c-muted); margin: .5rem 0 .25rem; }
 .ed-tree-filter { margin: 0 0 .5rem; }
+/* Cada módulo (y las secciones Evaluación/Materiales) como card suave, para
+   delimitarlo del siguiente sin ruido: borde y fondo apenas perceptibles. */
+.ed-module { border: 1px solid color-mix(in srgb, var(--c-border) 55%, transparent); background: color-mix(in srgb, var(--c-bg) 45%, white); border-radius: 10px; padding: .3rem .55rem .55rem; margin: 0 0 .7rem; }
+.ed-module > .ed-module-title { margin-top: .2rem; }
 /* Unidades plegables */
 details.ed-tree-unit { margin: .25rem 0 .5rem; }
 details.ed-tree-unit > summary.ed-unit-title { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; font-weight: 600; margin: .5rem 0 .25rem; cursor: pointer; user-select: none; list-style: none; }
 details.ed-tree-unit > summary.ed-unit-title::-webkit-details-marker { display: none; }
-details.ed-tree-unit > summary .ed-unit-name::before { content: '▸'; display: inline-block; margin-right: .35rem; color: var(--c-muted); transition: transform .15s ease; }
-details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(90deg); }
+/* Chevron propio (borde girado, mismo lenguaje que los iconos SVG). */
+details.ed-tree-unit > summary .ed-unit-name::before { content: ''; display: inline-block; width: 7px; height: 7px; margin: 0 .45rem .1rem 0; border-right: 1.8px solid var(--c-muted); border-bottom: 1.8px solid var(--c-muted); transform: rotate(-45deg); transition: transform .15s ease; }
+details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(45deg); }
 .ed-unit-count { font-size: .75rem; font-weight: 400; color: var(--c-muted); background: var(--c-bg); border-radius: 99px; padding: .05rem .5rem; }
 /* Badge de validación por pantalla */
-.ed-screen-badge { font-size: .8rem; padding: 0 .15rem; cursor: help; }
+.ed-screen-badge { padding: 0 .15rem; cursor: help; display: inline-flex; align-items: center; }
+.ed-screen-badge.is-err { color: #b3261e; }
+.ed-screen-badge.is-warn { color: #d09a00; }
 /* Marca de pantalla con actividad evaluable (puntúa para la nota) */
 .ed-eval { color: #7a4a00; font-weight: 600; }
 /* Selector de recetas de «+ Añadir pantalla» (AddScreenModal) */
@@ -80,21 +107,27 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(9
 /* Nota fija al pie: las recetas son puntos de partida, no un catálogo cerrado */
 .ed-recipes-note { margin: 0; padding-top: .25rem; border-top: 1px solid var(--c-border); font-size: .78rem; color: var(--c-muted); }
 .ed-recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .5rem; }
-.ed-recipe { display: grid; gap: .15rem; text-align: left; border: 1px solid var(--c-border); background: #fff; border-radius: 8px; padding: .55rem .65rem; cursor: pointer; }
-.ed-recipe:hover { border-color: var(--c-primary); background: #f6f8ff; }
+.ed-recipe { display: flex; gap: .6rem; align-items: flex-start; text-align: left; border: 1px solid var(--c-border); background: #fff; border-radius: 8px; padding: .55rem .65rem; cursor: pointer; }
+.ed-recipe:hover:not(:disabled) { border-color: var(--c-primary); background: #f6f8ff; }
+/* Chip del icono de la tarjeta: cuadrado suave con el color semántico del grupo
+   (--ico-c la pone cada tarjeta; sin ella, el primario). */
+.ed-recipe-ico { flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: color-mix(in srgb, var(--ico-c, var(--c-primary)) 11%, white); color: var(--ico-c, var(--c-primary)); }
+.ed-recipe:hover .ed-recipe-ico { background: color-mix(in srgb, var(--ico-c, var(--c-primary)) 19%, white); }
+.ed-recipe-text { display: grid; gap: .15rem; min-width: 0; }
 .ed-recipe-name { font-weight: 600; font-size: .9rem; }
 .ed-recipe-desc { font-size: .75rem; color: var(--c-muted); }
 /* Receta «única por unidad» ya presente: atenuada pero pulsable (aviso blando) */
 .ed-recipe.is-dup { opacity: .55; }
 .ed-recipe.is-current { border-color: var(--c-primary); box-shadow: 0 0 0 1px var(--c-primary) inset; background: #f6f8ff; }
-.ed-recipe-flag { font-size: .8em; }
+.ed-recipe-flag { color: #d09a00; margin-left: .25rem; }
+/* Tarjeta discreta («En blanco», «Pendiente»): chip neutro. */
+.ed-recipe-blank .ed-recipe-ico { background: var(--c-bg); color: var(--c-muted); }
 /* Cabecera de la interacción: tipo actual · Cambiar tipo… · posición · eliminar */
 .ed-it-head { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
   padding-bottom: .4rem; border-bottom: 1px solid var(--c-border); }
 .ed-it-type-name { font-weight: 600; }
 .ed-it-head .ed-field { margin-left: .4rem; }
-.ed-it-del { margin-left: auto; border-color: transparent; background: none; }
-.ed-it-del:hover { border-color: var(--c-border); background: #fff4f4; }
+.ed-it-del { margin-left: auto; }
 /* Folds anidados (Evaluación/Feedback dentro de Interacción): más discretos */
 .ed-fold .ed-fold { background: none; }
 .ed-fold .ed-fold > summary { font-size: .85rem; }
@@ -111,9 +144,9 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(9
    Selectores de hijo directo (>): el modal de recetas se renderiza dentro del <li> y no debe heredar estos estilos. */
 .ed-insert { height: 10px; margin: -5px 0; }
 .ed-insert > button { display: flex; align-items: center; gap: .35rem; width: 100%; height: 100%; padding: 0; border: none; background: none; color: var(--c-primary); cursor: pointer; opacity: 0; }
-.ed-insert > button:hover, .ed-insert > button:focus-visible { opacity: 1; }
+.ed-insert > button:hover, .ed-insert > button:focus-visible { opacity: 1; background: none; border: none; }
 .ed-insert > button::before, .ed-insert > button::after { content: ''; flex: 1; height: 2px; border-radius: 1px; background: currentColor; }
-.ed-insert > button > span { font-size: .75rem; line-height: 1; }
+.ed-insert > button > span { display: inline-flex; line-height: 1; }
 .ed-screen { display: flex; align-items: center; gap: .25rem; border: 1px solid var(--c-border); border-radius: 6px; background: #fff; padding: .2rem .3rem; }
 .ed-screen.is-selected { border-color: var(--c-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c-primary) 25%, transparent); }
 .ed-grip { cursor: grab; border: none; background: none; color: var(--c-muted); padding: .2rem; }
@@ -121,13 +154,13 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(9
 .ed-screen-type { font-size: .7rem; color: var(--c-muted); }
 .ed-screen-title { font-size: .9rem; }
 .ed-flag { color: #d09a00; }
-.ed-screen-actions button { border: none; background: none; padding: .2rem; }
+.ed-screen-actions { display: inline-flex; gap: .05rem; }
 .ed-add { width: 100%; margin: .35rem 0 .75rem; border-style: dashed; color: var(--c-muted); }
 /* Estructura desde el árbol (plan UX fase 7): mover/eliminar módulo y unidad */
 .ed-add-module { margin-top: 0; }
 .ed-struct-tools { display: inline-flex; gap: .1rem; margin-left: .25rem; }
-.ed-struct-btn { border: none; background: none; padding: 0 .2rem; font-size: .8rem; opacity: .45; }
-.ed-struct-btn:hover:not(:disabled) { opacity: 1; }
+.ed-struct-btn { display: inline-flex; align-items: center; justify-content: center; border: none; background: none; padding: .1rem .2rem; border-radius: 5px; color: var(--c-muted); opacity: .5; }
+.ed-struct-btn:hover:not(:disabled) { opacity: 1; background: color-mix(in srgb, var(--c-primary) 10%, white); color: var(--c-text); border: none; }
 .ed-struct-btn:disabled { opacity: .15; }
 .ed-tree-empty { display: grid; gap: .5rem; padding: .5rem 0 1rem; }
 .ed-tree-empty .ed-hint { margin: 0; font-size: .85rem; color: var(--c-muted); }
@@ -164,9 +197,10 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(9
 .ed-row .ed-field.ed-field-auto { flex: 0 0 auto; min-width: 0; }
 /* Control segmentado con iconos (title/aria-label describen cada opción) */
 .ed-seg { display: inline-flex; border: 1px solid var(--c-border); border-radius: 8px; overflow: hidden; width: max-content; }
-.ed-seg button { display: inline-flex; align-items: center; justify-content: center; min-width: 2.3rem; min-height: 2.1rem; border: none; border-right: 1px solid var(--c-border); border-radius: 0; background: var(--c-surface); padding: .3rem .5rem; font-size: 1.15rem; line-height: 1; }
+.ed-seg button { display: inline-flex; align-items: center; justify-content: center; min-width: 2.3rem; min-height: 2.1rem; border: none; border-right: 1px solid var(--c-border); border-radius: 0; background: var(--c-surface); padding: .3rem .5rem; font-size: .95rem; line-height: 1; color: var(--c-muted); }
+.ed-seg button.is-on { color: var(--c-text); }
 .ed-seg button:last-child { border-right: none; }
-.ed-seg button:hover { background: #eef; }
+.ed-seg button:hover:not(:disabled) { background: #eef; border-color: var(--c-border); }
 .ed-seg button.is-on { background: color-mix(in srgb, var(--c-primary) 15%, white); box-shadow: inset 0 0 0 2px var(--c-primary); }
 /* Recurso visual: campos a la izquierda, preview + disposición/proporción a la derecha */
 .ed-media-layout { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
@@ -185,10 +219,15 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(9
 .ed-check input { width: auto; }
 .ed-group { border: 1px solid var(--c-border); border-radius: 8px; padding: .75rem; display: grid; gap: .6rem; }
 .ed-group legend { font-weight: 600; padding: 0 .35rem; }
-/* Secciones plegables del editor de pantalla (colapsadas por defecto) */
+/* Secciones plegables del editor de pantalla (colapsadas por defecto).
+   Chevron propio en lugar del marcador nativo (coherente con los iconos SVG). */
 details.ed-fold { border: 1px solid var(--c-border); border-radius: 8px; }
-details.ed-fold > summary { font-weight: 600; padding: .6rem .75rem; cursor: pointer; user-select: none; list-style-position: inside; }
+details.ed-fold > summary { display: flex; align-items: center; gap: .55rem; font-weight: 600; padding: .6rem .75rem; cursor: pointer; user-select: none; list-style: none; }
+details.ed-fold > summary::-webkit-details-marker { display: none; }
+details.ed-fold > summary::before { content: ''; flex: none; width: 7px; height: 7px; border-right: 1.8px solid var(--c-muted); border-bottom: 1.8px solid var(--c-muted); transform: rotate(-45deg); transition: transform .15s ease; margin-top: -2px; }
+details.ed-fold[open] > summary::before { transform: rotate(45deg); margin-top: -4px; }
 details.ed-fold > summary:hover { color: var(--c-primary); }
+details.ed-fold > summary:hover::before { border-color: var(--c-primary); }
 details.ed-fold[open] > summary { border-bottom: 1px solid var(--c-border); }
 .ed-fold-body { padding: .75rem; display: grid; gap: .6rem; }
 .ed-options { display: grid; gap: .4rem; border-top: 1px solid var(--c-border); padding-top: .5rem; }
@@ -200,17 +239,17 @@ details.ed-fold[open] > summary { border-bottom: 1px solid var(--c-border); }
 .ed-config-fields { flex: 1; display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
 .ed-config-fields > input { flex: 1; min-width: 140px; }
 /* Herramientas por fila del ListEditor: plegar, subir/bajar, duplicar, eliminar */
-.ed-config-tools { display: flex; gap: .15rem; align-items: center; padding-top: .3rem; }
-.ed-config-tools button { padding: .05rem .35rem; line-height: 1.3; font-size: .8rem; }
+.ed-config-tools { display: flex; gap: .1rem; align-items: center; padding-top: .3rem; }
 /* Fila plegada: resumen pulsable que ocupa el hueco de los campos */
 .ed-config-sum { flex: 1; text-align: left; border: none; background: none; cursor: pointer;
   padding: .35rem .2rem; color: var(--c-text, inherit); font-size: .9rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ed-config-sum:hover { color: var(--c-primary); }
+.ed-config-sum { display: block; }
+.ed-config-sum:hover:not(:disabled) { color: var(--c-primary); background: none; border: none; }
 .ed-stack { display: grid; gap: .35rem; width: 100%; }
 .ed-file { display: inline-flex; flex-direction: column; gap: .2rem; align-self: end; }
-.ed-file-btn { display: inline-flex; align-items: center; padding: .45rem .7rem; border: 1px solid var(--c-border); border-radius: 6px; background: var(--c-surface); cursor: pointer; white-space: nowrap; }
-.ed-file-btn:hover { border-color: var(--c-primary); }
+.ed-file-btn { display: inline-flex; align-items: center; padding: .45rem .7rem; border: 1px solid var(--c-border); border-radius: 8px; background: var(--c-surface); cursor: pointer; white-space: nowrap; transition: background-color .12s ease, border-color .12s ease; }
+.ed-file-btn:hover { border-color: color-mix(in srgb, var(--c-primary) 55%, var(--c-border)); background: color-mix(in srgb, var(--c-primary) 5%, var(--c-surface)); }
 .ed-file-btn[aria-busy="true"] { opacity: .6; cursor: default; }
 .ed-file-msg { font-size: .8rem; color: #0c5a26; max-width: 220px; }
 .ed-rta { display: grid; gap: .3rem; }
@@ -227,8 +266,8 @@ details.ed-fold[open] > summary { border-bottom: 1px solid var(--c-border); }
 .cm-md-img.is-missing { color: var(--c-muted); font-style: italic; font-size: .85rem; }
 
 /* El botón de imagen es un <label> con input file oculto; se viste de botón. */
-.ed-rta-imgbtn { padding: .2rem .5rem; font-size: .85rem; line-height: 1.2; border: 1px solid var(--c-border); background: var(--c-surface); border-radius: 6px; cursor: pointer; }
-.ed-rta-imgbtn:hover { border-color: var(--c-primary); }
+.ed-rta-imgbtn { padding: .2rem .5rem; font-size: .85rem; line-height: 1.2; border: 1px solid var(--c-border); background: var(--c-surface); border-radius: 8px; cursor: pointer; transition: background-color .12s ease, border-color .12s ease; }
+.ed-rta-imgbtn:hover { border-color: color-mix(in srgb, var(--c-primary) 55%, var(--c-border)); background: color-mix(in srgb, var(--c-primary) 5%, var(--c-surface)); }
 .ed-rta-imgbtn[aria-busy='true'] { opacity: .45; cursor: default; }
 .ed-rta-sep { width: 1px; align-self: stretch; margin: .1rem .25rem; background: var(--c-border); }
 .ed-rta-preset { display: inline-flex; align-items: stretch; }
@@ -286,6 +325,11 @@ details.ed-fold[open] > summary { border-bottom: 1px solid var(--c-border); }
 .ed-pill { padding: .25rem .6rem; border-radius: 99px; font-size: .85rem; background: #eef; border: none; }
 /* Los recuadros de severidad actúan de filtro: atenuados cuando están ocultos. */
 button.ed-pill { cursor: pointer; }
+/* En hover conservan su color (pisa el hover del botón base) */
+button.ed-pill:hover:not(:disabled) { border: none; filter: brightness(.96); }
+button.ed-pill.err:hover:not(:disabled) { background: #fdecea; }
+button.ed-pill.warn:hover:not(:disabled) { background: #fff4e0; }
+button.ed-pill.info:hover:not(:disabled) { background: #e8f0fe; }
 .ed-pill.is-off { opacity: .4; text-decoration: line-through; }
 .ed-val-group { margin: 1rem 0; }
 .ed-val-group h3 { margin: 0 0 .4rem; font-size: .95rem; color: var(--c-muted); }
@@ -301,9 +345,15 @@ button.ed-pill { cursor: pointer; }
 .ed-issue.sev-error { border-left: 4px solid #b3261e; }
 .ed-issue.sev-warning { border-left: 4px solid #d09a00; }
 .ed-issue.sev-info { border-left: 4px solid #1b3f8a; }
+/* Icono de severidad de cada issue, con su color. */
+.ed-issue-icon { flex: none; display: inline-flex; padding-top: .1rem; }
+.ed-issue-icon.is-error { color: #b3261e; }
+.ed-issue-icon.is-warning { color: #d09a00; }
+.ed-issue-icon.is-info { color: #1b3f8a; }
 .ed-issue-body { display: grid; gap: .15rem; }
 .ed-issue-loc { font-size: .8rem; color: var(--c-muted); }
-.ed-link { border: none; background: none; color: var(--c-primary); text-decoration: underline; padding: 0 .25rem; }
+.ed-link { border: none; background: none; color: var(--c-primary); text-decoration: underline; padding: 0 .25rem; border-radius: 4px; }
+.ed-link:hover:not(:disabled) { background: none; border: none; color: color-mix(in srgb, var(--c-primary) 80%, black); }
 .ed-disclaimer { font-size: .8rem; color: var(--c-muted); margin-top: 1rem; border-top: 1px dashed var(--c-border); padding-top: .75rem; }
 
 /* Selector de color (Apariencia): muestra + hex */
@@ -314,7 +364,9 @@ button.ed-pill { cursor: pointer; }
 .ed-confirm-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, .45); display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .ed-confirm { background: var(--c-surface); border-radius: 12px; box-shadow: 0 16px 48px rgba(0, 0, 0, .35); width: 100%; max-width: 440px; padding: 1.25rem; animation: ed-confirm-pop .12s ease-out; }
 .ed-confirm-head { display: flex; align-items: center; gap: .6rem; margin-bottom: .6rem; }
-.ed-confirm-icon { font-size: 1.5rem; line-height: 1; }
+.ed-confirm-icon { display: inline-flex; line-height: 1; }
+.ed-confirm-icon.is-danger { color: #b3261e; }
+.ed-confirm-icon.is-info { color: var(--c-primary); }
 .ed-confirm-title { margin: 0; font-size: 1.15rem; }
 .ed-confirm-msg { margin: 0 0 1.2rem; color: var(--c-text); line-height: 1.45; }
 .ed-confirm-actions { display: flex; justify-content: flex-end; gap: .6rem; }
@@ -329,7 +381,7 @@ button.ed-pill { cursor: pointer; }
 .ed-modal-xl { max-width: 1080px; }
 .ed-modal-head { display: flex; align-items: center; justify-content: space-between; padding: .75rem 1rem; border-bottom: 1px solid var(--c-border); }
 .ed-modal-head h2 { margin: 0; font-size: 1.1rem; }
-.ed-modal-x { border: none; background: none; font-size: 1.1rem; color: var(--c-muted); padding: .2rem .5rem; }
+.ed-modal-x { width: 30px; height: 30px; }
 .ed-modal-body { padding: 1rem; display: grid; gap: .9rem; }
 .ed-tts-msg { font-size: .85rem; color: var(--c-muted); align-self: center; }
 .ed-tts-stats { margin: 0; font-size: .9rem; }
@@ -344,6 +396,10 @@ button.ed-pill { cursor: pointer; }
 .ed-report-actions { font-size: .85rem; color: var(--c-muted); }
 .ed-report-actions { display: flex; gap: .5rem; }
 .ed-preview-frame { width: 100%; height: 100%; min-height: 60vh; border: 1px solid var(--c-border); border-radius: 8px; background: #fff; }
+
+/* Estado ✓/✗ de las checklists del informe nativo */
+.ed-check-ok { color: #0c5a26; }
+.ed-check-ko { color: #b3261e; }
 
 /* Informe renderizado nativo (con enlaces al editor). */
 .ed-report-body { overflow: auto; border: 1px solid var(--c-border); border-radius: 8px; background: #fff; padding: 1.5rem 2rem; line-height: 1.5; }
@@ -368,8 +424,7 @@ button.ed-pill { cursor: pointer; }
 .ed-shortcuts-keys { font-family: ui-monospace, Consolas, monospace; font-size: .85rem; white-space: nowrap; }
 .ed-term-row { display: flex; gap: .5rem; align-items: flex-start; padding: .6rem .7rem; border: 1px solid var(--c-border); border-radius: 8px; background: var(--c-surface); }
 .ed-term-fields { flex: 1; display: grid; gap: .5rem; }
-.ed-term-row > button { border: none; background: none; color: var(--c-muted); font-size: 1rem; padding: .2rem .4rem; cursor: pointer; }
-.ed-term-row > button:hover { color: #b3261e; }
+.ed-term-row > button { align-self: flex-start; }
 
 /* Campos de código (interacción HTML a medida) */
 .ed-code { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: .85rem; white-space: pre; }
@@ -384,8 +439,7 @@ button.ed-pill { cursor: pointer; }
 .ed-obj-row { border: 1px solid var(--c-border); border-radius: 8px; padding: .6rem .7rem; display: grid; gap: .45rem; background: var(--c-surface); }
 .ed-obj-main { display: flex; gap: .4rem; align-items: center; }
 .ed-obj-main input { flex: 1; }
-.ed-obj-del { border: none; background: none; color: var(--c-muted); font-size: 1rem; padding: .2rem .4rem; cursor: pointer; }
-.ed-obj-del:hover { color: #b3261e; }
+.ed-obj-del { flex: none; }
 .ed-obj-uses { display: flex; gap: .35rem; flex-wrap: wrap; align-items: center; }
 .ed-obj-chip { border: 1px solid var(--c-border); background: var(--c-bg); border-radius: 99px; padding: .15rem .6rem; font-size: .8rem; cursor: pointer; }
 .ed-obj-chip:hover:not(:disabled) { background: #f4f7ff; border-color: var(--c-primary); }
@@ -407,7 +461,7 @@ button.ed-pill { cursor: pointer; }
 }
 
 /* Editor visual de zonas de hotspots (modal) */
-.ed-hz-open { align-self: flex-start; border: 1px solid var(--c-primary); color: var(--c-primary); background: var(--c-surface); border-radius: 6px; padding: .45rem .7rem; cursor: pointer; }
+.ed-hz-open { align-self: flex-start; border: 1px solid var(--c-primary); color: var(--c-primary); background: var(--c-surface); border-radius: 8px; padding: .45rem .7rem; cursor: pointer; }
 .ed-hz-open:hover:not(:disabled) { background: #f4f7ff; }
 .ed-hz-open:disabled { opacity: .55; cursor: default; border-color: var(--c-border); color: var(--c-muted); }
 .ed-hz-layout { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
@@ -426,8 +480,8 @@ button.ed-pill { cursor: pointer; }
 .ed-hz-item .ed-hz-num { position: static; flex: 0 0 auto; }
 .ed-hz-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ed-hz-ok { color: #2c8a4b; font-weight: 700; }
-.ed-hz-del { align-self: start; border: 1px solid var(--c-border); background: var(--c-surface); border-radius: 6px; padding: .4rem .6rem; cursor: pointer; color: #b3261e; }
-.ed-hz-del:hover { border-color: #b3261e; }
+.ed-hz-del { align-self: start; border: 1px solid var(--c-border); background: var(--c-surface); border-radius: 8px; padding: .4rem .6rem; cursor: pointer; color: #b3261e; }
+.ed-hz-del:hover:not(:disabled) { border-color: #b3261e; background: #fdecea; color: #b3261e; }
 .ed-hz-foot { display: flex; justify-content: flex-end; gap: .5rem; border-top: 1px solid var(--c-border); padding-top: .75rem; }
-.ed-hz-foot button { border: 1px solid var(--c-border); border-radius: 6px; padding: .45rem .9rem; background: var(--c-surface); cursor: pointer; }
+.ed-hz-foot button { border: 1px solid var(--c-border); border-radius: 8px; padding: .45rem .9rem; background: var(--c-surface); cursor: pointer; }
 .ed-hz-foot button.ed-primary { background: var(--c-primary); color: #fff; border-color: var(--c-primary); }

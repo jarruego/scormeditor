@@ -2,13 +2,15 @@ import { useRef } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import type { GlossaryTerm, BibliographyEntry } from '../schema/course.schema'
 import { confirmDialog } from '../store/confirm'
+import { Icon, type IconName } from './Icon'
+import { TYPE_COLORS } from '../schema/labels'
 
 /** Cabecera con título editable in situ (mismo patrón que ScreenEditor). */
 function EditableHead({ value, placeholder, ariaLabel, chipIcon, chipLabel, onChange }: {
   value: string
   placeholder: string
   ariaLabel: string
-  chipIcon: string
+  chipIcon: IconName
   chipLabel: string
   onChange: (v: string) => void
 }) {
@@ -19,9 +21,9 @@ function EditableHead({ value, placeholder, ariaLabel, chipIcon, chipLabel, onCh
         aria-label={ariaLabel} onChange={(e) => onChange(e.target.value)} />
       <button type="button" className="ed-title-pencil" title="Editar título" aria-label="Editar título"
         onClick={() => { ref.current?.focus(); ref.current?.select() }}>
-        <span aria-hidden="true">✏️</span>
+        <Icon name="pencil" size={14} />
       </button>
-      <span className="ed-form-type"><span aria-hidden="true">{chipIcon}</span> {chipLabel}</span>
+      <span className="ed-form-type"><Icon name={chipIcon} size={12} color={TYPE_COLORS.materiales} /> {chipLabel}</span>
     </h2>
   )
 }
@@ -30,7 +32,7 @@ function EditableHead({ value, placeholder, ariaLabel, chipIcon, chipLabel, onCh
  * Editores de los materiales transversales del curso: Glosario y Recursos/
  * bibliografía. Se abren desde el árbol (entradas sintéticas `__glossary__` y
  * `__bibliography__`, como `__final__`). En la carcasa se muestran en los
- * modales de los botones 📖/🔗 de la barra superior.
+ * modales de los botones Glosario/Recursos de la barra superior.
  */
 
 export function GlossaryEditor() {
@@ -59,7 +61,7 @@ export function GlossaryEditor() {
   return (
     <div className="ed-form">
       <EditableHead value={glossaryTitle} placeholder="Glosario" ariaLabel="Título del glosario"
-        chipIcon="📖" chipLabel="Glosario" onChange={setGlossaryTitle} />
+        chipIcon="book" chipLabel="Glosario" onChange={setGlossaryTitle} />
       <p className="ed-hint">
         El estudiante lo consulta con el botón correspondiente de la barra superior del curso
         (rotulado con este título). Los términos se muestran en el orden de esta lista.
@@ -79,14 +81,14 @@ export function GlossaryEditor() {
               <textarea rows={2} value={t.definition} onChange={(e) => update(i, { definition: e.target.value })} />
             </label>
           </div>
-          <button type="button" onClick={() => void remove(i)} aria-label={`Eliminar término ${t.term || i + 1}`} title="Eliminar término">🗑</button>
+          <button type="button" className="ed-icobtn ed-icobtn-danger" onClick={() => void remove(i)} aria-label={`Eliminar término ${t.term || i + 1}`} title="Eliminar término"><Icon name="trash" size={14} /></button>
         </div>
       ))}
 
       <div className="ed-row">
-        <button type="button" className="ed-primary" onClick={add}>+ Añadir término</button>
+        <button type="button" className="ed-primary" onClick={add}><Icon name="plus" size={13} /> Añadir término</button>
         {glossary.length > 1 && (
-          <button type="button" onClick={sort} title="Reordena los términos alfabéticamente">A→Z Ordenar alfabéticamente</button>
+          <button type="button" onClick={sort} title="Reordena los términos alfabéticamente"><Icon name="sort" size={14} /> Ordenar alfabéticamente</button>
         )}
       </div>
     </div>
@@ -117,7 +119,7 @@ export function BibliographyEditor() {
   return (
     <div className="ed-form">
       <EditableHead value={bibliographyTitle} placeholder="Recursos y bibliografía"
-        ariaLabel="Título de recursos y bibliografía" chipIcon="🔗" chipLabel="Recursos"
+        ariaLabel="Título de recursos y bibliografía" chipIcon="link" chipLabel="Recursos"
         onChange={setBibliographyTitle} />
       <p className="ed-hint">
         El estudiante los consulta con el botón «Recursos» de la barra superior del curso
@@ -141,12 +143,12 @@ export function BibliographyEditor() {
                 onChange={(e) => update(i, { url: e.target.value || undefined })} />
             </label>
           </div>
-          <button type="button" onClick={() => void remove(i)} aria-label={`Eliminar referencia ${i + 1}`} title="Eliminar referencia">🗑</button>
+          <button type="button" className="ed-icobtn ed-icobtn-danger" onClick={() => void remove(i)} aria-label={`Eliminar referencia ${i + 1}`} title="Eliminar referencia"><Icon name="trash" size={14} /></button>
         </div>
       ))}
 
       <div className="ed-row">
-        <button type="button" className="ed-primary" onClick={add}>+ Añadir referencia</button>
+        <button type="button" className="ed-primary" onClick={add}><Icon name="plus" size={13} /> Añadir referencia</button>
       </div>
     </div>
   )

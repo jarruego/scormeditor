@@ -1,7 +1,8 @@
 import { useCourseStore } from '../store/courseStore'
 import type { ScreenInput } from '../schema/course.schema'
-import { RECIPE_GROUPS, RECIPE_GROUP_LABELS, RECIPE_GROUP_HINTS, SCREEN_RECIPES, type ScreenRecipe } from '../schema/screenRecipes'
+import { RECIPE_GROUPS, RECIPE_GROUP_LABELS, RECIPE_GROUP_HINTS, RECIPE_GROUP_COLORS, SCREEN_RECIPES, type ScreenRecipe } from '../schema/screenRecipes'
 import { SettingsWindow } from './SettingsModal'
+import { Icon } from './Icon'
 
 /**
  * Selector de recetas de «+ Añadir pantalla»: tarjetas agrupadas por el papel
@@ -63,8 +64,13 @@ export function AddScreenModal({ unitId, atIndex, onClose }: { unitId: string; a
                     title={dup ? 'Ya existe una pantalla de este tipo en la unidad' : undefined}
                     onClick={() => create(r)}
                   >
-                    <span className="ed-recipe-name"><span aria-hidden="true">{r.icon}</span> {r.label}</span>
-                    <span className="ed-recipe-desc">{r.description}</span>
+                    <span className="ed-recipe-ico" aria-hidden="true"
+                      style={{ '--ico-c': RECIPE_GROUP_COLORS[r.group] } as React.CSSProperties}>
+                      <Icon name={r.icon} size={18} /></span>
+                    <span className="ed-recipe-text">
+                      <span className="ed-recipe-name">{r.label}</span>
+                      <span className="ed-recipe-desc">{r.description}</span>
+                    </span>
                   </button>
                 )
               })}

@@ -5,6 +5,7 @@ import { FileButton } from './FileButton'
 import { HotspotZonesModal, type HotspotSpot } from './HotspotZonesModal'
 import { ListEditor } from './ListEditor'
 import { SegIcons } from './SegIcons'
+import { Icon } from './Icon'
 
 const rid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 7)}`
 
@@ -219,7 +220,7 @@ export function InteractionConfigEditor({
           <label className="ed-field"><span>Texto alternativo de la imagen</span>
             <input value={cfg.alt || ''} onChange={(e) => setConfig({ alt: e.target.value })} /></label>
           <button className="ed-hz-open" onClick={() => setZonesOpen(true)} disabled={!cfg.image}>
-            🎯 Editar zonas sobre la imagen…
+            <Icon name="hotspot" size={14} /> Editar zonas sobre la imagen…
           </button>
           {!cfg.image && <p className="ed-hint">Sube o indica la imagen para poder dibujar las zonas visualmente.</p>}
           {zonesOpen && (

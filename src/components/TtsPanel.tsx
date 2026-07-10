@@ -15,6 +15,7 @@ import {
   type TtsConfig,
   type TtsProvider,
 } from '../tts/tts'
+import { Icon } from './Icon'
 
 /**
  * Sección «Narración por voz (TTS)»: configura la clave/voz/modelo de la API y
@@ -89,7 +90,7 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
       await audioRef.current.play()
       setTestMsg('✓ Voz generada correctamente.')
     } catch (e) {
-      setTestMsg(`⛔ ${(e as Error).message}`)
+      setTestMsg(`Error: ${(e as Error).message}`)
     } finally {
       setBusy(false)
     }
@@ -207,7 +208,7 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
               </label>
             )}
             <div className="ed-row">
-              <button type="button" onClick={onTest} disabled={busy}>▶ Probar voz</button>
+              <button type="button" onClick={onTest} disabled={busy}><Icon name="play" size={14} /> Probar voz</button>
               {testMsg && <span className="ed-tts-msg">{testMsg}</span>}
             </div>
           </fieldset>
@@ -216,7 +217,7 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
             <legend>Generar todos los audios</legend>
             {narrationOff && (
               <p className="ed-tts-msg">
-                ⚠ El curso está marcado como <strong>no narrado</strong>: la generación masiva está
+                <Icon name="alert-triangle" size={13} /> El curso está marcado como <strong>no narrado</strong>: la generación masiva está
                 deshabilitada. Cambia el ajuste «Curso narrado» (arriba) si quieres locutarlo.
               </p>
             )}
@@ -234,7 +235,7 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
               <button type="button" disabled={busy || narrationOff || stats.missingTranscript === 0}
                 onClick={onFillTranscripts}
                 title="Genera la transcripción desde el texto y las interacciones informativas; solo rellena las que están vacías">
-                ↻ Generar transcripciones desde el contenido
+                <Icon name="refresh" size={14} /> Generar transcripciones desde el contenido
                 {stats.missingTranscript > 0 && ` (${stats.missingTranscript} vacía${stats.missingTranscript === 1 ? '' : 's'})`}
               </button>
               {trMsg && <span className="ed-tts-msg">{trMsg}</span>}

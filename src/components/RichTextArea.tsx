@@ -8,6 +8,7 @@ import { mdHighlighting, calloutDecorations, livePreview, editorTheme, IMG_LINE 
 import { loadPresets, savePresets, PALETTE, type CustomBlockPreset } from '../store/customBlocks'
 import { useCourseStore } from '../store/courseStore'
 import { optimizeImage } from '../media/optimizeImage'
+import { Icon } from './Icon'
 
 // Iconos frecuentes en formación online para el bloque personalizado. Es una
 // lista curada (no un teclado emoji completo) para elegir con un clic sin pegar.
@@ -574,10 +575,10 @@ export function RichTextArea({
         <button type="button" onClick={() => linePrefix('1. ')} title="Lista numerada">1. Lista</button>
         <button type="button" onClick={openLinkEditor}
           title={ctx.link ? 'Editar el enlace donde está el cursor' : 'Insertar enlace'}>
-          🔗 {ctx.link ? 'Editar enlace' : 'Enlace'}
+          <Icon name="link" size={13} /> {ctx.link ? 'Editar enlace' : 'Enlace'}
         </button>
         <label className="ed-rta-imgbtn" title="Insertar una imagen (se optimiza y viaja en el ZIP)" aria-busy={imgBusy}>
-          🖼 {imgBusy ? 'Subiendo…' : 'Imagen'}
+          <Icon name="image" size={13} /> {imgBusy ? 'Subiendo…' : 'Imagen'}
           <input type="file" accept="image/*" hidden disabled={imgBusy} onChange={onPickImage} />
         </label>
         <span className="ed-rta-sep" aria-hidden="true" />
@@ -589,14 +590,14 @@ export function RichTextArea({
         <button type="button" onClick={() => callout('case')} title="Bloque: caso práctico">🧪 Caso práctico</button>
         <span className="ed-rta-sep" aria-hidden="true" />
         <button type="button" onClick={() => (showCustom && !editing ? closeCustom() : openCustomNew())}
-          title="Bloque personalizado (icono, color y título a elegir)">✚ Personalizado</button>
+          title="Bloque personalizado (icono, color y título a elegir)"><Icon name="plus" size={13} /> Personalizado</button>
         {presets.map((p) => (
           <span key={p.id} className="ed-rta-preset">
             <button type="button" onClick={() => insertCustom(p)} title={`Insertar «${p.title}»`}
               style={{ borderLeft: `4px solid ${p.color}` }}>
               {p.icon} {p.title}
             </button>
-            <button type="button" className="ed-rta-preset-x" onClick={() => deletePreset(p.id)} aria-label={`Eliminar preset ${p.title}`}>✕</button>
+            <button type="button" className="ed-rta-preset-x" onClick={() => deletePreset(p.id)} aria-label={`Eliminar preset ${p.title}`}><Icon name="x" size={12} /></button>
           </span>
         ))}
       </div>
@@ -610,7 +611,7 @@ export function RichTextArea({
                 <button type="button" className={`ed-rta-icon-btn ${draft.icon ? 'has-icon' : ''}`}
                   aria-label="Elegir icono" aria-expanded={showIcons}
                   title="Elegir un icono" onClick={() => setShowIcons((s) => !s)}>
-                  {draft.icon || '＋'}
+                  {draft.icon || <Icon name="plus" size={14} />}
                 </button>
                 {showIcons && (
                   <div className="ed-rta-icon-pop" role="menu" aria-label="Iconos">
@@ -662,7 +663,7 @@ export function RichTextArea({
         <div className="ed-rta-floats">
           {ctx.block && dismissedBlock !== blockSig && (
         <div className="ed-rta-blockbar">
-          <span className="ed-rta-blocklbl">🧩 Bloque:</span>
+          <span className="ed-rta-blocklbl"><Icon name="puzzle" size={13} /> Bloque:</span>
           <select value={blockTypeValue} onChange={(e) => changeType(e.target.value)} title="Cambiar el tipo del bloque">
             <optgroup label="Estándar">
               {CALLOUT_TYPES.map((tp) => (
@@ -676,18 +677,18 @@ export function RichTextArea({
                 ))}
               </optgroup>
             )}
-            <option value="custom">✚ Personalizado a medida…</option>
+            <option value="custom">＋ Personalizado a medida…</option>
           </select>
           {ctx.block.type === 'custom' && (
-            <button type="button" onClick={openCustomEdit} title="Editar color, icono y título">✎ Editar</button>
+            <button type="button" onClick={openCustomEdit} title="Editar color, icono y título"><Icon name="pencil" size={13} /> Editar</button>
           )}
-          <button type="button" onClick={unwrapBlock} title="Quitar el formato de bloque y dejar el texto plano">⤯ Quitar formato</button>
+          <button type="button" onClick={unwrapBlock} title="Quitar el formato de bloque y dejar el texto plano"><Icon name="ban" size={13} /> Quitar formato</button>
         </div>
       )}
 
       {ctx.img && dismissedImg !== imgSig && (
         <div className="ed-rta-blockbar ed-rta-imgbar">
-          <span className="ed-rta-blocklbl">🖼 Imagen:</span>
+          <span className="ed-rta-blocklbl"><Icon name="image" size={13} /> Imagen:</span>
           <input className="ed-rta-imgalt" value={ctx.img.alt} placeholder="Texto alternativo (accesibilidad)"
             onChange={(e) => updateImg({ alt: e.target.value })} />
           <select value={ctx.img.width ?? ''} title="Ancho de la imagen en la diapositiva"
@@ -700,17 +701,17 @@ export function RichTextArea({
             <option value="100">100 % del ancho</option>
           </select>
           <label className="ed-rta-imgbtn" title="Sustituir por otra imagen" aria-busy={imgBusy}>
-            {imgBusy ? 'Subiendo…' : '↻ Sustituir…'}
+            {imgBusy ? 'Subiendo…' : <><Icon name="refresh" size={13} /> Sustituir…</>}
             <input type="file" accept="image/*" hidden disabled={imgBusy} onChange={onReplaceImage} />
           </label>
           <button type="button" className="ed-danger" onClick={removeImage}
-            title="Quitar la imagen (el archivo se conserva si otra pantalla lo usa)">🗑 Quitar</button>
+            title="Quitar la imagen (el archivo se conserva si otra pantalla lo usa)"><Icon name="trash" size={13} /> Quitar</button>
         </div>
       )}
 
       {linkEdit && (
         <div className="ed-rta-blockbar ed-rta-linkedit">
-          <span className="ed-rta-blocklbl">🔗 Enlace:</span>
+          <span className="ed-rta-blocklbl"><Icon name="link" size={13} /> Enlace:</span>
           <input className="ed-rta-linktext" value={linkEdit.text} placeholder="Texto visible"
             onChange={(e) => setLinkEdit({ ...linkEdit, text: e.target.value })} />
           <input className="ed-rta-linkurl" value={linkEdit.url} placeholder="https://… o mailto:…"

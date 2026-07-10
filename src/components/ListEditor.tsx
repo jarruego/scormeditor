@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { confirmDialog } from '../store/confirm'
+import { Icon } from './Icon'
 
 /**
  * Editor genérico de listas del editor (opciones, tarjetas, apartados,
@@ -141,21 +142,23 @@ export function ListEditor<T>({
           )}
           <span className="ed-config-tools">
             {summary && isOpen(i) && (
-              <button type="button" onClick={() => mutOpen((s) => s.delete(i))}
-                title="Plegar" aria-label="Plegar">⤒</button>
+              <button type="button" className="ed-icobtn" onClick={() => mutOpen((s) => s.delete(i))}
+                title="Plegar" aria-label="Plegar"><Icon name="fold" size={13} /></button>
             )}
-            <button type="button" onClick={() => move(i, -1)} disabled={i === 0}
-              title="Subir" aria-label="Subir">▲</button>
-            <button type="button" onClick={() => move(i, 1)} disabled={i === items.length - 1}
-              title="Bajar" aria-label="Bajar">▼</button>
-            <button type="button" onClick={() => duplicate(i)}
-              title="Duplicar" aria-label="Duplicar">⧉</button>
-            <button type="button" onClick={() => void remove(i)}
-              title="Eliminar" aria-label="Eliminar">🗑</button>
+            <button type="button" className="ed-icobtn" onClick={() => move(i, -1)} disabled={i === 0}
+              title="Subir" aria-label="Subir"><Icon name="arrow-up" size={13} /></button>
+            <button type="button" className="ed-icobtn" onClick={() => move(i, 1)} disabled={i === items.length - 1}
+              title="Bajar" aria-label="Bajar"><Icon name="arrow-down" size={13} /></button>
+            <button type="button" className="ed-icobtn" onClick={() => duplicate(i)}
+              title="Duplicar" aria-label="Duplicar"><Icon name="copy" size={13} /></button>
+            <button type="button" className="ed-icobtn ed-icobtn-danger" onClick={() => void remove(i)}
+              title="Eliminar" aria-label="Eliminar"><Icon name="trash" size={13} /></button>
           </span>
         </div>
       ))}
-      <button type="button" onClick={add}>{addLabel ?? '+ Añadir'}</button>
+      <button type="button" onClick={add}>
+        <Icon name="plus" size={13} /> {(addLabel ?? '+ Añadir').replace(/^\+\s*/, '')}
+      </button>
     </div>
   )
 }

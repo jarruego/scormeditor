@@ -12,6 +12,7 @@ import { ValidationPanel } from './components/ValidationPanel'
 import { StudentPreview } from './components/StudentPreview'
 import { ReportPanel } from './components/ReportPanel'
 import { ConfirmModal } from './components/ConfirmModal'
+import { Icon } from './components/Icon'
 
 export function App() {
   const tab = useCourseStore((s) => s.activeTab)
@@ -118,9 +119,9 @@ export function App() {
             {id === 'validation' && (val.errors > 0 || val.warnings > 0) && (
               <span className={`ed-status ${val.errors > 0 ? 'err' : 'warn'}`}
                 title={`${val.errors} error${val.errors === 1 ? '' : 'es'} · ${val.warnings} aviso${val.warnings === 1 ? '' : 's'}`}>
-                {val.errors > 0 && <>{val.errors} ⛔</>}
+                {val.errors > 0 && <>{val.errors} <Icon name="alert-octagon" size={11} /></>}
                 {val.errors > 0 && val.warnings > 0 && ' · '}
-                {val.warnings > 0 && <>{val.warnings} ⚠</>}
+                {val.warnings > 0 && <>{val.warnings} <Icon name="alert-triangle" size={11} /></>}
               </span>
             )}
           </button>

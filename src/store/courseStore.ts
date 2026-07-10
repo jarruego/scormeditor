@@ -71,7 +71,8 @@ interface CourseState {
   removeModule: (id: string) => void
   /** Reordena el módulo dentro del curso (dir: -1 sube, +1 baja). */
   moveModule: (id: string, dir: -1 | 1) => void
-  /** Reordena la unidad dentro de su módulo (dir: -1 sube, +1 baja). */
+  /** Reordena la unidad (dir: -1 sube, +1 baja). Desde el extremo de su módulo
+   *  cruza al adyacente: al final del anterior o al principio del siguiente. */
   moveUnit: (id: string, dir: -1 | 1) => void
 
   selectScreen: (id: string | null) => void
@@ -309,15 +310,29 @@ export const useCourseStore = create<CourseState>((set, get) => {
   },
 
   moveUnit: (id, dir) => {
-    const src = get().course.modules.find((m) => m.units.some((u) => u.id === id))
-    if (!src) return
-    const i = src.units.findIndex((u) => u.id === id)
+    const modules = get().course.modules
+    const mi = modules.findIndex((m) => m.units.some((u) => u.id === id))
+    if (mi < 0) return
+    const i = modules[mi].units.findIndex((u) => u.id === id)
     const j = i + dir
-    if (j < 0 || j >= src.units.length) return
+    if (j >= 0 && j < modules[mi].units.length) {
+      // Dentro del módulo: intercambio con la vecina.
+      snapshot()
+      const course = clone(get().course)
+      const m = course.modules[mi]
+      ;[m.units[i], m.units[j]] = [m.units[j], m.units[i]]
+      set({ course })
+      return
+    }
+    // En el extremo: la unidad cruza al módulo adyacente (si lo hay) — al
+    // final del anterior subiendo, al principio del siguiente bajando.
+    const tm = mi + dir
+    if (tm < 0 || tm >= modules.length) return
     snapshot()
     const course = clone(get().course)
-    const m = course.modules.find((x) => x.id === src.id)!
-    ;[m.units[i], m.units[j]] = [m.units[j], m.units[i]]
+    const [unit] = course.modules[mi].units.splice(i, 1)
+    if (dir === -1) course.modules[tm].units.push(unit)
+    else course.modules[tm].units.unshift(unit)
     set({ course })
   },
 

@@ -620,7 +620,9 @@ preguntas.
     "id": "A01",
     "unit_id": "u1",
     "title": "Autoevaluación del Tema 1",
+    "instructions": "",
     "pass_score": 70,
+    "one_question_per_screen": false,
     "questions": [
       {
         "id": "Q01",
@@ -644,6 +646,14 @@ preguntas.
   del test usa botones de opción única; `multiple_choice` se admite en el esquema
   pero se comportaría como selección única, evítalo de momento.)
 - Para `true_false`, da dos opciones (`Verdadero`/`Falso`) con `correct`.
+- `one_question_per_screen` (opcional, def. `false`): el estudiante ve las preguntas
+  de una en una con navegación Anterior/Siguiente en vez de todas seguidas. Es una
+  decisión de presentación del editor humano: déjalo en `false` salvo que lo pidan.
+- `pass_score` (heredado): el runtime lo **ignora**; la nota mínima para aprobar es
+  única y es `scorm.rules.min_score` (§2). Puedes omitirlo o repetir ese valor.
+- `instructions` (opcional, def. `""`): texto introductorio que se muestra antes de las
+  preguntas (markdown ligero). Vacío = no se muestra nada; déjalo vacío salvo que el
+  encargo pida instrucciones concretas.
 
 ---
 

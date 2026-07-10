@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { Icon } from './Icon'
 
 /**
- * Etiqueta con renombrado inline: un lápiz ✏ convierte el texto en un input.
+ * Etiqueta con renombrado inline: un lápiz convierte el texto en un input.
  * Enter o perder el foco confirman; Escape restaura el valor original.
  * Los clics paran la propagación para poder vivir dentro de un `<summary>`
  * (árbol de unidades) sin plegar/desplegar el bloque.
@@ -26,7 +27,7 @@ export function InlineRename({ value, onChange, title = 'Renombrar', placeholder
         <span className="ed-rename-text">{value || placeholder}</span>
         <button type="button" className="ed-rename" title={title} aria-label={title}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); origRef.current = value; setEditing(true) }}>
-          ✏
+          <Icon name="pencil" size={13} />
         </button>
       </>
     )

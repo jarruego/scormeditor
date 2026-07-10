@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { create } from 'zustand'
 import {
   DndContext,
   PointerSensor,
@@ -17,11 +18,55 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useCourseStore } from '../store/courseStore'
 import type { Screen } from '../schema/course.schema'
-import { screenTypeLabel, screenTypeIcon } from '../schema/labels'
+import { screenTypeLabel, screenTypeIcon, screenTypeColor, interactionTypeLabel, TYPE_COLORS } from '../schema/labels'
+import { interactionRecipe, interactionColor } from '../schema/interactionRecipes'
 import { validateCourse, type Issue } from '../validation/validators'
 import { confirmDialog } from '../store/confirm'
 import { InlineRename } from './InlineRename'
 import { AddScreenModal } from './AddScreenModal'
+import { Icon } from './Icon'
+
+/**
+ * Estado de plegado de las unidades del árbol: preferencia de UI (no viaja en
+ * el curso ni entra en el historial de deshacer). Vive en un store propio para
+ * sobrevivir al desmontaje del árbol al cambiar de pestaña (App solo renderiza
+ * el aside en la pestaña Editor). Ids huérfanos de unidades borradas = inocuos.
+ */
+const useTreeFold = create<{
+  collapsed: Record<string, boolean>
+  setCollapsed: (id: string, v: boolean) => void
+}>((set) => ({
+  collapsed: {},
+  setCollapsed: (id, v) => set((s) => ({ collapsed: { ...s.collapsed, [id]: v } })),
+}))
+
+/** Scroll del árbol hasta el nodo, solo si no está ya del todo a la vista.
+ *  Centrado (no `nearest`): alineado al borde el nodo apenas se percibe. */
+function scrollTreeTo(el: HTMLElement | null) {
+  if (!el) return
+  const tree = el.closest('.ed-tree')
+  if (!tree) return
+  const r = el.getBoundingClientRect()
+  const t = tree.getBoundingClientRect()
+  if (r.top < t.top || r.bottom > t.bottom - 4) el.scrollIntoView({ block: 'center' })
+}
+
+/** Ref a un `<li>` del árbol que se lleva a la vista cuando pasa a estar
+ *  seleccionado (también al montar: al volver de otra pestaña el árbol se monta
+ *  de nuevo con la selección ya puesta). Diferido dos frames: en el montaje el
+ *  layout aún no es definitivo y el scroll inmediato se queda corto. */
+function useScrollWhenSelected(selected: boolean) {
+  const ref = useRef<HTMLLIElement | null>(null)
+  useEffect(() => {
+    if (!selected) return
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => scrollTreeTo(ref.current))
+    })
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2) }
+  }, [selected])
+  return ref
+}
 
 /** Peor severidad de los issues de una pantalla (para el badge del árbol). */
 type ScreenIssues = { errors: number; warnings: number }
@@ -36,7 +81,7 @@ function IssueBadge({ info }: { info?: ScreenIssues }) {
       className={`ed-screen-badge ${isErr ? 'is-err' : 'is-warn'}`}
       title={`${n} ${what}${n === 1 ? '' : 's'} de validación en esta pantalla`}
     >
-      {isErr ? '⛔' : '⚠'}
+      <Icon name={isErr ? 'alert-octagon' : 'alert-triangle'} size={14} />
     </span>
   )
 }
@@ -54,31 +99,42 @@ function ScreenItem({ screen, unitId, issues }: { screen: Screen; unitId: string
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
   const flagged = screen.type === 'content_placeholder' || screen.status === 'esqueleto_pendiente_desarrollo'
 
-  // Al seleccionarse (p. ej. pantalla recién creada desde una receta, o enlace
-  // desde Validación), el árbol hace scroll hasta dejarla a la vista.
-  const liRef = useRef<HTMLLIElement | null>(null)
-  useEffect(() => {
-    if (selected) liRef.current?.scrollIntoView({ block: 'nearest' })
-  }, [selected])
+  // Al seleccionarse (pantalla recién creada, enlace desde Validación, o al
+  // volver de la Vista estudiante), el árbol lleva la pantalla a la vista.
+  const liRef = useScrollWhenSelected(selected)
   const setRefs = (el: HTMLLIElement | null) => { liRef.current = el; setNodeRef(el) }
 
   return (
     <li ref={setRefs} style={style} className={`ed-screen ${selected ? 'is-selected' : ''}`}>
-      <button className="ed-grip" {...attributes} {...listeners} aria-label="Arrastrar para reordenar">⋮⋮</button>
+      <button className="ed-grip" {...attributes} {...listeners} aria-label="Arrastrar para reordenar">
+        <Icon name="grip" size={14} />
+      </button>
       <button className="ed-screen-label" onClick={() => select(screen.id)}>
         <span className="ed-screen-type">
-          <span aria-hidden="true">{screenTypeIcon(screen.type)}</span> {screenTypeLabel(screen.type)}
-          {screen.interaction && (screen.interaction.scored
-            ? <span className="ed-eval" title="Actividad evaluable: puntúa para la nota"> · ⭐ evaluable</span>
-            : <span title="Interacción informativa (no puntúa)"> · 🧩</span>)}
+          <Icon name={screenTypeIcon(screen.type)} size={12} color={screenTypeColor(screen.type)} /> {screenTypeLabel(screen.type)}
+          {/* Marca de la interacción: su icono real (con el color de su grupo), no un genérico */}
+          {screen.interaction && (
+            <span title={`${interactionTypeLabel(screen.interaction.type)}${screen.interaction.scored ? '' : ' (no puntúa)'}`}>
+              {' · '}
+              <Icon name={interactionRecipe(screen.interaction.type).icon} size={11}
+                color={interactionColor(screen.interaction.type)} />
+              {screen.interaction.scored && (
+                <span className="ed-eval" title="Actividad evaluable: puntúa para la nota">
+                  {' '}<Icon name="star" size={11} /> evaluable
+                </span>
+              )}
+            </span>
+          )}
         </span>
         <span className="ed-screen-title">{screen.title || '(sin título)'}</span>
-        {flagged && <span className="ed-flag" title="Pendiente de desarrollo">⚠</span>}
+        {flagged && <span className="ed-flag" title="Pendiente de desarrollo"><Icon name="alert-triangle" size={13} /></span>}
       </button>
       <IssueBadge info={issues} />
       <span className="ed-screen-actions">
-        <button onClick={() => duplicate(screen.id)} title="Duplicar">⧉</button>
-        <button
+        <button className="ed-icobtn" onClick={() => duplicate(screen.id)} title="Duplicar" aria-label="Duplicar">
+          <Icon name="copy" size={14} />
+        </button>
+        <button className="ed-icobtn ed-icobtn-danger"
           onClick={() => {
             void confirmDialog({
               title: 'Eliminar pantalla',
@@ -87,8 +143,8 @@ function ScreenItem({ screen, unitId, issues }: { screen: Screen; unitId: string
               danger: true,
             }).then((ok) => { if (ok) remove(screen.id) })
           }}
-          title="Eliminar"
-        >🗑</button>
+          title="Eliminar" aria-label="Eliminar"
+        ><Icon name="trash" size={14} /></button>
       </span>
     </li>
   )
@@ -99,7 +155,7 @@ function AddScreenButton({ unitId }: { unitId: string }) {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <button className="ed-add" onClick={() => setOpen(true)}>+ Añadir pantalla…</button>
+      <button className="ed-add" onClick={() => setOpen(true)}><Icon name="plus" size={13} /> Añadir pantalla…</button>
       {open && <AddScreenModal unitId={unitId} onClose={() => setOpen(false)} />}
     </>
   )
@@ -112,9 +168,26 @@ function InsertPoint({ unitId, index }: { unitId: string; index: number }) {
   return (
     <li className="ed-insert" role="presentation">
       <button aria-label="Insertar pantalla aquí" title="Insertar pantalla aquí" onClick={() => setOpen(true)}>
-        <span aria-hidden="true">＋</span>
+        <span aria-hidden="true"><Icon name="plus" size={12} /></span>
       </button>
       {open && <AddScreenModal unitId={unitId} atIndex={index} onClose={() => setOpen(false)} />}
+    </li>
+  )
+}
+
+/** Nodo sintético del árbol (Test final / Glosario / Recursos): mismo aspecto
+ *  que una pantalla y mismo scroll-a-la-vista al quedar seleccionado. */
+function SyntheticItem({ selected, onSelect, children }: {
+  selected: boolean
+  onSelect: () => void
+  children: React.ReactNode
+}) {
+  const liRef = useScrollWhenSelected(selected)
+  return (
+    <li ref={liRef} className={`ed-screen ${selected ? 'is-selected' : ''}`}>
+      <button className="ed-screen-label" onClick={onSelect}>
+        {children}
+      </button>
     </li>
   )
 }
@@ -136,6 +209,8 @@ export function CourseTree() {
   const moveModule = useCourseStore((s) => s.moveModule)
   const moveUnit = useCourseStore((s) => s.moveUnit)
   const [filter, setFilter] = useState('')
+  const collapsed = useTreeFold((s) => s.collapsed)
+  const setCollapsed = useTreeFold((s) => s.setCollapsed)
 
   // Borrado de módulo/unidad: confirma solo si contiene pantallas (deshacer
   // siempre disponible). Los botones viven en <summary>/<p>: hay que cortar el
@@ -218,13 +293,15 @@ export function CourseTree() {
                 <span className="ed-struct-tools">
                   <button type="button" className="ed-struct-btn" title="Subir módulo" aria-label="Subir módulo"
                     disabled={mi === 0}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveModule(m.id, -1) }}>▲</button>
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveModule(m.id, -1) }}>
+                    <Icon name="arrow-up" size={12} /></button>
                   <button type="button" className="ed-struct-btn" title="Bajar módulo" aria-label="Bajar módulo"
                     disabled={mi === course.modules.length - 1}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveModule(m.id, 1) }}>▼</button>
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveModule(m.id, 1) }}>
+                    <Icon name="arrow-down" size={12} /></button>
                   <button type="button" className="ed-struct-btn" title="Eliminar módulo" aria-label="Eliminar módulo"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onRemoveModule(m) }}>
-                    <span aria-hidden="true">🗑</span>
+                    <Icon name="trash" size={12} />
                   </button>
                 </span>
               )}
@@ -233,8 +310,13 @@ export function CourseTree() {
               const visible = u.screens.filter(matches)
               if (q && visible.length === 0) return null
               return (
-                // key con el filtro: al (des)activar el filtro se remonta abierto.
-                <details key={`${u.id}-${q ? 'f' : 'n'}`} className="ed-tree-unit" open>
+                // key con el filtro: al (des)activar el filtro se remonta abierto
+                // (con filtro siempre desplegada para ver los resultados). Sin
+                // filtro manda el estado plegado guardado, que sobrevive al
+                // cambio de pestaña (useTreeFold).
+                <details key={`${u.id}-${q ? 'f' : 'n'}`} className="ed-tree-unit"
+                  open={q ? true : !collapsed[u.id]}
+                  onToggle={(e) => { if (!q) setCollapsed(u.id, !e.currentTarget.open) }}>
                   <summary className="ed-unit-title">
                     <span className="ed-unit-name">
                       <InlineRename value={u.title} title="Renombrar unidad"
@@ -243,15 +325,22 @@ export function CourseTree() {
                     <span className="ed-unit-count">{q ? `${visible.length}/${u.screens.length}` : u.screens.length}</span>
                     {!q && (
                       <span className="ed-struct-tools">
-                        <button type="button" className="ed-struct-btn" title="Subir unidad" aria-label="Subir unidad"
-                          disabled={ui === 0}
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveUnit(u.id, -1) }}>▲</button>
-                        <button type="button" className="ed-struct-btn" title="Bajar unidad" aria-label="Bajar unidad"
-                          disabled={ui === m.units.length - 1}
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveUnit(u.id, 1) }}>▼</button>
+                        {/* Desde el extremo del módulo, subir/bajar cruza al módulo adyacente */}
+                        <button type="button" className="ed-struct-btn"
+                          title={ui === 0 ? 'Subir unidad (pasa al final del módulo anterior)' : 'Subir unidad'}
+                          aria-label="Subir unidad"
+                          disabled={mi === 0 && ui === 0}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveUnit(u.id, -1) }}>
+                          <Icon name="arrow-up" size={12} /></button>
+                        <button type="button" className="ed-struct-btn"
+                          title={ui === m.units.length - 1 ? 'Bajar unidad (pasa al principio del módulo siguiente)' : 'Bajar unidad'}
+                          aria-label="Bajar unidad"
+                          disabled={mi === course.modules.length - 1 && ui === m.units.length - 1}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveUnit(u.id, 1) }}>
+                          <Icon name="arrow-down" size={12} /></button>
                         <button type="button" className="ed-struct-btn" title="Eliminar unidad" aria-label="Eliminar unidad"
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onRemoveUnit(u) }}>
-                          <span aria-hidden="true">🗑</span>
+                          <Icon name="trash" size={12} />
                         </button>
                       </span>
                     )}
@@ -272,7 +361,7 @@ export function CourseTree() {
               )
             })}
             {!q && (
-              <button className="ed-add" onClick={() => addUnit(m.id)}>+ Añadir unidad</button>
+              <button className="ed-add" onClick={() => addUnit(m.id)}><Icon name="plus" size={13} /> Añadir unidad</button>
             )}
           </div>
         ))}
@@ -282,10 +371,10 @@ export function CourseTree() {
         course.modules.length === 0 ? (
           <div className="ed-tree-empty">
             <p className="ed-hint">El curso no tiene módulos. Crea el primero para empezar a añadir pantallas.</p>
-            <button className="ed-primary" onClick={addModule}>+ Crear el primer módulo</button>
+            <button className="ed-primary" onClick={addModule}><Icon name="plus" size={13} /> Crear el primer módulo</button>
           </div>
         ) : (
-          <button className="ed-add ed-add-module" onClick={addModule}>+ Añadir módulo</button>
+          <button className="ed-add ed-add-module" onClick={addModule}><Icon name="plus" size={13} /> Añadir módulo</button>
         )
       )}
 
@@ -295,16 +384,14 @@ export function CourseTree() {
             <p className="ed-module-title">Evaluación</p>
             <div className="ed-unit">
               <ul className="ed-screens">
-                <li className={`ed-screen ${finalSelected ? 'is-selected' : ''}`}>
-                  <button className="ed-screen-label" onClick={() => select('__final__')}>
-                    <span className="ed-screen-type"><span aria-hidden="true">📝</span> Test</span>
-                    <span className="ed-screen-title">
-                      {course.assessments.final_test
-                        ? course.assessments.final_test.title || 'Test final'
-                        : 'Test final (vacío)'}
-                    </span>
-                  </button>
-                </li>
+                <SyntheticItem selected={finalSelected} onSelect={() => select('__final__')}>
+                  <span className="ed-screen-type"><Icon name="clipboard-check" size={12} color={TYPE_COLORS.evaluacion} /> Test</span>
+                  <span className="ed-screen-title">
+                    {course.assessments.final_test
+                      ? course.assessments.final_test.title || 'Test final'
+                      : 'Test final (vacío)'}
+                  </span>
+                </SyntheticItem>
               </ul>
             </div>
           </div>
@@ -313,30 +400,26 @@ export function CourseTree() {
             <p className="ed-module-title">Materiales</p>
             <div className="ed-unit">
               <ul className="ed-screens">
-                <li className={`ed-screen ${glossarySelected ? 'is-selected' : ''}`}>
-                  <button className="ed-screen-label" onClick={() => select('__glossary__')}>
-                    <span className="ed-screen-type"><span aria-hidden="true">📖</span> {course.glossary_title.trim() || 'Glosario'}</span>
-                    <span className="ed-screen-title">
-                      {course.glossary.length
-                        ? `${course.glossary.length} término${course.glossary.length === 1 ? '' : 's'}`
-                        : 'Vacío'}
-                    </span>
-                  </button>
-                </li>
-                <li className={`ed-screen ${biblioSelected ? 'is-selected' : ''}`}>
-                  <button className="ed-screen-label" onClick={() => select('__bibliography__')}>
-                    {/* Con el título por defecto se abrevia a «Recursos», como el botón de la carcasa */}
-                    <span className="ed-screen-type"><span aria-hidden="true">🔗</span> {
-                      course.bibliography_title.trim() === 'Recursos y bibliografía' || !course.bibliography_title.trim()
-                        ? 'Recursos' : course.bibliography_title
-                    }</span>
-                    <span className="ed-screen-title">
-                      {course.bibliography.length
-                        ? `${course.bibliography.length} referencia${course.bibliography.length === 1 ? '' : 's'}`
-                        : 'Sin referencias'}
-                    </span>
-                  </button>
-                </li>
+                <SyntheticItem selected={glossarySelected} onSelect={() => select('__glossary__')}>
+                  <span className="ed-screen-type"><Icon name="book" size={12} color={TYPE_COLORS.materiales} /> {course.glossary_title.trim() || 'Glosario'}</span>
+                  <span className="ed-screen-title">
+                    {course.glossary.length
+                      ? `${course.glossary.length} término${course.glossary.length === 1 ? '' : 's'}`
+                      : 'Vacío'}
+                  </span>
+                </SyntheticItem>
+                <SyntheticItem selected={biblioSelected} onSelect={() => select('__bibliography__')}>
+                  {/* Con el título por defecto se abrevia a «Recursos», como el botón de la carcasa */}
+                  <span className="ed-screen-type"><Icon name="link" size={12} color={TYPE_COLORS.materiales} /> {
+                    course.bibliography_title.trim() === 'Recursos y bibliografía' || !course.bibliography_title.trim()
+                      ? 'Recursos' : course.bibliography_title
+                  }</span>
+                  <span className="ed-screen-title">
+                    {course.bibliography.length
+                      ? `${course.bibliography.length} referencia${course.bibliography.length === 1 ? '' : 's'}`
+                      : 'Sin referencias'}
+                  </span>
+                </SyntheticItem>
               </ul>
             </div>
           </div>

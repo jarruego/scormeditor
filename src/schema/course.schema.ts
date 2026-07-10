@@ -261,8 +261,21 @@ export const UnitTest = z.object({
   id: z.string(),
   unit_id: z.string(),
   title: z.string().default('Test de unidad'),
+  instructions: z
+    .string()
+    .default('')
+    .describe('Texto introductorio opcional antes de las preguntas (markdown ligero); vacío = no se muestra nada'),
   questions: z.array(QuizQuestion).default([]),
-  pass_score: z.number().min(0).max(100).default(60),
+  pass_score: z
+    .number()
+    .min(0)
+    .max(100)
+    .default(60)
+    .describe('Heredado, sin efecto: la nota mínima única del curso es scorm.rules.min_score'),
+  one_question_per_screen: z
+    .boolean()
+    .default(false)
+    .describe('Presentar el test paginado: una pregunta cada vez, con navegación Anterior/Siguiente'),
 })
 export type UnitTest = z.infer<typeof UnitTest>
 

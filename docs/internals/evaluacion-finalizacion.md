@@ -28,6 +28,12 @@ ilimitados, donde hay que acertar). `SCORM.setStatus`: `incomplete` / `passed` /
 
 - `mastery_score`/`masteryscore` van al manifiesto (`src/scorm/manifest.ts`);
   `rules.min_score` es el umbral APTO en el runtime.
+- **Nota mínima única** (jul 2026): `rules.min_score` es el ÚNICO umbral. El banner
+  APTO/NO APTO de la pantalla del test también lo usa, y solo aparece con
+  `score_source: 'final_test'` (con `mixed`/`unit_tests` el test muestra solo su
+  puntuación y remite a «Resultados», que es quien dicta el veredicto).
+  `final_test.pass_score` queda en el esquema por compatibilidad pero **se ignora**
+  (antes pintaba un APTO propio que podía contradecir al del curso).
 
 ## Cierre de sesión y modos del LMS (jul 2026, inspirado en eXeLearning)
 - `finishSession()` (app.js) es **idempotente** (flag `sessionFinished`) y se engancha a
@@ -71,8 +77,38 @@ Detalle de qué muestra: `interacciones.md`.
 ## Pantallas sintéticas (no están en `course.json`)
 `flatten()` añade al final de `SCREENS`:
 - **Test final** `__final__` (si `assessments.final_test` tiene preguntas):
-  `renderFinalTest()` pinta el formulario; al enviar, feedback por pregunta + nota; guarda
-  `STATE.results.__final__`.
+  `renderFinalTest()` pinta el formulario; al **Comprobar test**, feedback por pregunta
+  y guarda `STATE.results.__final__`. No hay texto fijo de instrucciones: solo
+  `final_test.instructions` (configurable en el editor, vacío por defecto) y el
+  contador de intentos si hay límite. En paginado, al comprobar (y al volver con el
+  test ya comprobado) se aterriza en la **vista de resultado** (`showSummary`, `mode:
+  'questions'|'summary'` dentro de `renderFinalTest`): puntuación (APTO/NO APTO si
+  `score_source: 'final_test'`), aciertos «X de N», **intentos restantes** y acciones
+  «Repetir el test» (solo si quedan intentos y <100%; salta a la primera fallada) y
+  «Revisar las respuestas». Desde ella «Siguiente» sale de la pantalla y «Anterior» o
+  los cuadritos vuelven a las preguntas; revisando, «Siguiente» tras la última vuelve
+  a la vista de resultado. En modo clásico el banner inline incluye los intentos.
+  Además, `finalLeave` (puente consultado por `goRelative`, limpiado en `goTo` como
+  `finalNav`) intercepta «Siguiente» al salir del test con fallos e intentos
+  restantes: modal de confirmación (`testDialog`, clases `.me-modal`/`.me-exit-*`
+  reutilizadas) «Quedarme en el test» / «Continuar».
+  Con `final_test.one_question_per_screen` (checkbox «Una pregunta por pantalla» en el
+  editor del test) el formulario se pagina: todos los fieldsets siguen en el DOM (la
+  corrección `paint()` y la restauración no cambian) pero solo se muestra el actual.
+  No hay botones propios: los **Anterior/Siguiente de la carcasa** mueven las preguntas
+  mientras el test está en pantalla (puente `finalNav`, consultado por `goRelative` y
+  `refreshNavState`; `goTo` lo limpia al salir) y solo cambian de diapositiva en los
+  extremos. Encima va el **navegador de preguntas** (`.me-qnav-row`: rótulo
+  «PREGUNTAS:» + `.me-qnav`, en columna en ≤640px): un cuadrito numerado por pregunta,
+  clicable para saltar, con estado gris = sin responder, relleno = respondida,
+  verde/rojo = corregida y borde en la actual. El contador «Pregunta X de N»
+  (`.me-final-prog`) es solo para lectores de pantalla (`sr-only`, aria-live). «Comprobar test» se ve en la
+  última pregunta y, esté donde esté el estudiante, en cuanto todas están respondidas;
+  Enter en una intermedia con el test incompleto avanza en vez de comprobar; comprobar
+  con preguntas sin responder salta a la primera pendiente. Con 0–1 preguntas no se
+  pagina.
+  Al **cambiar una respuesta** (paginado o no) se retira el feedback de esa pregunta y
+  el banner de nota del envío anterior (los intentos siguientes parten limpios).
 - **Resultados** `__results__` (si hay algo que calificar): `renderResults()` muestra
   nota, **APTO/NO APTO** (o «Curso incompleto») y desglose (test final y/o actividades).
   Estilos `.me-result-*` en `styles.css`.

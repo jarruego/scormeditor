@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { validateCourse } from '../validation/validators'
 import { ScreenType, InteractionType, Interaction } from '../schema/course.schema'
-import { screenTypeLabel, screenTypeIcon, interactionTypeLabel } from '../schema/labels'
+import { screenTypeLabel, screenTypeIcon, screenTypeColor, interactionTypeLabel } from '../schema/labels'
 import { SCREEN_TYPE_UI } from '../schema/screenTypeUI'
-import { interactionRecipe, migrateInteractionData, interactionHasContent } from '../schema/interactionRecipes'
+import { interactionRecipe, interactionColor, migrateInteractionData, interactionHasContent } from '../schema/interactionRecipes'
 import { InteractionTypeModal } from './InteractionTypeModal'
 import { SegIcons } from './SegIcons'
 import { RichTextArea } from './RichTextArea'
@@ -15,20 +15,21 @@ import { generateForScreen, hasApiKey } from '../tts/tts'
 import { buildTranscript, INFORMATIVE } from '../tts/buildTranscript'
 import { confirmDialog } from '../store/confirm'
 import type { AssetMap } from '../export/exportScorm'
+import { Icon } from './Icon'
 
 // Controles compactos con iconos (title/aria-label describen la acción) en vez de selects.
 const KIND_ICONS = [
-  { value: 'none', icon: '🚫', title: 'Sin recurso' },
-  { value: 'image', icon: '🖼️', title: 'Imagen' },
-  { value: 'video_youtube', icon: '▶️', title: 'Vídeo de YouTube' },
-  { value: 'video_file', icon: '🎬', title: 'Vídeo (archivo)' },
-  { value: 'audio', icon: '🔊', title: 'Audio' },
+  { value: 'none', icon: <Icon name="ban" size={17} />, title: 'Sin recurso' },
+  { value: 'image', icon: <Icon name="image" size={17} />, title: 'Imagen' },
+  { value: 'video_youtube', icon: <Icon name="play" size={17} />, title: 'Vídeo de YouTube' },
+  { value: 'video_file', icon: <Icon name="film" size={17} />, title: 'Vídeo (archivo)' },
+  { value: 'audio', icon: <Icon name="volume" size={17} />, title: 'Audio' },
 ]
 const LAYOUT_ICONS = [
-  { value: 'top', icon: '⬆️', title: 'Arriba del texto' },
-  { value: 'bottom', icon: '⬇️', title: 'Debajo del texto' },
-  { value: 'left', icon: '⬅️', title: 'A la izquierda del texto' },
-  { value: 'right', icon: '➡️', title: 'A la derecha del texto' },
+  { value: 'top', icon: <Icon name="arrow-up" size={16} />, title: 'Arriba del texto' },
+  { value: 'bottom', icon: <Icon name="arrow-down" size={16} />, title: 'Debajo del texto' },
+  { value: 'left', icon: <Icon name="arrow-left" size={16} />, title: 'A la izquierda del texto' },
+  { value: 'right', icon: <Icon name="arrow-right" size={16} />, title: 'A la derecha del texto' },
 ]
 const WIDTH_ICONS = [
   { value: '33', icon: '⅓', title: 'Recurso 33% · texto 66%' },
@@ -38,14 +39,14 @@ const WIDTH_ICONS = [
 // Ajuste del recurso en top/bottom (estados excluyentes: al estirar al 100% el
 // centrado ya no aplica). Mapea a media_align + media_full.
 const FIT_ICONS = [
-  { value: 'left', icon: '◧', title: 'Alineada a la izquierda' },
-  { value: 'center', icon: '▣', title: 'Centrada' },
-  { value: 'full', icon: '▬', title: 'Ancho completo (100%)' },
+  { value: 'left', icon: <Icon name="fit-left" size={17} />, title: 'Alineada a la izquierda' },
+  { value: 'center', icon: <Icon name="fit-center" size={17} />, title: 'Centrada' },
+  { value: 'full', icon: <Icon name="fit-full" size={17} />, title: 'Ancho completo (100%)' },
 ]
 // Posición de la interacción respecto al texto (mismos iconos que Disposición).
 const IT_POS_ICONS = [
-  { value: 'top', icon: '⬆️', title: 'Encima del texto' },
-  { value: 'bottom', icon: '⬇️', title: 'Debajo del texto' },
+  { value: 'top', icon: <Icon name="arrow-up" size={16} />, title: 'Encima del texto' },
+  { value: 'bottom', icon: <Icon name="arrow-down" size={16} />, title: 'Debajo del texto' },
 ]
 
 // Defaults de feedback del esquema (única fuente de verdad): para saber si el
@@ -143,7 +144,7 @@ export function ScreenEditor() {
     if (!id) return
     setTtsMsg(null)
     if (!hasApiKey()) {
-      setTtsMsg('⛔ Falta la clave de API. Configúrala en «⚙ Ajustes → Narración» de la barra superior.')
+      setTtsMsg('Error: falta la clave de API. Configúrala en «Ajustes → Narración» de la barra superior.')
       return
     }
     setTtsBusy(true)
@@ -152,7 +153,7 @@ export function ScreenEditor() {
       audioStaleWarned.delete(id)
       setTtsMsg('✓ Audio generado desde la transcripción.')
     } catch (e) {
-      setTtsMsg(`⛔ ${(e as Error).message}`)
+      setTtsMsg(`Error: ${(e as Error).message}`)
     } finally {
       setTtsBusy(false)
     }
@@ -215,7 +216,7 @@ export function ScreenEditor() {
     if (!screen) return
     const next = buildTranscript(screen)
     if (!next.trim()) {
-      setTtsMsg('⚠ La pantalla no tiene texto ni interacciones informativas de las que generar la transcripción.')
+      setTtsMsg('Aviso: la pantalla no tiene texto ni interacciones informativas de las que generar la transcripción.')
       return
     }
     if (screen.transcript.trim() && screen.transcript.trim() !== next.trim()) {
@@ -236,7 +237,7 @@ export function ScreenEditor() {
         cancelLabel: 'Mantener el audio',
       })
       if (regen) await onGenerateAudio()
-      else setTtsMsg('⚠ El audio actual ya no se corresponde con la transcripción regenerada.')
+      else setTtsMsg('Aviso: el audio actual ya no se corresponde con la transcripción regenerada.')
     }
   }
 
@@ -407,11 +408,11 @@ export function ScreenEditor() {
                       <FileButton accept=".vtt,text/vtt" label="Subir VTT…" currentPath={t.src}
                         makePath={() => `assets/media/${screen.id}_${t.lang || 'es'}.vtt`} onUploaded={(p) => updateTrack({ ...t, src: p })} />
                     </div>
-                    <button type="button" onClick={() => setTracks(vr.tracks.filter((_, j) => j !== i))} title="Eliminar subtítulo" aria-label="Eliminar subtítulo">🗑</button>
+                    <button type="button" className="ed-icobtn ed-icobtn-danger" onClick={() => setTracks(vr.tracks.filter((_, j) => j !== i))} title="Eliminar subtítulo" aria-label="Eliminar subtítulo"><Icon name="trash" size={13} /></button>
                   </div>
                 )
               })}
-              <button type="button" onClick={() => setTracks([...vr.tracks, { lang: 'es', label: 'Español', src: '', kind: 'subtitles' }])}>+ Añadir subtítulo</button>
+              <button type="button" onClick={() => setTracks([...vr.tracks, { lang: 'es', label: 'Español', src: '', kind: 'subtitles' }])}><Icon name="plus" size={13} /> Añadir subtítulo</button>
             </div>
           </>
         )}
@@ -445,12 +446,12 @@ export function ScreenEditor() {
           <button type="button" disabled={ttsBusy}
             onClick={() => void onRebuildTranscript()}
             title="Genera la transcripción a partir del texto del estudiante y las interacciones informativas de la pantalla">
-            ↻ {screen.transcript.trim() ? 'Regenerar' : 'Generar'} transcripción desde el contenido
+            <Icon name="refresh" size={14} /> {screen.transcript.trim() ? 'Regenerar' : 'Generar'} transcripción desde el contenido
           </button>
           <button type="button" className="ed-primary" disabled={ttsBusy || !screen.transcript.trim()}
             onClick={onGenerateAudio}
             title={screen.transcript.trim() ? 'Genera el audio con voz a partir de la transcripción' : 'Escribe primero una transcripción'}>
-            {ttsBusy ? 'Generando…' : screen.audio_src ? '🔊 Regenerar audio desde la transcripción' : '🔊 Generar audio desde la transcripción'}
+            {ttsBusy ? 'Generando…' : <><Icon name="volume" size={14} /> {screen.audio_src ? 'Regenerar' : 'Generar'} audio desde la transcripción</>}
           </button>
           {ttsMsg && <span className="ed-tts-msg">{ttsMsg}</span>}
         </div>
@@ -468,16 +469,16 @@ export function ScreenEditor() {
           onChange={(e) => patch({ title: e.target.value })} />
         <button type="button" className="ed-title-pencil" title="Editar título" aria-label="Editar título"
           onClick={() => { titleRef.current?.focus(); titleRef.current?.select() }}>
-          <span aria-hidden="true">✏️</span>
+          <Icon name="pencil" size={14} />
         </button>
-        <span className="ed-form-type"><span aria-hidden="true">{screenTypeIcon(screen.type)}</span> {screenTypeLabel(screen.type)}</span>
+        <span className="ed-form-type"><Icon name={screenTypeIcon(screen.type)} size={12} color={screenTypeColor(screen.type)} /> {screenTypeLabel(screen.type)}</span>
       </h2>
 
       {screenIssues.length > 0 && (
         <ul className="ed-inline-issues" aria-label="Avisos de validación de esta pantalla">
           {screenIssues.map((i, n) => (
             <li key={n} className={i.severity === 'error' ? 'is-err' : 'is-warn'}>
-              {i.severity === 'error' ? '⛔' : '⚠'} {i.message}
+              <Icon name={i.severity === 'error' ? 'alert-octagon' : 'alert-triangle'} size={13} /> {i.message}
             </li>
           ))}
         </ul>
@@ -505,14 +506,14 @@ export function ScreenEditor() {
       <Fold key={`it-${id}-${screen.type}`} summary="Interacción"
         defaultOpen={!!it || !!uiCfg.interactionOpen}>
         {!it ? (
-          <button onClick={() => setTypePicker('add')}>+ Añadir interacción</button>
+          <button onClick={() => setTypePicker('add')}><Icon name="plus" size={13} /> Añadir interacción</button>
         ) : (
           <>
             {/* 1. Cabecera: qué es (el tipo se elige en el selector visual),
                 dónde va respecto al texto, y eliminar (discreto, a la derecha). */}
             <div className="ed-it-head">
               <span className="ed-it-type-name">
-                <span aria-hidden="true">{itRecipe!.icon}</span> {interactionTypeLabel(it.type)}
+                <Icon name={itRecipe!.icon} size={15} color={interactionColor(it.type)} /> {interactionTypeLabel(it.type)}
               </span>
               <button type="button" onClick={() => setTypePicker('change')}
                 title="Elegir otro tipo de interacción (el contenido compatible se conserva)">
@@ -520,9 +521,9 @@ export function ScreenEditor() {
               </button>
               <SegIcons label="Posición" value={screen.interaction_layout}
                 onChange={(v) => patch({ interaction_layout: v as any })} options={IT_POS_ICONS} />
-              <button type="button" className="ed-it-del" title="Eliminar interacción"
+              <button type="button" className="ed-it-del ed-icobtn ed-icobtn-danger" title="Eliminar interacción"
                 aria-label="Eliminar interacción" onClick={() => void onDeleteInteraction()}>
-                <span aria-hidden="true">🗑</span>
+                <Icon name="trash" size={14} />
               </button>
             </div>
 

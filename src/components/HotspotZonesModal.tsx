@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import type { AssetMap } from '../export/exportScorm'
 import { SettingsWindow } from './SettingsModal'
+import { Icon } from './Icon'
 
 /**
  * Editor visual de zonas para la interacción `hotspots`: muestra la imagen a
@@ -189,7 +190,7 @@ export function HotspotZonesModal({
   }
 
   return (
-    <SettingsWindow title="🎯 Zonas activas sobre la imagen" onClose={onClose} wide>
+    <SettingsWindow title="Zonas activas sobre la imagen" onClose={onClose} wide>
       <p className="ed-hint">
         <strong>Arrastra sobre la imagen</strong> para dibujar una zona nueva. Arrastra una zona para moverla
         y usa el tirador de su esquina para cambiar el tamaño. Con el teclado: flechas mueven la zona
@@ -244,7 +245,7 @@ export function HotspotZonesModal({
                 >
                   <span className="ed-hz-num">{i + 1}</span>
                   <span className="ed-hz-item-label">{s.label || '(sin etiqueta)'}</span>
-                  {s.correct && <span className="ed-hz-ok" title="Zona correcta">✓</span>}
+                  {s.correct && <span className="ed-hz-ok" title="Zona correcta"><Icon name="check" size={13} /></span>}
                 </button>
               ))}
             </div>
@@ -262,7 +263,7 @@ export function HotspotZonesModal({
               <label className="ed-field"><span>Feedback al pulsar esta zona (opcional)</span>
                 <input value={sel.feedback || ''} onChange={(e) => updateSpot(sel.id, { feedback: e.target.value })} /></label>
               <p className="ed-hint">x {sel.x} % · y {sel.y} % · ancho {sel.w} % · alto {sel.h} %</p>
-              <button className="ed-hz-del" onClick={() => removeSpot(sel.id)}>🗑 Quitar esta zona</button>
+              <button className="ed-hz-del" onClick={() => removeSpot(sel.id)}><Icon name="trash" size={14} /> Quitar esta zona</button>
             </div>
           ) : (
             <p className="ed-hint">

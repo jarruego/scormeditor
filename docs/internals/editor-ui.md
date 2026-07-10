@@ -2,11 +2,45 @@
 
 > Doc interno de SCORMEditor. Índice en `CLAUDE.md`.
 
+## Sistema de iconos propio (`Icon.tsx`, jul 2026)
+Toda la iconografía del **editor** sale de `src/components/Icon.tsx`: SVG inline
+minimalistas (caja 24×24, trazo 1.8 redondeado, `currentColor`), sin dependencias.
+`<Icon name="trash" size={14} />`; añadir un icono = añadir una entrada a `PATHS`
+(el tipo `IconName` se deriva de las claves). Sustituyó a los emojis del chrome
+(🗑 ✏ ⧉ ▲▼ ⚙ ⛔ ⚠…) para unificar la estética (decisión del usuario, jul 2026).
+- **Catálogo tipado**: `SCREEN_TYPE_ICONS` (`labels.ts`), `screenRecipes.ts` e
+  `interactionRecipes.ts` guardan **nombres de icono** (`IconName`), no emojis; los
+  renderizan `CourseTree`, `ScreenEditor` (chip del título y cabecera de interacción)
+  y las tarjetas de los dos selectores (`.ed-recipe-ico`: chip cuadrado tintado).
+- **Color semántico** (petición del usuario, jul 2026): los iconos del catálogo llevan
+  color por familia — `TYPE_COLORS`/`SCREEN_TYPE_COLORS`/`screenTypeColor()` en
+  `labels.ts` (estructura=índigo `#5265c4`, contenido=teal `#0f9490`, práctica=ámbar
+  `#c27b06`, evaluación=frambuesa `#c2417e`, materiales=terracota `#bd5d52` —Glosario
+  y Recursos—, otros=gris `#7d8694`), con
+  `RECIPE_GROUP_COLORS` (tarjetas de pantalla) e `INTERACTION_GROUP_COLORS` +
+  `interactionColor()` (grupos de interacción, con matices naranja/índigo propios).
+  Son las familias de la paleta corporativa de teleformación (turquesa/ámbar/rosa/
+  violeta de los callouts) **saturadas** para leerse a 12px. `<Icon color=…>` fija el
+  color; el chip de tarjeta lo recibe vía la variable CSS `--ico-c`. En el árbol, la
+  marca de pantalla con interacción muestra el **icono del tipo de interacción real**
+  (con su color y `title`), no un puzzle genérico.
+- **Botones**: base global con radio 8px, transición y hover con tinte primario
+  (`color-mix`); `.ed-icobtn` para botones de solo-icono (fantasma, 26px, con variante
+  `.ed-icobtn-danger` que enrojece en hover). Los botones con colores propios
+  (`.ed-docstate`, `.ed-pill`, `.ed-danger`…) pisan el hover base con reglas
+  `:hover:not(:disabled)` explícitas. Los `<details>` (folds y unidades del árbol)
+  usan un **chevron CSS propio** (borde girado) en vez del marcador nativo/`▸`.
+- **Excepciones deliberadas** (NO migrar a SVG): la paleta de emojis de los bloques
+  personalizados y los botones de callouts del `RichTextArea` (muestran el icono real
+  que viaja en `course.json` y pinta la carcasa), `cmMarkdown.ts` (chips de callouts =
+  contenido), todo `src/runtime/`, y el informe exportado (`report.ts`, documento
+  autónomo). Los mensajes de estado transitorios usan «✓»/«Error:» tipográficos.
+
 ## Superficies de edición (no todo es «pantalla»)
 El panel central (`App.tsx`) muestra `ScreenEditor` salvo cuando el nodo seleccionado en
 `CourseTree` es un **id sintético**:
 - **`__final__`** (nodo «Evaluación → Test final») → `FinalTestEditor`: edita
-  `assessments.final_test` (título, `pass_score`, preguntas/opciones/feedback y
+  `assessments.final_test` (título, `one_question_per_screen`, preguntas/opciones/feedback y
   `learning_objective` por pregunta) vía `setFinalTest` del store.
 - **`__glossary__`** y **`__bibliography__`** (sección «Materiales» del árbol, jul 2026) →
   `GlossaryEditor` / `BibliographyEditor` (`MaterialsEditor.tsx`): editan `course.glossary`
@@ -190,9 +224,13 @@ módulos/unidades). Ahora:
   `resetSample`, para no arrastrar binarios del proyecto anterior).
 - **Árbol**: «+ Añadir unidad» al pie de cada módulo, «+ Añadir módulo» tras el último
   (`.ed-add-module`), y junto al nombre de módulo/unidad las herramientas discretas
-  `.ed-struct-tools` (**▲/▼ para reordenar** — módulos dentro del curso, unidades
-  dentro de su módulo, vía `moveModule`/`moveUnit` del store; deshabilitados en los
-  extremos — y 🗑 para eliminar). Todas cortan el clic
+  `.ed-struct-tools` (**▲/▼ para reordenar** — módulos dentro del curso; unidades
+  dentro de su módulo y, desde el extremo, **cruzando al módulo adyacente** (al final
+  del anterior subiendo, al principio del siguiente bajando — petición jul 2026,
+  `moveUnit` del store; los botones solo se deshabilitan en los extremos globales y
+  el `title` avisa del cruce) — y el icono de papelera para eliminar). Cada módulo se
+  presenta como **card suave** (`.ed-module`: borde y fondo muy leves) para delimitarlo
+  del siguiente; Evaluación y Materiales comparten esa presentación. Todas cortan el clic
   (`preventDefault`+`stopPropagation`) para no plegar el `details` ni disparar el
   rename; el borrado pide `confirmDialog` **solo si contienen pantallas** (deshacer
   siempre disponible). Se eligió ▲/▼ y no drag&drop para no anidar sortables con el
@@ -212,9 +250,13 @@ restaura. Se usa en el **título del curso** (`.ed-course-name` de la `Toolbar` 
 clics para poder vivir dentro del `<summary>` de la unidad sin plegarla.
 
 ### Árbol: plegado, filtro, iconos y plantillas (fase 3, jul 2026)
-- **Unidades plegables**: cada unidad es un `<details className="ed-tree-unit" open>` con
+- **Unidades plegables**: cada unidad es un `<details className="ed-tree-unit">` con
   chevron rotatorio y **contador** de pantallas (con filtro activo, «visibles/total»). La
-  `key` incluye el estado del filtro para remontarse abierta al (des)activarlo.
+  `key` incluye el estado del filtro para remontarse abierta al (des)activarlo. El estado
+  plegado/desplegado se guarda por unidad en `useTreeFold` (store zustand de UI local a
+  `CourseTree.tsx`, jul 2026): así **sobrevive al cambio de pestaña** (App desmonta el
+  aside fuera de la pestaña Editor). No entra en el historial de deshacer ni en el
+  proyecto; con filtro activo la unidad se fuerza abierta sin tocar lo guardado.
 - **Filtro** (`.ed-tree-filter`): por título o etiqueta de tipo; oculta unidades sin
   coincidencias y las secciones Evaluación/añadir mientras está activo. El dnd sigue
   funcionando (mueve por id, no por índice visible).
@@ -478,13 +520,14 @@ Convenciones unificadas en el barrido de la fase 8:
   como acierto; los validadores solo exigen `some(correct)`) y el `title` del checkbox
   lo aclara; en el **test final** es radio porque ahí la semántica es exactamente una.
 - **`SegIcons`** extraído a `src/components/SegIcons.tsx` (antes local de
-  `ScreenEditor`): admite `disabled` y `icon` con **texto corto** además de emoji. Se
+  `ScreenEditor`): admite `disabled` e `icon` como `ReactNode` — un `<Icon>` del
+  sistema propio o **texto corto** («Sutiles», «½»…). Se
   usa en recurso visual, posición de la interacción, **Apariencia** (nivel de
   animación «Sin/Sutiles/Llamativas» y velocidad, que se deshabilita con «Sin») y el
   **puzzle** (columnas/filas 2–5).
 - **Renombrado**: los dos mecanismos se mantienen como patrones distintos —
   título-input de cabecera (`.ed-title-input`/`EditableHead`) para las superficies de
-  edición y `InlineRename` (lápiz ✏ → input) para etiquetas compactas (árbol, título
+  edición y `InlineRename` (lápiz → input) para etiquetas compactas (árbol, título
   del curso en la toolbar). Unificarlos empeoraría uno de los dos contextos.
 
 Layout y atajos (fase 9):
@@ -505,7 +548,7 @@ Diálogo de confirmación promisificado: `confirmDialog({ title, message, confir
 cancelLabel, danger })` (`src/store/confirm.ts`, store zustand) devuelve `Promise<boolean>`
 para usar con `await` desde código imperativo. El modal (`ConfirmModal`, montado una vez en
 `App`) se centra, tiene Aceptar/Cancelar, Enter=aceptar/Esc=cancelar y variante `danger`
-(icono ⚠️, botón rojo). Lo usan los borrados irreversibles de assets (sustituir recurso en
+(icono de alerta rojo, botón rojo). Lo usan los borrados irreversibles de assets (sustituir recurso en
 `FileButton`, «Sin recurso» en `ScreenEditor`). Preferir esto a `window.confirm`.
 
 ## Sincronización Editor ↔ Vista estudiante (bidireccional)

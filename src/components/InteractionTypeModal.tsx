@@ -4,10 +4,12 @@ import {
   INTERACTION_GROUPS,
   INTERACTION_GROUP_LABELS,
   INTERACTION_GROUP_HINTS,
+  INTERACTION_GROUP_COLORS,
   INTERACTION_RECIPES,
   type InteractionRecipe,
 } from '../schema/interactionRecipes'
 import { SettingsWindow } from './SettingsModal'
+import { Icon } from './Icon'
 
 /**
  * Selector visual del tipo de interacción: tarjetas con icono y descripción
@@ -50,15 +52,20 @@ export function InteractionTypeModal({
       title={r.type === current ? 'Tipo actual de la interacción' : undefined}
       onClick={() => pick(r.type)}
     >
-      <span className="ed-recipe-name">
-        <span aria-hidden="true">{r.icon}</span> {interactionTypeLabel(r.type)}
-        {r.gradable && (
-          <span className="ed-recipe-flag" title="Puede puntuar (evaluable)">
-            <span aria-hidden="true"> ⭐</span>
-          </span>
-        )}
+      <span className="ed-recipe-ico" aria-hidden="true"
+        style={{ '--ico-c': INTERACTION_GROUP_COLORS[r.group] } as React.CSSProperties}>
+        <Icon name={r.icon} size={18} /></span>
+      <span className="ed-recipe-text">
+        <span className="ed-recipe-name">
+          {interactionTypeLabel(r.type)}
+          {r.gradable && (
+            <span className="ed-recipe-flag" title="Puede puntuar (evaluable)">
+              <Icon name="star" size={12} />
+            </span>
+          )}
+        </span>
+        <span className="ed-recipe-desc">{r.description}</span>
       </span>
-      <span className="ed-recipe-desc">{r.description}</span>
     </button>
   )
 
@@ -94,7 +101,7 @@ export function InteractionTypeModal({
           )
         })}
         <p className="ed-recipes-note">
-          ⭐ = puede puntuar. Al cambiar de tipo se conservan enunciado, feedback y objetivo; el
+          <Icon name="star" size={12} /> = puede puntuar. Al cambiar de tipo se conservan enunciado, feedback y objetivo; el
           contenido específico se migra entre tipos compatibles (y si algo se descartaría, se avisa antes).
         </p>
       </div>

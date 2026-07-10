@@ -3,6 +3,7 @@ import { useCourseStore } from '../store/courseStore'
 import { confirmDialog } from '../store/confirm'
 import type { ScormConfig } from '../schema/course.schema'
 import { SegIcons } from './SegIcons'
+import { Icon } from './Icon'
 
 // Niveles de animación y velocidad como segmentados de texto corto (el detalle
 // va en el title y en el hint de abajo).
@@ -25,7 +26,7 @@ const SPEED_SEGS = [
 /**
  * Sección «Interfaz (Apariencia)»: preferencias de presentación de la carcasa
  * (`shell`), separadas de las reglas de finalización. Ventana propia en el menú
- * ⚙ Ajustes.
+ * Ajustes.
  */
 export function AppearanceSection() {
   const shell = useCourseStore((s) => s.course.shell)
@@ -139,7 +140,7 @@ export function CourseSettingsSection() {
         </div>
         {r.score_source === 'final_test' && !hasFinal && (
           <p className="ed-hint-warn">
-            ⚠ La nota sale del test final, pero no hay test final. Créalo en «Evaluación → Test final».
+            <Icon name="alert-triangle" size={13} /> La nota sale del test final, pero no hay test final. Créalo en «Evaluación → Test final».
           </p>
         )}
         {r.score_source === 'mixed' && (

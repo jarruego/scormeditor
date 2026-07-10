@@ -4,6 +4,9 @@ import type { UnitTest, QuizQuestion, InteractionOption } from '../schema/course
 import { uncoveredObjectives } from '../validation/objectives'
 import { ObjectiveSelect } from './ObjectiveSelect'
 import { ListEditor } from './ListEditor'
+import { RichTextArea } from './RichTextArea'
+import { Icon } from './Icon'
+import { TYPE_COLORS } from '../schema/labels'
 
 function newId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 7)}`
@@ -29,7 +32,7 @@ function blankQuestion(objective = ''): QuizQuestion {
 }
 
 function blankTest(objective = ''): UnitTest {
-  return { id: 'final', unit_id: '', title: 'Test final', pass_score: 70, questions: [blankQuestion(objective)] }
+  return { id: 'final', unit_id: '', title: 'Test final', instructions: '', pass_score: 70, one_question_per_screen: false, questions: [blankQuestion(objective)] }
 }
 
 // Clon para «Duplicar pregunta»: regenera el id de la pregunta Y el de cada
@@ -56,7 +59,7 @@ export function FinalTestEditor() {
       <div className="ed-form">
         <h2>Test final</h2>
         <p className="ed-empty">Este curso no tiene test final. El test calificable se muestra al estudiante y genera la nota final.</p>
-        <button className="ed-primary" onClick={() => setFinalTest(blankTest(nextObjective))}>+ Crear test final</button>
+        <button className="ed-primary" onClick={() => setFinalTest(blankTest(nextObjective))}><Icon name="plus" size={13} /> Crear test final</button>
       </div>
     )
   }
@@ -74,25 +77,32 @@ export function FinalTestEditor() {
           onChange={(e) => patch({ title: e.target.value })} />
         <button type="button" className="ed-title-pencil" title="Editar título" aria-label="Editar título"
           onClick={() => { titleRef.current?.focus(); titleRef.current?.select() }}>
-          <span aria-hidden="true">✏️</span>
+          <Icon name="pencil" size={14} />
         </button>
-        <span className="ed-form-type"><span aria-hidden="true">📝</span> Test final</span>
+        <span className="ed-form-type"><Icon name="clipboard-check" size={12} color={TYPE_COLORS.evaluacion} /> Test final</span>
       </h2>
 
       <div className="ed-row">
-        <label className="ed-field ed-field-narrow">
-          <span>Nota mínima (%)</span>
-          <input type="number" min={0} max={100} value={test.pass_score}
-            onChange={(e) => patch({ pass_score: Number(e.target.value) })} />
+        <label className="ed-check" title="El estudiante ve las preguntas de una en una, con navegador de preguntas; los botones Anterior/Siguiente del curso avanzan por ellas">
+          <input type="checkbox" checked={!!test.one_question_per_screen}
+            onChange={(e) => patch({ one_question_per_screen: e.target.checked })} />
+          <span>Una pregunta por pantalla</span>
         </label>
         <span className="ed-hint">
           {test.questions.length === 1 ? '1 pregunta' : `${test.questions.length} preguntas`} ·{' '}
-          {totalPoints === 1 ? '1 punto' : `${totalPoints} puntos`}
+          {totalPoints === 1 ? '1 punto' : `${totalPoints} puntos`} ·{' '}
+          la nota mínima para aprobar se fija en Ajustes del curso
         </span>
       </div>
 
+      <label className="ed-field">
+        <span>Instrucciones (opcional, se muestran antes de las preguntas)</span>
+        <RichTextArea rows={2} value={test.instructions}
+          onChange={(v) => patch({ instructions: v })} />
+      </label>
+
       {/* Preguntas sobre ListEditor (plan UX fase 6): plegadas por defecto con
-          resumen (⛔ si ninguna opción es correcta), reordenar y duplicar. */}
+          resumen (aviso si ninguna opción es correcta), reordenar y duplicar. */}
       <ListEditor
         title="Preguntas"
         items={test.questions}
@@ -100,7 +110,7 @@ export function FinalTestEditor() {
         addLabel="+ Añadir pregunta"
         collapseFrom={1}
         summary={(q) =>
-          `${q.options.some((o) => o.correct) ? '' : '⛔ sin opción correcta · '}${q.prompt.trim() || '(sin enunciado)'}`}
+          `${q.options.some((o) => o.correct) ? '' : '[sin opción correcta] · '}${q.prompt.trim() || '(sin enunciado)'}`}
         create={() => blankQuestion(nextObjective)}
         clone={cloneQuestion}
         confirmRemove={(q) =>

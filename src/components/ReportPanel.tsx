@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { buildReport, generateReportHtml, generateReportMarkdown } from '../report/report'
 import { IssueItem } from './IssueList'
+import { Icon } from './Icon'
 
 export function ReportPanel() {
   const course = useCourseStore((s) => s.course)
@@ -128,7 +129,11 @@ export function ReportPanel() {
               <tbody>
                 {list.items.map((it) => (
                   <tr key={it.code}>
-                    <td>{it.failed ? '❌' : '✅'}</td>
+                    <td>
+                      <span className={it.failed ? 'ed-check-ko' : 'ed-check-ok'}>
+                        <Icon name={it.failed ? 'circle-x' : 'circle-check'} size={15} />
+                      </span>
+                    </td>
                     <td>
                       {it.label}
                       {it.failed && (

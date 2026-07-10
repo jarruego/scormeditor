@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useConfirmStore } from '../store/confirm'
+import { Icon } from './Icon'
 
 /**
  * Modal de confirmación (centrado, con Aceptar/Cancelar). Se monta una vez en
@@ -29,7 +30,9 @@ export function ConfirmModal() {
       <div className="ed-confirm" role="alertdialog" aria-modal="true"
         aria-labelledby="ed-confirm-title" aria-describedby="ed-confirm-msg">
         <div className="ed-confirm-head">
-          <span className="ed-confirm-icon" aria-hidden="true">{current.danger ? '⚠️' : 'ℹ️'}</span>
+          <span className={`ed-confirm-icon ${current.danger ? 'is-danger' : 'is-info'}`} aria-hidden="true">
+            <Icon name={current.danger ? 'alert-triangle' : 'info'} size={24} />
+          </span>
           <h2 className="ed-confirm-title" id="ed-confirm-title">{current.title || 'Confirmar'}</h2>
         </div>
         <p className="ed-confirm-msg" id="ed-confirm-msg">{current.message}</p>

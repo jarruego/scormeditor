@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { CourseSettingsSection, AppearanceSection } from './CourseSettingsEditor'
 import { NarrationSection } from './TtsPanel'
+import { Icon } from './Icon'
 
 /**
  * Ventana (modal) genérica de ajustes: marco + cabecera + cierre (Escape / clic
- * fuera / ✕). Si `busy` es true (p. ej. narración generando) no se puede cerrar.
+ * fuera / botón ✕). Si `busy` es true (p. ej. narración generando) no se puede cerrar.
  */
 export function SettingsWindow({
   title,
@@ -35,7 +36,7 @@ export function SettingsWindow({
         onMouseDown={(e) => e.stopPropagation()}>
         <header className="ed-modal-head">
           <strong>{title}</strong>
-          <button className="ed-modal-x" onClick={close} disabled={busy} aria-label="Cerrar">✕</button>
+          <button className="ed-modal-x ed-icobtn" onClick={close} disabled={busy} aria-label="Cerrar"><Icon name="x" size={16} /></button>
         </header>
         <div className="ed-modal-body">{children}</div>
       </div>
@@ -65,7 +66,7 @@ export function AppearanceModal({ onClose }: { onClose: () => void }) {
 export function NarrationModal({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false)
   return (
-    <SettingsWindow title="🔊 Narración por voz (TTS)" onClose={onClose} busy={busy}>
+    <SettingsWindow title="Narración por voz (TTS)" onClose={onClose} busy={busy}>
       <NarrationSection onBusyChange={setBusy} />
     </SettingsWindow>
   )

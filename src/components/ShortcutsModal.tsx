@@ -9,7 +9,7 @@ const SHORTCUTS: { keys: string; what: string }[] = [
   { keys: 'Esc', what: 'Cerrar la ventana o el menú abiertos' },
 ]
 
-/** Ventana «Atajos de teclado» (F1 / Ctrl+/ / menú ⚙ Ajustes). */
+/** Ventana «Atajos de teclado» (F1 / Ctrl+/ / menú Ajustes). */
 export function ShortcutsModal({ onClose }: { onClose: () => void }) {
   return (
     <SettingsWindow title="Atajos de teclado" onClose={onClose}>
@@ -26,7 +26,7 @@ export function ShortcutsModal({ onClose }: { onClose: () => void }) {
       <p className="ed-hint">
         Además: el separador entre el árbol y el editor se arrastra para redimensionar
         (doble clic lo pliega/despliega), y en el árbol las pantallas se reordenan
-        arrastrando ⋮⋮ (también con teclado) y los módulos/unidades con ▲/▼.
+        arrastrando su asa (también con teclado) y los módulos/unidades con las flechas.
       </p>
     </SettingsWindow>
   )

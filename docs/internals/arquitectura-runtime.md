@@ -180,6 +180,14 @@ que lo etiquete).
   app.js pasa `ctx.showScoredBadge` (`score_source !== 'final_test'`). Azul
   `--me-primary` diluido, no turquesa, para que no se funda con el filo superior de
   acento de la tarjeta.
+- **Miga «Módulo › Unidad»** (jul 2026): rótulo `.me-crumb` sobre el título de cada
+  pantalla con el módulo y la unidad a los que pertenece (uppercase pequeño en
+  `--me-muted`, como los rótulos del menú), para que el alumno se ubique aunque el menú
+  lateral esté plegado o en móvil. app.js pasa `ctx.crumb` (títulos de `entry.module`/
+  `entry.unit`) y `render()` (renderer.js) lo pinta. No sale en la portada (`cover`,
+  rompería el hero), ni en test final/resultados (pantallas sintéticas sin unidad), y
+  si módulo y unidad repiten título solo se muestra uno. Lleva `padding-right` para no
+  pisar la píldora «Evaluable».
 - **Pestaña de plegado del índice** (jul 2026): asa gris plana (`#me-menu-tab`,
   `.me-menu-tab`) centrada verticalmente en el borde derecho del menú, con flecha ◂;
   plegado el menú, asoma pegada al lateral izquierdo con ▸. Es un segundo control del

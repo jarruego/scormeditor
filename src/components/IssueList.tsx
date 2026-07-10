@@ -1,7 +1,12 @@
 import { useCourseStore } from '../store/courseStore'
 import type { Issue, Severity } from '../validation/validators'
+import { Icon, type IconName } from './Icon'
 
-export const SEVERITY_ICON: Record<Severity, string> = { error: '⛔', warning: '⚠️', info: 'ℹ️' }
+export const SEVERITY_ICON: Record<Severity, IconName> = {
+  error: 'alert-octagon',
+  warning: 'alert-triangle',
+  info: 'info',
+}
 
 /** Códigos globales cuyo arreglo pasa por el modal de Ajustes (origen de la nota). */
 const SETTINGS_CODES = new Set(['SCORM_NO_ACTIVITIES', 'SCORM_MIXED_EMPTY', 'SCORM_MIXED_NO_ACTIVITIES'])
@@ -56,7 +61,9 @@ export function IssueItem({ issue }: { issue: Issue }) {
       onClick={target ? target.go : undefined}
       title={target ? target.label : undefined}
     >
-      <span className="ed-issue-icon">{SEVERITY_ICON[issue.severity]}</span>
+      <span className={`ed-issue-icon is-${issue.severity}`}>
+        <Icon name={SEVERITY_ICON[issue.severity]} size={16} />
+      </span>
       <span className="ed-issue-body">
         <strong>{issue.message}</strong>
         <span className="ed-issue-loc">

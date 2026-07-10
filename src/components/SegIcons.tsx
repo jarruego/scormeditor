@@ -1,13 +1,13 @@
 /**
  * Control segmentado compacto (`.ed-seg`): una opción activa entre 2–5, con
- * `title`+`aria-label` describiendo cada una. `icon` admite un emoji o un
- * texto corto («Sutiles», «3»…). Extraído de `ScreenEditor` (plan UX fase 8)
- * para reutilizarlo en Apariencia, puzzle, etc.
+ * `title`+`aria-label` describiendo cada una. `icon` admite un `<Icon>` del
+ * sistema propio o un texto corto («Sutiles», «½»…). Extraído de `ScreenEditor`
+ * (plan UX fase 8) para reutilizarlo en Apariencia, puzzle, etc.
  */
 export function SegIcons({ label, value, options, onChange, disabled = false }: {
   label: string
   value: string
-  options: { value: string; icon: string; title: string }[]
+  options: { value: string; icon: React.ReactNode; title: string }[]
   onChange: (v: string) => void
   disabled?: boolean
 }) {

@@ -235,8 +235,21 @@
     // actividades cuentan para la nota (ctx.showScoredBadge, según score_source).
     var badge = ctx && ctx.showScoredBadge && screen.interaction && screen.interaction.scored
       ? '<span class="me-scored-badge">Evaluable</span>' : '';
+    // Miga de ubicación «Módulo › Unidad» sobre el título, para que el alumno
+    // sepa siempre dónde está aunque el menú lateral esté plegado (o en móvil).
+    // No se pinta en la portada (hero) ni si módulo y unidad repiten título.
+    var crumb = '';
+    if (ctx && ctx.crumb && screen.type !== 'cover') {
+      var cparts = [];
+      if (ctx.crumb.module) cparts.push(esc(ctx.crumb.module));
+      if (ctx.crumb.unit && ctx.crumb.unit !== ctx.crumb.module) cparts.push(esc(ctx.crumb.unit));
+      if (cparts.length) {
+        crumb = '<p class="me-crumb">' +
+          cparts.join('<span class="me-crumb-sep" aria-hidden="true">›</span>') + '</p>';
+      }
+    }
     container.innerHTML = '<article class="me-screen me-screen-' + esc(screen.type) + '">' +
-      badge + narrationBlock(screen) + html +
+      badge + crumb + narrationBlock(screen) + html +
       (screen.interaction ? '<section class="me-interaction" aria-label="Actividad"></section>' : '') + '</article>';
 
     var controller = null;

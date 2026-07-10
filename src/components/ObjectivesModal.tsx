@@ -3,6 +3,7 @@ import { useCourseStore } from '../store/courseStore'
 import { collectObjectives, type ObjectiveInfo } from '../validation/objectives'
 import { confirmDialog } from '../store/confirm'
 import { SettingsWindow } from './SettingsModal'
+import { Icon } from './Icon'
 
 /**
  * Gestor central de objetivos de aprendizaje. Los objetivos no son una entidad
@@ -55,13 +56,13 @@ function ObjectiveRow({ info, onGo }: { info: ObjectiveInfo; onGo: (id: string) 
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
           title="Renombrar: el cambio se aplica a todas las pantallas y evaluaciones vinculadas"
         />
-        <button className="ed-obj-del" onClick={() => void onDelete()}
-          title="Quitar este objetivo de todas las pantallas y evaluaciones" aria-label="Quitar objetivo">🗑</button>
+        <button className="ed-obj-del ed-icobtn ed-icobtn-danger" onClick={() => void onDelete()}
+          title="Quitar este objetivo de todas las pantallas y evaluaciones" aria-label="Quitar objetivo"><Icon name="trash" size={14} /></button>
       </div>
       <div className="ed-obj-uses">
         {info.declaredIn.length === 0 && (
           <span className="ed-obj-flag err" title="Alguna evaluación lo vincula, pero ninguna pantalla lo declara (típico de cursos importados)">
-            ⚠ no declarado en ninguna pantalla
+            <Icon name="alert-triangle" size={12} /> no declarado en ninguna pantalla
           </span>
         )}
         {!evaluated && info.declaredIn.length > 0 && (
@@ -71,14 +72,14 @@ function ObjectiveRow({ info, onGo }: { info: ObjectiveInfo; onGo: (id: string) 
         )}
         {info.declaredIn.map((s) => (
           <button key={s.id} className="ed-obj-chip" onClick={() => onGo(s.id)} title="Abrir la pantalla en el editor">
-            📄 {s.title}
+            <Icon name="file-text" size={12} /> {s.title}
           </button>
         ))}
         {info.usedBy.map((u, i) => (
           <button key={i} className="ed-obj-chip" disabled={!u.screenId}
             onClick={() => u.screenId && onGo(u.screenId)}
             title={u.screenId ? 'Abrir en el editor' : undefined}>
-            {u.evaluative ? '✅' : '▫'} {u.label}
+            <Icon name={u.evaluative ? 'circle-check' : 'circle'} size={12} /> {u.label}
           </button>
         ))}
       </div>
@@ -147,7 +148,7 @@ export function ObjectivesModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <SettingsWindow title="🎯 Objetivos de aprendizaje" onClose={onClose}>
+    <SettingsWindow title="Objetivos de aprendizaje" onClose={onClose}>
       <p className="ed-hint">
         Cada objetivo se declara en una o varias pantallas y las evaluaciones (interacciones puntuables y
         preguntas de test) se vinculan a él. Renombrar aquí actualiza <strong>todos</strong> los usos a la vez;
