@@ -9,7 +9,7 @@ const SHORTCUTS: { keys: string; what: string }[] = [
   { keys: 'Esc', what: 'Cerrar la ventana o el menú abiertos' },
 ]
 
-/** Ventana «Atajos de teclado» (F1 / Ctrl+/ / menú Ajustes). */
+/** Ventana «Atajos de teclado» (F1 / Ctrl+/ / menú Ayuda). */
 export function ShortcutsModal({ onClose }: { onClose: () => void }) {
   return (
     <SettingsWindow title="Atajos de teclado" onClose={onClose}>

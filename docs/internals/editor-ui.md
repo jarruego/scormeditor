@@ -71,11 +71,36 @@ pestañas). El estado de qué ventana está abierta vive en el store
 - **Narración (Audio IA)** → `NarrationModal` con `NarrationSection`: config TTS
   (localStorage) y generación masiva; ver `tts-narracion.md`. No hay botón de narración
   suelto en la toolbar: todo entra por este menú.
-- **Atajos de teclado** → `ShortcutsModal` (también con `F1` o `Ctrl+/`).
 Las ventanas comparten el marco genérico `SettingsWindow` (`SettingsModal.tsx`): cabecera,
 Escape/clic-fuera/✕, y `busy` opcional que bloquea el cierre (la narración lo reporta con
 `onBusyChange` mientras genera). La generación TTS por pantalla del `ScreenEditor` sigue
 existiendo y su aviso remite a «⚙ Ajustes → Narración».
+
+## Ayuda: manual integrado y tour guiado
+Menú **Ayuda** en la `Toolbar` (tras ⚙ Ajustes) con tres entradas:
+- **Manual de usuario** → `HelpModal` (`settingsModal: 'help'`, reutiliza `SettingsWindow`
+  en modo `wide`): índice lateral + contenido con scroll propio (`.ed-help`). El contenido
+  vive como JSX en `HelpModal.tsx` (audiencia: autores con nociones de e-learning, tono
+  paso a paso). Las **capturas** se cargan por nombre desde `src/assets/help/*.png` vía
+  `import.meta.glob`: añadir/actualizar una = soltar el png; si falta, su figura no se
+  pinta (el manual no se rompe). Para regenerarlas se conduce la app real con Playwright
+  (receta en `.claude/skills/verify`) sobre el curso demo; ojo: para capturar un modal
+  más alto que el viewport hay que agrandar el viewport, o el PNG sale con una banda
+  gris sin pintar.
+- **Tour guiado** → `GuidedTour.tsx`: motor propio sin dependencias. Las paradas se
+  declaran en `STEPS` (selector `data-tour="…"`, pestaña que debe estar activa, título y
+  texto); los atributos `data-tour` viven en `Toolbar.tsx` y `App.tsx`. El overlay es un
+  **velo único** a pantalla completa con el hueco recortado con
+  `clip-path: path(evenodd, …)` sobre el elemento resaltado, más contorno y tarjeta
+  (debajo/encima del target según quepa; centrada en las paradas sin target). Si el
+  selector no encuentra el target (p. ej. árbol plegado), la parada **se salta**.
+  Teclado: Esc sale, ←/→/Enter navegan. Al terminar o salir se marca
+  `localStorage['ed:tourDone']`.
+- **Atajos de teclado** → `ShortcutsModal` (vive aquí, no en ⚙ Ajustes; `F1` y `Ctrl+/`
+  siguen abriéndolo).
+**Primer arranque**: `WelcomeTip` (en `GuidedTour.tsx`), tarjeta discreta abajo a la
+derecha que ofrece el tour y el manual; solo aparece si no existen `ed:tourDone` ni
+`ed:welcomeDismissed`, y cualquier acción (incluida la ✕) la descarta para siempre.
 
 ## Etiquetas en español (no exponer identificadores del esquema)
 La UI del editor **nunca muestra los valores internos en crudo** (`content_placeholder`,
@@ -169,5 +194,6 @@ de instantáneas `{ course, selectedScreenId }`, tope 50 pasos.
 `courseStore.activeTab: Tab` (`'editor'|'preview'|'validation'|'report'`) es la fuente
 única de la pestaña activa (también para que el badge de validación navegue a ella). La
 `Toolbar` muestra el título del curso editable (`InlineRename` → `updateCourseInfo`), el
-indicador de guardado (ver `persistencia-scormproj.md`), el menú «Archivo ▾», el menú
-«⚙ Ajustes» y el badge de validación `.ed-status`. Clases del editor con prefijo `ed-`.
+indicador de guardado (ver `persistencia-scormproj.md`), los menús «Archivo ▾»,
+«⚙ Ajustes» y «Ayuda», y el badge de validación `.ed-status`. Clases del editor con
+prefijo `ed-`.

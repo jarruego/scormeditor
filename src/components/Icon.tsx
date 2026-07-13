@@ -54,6 +54,13 @@ const PATHS = {
       <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" />
     </>
   ),
+  'help-circle': (
+    <>
+      <circle cx="12" cy="12" r="9.5" />
+      <path d="M9.3 9.2a2.8 2.8 0 0 1 5.4 1c0 1.8-2.7 2.2-2.7 3.8" />
+      <circle cx="12" cy="17.3" r="0.9" fill="currentColor" stroke="none" />
+    </>
+  ),
   search: (
     <>
       <circle cx="11" cy="11" r="7" />

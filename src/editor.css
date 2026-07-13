@@ -422,6 +422,45 @@ button.ed-pill.info:hover:not(:disabled) { background: #e8f0fe; }
 .ed-shortcuts { border-collapse: collapse; margin-bottom: .75rem; }
 .ed-shortcuts td { padding: .3rem .75rem .3rem 0; border-bottom: 1px solid var(--c-border); }
 .ed-shortcuts-keys { font-family: ui-monospace, Consolas, monospace; font-size: .85rem; white-space: nowrap; }
+
+/* Ventana «Manual de usuario» (índice lateral + contenido con scroll propio) */
+.ed-help { display: grid; grid-template-columns: 230px 1fr; gap: 1rem; min-height: 0; }
+.ed-help-nav { display: flex; flex-direction: column; gap: .15rem; align-self: start; position: sticky; top: 0; }
+.ed-help-nav button { text-align: left; border: none; background: none; padding: .35rem .5rem; border-radius: 6px; font-size: .88rem; color: var(--c-text); }
+.ed-help-nav button:hover:not(:disabled) { background: color-mix(in srgb, var(--c-primary) 8%, transparent); border: none; }
+.ed-help-num { display: inline-block; min-width: 1.2rem; color: var(--c-muted); font-variant-numeric: tabular-nums; }
+.ed-help-tourbtn { margin-top: .5rem; color: var(--c-primary) !important; font-weight: 600; }
+.ed-help-body { max-height: 72vh; overflow-y: auto; padding-right: .75rem; line-height: 1.55; }
+.ed-help-section { padding-bottom: 1rem; }
+.ed-help-section + .ed-help-section { border-top: 1px solid var(--c-border); padding-top: .75rem; }
+.ed-help-section h3 { margin: .25rem 0 .5rem; font-size: 1.05rem; color: var(--c-primary); scroll-margin-top: .5rem; }
+.ed-help-section h4 { margin: 1rem 0 .35rem; font-size: .95rem; }
+.ed-help-section p, .ed-help-section ul, .ed-help-section ol { margin: .4rem 0; }
+.ed-help-section li { margin: .25rem 0; }
+.ed-help-kbd { font-family: ui-monospace, Consolas, monospace; font-size: .82rem; background: var(--c-bg); border: 1px solid var(--c-border); border-bottom-width: 2px; border-radius: 5px; padding: .05rem .35rem; white-space: nowrap; }
+.ed-help-shot { margin: .75rem 0; }
+.ed-help-shot img { max-width: 100%; border: 1px solid var(--c-border); border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, .08); }
+.ed-help-shot figcaption { font-size: .8rem; color: var(--c-muted); margin-top: .3rem; }
+@media (max-width: 760px) { .ed-help { grid-template-columns: 1fr; } .ed-help-nav { position: static; } }
+
+/* Tour guiado: velo con hueco (clip-path evenodd) + contorno + tarjeta. */
+.ed-tour-veil { position: fixed; inset: 0; z-index: 80; background: rgba(15, 23, 42, .55); animation: ed-tour-fade .2s ease-out; }
+.ed-tour-hl { position: fixed; z-index: 81; border-radius: 10px; outline: 2px solid var(--c-primary); box-shadow: 0 0 14px rgba(0, 0, 0, .35); pointer-events: none; transition: all .2s ease; }
+@keyframes ed-tour-fade { from { opacity: 0; } to { opacity: 1; } }
+.ed-tour-card { position: fixed; z-index: 82; background: var(--c-surface); border-radius: 12px; box-shadow: 0 16px 48px rgba(0, 0, 0, .35); padding: .9rem 1rem; animation: ed-confirm-pop .15s ease-out; }
+.ed-tour-card header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .35rem; }
+.ed-tour-card p { margin: 0 0 .8rem; font-size: .92rem; line-height: 1.5; }
+.ed-tour-card footer { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.ed-tour-count { font-size: .8rem; color: var(--c-muted); font-variant-numeric: tabular-nums; }
+.ed-tour-btns { display: flex; gap: .5rem; }
+.ed-tour-next { background: var(--c-primary); color: #fff; border-color: var(--c-primary); }
+.ed-tour-next:hover:not(:disabled) { background: color-mix(in srgb, var(--c-primary) 85%, black); color: #fff; }
+
+/* Aviso de bienvenida del primer arranque (ofrece tour y manual) */
+.ed-welcome { position: fixed; right: 1rem; bottom: 1rem; z-index: 40; width: 300px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; box-shadow: 0 12px 36px rgba(0, 0, 0, .18); padding: .9rem 1rem; animation: ed-confirm-pop .2s ease-out; }
+.ed-welcome p { margin: .3rem 0 .7rem; font-size: .88rem; color: var(--c-muted); line-height: 1.45; }
+.ed-welcome-x { position: absolute; top: .5rem; right: .5rem; }
+.ed-welcome-actions { display: flex; gap: .5rem; }
 .ed-term-row { display: flex; gap: .5rem; align-items: flex-start; padding: .6rem .7rem; border: 1px solid var(--c-border); border-radius: 8px; background: var(--c-surface); }
 .ed-term-fields { flex: 1; display: grid; gap: .5rem; }
 .ed-term-row > button { align-self: flex-start; }

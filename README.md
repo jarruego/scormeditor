@@ -107,6 +107,8 @@ parciales auditables). Detalle en `docs/internals/ingesta-gpt.md`.
 - **Vista estudiante**: la misma carcasa que se exporta, sincronizada con el editor.
 - **Validación e informe**: badge de errores/avisos + pestañas de validación y de informe
   (recuentos y matriz de trazabilidad de objetivos).
+- **Ayuda integrada**: manual de usuario con capturas y **tour guiado** por la interfaz
+  (menú «Ayuda»; en el primer arranque se ofrecen solos).
 
 ## Arquitectura
 

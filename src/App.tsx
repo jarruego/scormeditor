@@ -12,6 +12,7 @@ import { ValidationPanel } from './components/ValidationPanel'
 import { StudentPreview } from './components/StudentPreview'
 import { ReportPanel } from './components/ReportPanel'
 import { ConfirmModal } from './components/ConfirmModal'
+import { GuidedTour, WelcomeTip } from './components/GuidedTour'
 import { Icon } from './components/Icon'
 
 export function App() {
@@ -101,7 +102,7 @@ export function App() {
   return (
     <div className="ed-app">
       <Toolbar />
-      <div className="ed-tabs" role="tablist">
+      <div className="ed-tabs" role="tablist" data-tour="tabs">
         {([
           ['editor', 'Editor'],
           ['preview', 'Vista estudiante'],
@@ -135,7 +136,7 @@ export function App() {
         {tab === 'editor' && (
           <>
             {treeW > 0 && (
-              <aside className="ed-tree">
+              <aside className="ed-tree" data-tour="tree">
                 <CourseTree />
               </aside>
             )}
@@ -146,7 +147,7 @@ export function App() {
               onDoubleClick={() => setTreeW((w) => (w === 0 ? 320 : 0))} />
           </>
         )}
-        <section className="ed-content">
+        <section className="ed-content" data-tour="content">
           {tab === 'editor' && (
             selectedSynthetic === '__final__' ? <FinalTestEditor />
             : selectedSynthetic === '__glossary__' ? <GlossaryEditor />
@@ -159,6 +160,8 @@ export function App() {
         </section>
       </div>
       <ConfirmModal />
+      <GuidedTour />
+      <WelcomeTip />
     </div>
   )
 }

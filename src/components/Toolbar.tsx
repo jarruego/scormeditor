@@ -11,6 +11,8 @@ import {
 import { CourseSettingsModal, AppearanceModal, NarrationModal } from './SettingsModal'
 import { ObjectivesModal } from './ObjectivesModal'
 import { ShortcutsModal } from './ShortcutsModal'
+import { HelpModal } from './HelpModal'
+import { startTour } from './GuidedTour'
 import { InlineRename } from './InlineRename'
 import { confirmDialog } from '../store/confirm'
 import { orphanAssetPaths } from '../schema/assetRefs'
@@ -50,8 +52,10 @@ export function Toolbar() {
   const setSettingsModal = useCourseStore((s) => s.setSettingsModal)
   const [menuOpen, setMenuOpen] = useState(false)
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false)
+  const [helpMenuOpen, setHelpMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const settingsMenuRef = useRef<HTMLDivElement>(null)
+  const helpMenuRef = useRef<HTMLDivElement>(null)
   const fsOk = isFsSupported()
 
   // Cierra un menú desplegable al hacer clic fuera o pulsar Escape.
@@ -75,6 +79,7 @@ export function Toolbar() {
   }
   useMenuDismiss(menuOpen, menuRef, () => setMenuOpen(false))
   useMenuDismiss(settingsMenuOpen, settingsMenuRef, () => setSettingsMenuOpen(false))
+  useMenuDismiss(helpMenuOpen, helpMenuRef, () => setHelpMenuOpen(false))
 
   const isSaved = !!linkedFileName && !projectDirty
   // Recursos que ya no usa ninguna diapositiva (peso muerto en el .scormproj).
@@ -125,7 +130,7 @@ export function Toolbar() {
   return (
     <header className="ed-toolbar">
       <strong className="ed-logo">SCORMEditor</strong>
-      <span className="ed-course-name">
+      <span className="ed-course-name" data-tour="course-name">
         <InlineRename value={course.course.title} placeholder="Curso sin título"
           title="Renombrar el curso (título principal del SCORM)"
           onChange={(title) => updateCourseInfo({ title })} />
@@ -134,6 +139,7 @@ export function Toolbar() {
       {/* Estado del documento: un único concepto de guardado = el archivo. */}
       <button
         className={`ed-docstate ${isSaved ? 'is-saved' : 'is-dirty'}`}
+        data-tour="docstate"
         onClick={() => void saveProject()}
         title={
           isSaved
@@ -152,7 +158,7 @@ export function Toolbar() {
           <Icon name="redo" size={14} /> Rehacer</button>
 
         <input ref={fileRef} type="file" accept=".scormproj,.zip,application/zip" hidden onChange={onImportFile} />
-        <div className="ed-menu" ref={menuRef}>
+        <div className="ed-menu" ref={menuRef} data-tour="file-menu">
           <button
             className="ed-menu-trigger"
             aria-haspopup="menu"
@@ -194,7 +200,7 @@ export function Toolbar() {
           )}
         </div>
 
-        <div className="ed-menu" ref={settingsMenuRef}>
+        <div className="ed-menu" ref={settingsMenuRef} data-tour="settings-menu">
           <button
             className="ed-menu-trigger"
             aria-haspopup="menu"
@@ -222,8 +228,32 @@ export function Toolbar() {
                 title="Proveedor/clave de API, voz y generación de audio">
                 Narración (Audio IA)
               </button>
+            </div>
+          )}
+        </div>
+
+        <div className="ed-menu" ref={helpMenuRef} data-tour="help-menu">
+          <button
+            className="ed-menu-trigger"
+            aria-haspopup="menu"
+            aria-expanded={helpMenuOpen}
+            onClick={() => setHelpMenuOpen((o) => !o)}
+            title="Manual, tour guiado y atajos de teclado"
+          >
+            <Icon name="help-circle" size={14} /> Ayuda <Icon name="chevron-down" size={12} />
+          </button>
+          {helpMenuOpen && (
+            <div className="ed-menu-list" role="menu">
+              <button role="menuitem" onClick={() => { setHelpMenuOpen(false); setSettingsModal('help') }}
+                title="El manual completo de la aplicación, con capturas">
+                Manual de usuario
+              </button>
+              <button role="menuitem" onClick={() => { setHelpMenuOpen(false); startTour() }}
+                title="Recorrido interactivo por la interfaz (un minuto)">
+                Tour guiado
+              </button>
               <hr className="ed-menu-sep" />
-              <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('shortcuts') }}
+              <button role="menuitem" onClick={() => { setHelpMenuOpen(false); setSettingsModal('shortcuts') }}
                 title="Lista de atajos de teclado del editor (también con F1)">
                 Atajos de teclado
               </button>
@@ -240,6 +270,7 @@ export function Toolbar() {
       {settingsModal === 'objectives' && <ObjectivesModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'appearance' && <AppearanceModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'narration' && <NarrationModal onClose={() => setSettingsModal(null)} />}
+      {settingsModal === 'help' && <HelpModal onClose={() => setSettingsModal(null)} />}
     </header>
   )
 }
