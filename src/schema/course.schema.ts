@@ -130,6 +130,13 @@ export const VisualResource = z.object({
     .boolean()
     .default(false)
     .describe('Estira el recurso al 100% del ancho en disposiciones top/bottom'),
+  media_ratio: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .enum(['16x9', '4x3', '1x1', '9x16'])
+      .default('16x9')
+      .describe('Proporción del marco del vídeo de YouTube'),
+  ),
 })
 export type VisualResource = z.infer<typeof VisualResource>
 

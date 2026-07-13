@@ -138,7 +138,9 @@
         (vr.caption ? '<figcaption>' + esc(vr.caption) + '</figcaption>' : '') + '</figure>';
     }
     if (vr.kind === 'video_youtube') {
-      return '<div class="me-video"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(vr.src) +
+      // Solo valores conocidos: la clase acaba en el DOM.
+      var ratio = ['4x3', '1x1', '9x16'].indexOf(vr.media_ratio) >= 0 ? vr.media_ratio : '16x9';
+      return '<div class="me-video me-ratio-' + ratio + '"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(vr.src) +
         '" title="' + esc(vr.caption || 'Vídeo') + '" allowfullscreen loading="lazy"></iframe></div>';
     }
     if (vr.kind === 'video_file') {

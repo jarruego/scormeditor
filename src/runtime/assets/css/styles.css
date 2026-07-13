@@ -190,8 +190,17 @@ body {
 .me-media-center > .me-figure { text-align: center; }
 .me-media-full > .me-figure img, .me-media-full > .me-video, .me-media-full > video { width: 100%; }
 .me-figure figcaption { color: var(--me-muted); font-size: .85rem; }
-.me-video { position: relative; aspect-ratio: 16/9; margin: 1rem 0; }
-.me-video iframe, .me-video { width: 100%; }
+.me-video { position: relative; aspect-ratio: 16 / 9; margin: 1rem 0; width: 100%; }
+/* El iframe debe llenar el marco: sin alto explícito se queda en los 150px por defecto. */
+.me-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 6px; }
+/* Alto mínimo de seguridad para embeds (solo el marco div; el <video> conserva su alto intrínseco). */
+div.me-video { min-height: 240px; }
+/* Proporción del marco (media_ratio, solo vídeo embebido). El vertical se acota para no desbordar. */
+.me-video.me-ratio-4x3 { aspect-ratio: 4 / 3; }
+.me-video.me-ratio-1x1 { aspect-ratio: 1 / 1; }
+.me-video.me-ratio-9x16 { aspect-ratio: 9 / 16; max-width: 380px; }
+/* text-align no centra bloques con max-width: hace falta margin auto (afecta al 9:16). */
+.me-media-center .me-video { margin-inline: auto; }
 video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 /* La locución es un <audio> oculto (se controla desde la barra: reproducción
    automática al entrar y botón Audio). No debe ocupar espacio. */

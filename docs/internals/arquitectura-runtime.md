@@ -111,8 +111,14 @@ que lo etiquete).
   (iconos ◧/▣/▬ = Izquierda/Centrada/Ancho 100%, estados excluyentes) que solo aparece con
   disposición arriba/abajo y mapea a esos dos campos (glifos de texto para alinear en
   altura con Disposición/Proporción; `.ed-seg button` tiene tamaño fijo).
-- **Lightbox**: imágenes ampliables al 100% al hacer clic (`setupLightbox()`,
-  `.me-lightbox`/`.me-zoomable`).
+- **Vídeo embebido (YouTube)**: el marco `.me-video` fija la proporción con
+  `aspect-ratio` y el `<iframe>` la llena en absoluto (`inset:0; height:100%` — sin alto
+  explícito un iframe se queda en sus 150px por defecto, fallo histórico). Alto mínimo de
+  seguridad 240px solo en el marco `div.me-video` (el `<video>` de archivo conserva su
+  alto intrínseco). `media_ratio` (`16x9` def./`4x3`/`1x1`/`9x16`) elige la proporción
+  vía clase `me-ratio-*`; el vertical 9:16 se acota a 380px de ancho y `.me-media-center`
+  lo centra con `margin-inline:auto` (text-align no centra bloques con max-width). El
+  mismo CSS cubre el YouTube de la interacción `video` (comparte `.me-video`).
 - **Assets en preview**: blobs vía `window.__ASSETS__` (mapa id→blobURL);
   `assetUrl()`/`asset` resuelve. En export, los ficheros van al ZIP y al manifiesto.
 

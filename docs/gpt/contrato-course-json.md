@@ -334,7 +334,9 @@ Reglas de formato (para que el editor lo renderice bien):
   paralelos** (lista de herramientas, categorías…), no para prosa corrida. Si varias
   figuras ilustran sub-puntos distintos, empareja **cada figura con su texto** en su
   pantalla (mismo `title`), en vez de una ristra de imágenes sin texto.
-- Si `kind="video_youtube"` → `src` = **ID de YouTube** (no la URL completa).
+- Si `kind="video_youtube"` → `src` = **ID de YouTube** (no la URL completa). Opcional
+  `media_ratio` (`"16x9"` def. | `"4x3"` | `"1x1"` | `"9x16"`): proporción del marco del
+  vídeo; omite la clave si no la conoces (nunca `""`).
 - Si `kind="video_file"`/`"audio"` y hay voz → `has_voice: true` **y** `tracks` con
   subtítulos VTT:
   ```json

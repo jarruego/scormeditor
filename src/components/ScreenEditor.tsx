@@ -43,6 +43,13 @@ const FIT_ICONS = [
   { value: 'center', icon: <Icon name="fit-center" size={17} />, title: 'Centrada' },
   { value: 'full', icon: <Icon name="fit-full" size={17} />, title: 'Ancho completo (100%)' },
 ]
+// Proporción del marco del vídeo embebido (media_ratio, solo YouTube).
+const RATIO_ICONS = [
+  { value: '16x9', icon: '16:9', title: 'Panorámico 16:9' },
+  { value: '4x3', icon: '4:3', title: 'Clásico 4:3' },
+  { value: '1x1', icon: '1:1', title: 'Cuadrado 1:1' },
+  { value: '9x16', icon: '9:16', title: 'Vertical 9:16' },
+]
 // Posición de la interacción respecto al texto (mismos iconos que Disposición).
 const IT_POS_ICONS = [
   { value: 'top', icon: <Icon name="arrow-up" size={16} />, title: 'Encima del texto' },
@@ -97,9 +104,13 @@ function MediaPreview({ vr, assets }: { vr: any; assets: AssetMap }) {
   if (vr.kind === 'none') return null
   if (vr.kind === 'video_youtube') {
     if (!vr.src) return null
+    // La vista previa refleja la proporción elegida (media_ratio); la vertical
+    // se acota en ancho para que no crezca desmesuradamente en alto.
+    const ratio = (vr.media_ratio || '16x9').replace('x', ' / ')
     return (
       <div className="ed-media-preview">
         <iframe className="ed-media-yt" src={`https://www.youtube.com/embed/${vr.src}`}
+          style={{ aspectRatio: ratio, ...(vr.media_ratio === '9x16' ? { maxWidth: 200 } : null) }}
           title="Vista previa de YouTube" allowFullScreen loading="lazy" />
       </div>
     )
@@ -183,11 +194,18 @@ export function ScreenEditor() {
   }
   const setVr = (p: Partial<typeof vr>) => patch({ visual_resource: { ...vr, ...p } })
   const setTracks = (tracks: typeof vr.tracks) => setVr({ tracks })
+  // Rutas/ID por tipo de recurso y pantalla (clave `id:kind`), para que cambiar
+  // de tipo no arrastre el valor de otro. Solo vive durante la sesión de edición.
+  const vrMemory = useRef<Record<string, { src: string; poster?: string; tracks: typeof vr.tracks }>>({})
 
-  // Cambia el tipo de recurso. Al pasar a «Sin recurso», ofrece borrar los
-  // binarios asociados de assets (irrecuperable) con aviso previo.
+  // Cambia el tipo de recurso. Cada tipo conserva su propia ruta/ID: al cambiar
+  // se guarda lo actual y se restaura lo que el tipo destino tuviera antes (así
+  // una ruta assets/… nunca acaba como «ID de YouTube» ni viceversa). Al pasar a
+  // «Sin recurso», ofrece borrar los binarios asociados de assets (irrecuperable)
+  // con aviso previo.
   async function changeKind(next: string) {
     if (next === vr.kind) return
+    vrMemory.current[`${id}:${vr.kind}`] = { src: vr.src, poster: vr.poster, tracks: vr.tracks }
     if (next === 'none') {
       const paths = [vr.src, vr.poster, ...vr.tracks.map((t) => t.src)]
         .filter((p): p is string => !!p && !!assets[p])
@@ -204,9 +222,12 @@ export function ScreenEditor() {
       // binario si alguna otra pantalla aún lo usa (p. ej. tras duplicar).
       setVr({ kind: 'none', src: '', poster: '', tracks: [] })
       paths.forEach((p) => removeAsset(p))
+      // Los binarios ya no existen: restaurar esas rutas al volver engañaría.
+      Object.keys(vrMemory.current).forEach((k) => { if (k.startsWith(`${id}:`)) delete vrMemory.current[k] })
       return
     }
-    setVr({ kind: next as any })
+    const prev = vrMemory.current[`${id}:${next}`]
+    setVr({ kind: next as any, src: prev?.src ?? '', poster: prev?.poster ?? '', tracks: prev?.tracks ?? [] })
   }
 
   // Regenera la transcripción a partir del contenido de la pantalla. Si hay un
@@ -382,6 +403,10 @@ export function ScreenEditor() {
                     <SegIcons label="Ajuste" options={FIT_ICONS}
                       value={vr.media_full ? 'full' : vr.media_align === 'center' ? 'center' : 'left'}
                       onChange={(v) => setVr(v === 'full' ? { media_full: true } : { media_full: false, media_align: v as any })} />
+                  )}
+                  {vr.kind === 'video_youtube' && (
+                    <SegIcons label="Formato" value={vr.media_ratio}
+                      onChange={(r) => setVr({ media_ratio: r as any })} options={RATIO_ICONS} />
                   )}
                 </div>
               )}

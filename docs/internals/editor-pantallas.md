@@ -117,14 +117,18 @@ visual**, **Audio de locución y transcripción** e **Interacción** — son
 por defecto. Se despliegan al pulsarlos (nativo, sin JS ni estado). No usar la
 `<fieldset className="ed-group">` para estas tres (esa sigue en Ajustes/Test final/TTS).
 
-Dentro de **Recurso visual**: Tipo de recurso / Disposición / Proporción van juntos como
-**controles segmentados de iconos** (`SegIcons` → `.ed-seg`, `role="group"`), con
-`title`+`aria-label` que describen cada opción (no `<select>`); Disposición/Proporción
+Dentro de **Recurso visual**: Tipo de recurso / Disposición / Proporción / Formato van
+juntos como **controles segmentados de iconos** (`SegIcons` → `.ed-seg`, `role="group"`),
+con `title`+`aria-label` que describen cada opción (no `<select>`); Disposición/Proporción
 solo aparecen cuando aplican (recurso visual no-audio; proporción solo con layout
-left/right). Debajo, una **vista previa** del recurso (`MediaPreview`):
+left/right; **Formato** — `media_ratio` 16:9/4:3/1:1/9:16 — solo con YouTube). Al
+**cambiar el tipo de recurso**, cada tipo conserva su propia ruta/ID (memoria por
+`id:kind` en `vrMemory`, solo de sesión): así una ruta `assets/…` nunca se arrastra como
+«ID de YouTube» ni viceversa. Debajo, una **vista previa** del recurso (`MediaPreview`):
 imagen/vídeo-archivo/audio se resuelven a object URL desde `assets` (hook
 `useObjectUrl`, que libera con `revokeObjectURL`); YouTube se incrusta por ID
-(`/embed/`). Si la ruta aún no tiene binario subido, muestra un aviso en vez de romper.
+(`/embed/`) con la proporción elegida. Si la ruta aún no tiene binario subido, muestra
+un aviso en vez de romper.
 
 ## Editor sensible al tipo (`screenTypeUI.ts`)
 El `ScreenEditor` adapta el formulario al tipo de pantalla según
