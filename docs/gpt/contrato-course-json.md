@@ -208,12 +208,14 @@ editor SCORMEditor lo renderiza. Sintaxis admitida:
 - `## ` y `### ` encabezados (el `#`/H1 se reserva al título de pantalla).
 - `**negrita**`, `*cursiva*`, `[texto](url)` (http(s) o mailto).
 - `- ` listas con viñetas; `1. ` listas numeradas.
-- Imagen en **línea propia**: `![texto alternativo](assets/img/archivo.png)` (o URL
-  http(s)); ancho opcional en % con `![texto alternativo|50](ruta)`. No la uses inline
-  dentro de un párrafo. Normalmente NO la generarás tú: las imágenes las sube el autor
-  desde el editor; si el contenido pide una, deja una `editor_note` describiéndola.
+- Imagen `![alt](ruta)`: **el GPT NUNCA la usa**. Esa sintaxis es del editor humano.
+  Toda imagen que generes va como `visual_resource` (§5), **máximo una por
+  pantalla**; si un apartado trae varias figuras, una pantalla por punto (§5). Si el
+  contenido pide una imagen que no tienes, deja una `editor_note` describiéndola.
 - **Bloques destacados (callouts)**: una línea `::: tipo`, el contenido en las
-  líneas siguientes, y una línea `:::` para cerrar. Usa `\n` en el JSON:
+  líneas siguientes, y una línea `:::` para cerrar. **Nunca un callout vacío**
+  (`::: tipo` seguido de `:::` sin cuerpo): si no hay texto para la caja, no la
+  emitas — el editor lo marca con el aviso `CALLOUT_EMPTY`. Usa `\n` en el JSON:
 
 ```json
 "student_text": "Texto normal.\n\n::: tip\nEste es un consejo para el alumnado.\n:::\n\nMás texto."
@@ -293,8 +295,11 @@ Reglas de formato (para que el editor lo renderice bien):
   (Importante, ¿Sabías que?, Consejo…) como callouts (§4.1). Extrae con formato, no en
   plano: el texto plano pierde negritas y cajas.
 - **Enlaces externos**: presérvalos como `[texto](url)` (http/https/mailto); las URLs
-  sueltas, envuélvelas igual. El runtime los abre en otra pestaña (`target="_blank"
-  rel="noopener"`) automáticamente; no pongas HTML.
+  sueltas, envuélvelas igual. Ojo: los enlaces de un PDF son **anotaciones**, no texto
+  — `get_text` no los devuelve; `extract_text_markdown` (§11) ya los captura cruzando
+  `page.get_links()` con los spans y los emite como `[texto](url)`. **No los pierdas**:
+  todo enlace del original debe llegar al curso. El runtime los abre en otra pestaña
+  (`target="_blank" rel="noopener"`) automáticamente; no pongas HTML ni ese atributo.
 
 ---
 
@@ -334,9 +339,25 @@ Reglas de formato (para que el editor lo renderice bien):
   paralelos** (lista de herramientas, categorías…), no para prosa corrida. Si varias
   figuras ilustran sub-puntos distintos, empareja **cada figura con su texto** en su
   pantalla (mismo `title`), en vez de una ristra de imágenes sin texto.
+- **Máximo UNA imagen por pantalla, siempre en `visual_resource`** (nunca `![...]`
+  dentro de `student_text`, §4.1). Un apartado con varias figuras (un formato, un
+  ejemplo, un paso por figura) = **una pantalla por punto**, mismo `title`.
+- **Pantalla con texto + imagen → SIN interacción** (tampoco informativa:
+  tabs/timeline/accordion). La interactividad va en la **pantalla siguiente** (mismo
+  `title`), cuyo `student_text` lleva como mucho una **frase introductoria** para que
+  se entienda.
 - Si `kind="video_youtube"` → `src` = **ID de YouTube** (no la URL completa). Opcional
   `media_ratio` (`"16x9"` def. | `"4x3"` | `"1x1"` | `"9x16"`): proporción del marco del
   vídeo; omite la clave si no la conoces (nunca `""`).
+- **Enlace a un vídeo de YouTube en el documento fuente → pantalla con el vídeo
+  embebido**, no un enlace de texto: crea una pantalla `content` con
+  `visual_resource.kind="video_youtube"`, el **ID extraído de la URL** en `src`
+  (`youtube.com/watch?v=ID`, `youtu.be/ID`, `youtube.com/embed/ID`) y `caption` con el
+  título/descripción que dé el fuente. El texto que acompaña al vídeo en el original va
+  en el `student_text` de esa misma pantalla; añade `transcript` si el fuente da la
+  información (si no, nota en `editor_notes` para que el editor humano lo complete).
+  La carcasa lo reproduce embebida (`youtube-nocookie.com`), no saca al alumno del
+  SCORM.
 - Si `kind="video_file"`/`"audio"` y hay voz → `has_voice: true` **y** `tracks` con
   subtítulos VTT:
   ```json
@@ -375,10 +396,25 @@ Estructura común a TODAS:
   `timeline`, `flashcards`, `html_embed`, `image_cards`, `before_after`,
   `word_search`, `crossword`, `hidden_image`, `az_quiz`, `puzzle`,
   `progress_report`.
+- **Tipos que el GPT NO genera** (reservados al editor humano, que los añade desde
+  SCORMEditor si procede): `hotspots`, `before_after`, `hidden_image`, `puzzle`,
+  `video` (vídeo interactivo con preguntas) y `html_embed` (código a medida). Piden
+  elegir y ajustar a mano una imagen, un medio o un código. El enum los admite (el
+  editor los soporta), pero no los emitas. Los vídeos de YouTube del fuente **sí**
+  van: como `visual_resource` `video_youtube` (§5), no como interacción `video`.
+- **Una evaluable no comparte pantalla con teoría**: la interactividad evaluable o de
+  pregunta directa va en pantalla propia; su `student_text` lleva como mucho una
+  frase de contexto (el enunciado va en `prompt`/`instructions`) y el desarrollo, en
+  la pantalla anterior (mismo `title`).
 - `retries`: `0` = ilimitados.
 - `learning_objective`: rellénalo siempre (el validador lo pide).
 - Reglas del validador para preguntas evaluables: deben tener **respuesta
   correcta** y **feedback** (acierto/error).
+- **No te preocupes del orden de las opciones**: la carcasa **baraja** al mostrar las
+  opciones de `single_choice`, `scenario_decision`, `match_pairs`/`classification`,
+  `sort_steps` y las preguntas del test (no `true_false`, que mantiene V/F). Escribe
+  las opciones en el orden que te resulte natural (p. ej. la correcta primero, que
+  facilita revisar); no intentes «aleatorizarlas» tú.
 
 ### Forma del `config` y `options` por tipo
 
@@ -716,7 +752,9 @@ preguntas.
 10. `scorm.identifier` no vacío.
 11. **Texto original conservado (~100%)**: el curso reproduce el texto de origen casi
     literal (mínimo ~0.95, ideal ≈1.0), NO un resumen ni una reescritura. Solo se
-    permiten retoques mínimos de conexión para cortar entre pantallas. El texto va
+    permiten retoques mínimos de conexión para cortar entre pantallas y
+    micro-transiciones **aditivas** (1-2 frases propias que introducen o enlazan, sin
+    sustituir texto fuente; por eso el ratio puede superar 1.0). El texto va
     **visible** (`student_text` y/o dentro de interactividades informativas) y
     **duplicado en `transcript`**. Se reparte en pantallas **sustanciales** (no
     micro-diapositivas) e interactividades informativas; la información NO se recorta
@@ -840,29 +878,55 @@ def extract_pdf_images(pdf_path):
 
 
 def extract_text_markdown(pdf_path, pages=None):
-    """Extrae el texto de un PDF CONSERVANDO la negrita como markdown `**...**`.
-    NO uses get_text('text'): pierde la negrita. Aquí se usa get_text('dict'), donde
-    cada 'span' trae 'flags' y 'font': el bit 4 (16) de flags y/o un nombre de fuente
-    con 'Bold'/'Black'/'Semibold' indican negrita. Devuelve texto plano con markdown
-    ligero, listo para segmentar en pantallas (Regla Nº1). Requiere PyMuPDF."""
+    """Extrae el texto de un PDF CONSERVANDO la negrita como markdown `**...**` y
+    los ENLACES como `[texto](url)`. NO uses get_text('text'): pierde la negrita.
+    Aquí se usa get_text('dict'), donde cada 'span' trae 'flags' y 'font': el bit 4
+    (16) de flags y/o un nombre de fuente con 'Bold'/'Black'/'Semibold' indican
+    negrita. Los enlaces de un PDF son ANOTACIONES (page.get_links()), no texto:
+    get_text no los devuelve, hay que cruzar el rectángulo de cada anotación con los
+    spans (si no, se pierden). Devuelve texto plano con markdown ligero, listo para
+    segmentar en pantallas (Regla Nº1). Requiere PyMuPDF."""
     import fitz
     doc = fitz.open(pdf_path)
     nums = range(len(doc)) if pages is None else pages
     out = []
     for pno in nums:
-        for block in doc[pno].get_text("dict")["blocks"]:
+        page = doc[pno]
+        links = [(fitz.Rect(l["from"]), l["uri"]) for l in page.get_links()
+                 if str(l.get("uri", "")).startswith(("http://", "https://", "mailto:"))]
+
+        def span_uri(span):
+            b = fitz.Rect(span["bbox"])
+            center = fitz.Point((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2)
+            for rect, uri in links:
+                if rect.contains(center):
+                    return uri
+            return None
+
+        for block in page.get_text("dict")["blocks"]:
             for line in block.get("lines", []):
-                buf, open_b = "", False
+                buf, open_b, open_uri = "", False, None
                 for span in line["spans"]:
                     t = span["text"]
                     bold = bool(span["flags"] & 16) or any(
                         k in span["font"] for k in ("Bold", "Black", "Semibold"))
+                    uri = span_uri(span)
+                    if t.strip() and uri != open_uri:  # abre/cierra [texto](url)
+                        if open_b:
+                            buf += "**"; open_b = False
+                        if open_uri:
+                            buf += "](%s)" % open_uri
+                        if uri:
+                            buf += "["
+                        open_uri = uri
                     if t.strip() and bold != open_b:   # abre/cierra ** en la transición
                         buf += "**"
                         open_b = bold
                     buf += t
                 if open_b:
                     buf += "**"
+                if open_uri:                            # cierra el enlace a fin de línea
+                    buf += "](%s)" % open_uri
                 out.append(buf)
             out.append("")                              # línea en blanco entre bloques
     return "\n".join(out)

@@ -48,7 +48,7 @@ Lee el que corresponda al tocar esa área:
   Access, ciclo de vida de los assets, indicador de guardado.
 - `tts-narracion.md` — transcripción, `audio_src`, generación TTS (panel y por pantalla).
 - `informes-validacion.md` — `validators.ts` (errores/avisos) y el informe (`report.ts`).
-- `ingesta-gpt.md` — el GPT generador y los **6 docs de conocimiento** de `docs/gpt/` (los
+- `ingesta-gpt.md` — el GPT generador y los **7 docs de conocimiento** de `docs/gpt/` (los
   que se suben a ChatGPT), la invariante de ingesta y los criterios de contenido acordados.
 
 ### Flujos típicos (qué leer según la tarea)
@@ -86,8 +86,10 @@ el fichero de `docs/internals/` del área afectada** (y este índice si aparece/
 un área). Mantén cada fichero centrado en su tema; el detalle exhaustivo está en el código
 — aquí van invariantes y decisiones no deducibles leyéndolo. Si el cambio afecta al formato
 `.scormproj`/`course.json`, sincroniza también los docs del GPT (`ingesta-gpt.md`) y la
-copia del contrato en `Downloads`. Ante trabajo largo, actualiza al cierre de cada tarea,
-no lo dejes acumular.
+copia del contrato en `Downloads`. Si tocas `validators.ts` (código nuevo, regla cambiada
+o eliminada), sincroniza su fila en `docs/gpt/tabla-autocorreccion.md`; y si una
+conversación fija un criterio de corrección nuevo, vuélcalo a esa tabla al cerrar. Ante
+trabajo largo, actualiza al cierre de cada tarea, no lo dejes acumular.
 
 **Estilo de los docs** (para que no vuelvan a engordar): describen el **estado actual, en
 presente**, sin fechas, fases ni «antes era…» — la cronología ya la cuenta git; el

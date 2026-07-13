@@ -78,7 +78,9 @@ Detalle de qué muestra: `interacciones.md`.
 `flatten()` añade al final de `SCREENS`:
 - **Test final** `__final__` (si `assessments.final_test` tiene preguntas):
   `renderFinalTest()` pinta el formulario; al **Comprobar test**, feedback por pregunta
-  y guarda `STATE.results.__final__`. No hay texto fijo de instrucciones: solo
+  y guarda `STATE.results.__final__`. Las **opciones de cada pregunta se barajan**
+  (`Interactions.shuffle`, determinista por `q.id`; `true_false` mantiene V/F); las
+  preguntas conservan su orden. Seguro para restaurar: las respuestas se guardan por id. No hay texto fijo de instrucciones: solo
   `final_test.instructions` (configurable en el editor, vacío por defecto) y el
   contador de intentos si hay límite. En paginado, al comprobar (y al volver con el
   test ya comprobado) se aterriza en la **vista de resultado** (`showSummary`, `mode:

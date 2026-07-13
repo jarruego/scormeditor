@@ -896,7 +896,9 @@
     }
     questions.forEach(function (q, qi) {
       html += '<fieldset class="me-q" data-qi="' + qi + '"' + (paged && qi > 0 ? ' hidden' : '') + '><legend>' + (qi + 1) + '. ' + rich(q.prompt) + '</legend>';
-      (q.options || []).forEach(function (o) {
+      // Opciones barajadas (determinista por id de pregunta); V/F conserva su orden.
+      var shownOpts = q.type === 'true_false' ? (q.options || []) : global.Interactions.shuffle(q.options || [], q.id);
+      shownOpts.forEach(function (o) {
         var checked = saved[q.id] === o.id ? ' checked' : '';
         html += '<label class="me-choice"><input type="radio" name="q-' + esc(q.id) + '" value="' + esc(o.id) + '"' + checked + (exhausted ? ' disabled' : '') + '> <span>' + rich(o.text) + '</span></label>';
       });

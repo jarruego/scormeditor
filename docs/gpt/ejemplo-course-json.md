@@ -101,8 +101,22 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
                 "tracks": [],
                 "has_voice": false
               },
+              "required": true,
+              "min_time_seconds": 0,
+              "transcript": "La atención centrada en la persona es un enfoque que organiza los apoyos partiendo de la persona: sus preferencias, valores, historia y proyecto de vida. Frente a modelos centrados en el servicio, la ACP adapta el apoyo a la persona y no al revés.",
+              "accessibility": { "alt_text_ok": true, "keyboard_ok": true, "contrast_ok": true },
+              "scorm": { "counts_for_completion": true },
+              "editor_notes": [],
+              "status": "ok"
+            },
+            {
+              "id": "s05",
+              "type": "content",
+              "title": "¿Qué es la ACP?",
+              "objective": "Definir la atención centrada en la persona.",
+              "student_text": "Comprueba que la idea clave ha quedado clara.",
               "interaction": {
-                "id": "s04_i01",
+                "id": "s05_i01",
                 "type": "single_choice",
                 "prompt": "¿Qué pone la ACP en el centro de la organización de los apoyos?",
                 "instructions": "Elige la opción correcta.",
@@ -120,20 +134,18 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
               },
               "required": true,
               "min_time_seconds": 0,
-              "transcript": "La atención centrada en la persona es un enfoque que organiza los apoyos partiendo de la persona: sus preferencias, valores, historia y proyecto de vida. Frente a modelos centrados en el servicio, la ACP adapta el apoyo a la persona y no al revés.",
               "accessibility": { "alt_text_ok": true, "keyboard_ok": true, "contrast_ok": true },
               "scorm": { "counts_for_completion": true },
-              "editor_notes": [],
               "status": "ok"
             },
             {
-              "id": "s05",
+              "id": "s06",
               "type": "content",
               "title": "Principios de la ACP",
               "objective": "Reconocer los principios de la ACP.",
               "student_text": "Despliega cada principio para conocerlo.",
               "interaction": {
-                "id": "s05_i01",
+                "id": "s06_i01",
                 "type": "accordion",
                 "prompt": "Principios de la ACP",
                 "instructions": "Despliega cada apartado.",
@@ -157,13 +169,13 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
               "status": "ok"
             },
             {
-              "id": "s06",
+              "id": "s07",
               "type": "content",
               "title": "Caso práctico: el horario de la ducha",
               "objective": "Aplicar la ACP a una decisión cotidiana.",
               "student_text": "Lee la situación y decide la respuesta más coherente con la ACP.",
               "interaction": {
-                "id": "s06_i01",
+                "id": "s07_i01",
                 "type": "scenario_decision",
                 "prompt": "¿Qué harías?",
                 "instructions": "Elige la opción más adecuada.",
@@ -186,7 +198,57 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
               "status": "ok"
             },
             {
-              "id": "s07",
+              "id": "s08",
+              "type": "content",
+              "title": "Repasa lo aprendido",
+              "objective": "Reconocer los principios de la ACP.",
+              "student_text": "Antes de terminar, repasa las ideas clave del tema.",
+              "interaction": {
+                "id": "s08_i01",
+                "type": "flashcards",
+                "prompt": "Tarjetas de repaso",
+                "instructions": "Lee cada tarjeta, muestra la respuesta y marca si la sabías.",
+                "options": [],
+                "config": { "cards": [
+                  { "front": "¿Qué pone la ACP en el centro?", "back": "Las preferencias, valores y proyecto de vida de la persona." },
+                  { "front": "Principio de autonomía", "back": "La persona decide sobre su vida en la medida de sus capacidades." },
+                  { "front": "Principio de individualización", "back": "Cada apoyo se ajusta a la persona concreta." }
+                ] },
+                "feedback": { "correct": "", "incorrect": "", "explanation": "" },
+                "scored": false,
+                "points": 0,
+                "retries": 0,
+                "learning_objective": "Reconocer los principios de la ACP.",
+                "source_refs": [ { "doc": "Curso ACP T.1.pdf", "locator": "p.5-9" } ]
+              },
+              "required": true,
+              "status": "ok"
+            },
+            {
+              "id": "s09",
+              "type": "content",
+              "title": "Sopa de letras del tema",
+              "objective": "Reconocer los principios de la ACP.",
+              "student_text": "Encuentra los conceptos clave del tema.",
+              "interaction": {
+                "id": "s09_i01",
+                "type": "word_search",
+                "prompt": "Conceptos de la ACP",
+                "instructions": "Toca la primera y la última letra de cada palabra.",
+                "options": [],
+                "config": { "words": ["PERSONA", "AUTONOMIA", "APOYOS", "PARTICIPAR"] },
+                "feedback": { "correct": "", "incorrect": "", "explanation": "" },
+                "scored": false,
+                "points": 0,
+                "retries": 0,
+                "learning_objective": "Reconocer los principios de la ACP.",
+                "source_refs": [ { "doc": "Curso ACP T.1.pdf", "locator": "p.5-9" } ]
+              },
+              "required": true,
+              "status": "ok"
+            },
+            {
+              "id": "s10",
               "type": "summary",
               "title": "Resumen del tema",
               "student_text": "La ACP organiza los apoyos desde la persona. Sus principios son autonomía, individualización y participación, y se aplican a las decisiones cotidianas.",
@@ -252,10 +314,21 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
 
 ## Notas de uso
 - Una unidad real suele tener **más pantallas de desarrollo** e interacciones
-  variadas (alterna `accordion`/`tabs`/`flip_cards` informativas con
-  `single_choice`/`sort_steps`/`classification` evaluables).
+  variadas: alterna las informativas (`accordion`/`tabs`/`flip_cards`/`timeline`) y
+  **todo el repertorio evaluable** (`single_choice`, `true_false`, `fill_blanks`,
+  `match_pairs`, `classification`, `sort_steps`, `scenario_decision`,
+  `case_practice`) sin repetir tipo dos veces seguidas.
+- Fíjate en **s04→s05**: la teoría (con su imagen) y la pregunta van en pantallas
+  **separadas** con el mismo `title`. Una evaluable nunca comparte pantalla con
+  teoría.
+- Fíjate en el **cierre del tema (s08–s09)**: `flashcards` + una lúdica con
+  `scored: false`. La lúdica **alterna entre temas**: `word_search`, `crossword`,
+  `az_quiz`.
+- **No generes** `hotspots`, `before_after`, `hidden_image`, `puzzle`, `video`
+  (vídeo interactivo) ni `html_embed`: los añade el editor humano desde SCORMEditor.
 - Mantén **una sola interacción por pantalla** y `learning_objective` en todas.
 - Si una pantalla referencia una imagen pero no tienes el binario, pon
   `visual_resource.kind = "none"` y anótalo en `editor_notes`.
 - Para las formas concretas de `sort_steps`, `classification`, `match_pairs`,
-  `flip_cards`, `tabs`, `hotspots` y `video`, consulta §6 del contrato.
+  `flip_cards`, `tabs`, `word_search`, `crossword` y `az_quiz`, consulta §6 del
+  contrato.

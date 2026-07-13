@@ -26,11 +26,29 @@ function groupIssues(issues: Issue[], pathByScreen: Map<string, string>, pathByU
   return groups
 }
 
+const SEV_MARK: Record<Severity, string> = { error: '⛔', warning: '⚠', info: 'ℹ' }
+
 export function ValidationPanel() {
   const course = useCourseStore((s) => s.course)
   const result = useMemo(() => validateCourse(course), [course])
   // Severidades ocultas por el usuario (los recuadros del resumen actúan de filtro).
   const [hidden, setHidden] = useState<Set<Severity>>(new Set())
+  const [copied, setCopied] = useState(false)
+
+  // Copia todos los issues (sin filtros) con su código, en el formato que espera
+  // la tabla de autocorrección del GPT (`docs/gpt/tabla-autocorreccion.md`).
+  const copyReport = () => {
+    const lines = [
+      `# Informe de validación — ${course.course.title || 'Curso'}`,
+      `${result.errors} errores · ${result.warnings} avisos · ${result.infos} informativos`,
+      '',
+      ...result.issues.map((i) => `- ${SEV_MARK[i.severity]} [${i.code}] ${i.message} — ${i.location}`),
+    ]
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   const toggle = (sev: Severity) =>
     setHidden((h) => {
@@ -80,6 +98,16 @@ export function ValidationPanel() {
         <span className={`ed-pill ${result.ok ? 'ok' : 'err'}`}>
           {result.ok ? 'Apto para exportar' : 'Hay errores bloqueantes'}
         </span>
+        {result.issues.length > 0 && (
+          <button
+            className="ed-primary ed-val-copy"
+            onClick={copyReport}
+            title="Copia los avisos con su código, listos para pegar al GPT y que los corrija"
+          >
+            <Icon name={copied ? 'clipboard-check' : 'copy'} size={14} />{' '}
+            {copied ? 'Copiado' : 'Copiar informe'}
+          </button>
+        )}
       </div>
 
       {result.issues.length === 0 ? (

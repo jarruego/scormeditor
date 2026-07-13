@@ -53,6 +53,10 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
   if (s.type === 'forum_prompt' && s.interaction?.scored)
     add('FORUM_SCORED', 'warning', 'El debate en foro es una actividad externa (campus): su interacción no debería puntuar.')
 
+  // Callout abierto y cerrado sin cuerpo (::: tipo / :::): caja vacía en pantalla.
+  if (/^[ \t]*:::[ \t]*[\wáéíóúñ-]+[^\n]*\n(?:[ \t]*\n)*[ \t]*:::[ \t]*$/im.test(s.student_text))
+    add('CALLOUT_EMPTY', 'warning', 'Callout sin contenido (`::: tipo` vacío): añade el texto de la caja o elimínala.')
+
   const vr = s.visual_resource
   if (vr.kind === 'image' && !vr.alt.trim())
     add('IMG_NO_ALT', 'error', 'Imagen sin texto alternativo (alt).')

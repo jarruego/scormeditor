@@ -32,6 +32,20 @@ ese contrato; no conoce el tipo concreto.
 - **Feedback marcado en la opción**: `choiceFactory` y `scenario_decision` marcan el
   elemento elegido con `.is-right`/`.is-wrong` (color + icono ✔/✖), también al restaurar;
   `replay()` reinicia las animaciones (shake/pop) entre intentos.
+- **Barajado de opciones**: `shuffle(arr, seed)` es un Fisher-Yates con PRNG sembrado
+  (`seededRandom`), **determinista por id**: la misma interacción baraja igual en cada
+  carga (casa con `suspend_data`/reanudación) pero el orden del autor no se sirve tal
+  cual, y la correcta cae en posición distinta en cada interacción. Lo usan
+  `choiceFactory` (`single_choice`; **`true_false` NO se baraja**, V/F mantiene su orden
+  natural), `scenario_decision`, el pool de `dragAssignFactory`
+  (`match_pairs`/`classification`), `sort_steps` (con guardia: si el barajado deja por
+  azar el orden correcto, rota un elemento — nunca se sirve resuelto), `fill_blanks` y
+  el test final (`renderFinalTest` en `app.js`, opciones por pregunta vía
+  `Interactions.shuffle` exportado; las preguntas mantienen su orden). Restaurar es
+  seguro porque todo estado se guarda por **id**, no por posición. **Excepción**: las
+  preguntas de `video`/`hidden_image` (`questionCard`) no se barajan — su estado guarda
+  el **índice** de la opción, barajar rompería restauraciones antiguas. Ojo histórico:
+  ordenar por `id+semilla` NO baraja (el prefijo decide); por eso `shuffle` usa PRNG.
 - **Drag&drop** (sin dnd-kit; el runtime es plano): `sort_steps` reordena; `match_pairs`
   y `classification` usan `dragAssignFactory` (chips `.me-chip` sobre zonas `.me-dnd`).
   Layout: pool «Sin asignar» a la **izquierda** y categorías a la derecha, **apiladas en

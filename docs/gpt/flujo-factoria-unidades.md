@@ -49,17 +49,26 @@ Para **cada** tema, y **solo** ese tema (ver Regla Nº1 de la guía):
    `get_text("dict")`, conserva las **negritas** del original (`flags`/fuente «Bold» →
    `**...**`), detecta **encabezados** (tamaño/estilo → `## `/`### `) y **cajas
    destacadas** (etiqueta o recuadro/color → callouts `::: tipo`).
-2. **Segmenta** por epígrafe/idea en trozos **pequeños y coherentes**, en orden.
-3. **Una pantalla por trozo** (o más si mezcla ideas). Sin tope: 20-40+ pantallas por
-   tema es normal.
+2. **Monta el guion de pantallas del tema** (guía, sección «El guion de pantallas»):
+   tabla bloque→pantalla→interacción, con el **nº de caracteres** de cada pantalla y
+   su **chequeo de ritmo** (informativa ~1 de cada 3-4 pantallas, nunca >3 seguidas
+   de solo texto; checkpoint aplicado cada 4-5, tipos variados; ninguna pantalla de
+   >~800 caracteres sin informativa). Corrige la tabla antes de escribir nada. Si la orden pedía
+   **«enséñame el guion»**, entrega aquí el guion completo y espera el OK del usuario.
+3. **Segmenta según el guion**, en orden: **una pantalla por fila** (o más si un bloque
+   mezcla ideas). Sin tope: 20-40+ pantallas por tema es normal.
 4. Conserva el texto **casi literal (~100%)**: NO resumas ni reescribas «para
    e-learning»; usa las palabras del documento con solo retoques de conexión. El texto
    va **visible** (`student_text` y/o dentro de accordion/tabs/flip_cards que lo
    **contienen**) y **duplicado íntegro en `transcript`**.
 5. Presenta el texto de forma amena con interactividades **informativas** (que
-   contienen el texto fuente) y, cada **4-8 pantallas**, una pantalla de checkpoint con
-   una interactividad **aplicada** (`scenario_decision`/`classification`/
-   `single_choice`/`case_practice`). Una interacción por pantalla.
+   contienen el texto fuente; ~1 de cada 3-4 pantallas) y, cada **4-5 pantallas**, una
+   pantalla de checkpoint con una interactividad **aplicada en pantalla propia** (sin
+   teoría: solo el enunciado), **alternando todo el repertorio evaluable** sin repetir
+   tipo dos veces seguidas. Cierra cada tema con `flashcards` **+ una lúdica**
+   (`word_search`/`crossword`/`az_quiz`, alternando entre temas, `scored: false`).
+   Nunca `hotspots`/`before_after`/`hidden_image`/`puzzle`/`video`/`html_embed`
+   (los añade el editor humano). Una interacción por pantalla, según el guion.
 6. Añade callouts (`::: tipo`), `source_refs` reales (página real del PDF, no
    aproximada), imágenes del tema y su `alt`.
 
@@ -267,6 +276,23 @@ Si el GPT recibe una orden con esta forma, debe tratar las reglas numeradas como
 > 6. Cada cover con «Tema N» visible; bibliografía solo en bibliography[] con
 >    formato homogéneo (Autor/Entidad (año). Título. Fuente.); varía las
 >    interacciones informativas (tabs/flip_cards solo con ≤4 ítems).
+> 7. Antes de producir cada tema, monta el guion de pantallas (guía), con el nº de
+>    caracteres de cada pantalla, y pasa su chequeo de ritmo: informativa ~1 de
+>    cada 3-4 pantallas (nunca 3 seguidas de solo texto), checkpoint aplicado cada
+>    4-5 pantallas, tipos variados, y ninguna pantalla de más de ~800 caracteres
+>    sin interactividad informativa (repártela en una que contenga el texto, o divide).
+> 8. Toda evaluable o pregunta directa en SU PROPIA pantalla (sin teoría en
+>    student_text), alternando todo el repertorio (choice, V/F, huecos, parejas,
+>    clasificar, ordenar, escenario, caso). Cierre de cada tema: Tarjetas de repaso
+>    + una lúdica (sopa de letras / crucigrama / rosco, alterna entre temas).
+>    Nunca hotspots, before_after, hidden_image, puzzle, vídeo interactivo ni
+>    html_embed: esos los añade el editor humano desde SCORMEditor.
+> 9. Máximo UNA imagen por pantalla y siempre como visual_resource, nunca ![...]
+>    dentro de student_text; serie de figuras → una pantalla por punto (mismo
+>    title). Si una pantalla ya lleva texto+imagen, NINGUNA interactividad en ella
+>    (tampoco tabs/timeline/accordion): va en la pantalla siguiente con solo una
+>    frase introductoria. Ni callouts vacíos ni rótulos/flechas de una infografía
+>    volcados como texto suelto.
 >
 > Antes de entregar: pasa el checklist de referencia-rapida.md y la revisión de
 > fidelidad contra el PDF (cada epígrafe con su pantalla, mismo orden y jerarquía).
@@ -277,6 +303,16 @@ Si el GPT recibe una orden con esta forma, debe tratar las reglas numeradas como
 decorativo: obliga a autoevaluarse contra la lista y mejora el cumplimiento. Si el
 usuario detecta un incumplimiento, la corrección más eficaz es en el mismo chat:
 «Incumples la regla N. Corrígelo y regenera el .scormproj».)
+
+**Con guion previo (una parada para revisar el troceo):**
+> Genera el `.scormproj` de la Unidad 2 y enséñame antes el guion de pantallas.
+
+Comportamiento: inventario + extracción + **guion completo de la unidad** (la tabla de
+la guía: pantalla, epígrafe fuente, forma del bloque, **nº de caracteres**,
+interacción, evaluable), **una
+sola parada** para que el usuario lo apruebe o corrija sobre la tabla, y después
+producción autónoma hasta la entrega. Corregir el guion es barato; regenerar la
+unidad, no.
 
 **Análisis previo (sin generar nada):**
 > Analiza el documento: qué contenido hay, qué volumen tiene cada unidad/tema y cómo

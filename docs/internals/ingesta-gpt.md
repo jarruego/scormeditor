@@ -26,7 +26,7 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   (así el Knowledge se consulta de verdad, no solo por RAG). Motivo: el campo
   Instructions tiene un **límite duro de 8000 caracteres** (verificar con `wc -m` tras
   editar `instrucciones-gpt.md`).
-- **6 ficheros de conocimiento en `docs/gpt/`** (mantenerlos al día si cambia el formato
+- **7 ficheros de conocimiento en `docs/gpt/`** (mantenerlos al día si cambia el formato
   `.scormproj`, el esquema de `course.json`, `autosave.ts` o el `renderer.js`):
   - `instrucciones-gpt.md`: system prompt (Instructions). Solo guardarraíles.
   - `contrato-course-json.md`: referencia normativa del `course.json`; §4.1 markdown/
@@ -39,9 +39,23 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
     (inventario → temas parciales auditables `.scormpart` → fusión), con control de
     cobertura y helper `merge_unit`. Incluye el **prompt reforzado** recomendado para
     el usuario (en «Órdenes de trabajo típicas»): re-ancla en el mensaje las reglas
-    más incumplidas como bloqueantes; probado con buen resultado.
+    más incumplidas como bloqueantes; probado con buen resultado. También la orden
+    **«con guion previo»** («…y enséñame antes el guion de pantallas»): una sola
+    parada para aprobar/corregir el guion antes de la producción autónoma.
   - `referencia-rapida.md`: modos, valores por defecto, accesibilidad, SEPE, evaluación y
     checklist de validación.
+  - `tabla-autocorreccion.md`: cierra el ciclo generar→validar→corregir. Mapa **código
+    del validador → causa raíz → corrección canónica → quién corrige** (GPT / editor
+    humano / según caso). El usuario pega el informe que produce el botón «Copiar
+    informe» de la pestaña Validación (`- ⛔ [CODE] mensaje — ubicación`) y el GPT
+    corrige por código, sin que el usuario tenga que diagnosticar (ciclo probado con un
+    informe real, con buen resultado). La columna «Quién»
+    evita que el GPT «resuelva» inventando lo que es tarea del editor humano
+    (`NARR_NO_AUDIO`, imágenes de tipos vetados, `EDITOR_NOTE`…). **Invariante de
+    mantenimiento**: todo validador nuevo o cambiado en `validators.ts` añade/actualiza
+    su fila en esta tabla (misma disciplina que sincronizar el contrato); y si una
+    conversación con el usuario fija un criterio de corrección nuevo, se vuelca a la
+    fila correspondiente al cerrar la tarea.
 - **Criterios de contenido acordados, viven en esos docs:** (1) **Regla Nº1** —
   conservar el texto de origen **casi al 100%** (ratio ≥0.95), sin resumir ni reescribir;
   extraer **con formato** (negritas, cajas→callouts) vía PyMuPDF `get_text("dict")`, no en
@@ -78,14 +92,57 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   Fuente.`), normalizando aunque el original sea desordenado. **Negritas**: la extracción
   con `get_text("dict")` debe detectar la negrita por `span.flags & 16` o fuente con
   `Bold`/`Black`/`Semibold` y re-emitirla como `**...**` (helper `extract_text_markdown`
-  en el contrato §11); el texto plano las pierde. (4) Interacciones repartidas cada 4-8
-  pantallas (no al final); una interacción entera en una pantalla (no partir
-  accordion/actividad); **`accordion`/`tabs` solo para ítems paralelos, NUNCA para prosa
+  en el contrato §11); el texto plano las pierde. **Enlaces**: en un PDF son
+  anotaciones, no texto — el mismo helper cruza `page.get_links()` con los spans y
+  los emite como `[texto](url)` (verificado con PyMuPDF 1.28, incluida negrita dentro
+  del enlace); sin eso se perdían los enlaces cuyo texto visible no es la URL. La
+  carcasa los abre **siempre** en pestaña nueva: `rich()` (`interactions.js`) emite
+  `target="_blank" rel="noopener noreferrer"` y el renderer de `student_text` delega
+  en esa misma función; el GPT no debe añadir HTML ni `target`. **Excepción — vídeos
+  de YouTube** (jul 2026): un enlace a YouTube en el fuente no se deja como enlace de
+  texto; se crea pantalla con `visual_resource.kind="video_youtube"` (ID en `src`),
+  que la carcasa embebe vía `youtube-nocookie.com` (`renderer.js` `mediaBlock`) sin
+  sacar al alumno del SCORM. (4) **Guion de pantallas** obligatorio
+  antes de producir cada tema (jul 2026, tras calibrar el troceo con el usuario):
+  tabla bloque→pantalla→interacción donde la **forma del bloque fuente** decide el
+  patrón (tabla de mapeo en la guía), con el **nº de caracteres por pantalla**
+  (contado en Python, no a ojo) y con **chequeo de ritmo** — informativa ~1 de
+  cada 3-4 pantallas de desarrollo (nunca >3 seguidas de solo texto), **ninguna
+  pantalla de >~800 caracteres sin interactividad informativa** (repartir el texto en
+  una que lo contenga, o dividir), checkpoint aplicado cada 4-5 (mín. ⌈N/5⌉)
+  prefiriendo decidir/clasificar/ordenar a `single_choice`, tipos variados sin
+  repetir dos seguidos. El guion es interno por
+  defecto (va al informe final); la orden «enséñame el guion» añade una única parada
+  de aprobación antes de producir. Motivo: decidir pantalla a pantalla mientras se
+  escribe producía ritmo desigual y deriva entre generaciones. **Micro-transiciones
+  aditivas** permitidas (1-2 frases puente propias por pantalla; nunca sustituyen
+  texto fuente — por eso el ratio puede superar 1.0). **Toda evaluable o pregunta
+  directa en pantalla propia** (jul 2026): nunca comparte pantalla con teoría; su
+  `student_text` lleva como mucho una frase de contexto y el desarrollo va en la
+  pantalla anterior (mismo `title`) — el ejemplo dorado lo modela (s04 teoría+imagen
+  → s05 pregunta). **Alternar todo el repertorio evaluable** (choice, V/F, huecos,
+  parejas, clasificar, ordenar, escenario, caso) sin repetir tipo dos seguidos; ante
+  la duda, un checkpoint de más (al usuario le es más fácil borrar/retocar en
+  SCORMEditor que crear). **Cierre de cada tema**: `flashcards` + una lúdica
+  (`word_search`/`crossword`/`az_quiz`, alternando entre temas, `scored: false`) —
+  ejemplo dorado s08-s09. **Tipos vetados al GPT** (reservados al editor humano:
+  piden ajustar a mano imagen/medio/código): `hotspots`, `before_after`,
+  `hidden_image`, `puzzle`, `video` (vídeo interactivo; el `visual_resource`
+  `video_youtube` sí se genera) y `html_embed`. Una interacción entera en una
+  pantalla (no partir accordion/actividad); **`accordion`/`tabs` solo para ítems paralelos, NUNCA para prosa
   corrida ni para texto que acompaña a una imagen**; **variar los tipos informativos**
   (no todo accordion; `tabs`/`flip_cards` solo con ≤4 ítems cortos); **texto + imagen =
   UNA pantalla** (`student_text` visible + `visual_resource`), sin fragmentar cada imagen
-  en su propia pantalla; no juntar imagen+texto+interacción en una pantalla; **callout
-  con cuerpo real (no la etiqueta) y no dos del mismo tipo en la misma pantalla**; el
+  en su propia pantalla; **máximo UNA imagen por pantalla y siempre como
+  `visual_resource`** — nunca `![...]` en `student_text` (esa sintaxis es del editor
+  humano; jul 2026, del análisis de pai-u02 (9)); serie de figuras → una pantalla por
+  punto (mismo `title`); **pantalla con texto+imagen sin NINGUNA interacción**
+  (tampoco informativa): la interactividad va a la pantalla siguiente con solo una
+  frase introductoria; los rótulos/flechas de una infografía no se vuelcan como
+  párrafos sueltos (van en `alt`/`caption`/`transcript`); **callout
+  con cuerpo real (no la etiqueta) y no dos del mismo tipo en la misma pantalla**;
+  **nunca un callout vacío** (`::: tipo` sin cuerpo; el editor avisa con
+  `CALLOUT_EMPTY`, `validators.ts`); el
   test calificable solo en `assessments.final_test` (no una pantalla `unit_quiz` con el
   test en texto). (5) **Objetivos**: conjunto reducido derivado del contenido + petición
   del usuario + normativa facilitada (NO un micro-objetivo por pantalla, sin cuota fija);

@@ -56,12 +56,17 @@
   function register(type, factory) { registry[type] = factory; }
 
   function shuffle(arr, seed) {
-    // Orden determinista por id para que coincida con suspend_data
-    return arr.slice().sort(function (a, b) {
-      var ka = (a.id || a.title || a.text || '') + seed;
-      var kb = (b.id || b.title || b.text || '') + seed;
-      return ka < kb ? -1 : ka > kb ? 1 : 0;
-    });
+    // Barajado REAL pero determinista (Fisher-Yates con PRNG sembrado): la misma
+    // interacción baraja igual en cada carga (casa con suspend_data y la
+    // reanudación), pero el orden del autor no se sirve tal cual al alumno.
+    // Ojo: ordenar por (id + semilla) NO baraja — el prefijo (id) decide.
+    var rnd = seededRandom(String(seed));
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rnd() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
   }
 
   // Nº de intentos de una interacción evaluable. Por defecto 1; 0 = ilimitados.
@@ -244,7 +249,8 @@
 
   // --- 6. Single choice / 7. True-false (comparten lógica) -------------------
   function choiceFactory(el, data, ctx) {
-    var opts = data.options || [];
+    // Opciones barajadas (determinista por id); Verdadero/Falso conserva su orden.
+    var opts = data.type === 'true_false' ? (data.options || []) : shuffle(data.options || [], data.id);
     var name = 'opt-' + data.id;
     var maxAtt = attemptsOf(data); // 0 = ilimitados
     var html = header(data) + '<fieldset class="me-choices"><legend class="sr-only">' + esc(data.prompt) + '</legend>';
@@ -315,9 +321,19 @@
   // Arrastrar y soltar (ratón) + botones ▲▼ y flechas de teclado (accesible).
   register('sort_steps', function (el, data, ctx) {
     var steps = (data.config.steps || []); // [{id, text, order}]
-    var shown = (ctx.state && ctx.state.order && ctx.state.order.length)
-      ? orderByIds(steps, ctx.state.order)
-      : shuffle(steps, data.id);
+    var shown;
+    if (ctx.state && ctx.state.order && ctx.state.order.length) {
+      shown = orderByIds(steps, ctx.state.order);
+    } else {
+      shown = shuffle(steps, data.id);
+      // Si el barajado deja por azar el orden correcto, rota uno: el ejercicio
+      // nunca se sirve ya resuelto.
+      var solved = steps.slice().sort(function (a, b) { return a.order - b.order; })
+        .map(function (s) { return s.id; }).join('');
+      if (steps.length > 1 && shown.map(function (s) { return s.id; }).join('') === solved) {
+        shown = shown.slice(1).concat([shown[0]]);
+      }
+    }
     var html = header(data) +
       '<p class="me-sort-hint">Arrastra los elementos para ordenarlos. También puedes usar los botones ▲▼ o las flechas del teclado.</p>' +
       '<ol class="me-sort" aria-label="Lista ordenable">';
@@ -419,7 +435,7 @@
   // DnD nativo (ratón) + desplegable «Asignar a» por elemento (teclado/táctil).
   function dragAssignFactory(el, data, ctx) {
     var groups = data.config.groups || [];   // [{id, label}]
-    var opts = data.options || [];            // [{id, text, group}]
+    var opts = shuffle(data.options || [], data.id); // [{id, text, group}], pool barajado
     var assign = {};                          // itemId -> groupId ('' = sin asignar)
     if (ctx.state && ctx.state.answers) assign = Object.assign({}, ctx.state.answers);
 
@@ -561,7 +577,7 @@
     var html = header(data);
     if (data.config.scenario) html += '<div class="me-scenario">' + rich(data.config.scenario) + '</div>';
     html += '<div class="me-choices">';
-    (data.options || []).forEach(function (o) {
+    shuffle(data.options || [], data.id).forEach(function (o) {
       html += '<button class="me-btn me-option" data-id="' + esc(o.id) + '">' + rich(o.text) + '</button>';
     });
     el.innerHTML = html + '</div>' + feedbackBox(data);
@@ -2083,5 +2099,5 @@
     var f = registry[data.type];
     if (!f) { el.innerHTML = '<p class="me-warn">Tipo de interacción no soportado: ' + esc(data.type) + '</p>'; return { result: function () { return { completed: true, scored: false }; } }; }
     return f(el, data, ctx);
-  }, esc: esc, rich: rich, stripTags: stripTags, asset: assetUrl };
+  }, esc: esc, rich: rich, stripTags: stripTags, asset: assetUrl, shuffle: shuffle };
 })(window);

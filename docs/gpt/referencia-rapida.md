@@ -79,14 +79,31 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   tras cerrar negrita (`**útil** y`, no `**útil**y`);
   encabezados `## `/`### ` con solo el título en su línea; sub-epígrafes hermanos con
   el **mismo nivel** de encabezado (ninguno degradado a `3. **…**`); ninguna pantalla
-  arranca con contenido residual del epígrafe anterior; **no dos callouts del mismo
+  arranca con contenido residual del epígrafe anterior (ni con un bloque que su
+  `title` no anuncie); **no dos callouts del mismo
   tipo en una pantalla** (dos `::: important` juntos = dos pantallas fusionadas:
-  divide).
+  divide); **ningún callout vacío** (`::: tipo` sin cuerpo); el texto interno de una
+  infografía (rótulos, flechas «→») no se vuelca como párrafos sueltos;
+  **enlaces del original preservados** como `[texto](url)`
+  (`extract_text_markdown` ya captura las anotaciones del PDF; sin `target`, lo pone
+  el runtime); **enlace a YouTube → vídeo embebido** (`visual_resource`
+  `video_youtube`, ID en `src`), nunca como enlace de texto.
 - **Estructura**: `cover` solo portada, con el **número del tema visible** («Tema 1»,
   «Tema 2»… en `subtitle` o antepuesto al título) y sin párrafos de contenido;
-  ejercicios prácticos (`case_practice`/`reflection`, `::: case`/`::: reflect`) en
+  **máximo una imagen por pantalla y siempre como `visual_resource`** (nunca `![...]`
+  en `student_text`; serie de figuras → una pantalla por punto, mismo `title`);
+  **pantalla con texto+imagen sin interacción** (ni informativa: la interactividad
+  va en la pantalla siguiente, con solo una frase introductoria);
+  **toda interactividad evaluable o de pregunta directa en pantalla propia** (sin
+  teoría en `student_text`: solo una frase de contexto; el desarrollo, en la pantalla
+  anterior con el mismo `title`); ejercicios prácticos
+  (`case_practice`/`reflection`, `::: case`/`::: reflect`) igual, en
   **pantalla propia**, no pegados tras el contenido, con la **solución en
   `feedback.explanation`** (nunca «Resolución propuesta» visible en `student_text`);
+  **cierre de cada tema**: `flashcards` + una lúdica (`word_search`/`crossword`/
+  `az_quiz`, alternando entre temas, `scored: false`); **tipos reservados al editor
+  humano, nunca generados**: `hotspots`, `before_after`, `hidden_image`, `puzzle`,
+  `video` (vídeo interactivo) y `html_embed`;
   bibliografía **solo** en
   `bibliography[]` (la carcasa la muestra sola; sin pantalla «Referencias»), una
   entrada por referencia con **formato homogéneo** (`Autor/Entidad (año). Título.
@@ -100,7 +117,16 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   `assert json.dumps(course).count('**') > 0`. Si sale **0**, has extraído en plano o
   redactado de memoria → **reextrae con `extract_text_markdown` (contrato §11)** y vuelca
   ese texto (que ya trae las `**`) a `student_text`; **no** reescribas el texto tú.
-- **Interacciones** repartidas cada 4-8 pantallas (no acumuladas al final).
+- **Guion de pantallas** montado antes de producir cada tema (tabla
+  bloque→pantalla→interacción de la guía, con el **nº de caracteres** por pantalla;
+  adjunto al informe, y aprobado por el usuario si la orden pedía «enséñame el
+  guion») y su **ritmo** cumplido: informativa ~1 de cada 3-4 pantallas de desarrollo
+  (**nunca >3 seguidas de solo texto**); **ninguna pantalla de >~800 caracteres sin
+  interactividad informativa** (repartir el texto en una que lo contenga, o dividir);
+  checkpoint aplicado cada 4-5 pantallas (mín. ⌈N/5⌉, no acumulados al final),
+  **alternando todo el repertorio evaluable** sin repetir tipo dos veces seguidas y
+  prefiriendo decidir/clasificar/ordenar a `single_choice`; ante la duda, un
+  checkpoint de más (borrar en SCORMEditor es fácil; crear, no).
 - **Objetivos**: conjunto reducido derivado del contenido, de la petición del usuario
   y de la normativa facilitada (no uno distinto por pantalla); texto **idéntico**
   reutilizado entre pantallas, interacciones y preguntas del test; cada objetivo con

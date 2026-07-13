@@ -48,7 +48,9 @@ Reglas por pantalla / unidad / curso, p. ej.:
   son un despiste. `COVER_INTERACTION` (portada con actividad), `VIDEO_NO_MEDIA`
   (pantalla `video` sin recurso de vídeo **ni** interacción `video`), `QUIZ_NO_SCORED`
   (`unit_quiz` sin interacción `scored`), `FORUM_SCORED` (`forum_prompt` con interacción
-  puntuable — el foro es actividad externa del campus). La filosofía: las recetas guían
+  puntuable — el foro es actividad externa del campus), `CALLOUT_EMPTY` (un
+  `::: tipo` … `:::` sin cuerpo en `student_text` — caja vacía en pantalla; los GPT a
+  veces lo emiten). La filosofía: las recetas guían
   al crear, el editor permite todo, y estos avisos señalan lo incongruente sin bloquear.
 
 Uso en UI:
@@ -60,6 +62,14 @@ Uso en UI:
   módulo › unidad** (por ids, no parseando `location`), más grupos «Test final» y «Curso y
   SCORM». Los recuadros de severidad del resumen actúan de **filtro** (clic = ocultar/
   mostrar; clase `.is-off`).
+- Botón **«Copiar informe»** (en el resumen, solo si hay issues): copia TODOS los issues
+  (ignora los filtros, para que el resultado sea determinista) como markdown
+  `- ⛔ [CODE] mensaje — ubicación` con cabecera de título y recuentos. Es la entrada del
+  ciclo de **autocorrección por el GPT**: el usuario lo pega en ChatGPT y el GPT corrige
+  cada código según `docs/gpt/tabla-autocorreccion.md`. Por eso los códigos son parte del
+  contrato con el GPT: **todo validador nuevo o cambiado en `validators.ts` debe
+  añadir/actualizar su fila en esa tabla** (convención también en `CLAUDE.md`). El
+  informe exportado (`report.ts`) imprime igualmente `[CODE]` en riesgos y pendientes.
 
 ### Enlaces al editor (invariante de navegación)
 Todo issue con destino editable **enlaza a su superficie de edición**. La resolución vive

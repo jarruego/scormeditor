@@ -208,7 +208,7 @@ export function generateReportMarkdown(course: Course): string {
 
   md.push(`## 7. Pendientes de validación normativa / por la entidad\n`)
   if (pending.length === 0) md.push(`_Sin avisos._`)
-  else pending.forEach((i) => md.push(`- ${i.message} — _${i.location}_`))
+  else pending.forEach((i) => md.push(`- **[${i.code}]** ${i.message} — _${i.location}_`))
   md.push('')
   md.push(`> **Pendiente de revisión por la entidad** y, en su caso, de alineación con criterios del SEPE o administración competente.\n`)
 
