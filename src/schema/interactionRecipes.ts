@@ -71,8 +71,21 @@ export const INTERACTION_GROUP_HINTS: Record<InteractionGroup, string> = {
   avanzado: 'Piezas especiales: código a medida y paneles.',
 }
 
-/** Familias de datos compatibles para migrar contenido al cambiar de tipo. */
-export type InteractionFamily = 'options' | 'cards' | 'titled-items' | 'questions'
+/**
+ * Familias de datos compatibles para migrar contenido al cambiar de tipo:
+ * - `options`: respuestas con `correct` en `options` (single_choice, true_false,
+ *   scenario_decision).
+ * - `assign`: elementos con `group` en `options` (match_pairs, classification) —
+ *   mismo shape exacto, migran sin pérdida.
+ * - `titled-content`: patrón «título + detalle» (accordion, tabs, flip_cards,
+ *   flashcards, timeline, image_cards). Cada tipo guarda un shape distinto en
+ *   `config`, así que la migración pasa por un adaptador canónico
+ *   (`TITLED_ADAPTERS`); los campos que el destino no conserva (label de
+ *   timeline, image/alt de image_cards) se descartan avisando (`lossy`).
+ * - `questions`: preguntas con timestamp/opciones en `config.questions`
+ *   (video, hidden_image).
+ */
+export type InteractionFamily = 'options' | 'assign' | 'titled-content' | 'questions'
 
 export type InteractionRecipe = {
   type: InteractionType
@@ -100,7 +113,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'presentar',
     gradable: false,
     supportsAttempts: false,
-    family: 'titled-items',
+    family: 'titled-content',
   },
   {
     type: 'tabs',
@@ -109,7 +122,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'presentar',
     gradable: false,
     supportsAttempts: false,
-    family: 'titled-items',
+    family: 'titled-content',
   },
   {
     type: 'flip_cards',
@@ -118,7 +131,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'presentar',
     gradable: false,
     supportsAttempts: false,
-    family: 'cards',
+    family: 'titled-content',
   },
   {
     type: 'timeline',
@@ -127,6 +140,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'presentar',
     gradable: false,
     supportsAttempts: false,
+    family: 'titled-content',
   },
   {
     type: 'image_cards',
@@ -135,6 +149,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'presentar',
     gradable: false,
     supportsAttempts: false,
+    family: 'titled-content',
   },
   {
     type: 'before_after',
@@ -226,6 +241,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'manipular',
     gradable: true,
     supportsAttempts: true,
+    family: 'assign',
   },
   {
     type: 'classification',
@@ -234,6 +250,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'manipular',
     gradable: true,
     supportsAttempts: true,
+    family: 'assign',
   },
 
   // ---- Juegos didácticos ---------------------------------------------------
@@ -286,7 +303,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'juegos',
     gradable: false,
     supportsAttempts: false,
-    family: 'cards',
+    family: 'titled-content',
   },
 
   // ---- Vídeo ---------------------------------------------------------------
@@ -350,17 +367,62 @@ export function interactionHasContent(it: Interaction): boolean {
   return hasText(it.options) || hasText(it.config)
 }
 
-/** Dónde vive el contenido de cada familia dentro de `config` (options aparte). */
-const FAMILY_CONFIG_KEY: Record<Exclude<InteractionFamily, 'options'>, string> = {
-  cards: 'cards',
-  'titled-items': 'items',
-  questions: 'questions',
+/** Ítem canónico de la familia `titled-content`: título + detalle y extras opcionales. */
+type TitledItem = { title: string; body: string; label: string; image: string; alt: string }
+
+type TitledAdapter = {
+  /** Clave de `config` donde vive la lista de este tipo. */
+  key: string
+  /** Campos canónicos que el shape del tipo conserva (el resto se pierde al migrar). */
+  keeps: ReadonlyArray<keyof TitledItem>
+  read: (raw: Record<string, unknown>) => TitledItem
+  write: (item: TitledItem) => Record<string, unknown>
+}
+
+const str = (v: unknown): string => (typeof v === 'string' ? v : '')
+
+/** Tipos con `config.items: [{title, body}]` (accordion, tabs). */
+const ITEMS_ADAPTER: TitledAdapter = {
+  key: 'items',
+  keeps: ['title', 'body'],
+  read: (r) => ({ title: str(r.title), body: str(r.body), label: '', image: '', alt: '' }),
+  write: (it) => ({ title: it.title, body: it.body }),
+}
+
+/** Tipos con `config.cards: [{front, back}]` (flip_cards, flashcards). */
+const FLIP_ADAPTER: TitledAdapter = {
+  key: 'cards',
+  keeps: ['title', 'body'],
+  read: (r) => ({ title: str(r.front), body: str(r.back), label: '', image: '', alt: '' }),
+  write: (it) => ({ front: it.title, back: it.body }),
+}
+
+/** Cómo lee/escribe cada tipo de `titled-content` su shape real de `config`. */
+const TITLED_ADAPTERS: Partial<Record<InteractionType, TitledAdapter>> = {
+  accordion: ITEMS_ADAPTER,
+  tabs: ITEMS_ADAPTER,
+  flip_cards: FLIP_ADAPTER,
+  flashcards: FLIP_ADAPTER,
+  timeline: {
+    key: 'milestones',
+    keeps: ['title', 'body', 'label'],
+    read: (r) => ({ title: str(r.title), body: str(r.body), label: str(r.label), image: '', alt: '' }),
+    write: (it) => ({ label: it.label, title: it.title, body: it.body }),
+  },
+  image_cards: {
+    key: 'cards',
+    keeps: ['title', 'body', 'image', 'alt'],
+    read: (r) => ({ title: str(r.title), body: str(r.text), label: '', image: str(r.image), alt: str(r.alt) }),
+    write: (it) => ({ image: it.image, alt: it.alt, title: it.title, text: it.body }),
+  },
 }
 
 /**
  * Datos específicos resultantes de cambiar `it` al tipo `to`:
  * - misma `family` → migra el contenido compartido (y nada más: sin claves
- *   huérfanas de config en el `course.json`);
+ *   huérfanas de config en el `course.json`). En `titled-content` el shape del
+ *   origen pasa a ítem canónico y de ahí al shape del destino; los campos que
+ *   el destino no conserva se descartan.
  * - sin familia común → parte del `seed()` del tipo nuevo.
  * `lossy` indica si se descarta contenido escrito (la UI confirma solo entonces).
  */
@@ -371,13 +433,32 @@ export function migrateInteractionData(
   const fromRec = interactionRecipe(it.type)
   const toRec = interactionRecipe(to)
   if (fromRec.family && fromRec.family === toRec.family) {
-    if (fromRec.family === 'options')
+    // `options` y `assign` viven en `options` con el mismo shape: migra tal cual.
+    if (fromRec.family === 'options' || fromRec.family === 'assign')
       return { options: it.options ?? [], config: {}, lossy: hasText(it.config) }
-    const key = FAMILY_CONFIG_KEY[fromRec.family]
-    const rest = { ...(it.config ?? {}) }
-    const kept = rest[key] ?? []
-    delete rest[key]
-    return { options: [], config: { [key]: kept }, lossy: hasText(it.options) || hasText(rest) }
+    if (fromRec.family === 'questions') {
+      const rest = { ...(it.config ?? {}) }
+      const kept = rest.questions ?? []
+      delete rest.questions
+      return { options: [], config: { questions: kept }, lossy: hasText(it.options) || hasText(rest) }
+    }
+    const fromAd = TITLED_ADAPTERS[it.type]
+    const toAd = TITLED_ADAPTERS[to]
+    if (fromAd && toAd) {
+      const rest = { ...(it.config ?? {}) }
+      const raw = rest[fromAd.key]
+      delete rest[fromAd.key]
+      const items = (Array.isArray(raw) ? raw : []).map((r) => fromAd.read(r ?? {}))
+      // Se pierde algo si algún ítem trae texto en un campo que el destino no conserva.
+      const dropped = items.some((item) =>
+        fromAd.keeps.some((k) => !toAd.keeps.includes(k) && item[k].trim() !== ''),
+      )
+      return {
+        options: [],
+        config: { [toAd.key]: items.map(toAd.write) },
+        lossy: dropped || hasText(it.options) || hasText(rest),
+      }
+    }
   }
   const seed = toRec.seed?.() ?? {}
   return {

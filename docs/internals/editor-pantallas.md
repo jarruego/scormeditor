@@ -226,11 +226,22 @@ tipo actual se marca (`.ed-recipe.is-current`). Lo abren dos caminos del `Screen
 (id, enunciado, instrucciones, feedback, intentos, objetivo, source_refs;
 `scored`/`points` solo si el tipo nuevo es `gradable`) y para options/config aplica
 `migrateInteractionData` (`interactionRecipes.ts`):
-- **Misma `family`** → migra el contenido compartido: `options`
-  (single_choice ↔ true_false ↔ scenario_decision), `config.cards`
-  (flip_cards ↔ flashcards), `config.items` (accordion ↔ tabs), `config.questions`
-  (video ↔ hidden_image). El resto de claves se descarta.
+- **Misma `family`** → migra el contenido compartido (el resto de claves se descarta):
+  - `options` (single_choice ↔ true_false ↔ scenario_decision) y `assign`
+    (match_pairs ↔ classification): mismo shape en `options`, migran tal cual.
+  - `titled-content` (accordion ↔ tabs ↔ flip_cards ↔ flashcards ↔ timeline ↔
+    image_cards): patrón «título + detalle» con un shape distinto por tipo
+    (`items {title, body}`, `cards {front, back}`, `milestones {label, title,
+    body}`, `cards {image, alt, title, text}`); la migración pasa por el ítem
+    canónico `{title, body, label, image, alt}` vía `TITLED_ADAPTERS`, y los
+    campos que el destino no conserva (label de timeline, image/alt de
+    image_cards) se descartan marcando `lossy`.
+  - `questions` (video ↔ hidden_image): `config.questions`.
 - **Sin familia común** → `options`/`config` parten del `seed()` del tipo nuevo.
+  Quedan fuera a propósito: az_quiz/crossword (sus «respuestas» exigen una
+  palabra corta — migrar texto libre daría contenido inválido) y
+  sort_steps/single_choice (comparten `options` pero la semántica cambia: el
+  orden es la respuesta vs. la marca `correct`).
 - En ambos casos **nunca quedan claves huérfanas** del tipo anterior en `config` (un
   `{...it, type}` ingenuo acumularía basura exportable).
 - Devuelve `lossy`: la UI (`onChangeInteractionType` en `ScreenEditor`) pide
