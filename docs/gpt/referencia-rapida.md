@@ -108,7 +108,9 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   `bibliography[]` (la carcasa la muestra sola; sin pantalla «Referencias»), una
   entrada por referencia con **formato homogéneo** (`Autor/Entidad (año). Título.
   Fuente.`); interacciones informativas **variadas** (no todo `accordion`;
-  `tabs`/`flip_cards` solo con ≤4 ítems).
+  `tabs`/`flip_cards` solo con ≤4 ítems) y **con sustancia tras el clic** (el cuerpo de
+  cada ítem/tarjeta/hito claramente más extenso que su título, nunca un eco del rótulo;
+  solo rótulos sin desarrollo → lista en `student_text`, no desplegable).
 - **Contenido íntegro (Regla Nº1)**: texto conservado ~100% (ratio ≥0.95);
   `quality_checklist`: `"Contenido del documento trazado sin pérdidas": true`.
 - **Negritas (check automático, OBLIGATORIO)**: si el PDF fuente tiene texto en negrita

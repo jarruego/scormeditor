@@ -225,6 +225,16 @@ El texto de cada `item`/`tab`/`card`/hito es el **texto fuente** de esa parte. E
 siempre el mismo patrón. El `accordion` es el comodín para ítems largos o numerosos
 (5+), no la única opción.
 
+**Detrás del clic debe haber sustancia.** El sentido de un desplegable es descubrir un
+desarrollo: el cuerpo de cada ítem (`body` del accordion/tab/hito, `back` de la tarjeta)
+debe ser claramente **más extenso y descriptivo que el título que se clica** — varias
+frases del texto fuente, nunca una frase que repite o parafrasea lo que ya dice el
+rótulo (clicar para leer lo mismo frustra y resta credibilidad al curso). Si el fuente
+solo da una lista de rótulos sin desarrollo (nombres, etiquetas de un esquema), **no hay
+nada que desplegar**: preséntala como lista `- ` en `student_text` (o como callout) y
+reserva la informativa para un bloque que sí tenga contenido detrás. Este criterio manda
+sobre el ritmo del guion: mejor una pantalla de texto de más que un desplegable hueco.
+
 **Una interacción = UNA pantalla, con TODOS sus ítems.** No la partas en varias
 pantallas: un accordion «Áreas clave» con 8 apartados es **un** accordion en **una**
 pantalla, no «Áreas clave (1)» / «(2)». Lo mismo con `tabs`/`flip_cards`. Dentro de un
@@ -466,3 +476,6 @@ Convierte «reflexiona sobre…» en algo accionable siempre que puedas:
     pertenece a la pantalla anterior o pide pantalla propia.
   - **Varias imágenes en una pantalla** (una en `visual_resource` + otras `![...]`
     en el texto): máximo una por pantalla; serie ilustrada → una pantalla por punto.
+  - **Desplegable hueco**: accordion/tabs/flip_cards/timeline cuyos cuerpos casi
+    repiten el título que se clica. Sin desarrollo real detrás del clic, el bloque va
+    como lista en `student_text`, no como interacción.

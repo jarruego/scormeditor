@@ -37,6 +37,14 @@ Reglas que NO se pueden romper:
   **No se admite un array `screens` en la raíz.**
 - `quality_checklist` es un **objeto** `{"texto del criterio": true|false}`,
   **no** un array.
+- **IDs deterministas, nunca «inventados»**: numeración secuencial por orden de
+  aparición — módulos `m1, m2…`; unidades `u1, u2…` y pantallas `s01, s02…` con
+  **numeración continua en TODO el curso** (las pantallas no reinician por unidad);
+  interacciones `<id_pantalla>_i01`; tests `A01, A02…` y sus preguntas `Q01, Q02…`;
+  opciones `a, b, c…` (o `o1/p1/z1` según el tipo, ver §6). Motivo: los IDs
+  descriptivos o «aleatorios» producen duplicados en cursos largos y el editor los
+  rechaza. Al **corregir o regenerar** un curso existente, **conserva los IDs que ya
+  tiene** (son la referencia estable de pantallas y actividades).
 - Cualquier clave extra que no esté en este contrato se ignora (no rompe, pero se
   pierde). No metas `parent_course`, `learning_design`, `generation_context`, etc.:
   su información útil debe volcarse en los campos que sí existen (ver §2).
@@ -395,7 +403,10 @@ Estructura común a TODAS:
   `scenario_decision`, `case_practice`, `hotspots`, `video`, `fill_blanks`,
   `timeline`, `flashcards`, `html_embed`, `image_cards`, `before_after`,
   `word_search`, `crossword`, `hidden_image`, `az_quiz`, `puzzle`,
-  `progress_report`.
+  `progress_report`. **`reflection` NO está en esta lista**: es un tipo de
+  *pantalla* (§3), no de interacción. Una reflexión se modela como pantalla
+  `type: "reflection"` con `interaction: null`, o —si tiene tarea con
+  solución/feedback— como interacción `case_practice`.
 - **Tipos que el GPT NO genera** (reservados al editor humano, que los añade desde
   SCORMEditor si procede): `hotspots`, `before_after`, `hidden_image`, `puzzle`,
   `video` (vídeo interactivo con preguntas) y `html_embed` (código a medida). Piden
@@ -460,7 +471,11 @@ con `correct` y `feedback` por opción:
 ```
 
 **`accordion` / `tabs`** — informativas (no evalúan; `scored: false`).
-`config.items` con `title` + `body`:
+`config.items` con `title` + `body`. El `body` debe tener **desarrollo real, claramente
+más extenso que su `title`** (nunca una frase que repita o parafrasee el rótulo que se
+clica); si el fuente solo da rótulos sin desarrollo, el bloque va como lista en
+`student_text`, no como desplegable. Lo mismo aplica al `back` de `flip_cards` respecto
+a su `front` y al `body` de cada hito de `timeline`:
 ```json
 "config": { "items": [ { "title": "Dar coherencia", "body": "Todo el equipo actúa..." } ] }
 ```
@@ -680,6 +695,9 @@ preguntas.
 }
 ```
 
+- `unit_id` es **obligatorio**, también en `final_test` (el esquema del editor lo
+  exige): el id de una unidad existente. Si el test abarca todo el curso, pon la
+  primera unidad (p. ej. `"u1"`).
 - Pregunta `type`: usa **`"single_choice"`** o **`"true_false"`**. (El renderizador
   del test usa botones de opción única; `multiple_choice` se admite en el esquema
   pero se comportaría como selección única, evítalo de momento.)
@@ -776,6 +794,8 @@ preguntas.
 - [ ] **Texto original conservado ~100%** (regla 9.11): casi literal (≥0.95), visible
       + en `transcript`, sin resumir ni reescribir.
       `quality_checklist`: `"Contenido del documento trazado sin pérdidas": true`.
+- [ ] **Preflight `validate_course(course)` con CERO errores** (§11) y avisos
+      corregidos (salvo imposibilidad real, que se anota en `editor_notes`).
 - [ ] Empaquetado como `.scormproj` (§11): `course.json` en la raíz del ZIP +
       `assets/` con TODOS los binarios referenciados; ninguna ruta `assets/…` del
       `course.json` apunta a un fichero ausente.
@@ -824,11 +844,138 @@ si procede, `caption`. Las figuras decorativas o de baja calidad: omítelas
 ### Builder en Code Interpreter (Python)
 
 Construye el `course.json` como `dict`, reúne los binarios en un `dict`
-`ruta → bytes` y empaqueta con esta función. Valida que no haya rutas rotas
-**antes** de devolver el archivo.
+`ruta → bytes` y empaqueta con esta función. **Preflight obligatorio**: antes de
+empaquetar, `validate_course(course)` comprueba en Python las reglas del §9 (las
+mismas que aplicará el editor al abrir el archivo). `build_scormproj` lo ejecuta y
+**aborta si hay ERRORes**: corrige el `course` con los mensajes y reintenta hasta
+cero errores (los AVISOs corrígelos también, salvo imposibilidad real — p. ej. no
+tener el dato en la fuente). Nunca entregues con errores de preflight: el usuario
+los verá igualmente al abrir el proyecto.
 
 ```python
-import json, zipfile, os, re
+import json, zipfile, os, re, unicodedata
+
+def validate_course(course: dict) -> list:
+    """Preflight de las reglas §9 sobre el course.json ANTES de empaquetar.
+    Devuelve mensajes "ERROR: ..." (bloquean) y "AVISO: ..." (corregir si se
+    puede). Réplica de los validadores de SCORMEditor: lo que falle aquí,
+    fallará en el editor."""
+    out, ids = [], {}
+    err = lambda m: out.append("ERROR: " + m)
+    warn = lambda m: out.append("AVISO: " + m)
+
+    # Enums cerrados del esquema (§3 y §6): un valor fuera de lista rompe la carga.
+    SCREEN_TYPES = {"cover", "objectives", "route", "content", "summary", "video",
+                    "reflection", "forum_prompt", "unit_quiz", "content_placeholder"}
+    INTERACTION_TYPES = {"accordion", "tabs", "flip_cards", "match_pairs", "sort_steps",
+                         "single_choice", "true_false", "classification",
+                         "scenario_decision", "case_practice", "hotspots", "video",
+                         "fill_blanks", "timeline", "flashcards", "html_embed",
+                         "image_cards", "before_after", "word_search", "crossword",
+                         "hidden_image", "az_quiz", "puzzle", "progress_report"}
+
+    def norm(t):  # misma normalización de objetivos que el editor
+        t = unicodedata.normalize("NFD", str(t or "").lower())
+        t = "".join(c for c in t if unicodedata.category(c) != "Mn")
+        return re.sub(r"\s+", " ", t).strip().rstrip(".").strip()
+
+    def uid(i, what):  # ids únicos y presentes (§1: IDs deterministas)
+        if not i: err(f"{what} sin id")
+        elif i in ids: err(f"id duplicado «{i}» ({what} y {ids[i]})")
+        else: ids[i] = what
+
+    def check_question(prompt, options, feedback, where):
+        opts = options or []
+        fb = feedback or {}
+        if not str(prompt or "").strip(): err(f"{where}: sin enunciado")
+        if not any(o.get("correct") for o in opts) and not any(o.get("group") for o in opts):
+            err(f"{where}: sin respuesta correcta")
+        if not str(fb.get("correct", "")).strip() and not str(fb.get("incorrect", "")).strip():
+            err(f"{where}: sin feedback de acierto/error")
+
+    declared, evaluated = {}, set()
+    for m in course.get("modules") or []:
+        uid(m.get("id"), "módulo")
+        for u in m.get("units") or []:
+            uid(u.get("id"), "unidad")
+            screens = u.get("screens") or []
+            if not (str(u.get("summary", "")).strip() or any(s.get("type") == "summary" for s in screens)):
+                warn(f"unidad {u.get('id')}: sin summary ni pantalla summary")
+            if not any(s.get("interaction") for s in screens):
+                warn(f"unidad {u.get('id')}: sin actividad ni test")
+            for s in screens:
+                uid(s.get("id"), "pantalla")
+                w = f"pantalla {s.get('id')}"
+                if s.get("type") not in SCREEN_TYPES:
+                    err(f"{w}: type de pantalla «{s.get('type')}» no existe (§3)")
+                if not str(s.get("title", "")).strip(): err(f"{w}: sin título")
+                if s.get("type") not in ("cover", "summary") and not str(s.get("objective", "")).strip():
+                    warn(f"{w}: sin objective")
+                key = norm(s.get("objective"))
+                if key and key not in declared: declared[key] = s.get("objective")
+                vr = s.get("visual_resource") or {}
+                if vr.get("kind") == "image" and not str(vr.get("alt", "")).strip():
+                    err(f"{w}: imagen sin alt")
+                if (vr.get("kind") in ("video_file", "video_youtube") or s.get("type") == "video") \
+                        and not str(s.get("transcript", "")).strip():
+                    err(f"{w}: vídeo sin transcript")
+                if vr.get("has_voice") and not (vr.get("tracks") or []):
+                    err(f"{w}: medio con voz sin subtítulos VTT")
+                if re.search(r"^[ \t]*:::[ \t]*[\wáéíóúñ-]+[^\n]*\n(?:[ \t]*\n)*[ \t]*:::[ \t]*$",
+                             str(s.get("student_text", "")), re.M | re.I):
+                    warn(f"{w}: callout vacío (::: tipo sin cuerpo, §4.1)")
+                it = s.get("interaction")
+                if it:
+                    uid(it.get("id"), "interacción")
+                    if it.get("type") not in INTERACTION_TYPES:
+                        err(f"{w}: interaction.type «{it.get('type')}» no existe (§6). "
+                            "Ojo: «reflection» es un tipo de PANTALLA, no de interacción — "
+                            "usa pantalla type «reflection» (interaction null) o "
+                            "interacción «case_practice»")
+                    lo = str(it.get("learning_objective", "")).strip()
+                    if not lo: warn(f"{w}: interacción sin learning_objective")
+                    if it.get("scored") and norm(lo): evaluated.add(norm(lo))
+                    if it.get("type") in ("single_choice", "true_false", "classification",
+                                          "match_pairs", "scenario_decision"):
+                        check_question(it.get("prompt"), it.get("options"), it.get("feedback"), w)
+                    if it.get("type") == "fill_blanks" and \
+                            not re.findall(r"\[\[.+?\]\]", str((it.get("config") or {}).get("text", ""))):
+                        err(f"{w}: fill_blanks sin ningún hueco [[respuesta]]")
+
+    a = course.get("assessments") or {}
+    tests = ([a["final_test"]] if a.get("final_test") else []) + (a.get("unit_tests") or [])
+    for t in tests:
+        tw = f"test {t.get('id')}"
+        uid(t.get("id"), "test")
+        if not str(t.get("unit_id", "")).strip():
+            err(f"{tw}: unit_id obligatorio, también en final_test (§7) — id de una "
+                "unidad existente; si el test abarca todo el curso, la primera unidad")
+        elif ids.get(t.get("unit_id")) != "unidad":
+            err(f"{tw}: unit_id «{t.get('unit_id')}» no es el id de ninguna unidad")
+        for q in t.get("questions") or []:
+            uid(q.get("id"), f"pregunta de {t.get('id')}")
+            check_question(q.get("prompt"), q.get("options"), q.get("feedback"),
+                           f"test {t.get('id')} › {q.get('id')}")
+            if norm(q.get("learning_objective")): evaluated.add(norm(q.get("learning_objective")))
+
+    for key, txt in declared.items():
+        if key not in evaluated:
+            warn(f"objetivo sin evaluación que lo mida: «{txt}» — copia su texto EXACTO "
+                 "en el learning_objective de una interacción scored o pregunta de test")
+
+    rules = (course.get("scorm") or {}).get("rules") or {}
+    nfinal = len((a.get("final_test") or {}).get("questions") or [])
+    nact = sum(1 for m in course.get("modules") or [] for u in m.get("units") or []
+               for s in u.get("screens") or [] if (s.get("interaction") or {}).get("scored"))
+    src = rules.get("score_source")
+    if src == "final_test" and nfinal == 0: err("score_source final_test sin preguntas en final_test")
+    if src == "unit_tests" and nact == 0: err("score_source unit_tests sin interacciones scored")
+    if src == "mixed" and nfinal == 0 and nact == 0: err("score_source mixed sin test ni actividades")
+    if not str((course.get("scorm") or {}).get("identifier", "")).strip(): err("scorm.identifier vacío")
+    if not course.get("glossary"): warn("glossary vacío")
+    if not course.get("bibliography"): warn("bibliography vacía")
+    return out
+
 
 def build_scormproj(course: dict, asset_files: dict, out_dir="/mnt/data"):
     """
@@ -838,6 +985,13 @@ def build_scormproj(course: dict, asset_files: dict, out_dir="/mnt/data"):
                    rutas referenciadas en course.json.
     Devuelve (ruta_del_scormproj, lista_de_huerfanos).
     """
+    # Preflight §9: no se empaqueta un curso que el editor marcará en rojo.
+    problems = validate_course(course)
+    for p in problems: print(p)
+    errores = [p for p in problems if p.startswith("ERROR")]
+    if errores:
+        raise ValueError(f"{len(errores)} errores de contrato (§9): corrige el course y reintenta.")
+
     blob = json.dumps(course, ensure_ascii=False)
     referenced = set(re.findall(r'"(assets/[^"]+)"', blob))
 

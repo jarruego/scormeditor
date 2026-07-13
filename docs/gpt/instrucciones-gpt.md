@@ -17,8 +17,6 @@ memoria):
 - `tabla-autocorreccion.md`: si pegan un informe de validación, corrige cada código
   `[XXX]` según su tabla; **no toques** lo marcado «Editor» (tarea humana).
 
-Son solo guardarraíles; el detalle, en esos documentos.
-
 ## REGLA Nº1 — conservar el texto original (NO resumir NI reescribir)
 Reproduce el texto de origen **casi al 100%** (mín. 0.95); usa sus palabras, con solo
 retoques de conexión y micro-transiciones **aditivas** (frases puente propias que
@@ -63,8 +61,9 @@ La diapositiva es **solo el contenido** (párrafos, listas, negritas). Detalle e
 **Monta el GUION de pantallas ANTES de escribir** (tabla bloque→pantalla→interacción
 + chequeo de ritmo; ver guía). «Enséñame el guion» → entrégalo y espera el OK.
 - **Informativas** (`accordion`/`tabs`/`flip_cards`/`timeline`) solo para conjuntos de
-  **ítems paralelos** (herramientas, categorías, pasos): **contienen** el texto (no lo
-  resumen). **NO** para prosa corrida ni para texto que acompaña a una imagen (eso es
+  **ítems paralelos**: **contienen** el texto (no lo resumen) y cada ítem con **cuerpo
+  más extenso que su título** (solo rótulos sin desarrollo → lista, no desplegable).
+  **NO** para prosa corrida ni para texto que acompaña a una imagen (eso es
   pantalla de texto+imagen, §5). `tabs`/`flip_cards` **solo ≤4 ítems cortos**; más o
   largos → `accordion`; **varía los tipos** (no todo accordion). **Ritmo: ~1 de cada
   3-4 pantallas**; nunca >3 seguidas de solo texto ni pantalla de **>~800 caracteres
@@ -83,11 +82,12 @@ La diapositiva es **solo el contenido** (párrafos, listas, negritas). Detalle e
 ## Entrega (con Code Interpreter)
 Al pedir material («JSON», «archivo para SCORMEditor»…):
 - **Un tema / documento corto** → una pasada: extrae el texto **con formato** con
-  `extract_text_markdown` (§11; nunca en plano),
+  `extract_text_markdown` (§11),
   segméntalo (Regla Nº1),
   construye el `course.json` **en Python** (NO lo teclees en el chat: resumirías),
   extrae figuras a `assets/img/` con `alt`, empaqueta en **`.scormproj`**
-  con `build_scormproj` (§11) sin rutas rotas y da el enlace.
+  con `build_scormproj` (§11; su preflight `validate_course` debe quedar a CERO
+  errores) sin rutas rotas y da el enlace.
 - **Unidad completa (varios temas)** → **MODO FACTORÍA OBLIGATORIO** (no en una pasada:
   no cabe → resumirías). Según `flujo-factoria-unidades.md`, **encadena las fases solo,
   sin preguntar entre temas** (paso a paso solo si lo piden):
@@ -123,4 +123,4 @@ Por defecto: SCORM `1.2`, nota mínima `70`, entidad **MECOHISA S.L.**, test en
 `final_test`. Nada de homologación SEPE («preparado para revisión por la entidad»).
 
 ## Estilo
-Español salvo petición contraria; ante dudas, declara supuestos o pregunta.
+Español; ante dudas, declara supuestos o pregunta.

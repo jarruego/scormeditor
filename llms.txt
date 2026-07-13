@@ -1,0 +1,35 @@
+# SCORMEditor
+
+> Editor de cursos SCORM 1.2 para Moodle. Los cursos se definen en un archivo de
+> proyecto `.scormproj`: un ZIP con `course.json` en la raíz (JSON con esquema
+> versionado, texto en markdown ligero, sin HTML) y una carpeta `assets/` con los
+> binarios. Cualquier asistente/LLM puede generar un `.scormproj` válido siguiendo
+> los documentos indexados aquí (rutas relativas a la raíz del repositorio).
+
+## Contrato del formato (imprescindible)
+
+- [Contrato course.json / .scormproj](docs/gpt/contrato-course-json.md): referencia
+  normativa completa — estructura, tipos de pantalla e interacción, markdown ligero y
+  callouts (§4.1), reglas del validador (§9), checklist (§10) y empaquetado con
+  preflight Python (§11). Manda en caso de conflicto.
+- [Ejemplo dorado](docs/gpt/ejemplo-course-json.md): un `course.json` completo y
+  válido, como referencia few-shot.
+
+## Criterio pedagógico y flujo de trabajo
+
+- [Guía de diseño de interacciones](docs/gpt/guia-diseno-interacciones.md):
+  segmentación en pantallas, ritmo de interactividades, antipatrones.
+- [Flujo factoría para unidades grandes](docs/gpt/flujo-factoria-unidades.md):
+  producción por fases (inventario → temas parciales → fusión) con control de
+  cobertura del texto fuente.
+- [Referencia rápida](docs/gpt/referencia-rapida.md): valores por defecto,
+  accesibilidad, evaluación y checklist de validación.
+- [Tabla de autocorrección](docs/gpt/tabla-autocorreccion.md): mapa código del
+  validador → causa → corrección canónica, para corregir un curso a partir del
+  informe de validación que exporta el editor.
+
+## Optional
+
+- [Instrucciones del GPT](docs/gpt/instrucciones-gpt.md): system prompt del GPT de
+  ChatGPT que genera los cursos (guardarraíles resumidos; el detalle está en los
+  documentos anteriores).

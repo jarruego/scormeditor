@@ -29,9 +29,20 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
 - **7 ficheros de conocimiento en `docs/gpt/`** (mantenerlos al día si cambia el formato
   `.scormproj`, el esquema de `course.json`, `autosave.ts` o el `renderer.js`):
   - `instrucciones-gpt.md`: system prompt (Instructions). Solo guardarraíles.
-  - `contrato-course-json.md`: referencia normativa del `course.json`; §4.1 markdown/
-    callouts/formato, **§11 Empaquetado `.scormproj`** (builder Python `build_scormproj` /
-    `extract_pdf_images`). **Manda en caso de conflicto.**
+  - `contrato-course-json.md`: referencia normativa del `course.json`; §1 incluye la
+    regla de **IDs deterministas** (secuenciales por orden: `m1/u1/s01…`, `sNN_i01`,
+    `A01/Q01…`; al corregir se conservan los existentes — los IDs «inventados»
+    duplicaban en cursos largos); §4.1 markdown/callouts/formato, **§11 Empaquetado
+    `.scormproj`** (builder Python `build_scormproj` / `extract_pdf_images` /
+    **`validate_course`**, preflight que replica en Python las reglas §9 y los
+    guardas duros del esquema Zod — enums cerrados de pantalla/interacción (el GPT
+    emitía `interaction.type: "reflection"`, que es tipo de pantalla) y `unit_id`
+    obligatorio en `final_test`/`unit_tests`, errores que solo afloraban al abrir
+    el proyecto en el editor;
+    `build_scormproj` lo ejecuta y aborta con ERRORes, de modo que el GPT corrige en
+    origen lo que antes solo afloraba al abrir el proyecto en el editor — idea tomada
+    del flujo «valida y regenera con el error» de eXeLearning). **Manda en caso de
+    conflicto.**
   - `ejemplo-course-json.md`: ejemplo dorado (few-shot) de un `course.json` válido.
   - `guia-diseno-interacciones.md`: criterio pedagógico (segmentación, formato,
     interacciones, callouts, antipatrones).
@@ -131,7 +142,10 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   `video_youtube` sí se genera) y `html_embed`. Una interacción entera en una
   pantalla (no partir accordion/actividad); **`accordion`/`tabs` solo para ítems paralelos, NUNCA para prosa
   corrida ni para texto que acompaña a una imagen**; **variar los tipos informativos**
-  (no todo accordion; `tabs`/`flip_cards` solo con ≤4 ítems cortos); **texto + imagen =
+  (no todo accordion; `tabs`/`flip_cards` solo con ≤4 ítems cortos); **sustancia tras el
+  clic** (jul 2026): el cuerpo de cada ítem/tarjeta/hito claramente más extenso que su
+  título, nunca un eco del rótulo — solo rótulos sin desarrollo → lista en
+  `student_text`, no desplegable; **texto + imagen =
   UNA pantalla** (`student_text` visible + `visual_resource`), sin fragmentar cada imagen
   en su propia pantalla; **máximo UNA imagen por pantalla y siempre como
   `visual_resource`** — nunca `![...]` en `student_text` (esa sintaxis es del editor
@@ -160,3 +174,9 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   ficheros. Dentro de las Instructions, los docs se referencian por **nombre de fichero
   suelto** (así los ve el Knowledge del GPT), no por ruta: mover la carpeta en el repo no
   afecta al GPT.
+- **`llms.txt` en la raíz del repo**: índice de los docs de `docs/gpt/` para que un
+  asistente **distinto de ChatGPT** (Claude, Gemini, un script con API…) pueda generar
+  `.scormproj` válidos partiendo de ese punto de entrada. Mientras el repo sea privado
+  es inerte de puertas afuera (solo sirve a agentes con acceso local); si algún día se
+  publica, revisar antes que el contrato lleva datos internos (entidad por defecto,
+  criterios SEPE). Mantener: solo cambia si se añade/renombra un doc de `docs/gpt/`.

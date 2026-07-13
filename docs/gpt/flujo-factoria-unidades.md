@@ -293,6 +293,10 @@ Si el GPT recibe una orden con esta forma, debe tratar las reglas numeradas como
 >    (tampoco tabs/timeline/accordion): va en la pantalla siguiente con solo una
 >    frase introductoria. Ni callouts vacíos ni rótulos/flechas de una infografía
 >    volcados como texto suelto.
+> 10. En accordion/tabs/flip_cards/timeline, el cuerpo de cada ítem debe ser
+>     claramente más extenso y descriptivo que el título que se clica: nunca una
+>     frase que repite el rótulo. Si el fuente solo da rótulos sin desarrollo,
+>     preséntalo como lista en student_text, no como desplegable.
 >
 > Antes de entregar: pasa el checklist de referencia-rapida.md y la revisión de
 > fidelidad contra el PDF (cada epígrafe con su pantalla, mismo orden y jerarquía).
