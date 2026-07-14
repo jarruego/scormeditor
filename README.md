@@ -67,7 +67,9 @@ o un `.fig`. El flujo es el estándar de cualquier app de documento:
 > editar → **● Sin guardar** → `Ctrl+S` → **✓ Guardado**
 
 - **Menú «Archivo»** de la barra superior: *Abrir proyecto…*, *Guardar*,
-  *Guardar como…*, *Nuevo (demo)* y *Exportar SCORM ZIP*.
+  *Guardar como…*, *Nuevo (demo)*, *Exportar SCORM ZIP* y *Exportar a eXeLearning
+  (.elpx)* (herramienta aparte: convierte el curso a un paquete importable en
+  **eXeLearning ≥ 4.0.1** para seguir editándolo allí; ver `docs/internals/interop-elpx.md`).
 - **Importación dual** al abrir: admite `.scormproj` y también `.zip` SCORM
   exportado (se importa como proyecto editable, sin vincular el ZIP de origen).
 - El **indicador de estado** junto al título es además un botón: pulsarlo guarda.

@@ -50,6 +50,10 @@ Lee el que corresponda al tocar esa área:
 - `informes-validacion.md` — `validators.ts` (errores/avisos) y el informe (`report.ts`).
 - `ingesta-gpt.md` — el GPT generador y los **7 docs de conocimiento** de `docs/gpt/` (los
   que se suben a ChatGPT), la invariante de ingesta y los criterios de contenido acordados.
+- `interop-elpx.md` — exportador `.elpx` (eXeLearning ≥ 4.0.1) en `src/interop/elpx/`:
+  herramienta aparte y opcional (menú Archivo, `import()` dinámico), formato ODE 2.0,
+  mapa de conversión de interacciones a iDevices y degradaciones. **No** toca runtime,
+  esquema ni export SCORM.
 
 ### Flujos típicos (qué leer según la tarea)
 - **Añadir/cambiar un tipo de interacción** → `interacciones.md` +
@@ -62,6 +66,8 @@ Lee el que corresponda al tocar esa área:
   (+ `interacciones.md` si es una interacción; + `evaluacion-finalizacion.md` si toca
   nota/gating).
 - **Guardar/abrir/exportar/assets** → `persistencia-scormproj.md`.
+- **Exportar a eXeLearning (`.elpx`)** → `interop-elpx.md` (+ `interacciones.md` si el
+  cambio afecta al `config` de una interacción, porque el mapeo lee ese shape).
 - **Contenido generado por GPT / criterios de ingesta** → `ingesta-gpt.md`.
 - **Preguntas conceptuales** (sin tocar código) → normalmente basta un doc; no cargues
   varios «por si acaso».

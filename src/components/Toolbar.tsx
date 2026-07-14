@@ -101,6 +101,46 @@ export function Toolbar() {
     }
   }
 
+  // Exporta el curso a un paquete .elpx de eXeLearning (≥ 4.0.1). El módulo se
+  // carga bajo demanda (import dinámico): su código no pesa en el bundle si no
+  // se usa. Tras generar, se resume qué se convirtió y qué se reconvirtió.
+  async function onExportElpx() {
+    setBusy(true)
+    try {
+      const { downloadElpx } = await import('../interop/elpx')
+      const { summary } = await downloadElpx(course, assets)
+      const lines = [
+        `Se ha generado el paquete .elpx para eXeLearning 4.0.1 o posterior.`,
+        ``,
+        `• Páginas: ${summary.pages}`,
+        `• Actividades y bloques de contenido: ${summary.components}`,
+      ]
+      if (summary.notes.length) {
+        lines.push(``, `Reconversiones y ajustes:`)
+        for (const n of summary.notes) lines.push(`• ${n}`)
+      }
+      lines.push(
+        ``,
+        `Ábrelo en eXeLearning con «Importar». Se pierden la nota SCORM, el gating y los intentos (eXe los gestiona de otro modo).`,
+      )
+      await confirmDialog({
+        title: 'Exportación a eXeLearning completada',
+        message: lines.join('\n'),
+        confirmLabel: 'Entendido',
+        hideCancel: true,
+      })
+    } catch (err) {
+      await confirmDialog({
+        title: 'No se pudo exportar a eXeLearning',
+        message: `Ha ocurrido un error al generar el .elpx:\n\n${err instanceof Error ? err.message : String(err)}`,
+        confirmLabel: 'Cerrar',
+        hideCancel: true,
+      })
+    } finally {
+      setBusy(false)
+    }
+  }
+
   // Ejecuta la acción de un ítem del menú y lo cierra.
   function runMenu(action: () => void) {
     setMenuOpen(false)
@@ -195,6 +235,10 @@ export function Toolbar() {
               <button role="menuitem" onClick={() => runMenu(onNewDemo)}>Nuevo (demo)</button>
               <button role="menuitem" className="ed-menu-primary" disabled={busy} onClick={() => runMenu(onExportScorm)}>
                 {busy ? 'Generando…' : 'Exportar SCORM ZIP'}
+              </button>
+              <button role="menuitem" disabled={busy} onClick={() => runMenu(() => void onExportElpx())}
+                title="Exportar el curso a un paquete .elpx para seguir editándolo en eXeLearning 4.0.1 o posterior">
+                {busy ? 'Generando…' : 'Exportar a eXeLearning (.elpx)'}
               </button>
             </div>
           )}
