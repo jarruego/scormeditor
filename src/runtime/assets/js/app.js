@@ -56,6 +56,9 @@
   function flatten() {
     SCREENS = [];
     (COURSE.modules || []).forEach(function (m) {
+      // Pantallas propias del módulo (portada/presentación): siempre antes de
+      // las de sus unidades. Mismo orden que screenContainers() en el editor.
+      (m.screens || []).forEach(function (sc) { SCREENS.push({ unit: null, module: m, screen: sc, isFinalTest: false }); });
       (m.units || []).forEach(function (u) {
         (u.screens || []).forEach(function (sc) { SCREENS.push({ unit: u, module: m, screen: sc, isFinalTest: false }); });
       });
@@ -78,6 +81,15 @@
     applyBranding();
     buildMenu();
     bindChrome();
+    // Curso sin pantallas (estructura vacía en el editor): mensaje amable en
+    // vez de romper (goTo leería SCREENS[0], que no existe).
+    if (!SCREENS.length) {
+      document.getElementById('me-content').innerHTML =
+        '<article class="me-screen"><p class="me-warn">Este curso aún no tiene pantallas. Añádelas en el editor para previsualizarlo.</p></article>';
+      document.getElementById('me-position').textContent = '0 / 0';
+      refreshNavState();
+      return;
+    }
     var rules = COURSE.scorm.rules || {};
     if (rules.allow_resume) {
       var loc = parseInt(SCORM.getLocation(), 10);
@@ -156,6 +168,18 @@
     var idx = 0;
     (COURSE.modules || []).forEach(function (m) {
       html += '<div class="me-menu-module"><p class="me-menu-mtitle">' + esc(m.title) + '</p>';
+      // Pantallas propias del módulo: cuelgan del título del módulo, sin rótulo
+      // de unidad ni mini-barra (refreshMenuChecks tolera su ausencia).
+      var mCount = (m.screens || []).length;
+      if (mCount) {
+        html += '<div class="me-menu-unit me-menu-modscreens" data-start="' + idx + '" data-count="' + mCount + '"><ul>';
+        (m.screens || []).forEach(function (sc) {
+          html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(sc.title || sc.type) +
+            '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
+          idx++;
+        });
+        html += '</ul></div>';
+      }
       (m.units || []).forEach(function (u) {
         // data-start/data-count delimitan las pantallas de la unidad para el
         // contador y la mini-barra de progreso (refreshMenuChecks los rellena).
@@ -449,6 +473,7 @@
   function startMinTimer() {
     refreshNavState();
     var entry = SCREENS[current];
+    if (!entry) return; // curso sin pantallas
     var min = entry.isFinalTest ? 0 : (entry.screen.min_time_seconds || 0);
     if (min > 0) {
       setTimeout(function () { refreshNavState(); }, min * 1000 + 100);
@@ -759,6 +784,8 @@
   function refreshNavState() {
     var prev = document.getElementById('me-prev');
     var next = document.getElementById('me-next');
+    // Sin pantallas no hay nada que navegar (curso vacío en el editor).
+    if (!SCREENS.length) { prev.disabled = true; next.disabled = true; return; }
     // Con el test paginado en pantalla, los botones también mueven preguntas:
     // solo se bloquean cuando ni la pregunta ni la diapositiva pueden avanzar.
     prev.disabled = current <= 0 && !(finalNav && !finalNav.atFirst());

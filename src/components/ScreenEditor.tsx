@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { validateCourse } from '../validation/validators'
-import { ScreenType, InteractionType, Interaction } from '../schema/course.schema'
+import { ScreenType, InteractionType, Interaction, type Screen } from '../schema/course.schema'
 import { screenTypeLabel, screenTypeIcon, screenTypeColor, interactionTypeLabel } from '../schema/labels'
 import { SCREEN_TYPE_UI } from '../schema/screenTypeUI'
 import { interactionRecipe, interactionColor, migrateInteractionData, interactionHasContent } from '../schema/interactionRecipes'
@@ -141,6 +141,12 @@ export function ScreenEditor() {
   // cambia el tipo de la existente (con migración/confirmación).
   const [typePicker, setTypePicker] = useState<null | 'add' | 'change'>(null)
   const titleRef = useRef<HTMLInputElement>(null)
+  // Rutas/ID por tipo de recurso y pantalla (clave `id:kind`), para que cambiar
+  // de tipo no arrastre el valor de otro. Solo vive durante la sesión de edición.
+  // OJO: debe declararse ANTES del return temprano de «sin pantalla» — un hook
+  // tras un return condicional rompe React («Rendered fewer hooks») y dejaba la
+  // app en blanco al borrar el módulo/unidad de la pantalla seleccionada.
+  const vrMemory = useRef<Record<string, { src: string; poster?: string; tracks: Screen['visual_resource']['tracks'] }>>({})
 
   // Issues de validación de ESTA pantalla (validación en contexto, no solo en
   // la pestaña Validación).
@@ -194,9 +200,6 @@ export function ScreenEditor() {
   }
   const setVr = (p: Partial<typeof vr>) => patch({ visual_resource: { ...vr, ...p } })
   const setTracks = (tracks: typeof vr.tracks) => setVr({ tracks })
-  // Rutas/ID por tipo de recurso y pantalla (clave `id:kind`), para que cambiar
-  // de tipo no arrastre el valor de otro. Solo vive durante la sesión de edición.
-  const vrMemory = useRef<Record<string, { src: string; poster?: string; tracks: typeof vr.tracks }>>({})
 
   // Cambia el tipo de recurso. Cada tipo conserva su propia ruta/ID: al cambiar
   // se guarda lo actual y se restaura lo que el tipo destino tuviera antes (así

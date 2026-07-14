@@ -3,6 +3,7 @@ import type { Course, Screen, ScreenInput, ScreenType, InteractionType, UnitTest
 import { Course as CourseSchema, Screen as ScreenSchema, Interaction as InteractionSchema } from '../schema/course.schema'
 import { interactionRecipe, migrateInteractionData } from '../schema/interactionRecipes'
 import { migrate } from '../schema/migrations'
+import { allScreens } from '../schema/traverse'
 import { sampleCourse } from '../schema/sample-course'
 import { isAssetReferenced, orphanAssetPaths } from '../schema/assetRefs'
 import { normalizeObjective } from '../validation/objectives'
@@ -23,7 +24,23 @@ function blankScreen(preset?: Partial<ScreenInput>): Screen {
   return ScreenSchema.parse({ id: newId('s'), type: 'content', title: 'Nueva pantalla', ...(preset || {}) })
 }
 
-interface Located { mi: number; ui: number; si: number }
+/** Posición de una pantalla: `ui` null = pantalla propia del módulo. */
+interface Located { mi: number; ui: number | null; si: number }
+
+/** Lista de pantallas del contenedor localizado (módulo o unidad). */
+function screensAt(course: Course, mi: number, ui: number | null): Screen[] {
+  return ui == null ? course.modules[mi].screens : course.modules[mi].units[ui].screens
+}
+
+/** Pantallas del contenedor por id: una unidad o, en su defecto, un módulo
+ *  (pantallas propias del módulo). Los ids son únicos en todo el curso. */
+function containerScreens(course: Course, containerId: string): Screen[] | null {
+  for (const m of course.modules) {
+    if (m.id === containerId) return m.screens
+    for (const u of m.units) if (u.id === containerId) return u.screens
+  }
+  return null
+}
 
 export type Tab = 'editor' | 'preview' | 'validation' | 'report'
 
@@ -85,13 +102,14 @@ interface CourseState {
    *  huérfanas de otros tipos en `config`. La confirmación de pérdida vive en
    *  la UI (`migrateInteractionData(...).lossy`). Paso de historial propio. */
   changeInteractionType: (screenId: string, type: InteractionType) => void
-  /** Añade una pantalla; `preset` permite recetas (texto+imagen, actividad…) y
-   *  `atIndex` fija la posición en la unidad (si falta: tras `afterId` o al final). */
-  addScreen: (unitId: string, afterId?: string, preset?: Partial<ScreenInput>, atIndex?: number) => void
+  /** Añade una pantalla; `containerId` es una unidad o un módulo (pantallas
+   *  propias del módulo); `preset` permite recetas (texto+imagen, actividad…) y
+   *  `atIndex` fija la posición en el contenedor (si falta: tras `afterId` o al final). */
+  addScreen: (containerId: string, afterId?: string, preset?: Partial<ScreenInput>, atIndex?: number) => void
   duplicateScreen: (id: string) => void
   deleteScreen: (id: string) => void
-  /** Reordena dentro de la unidad o mueve entre unidades. */
-  moveScreen: (id: string, toUnitId: string, toIndex: number) => void
+  /** Reordena dentro del contenedor o mueve a otro (unidad o módulo). */
+  moveScreen: (id: string, toContainerId: string, toIndex: number) => void
   /** Reemplaza el test final (`assessments.final_test`); `null` lo elimina. */
   setFinalTest: (test: UnitTest | null) => void
   /** Actualiza la config SCORM (nota mínima, reglas de finalización, etc.). */
@@ -174,12 +192,10 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot()
     const course = clone(get().course)
     const apply = (v: string) => (normalizeObjective(v) === key ? to : v)
-    for (const m of course.modules)
-      for (const u of m.units)
-        for (const s of u.screens) {
-          s.objective = apply(s.objective)
-          if (s.interaction) s.interaction.learning_objective = apply(s.interaction.learning_objective ?? '')
-        }
+    for (const s of allScreens(course)) {
+      s.objective = apply(s.objective)
+      if (s.interaction) s.interaction.learning_objective = apply(s.interaction.learning_objective ?? '')
+    }
     const tests = [...course.assessments.unit_tests, ...(course.assessments.final_test ? [course.assessments.final_test] : [])]
     for (const t of tests)
       for (const q of t.questions) q.learning_objective = apply(q.learning_objective ?? '')
@@ -189,7 +205,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
   return {
   course: sampleCourse,
   assets: {},
-  selectedScreenId: sampleCourse.modules[0]?.units[0]?.screens[0]?.id ?? null,
+  selectedScreenId: allScreens(sampleCourse)[0]?.id ?? null,
   importError: null,
 
   activeTab: 'editor',
@@ -207,7 +223,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
   setLinked: (name) => set({ linkedFileName: name }),
   hydrate: (course, assets) => {
     resetCoalesce()
-    set({ course, assets, importError: null, past: [], future: [], selectedScreenId: course.modules[0]?.units[0]?.screens[0]?.id ?? null })
+    set({ course, assets, importError: null, past: [], future: [], selectedScreenId: allScreens(course)[0]?.id ?? null })
   },
   replaceAssets: (assets) => set({ assets }),
 
@@ -225,7 +241,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
         return false
       }
       resetCoalesce()
-      set({ course: parsed.data, importError: null, past: [], future: [], selectedScreenId: parsed.data.modules[0]?.units[0]?.screens[0]?.id ?? null })
+      set({ course: parsed.data, importError: null, past: [], future: [], selectedScreenId: allScreens(parsed.data)[0]?.id ?? null })
       return true
     } catch (e) {
       set({ importError: `JSON inválido: ${(e as Error).message}` })
@@ -235,7 +251,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
 
   resetSample: () => {
     resetCoalesce()
-    set({ course: sampleCourse, importError: null, past: [], future: [], selectedScreenId: sampleCourse.modules[0]?.units[0]?.screens[0]?.id ?? null })
+    set({ course: sampleCourse, importError: null, past: [], future: [], selectedScreenId: allScreens(sampleCourse)[0]?.id ?? null })
   },
 
   resetEmpty: () => {
@@ -257,6 +273,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     course.modules.push({
       id: newId('m'),
       title: `Módulo ${course.modules.length + 1}`,
+      screens: [],
       units: [{ id: newId('u'), title: 'Unidad 1', summary: '', screens: [], status: 'ok' }],
     })
     set({ course })
@@ -293,7 +310,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot()
     const course = clone(get().course)
     const mod = course.modules.find((m) => m.id === id)!
-    const removedScreenIds = mod.units.flatMap((u) => u.screens.map((s) => s.id))
+    const removedScreenIds = [...mod.screens, ...mod.units.flatMap((u) => u.screens)].map((s) => s.id)
     course.modules = course.modules.filter((m) => m.id !== id)
     const sel = get().selectedScreenId
     set({ course, selectedScreenId: sel && removedScreenIds.includes(sel) ? null : sel })
@@ -340,18 +357,21 @@ export const useCourseStore = create<CourseState>((set, get) => {
 
   locate: (id) => {
     const { course } = get()
-    for (let mi = 0; mi < course.modules.length; mi++)
+    for (let mi = 0; mi < course.modules.length; mi++) {
+      const msi = course.modules[mi].screens.findIndex((s) => s.id === id)
+      if (msi >= 0) return { mi, ui: null, si: msi }
       for (let ui = 0; ui < course.modules[mi].units.length; ui++) {
         const si = course.modules[mi].units[ui].screens.findIndex((s) => s.id === id)
         if (si >= 0) return { mi, ui, si }
       }
+    }
     return null
   },
 
   getScreen: (id) => {
     const loc = get().locate(id)
     if (!loc) return null
-    return get().course.modules[loc.mi].units[loc.ui].screens[loc.si]
+    return screensAt(get().course, loc.mi, loc.ui)[loc.si]
   },
 
   updateScreen: (id, patch) => {
@@ -359,8 +379,8 @@ export const useCourseStore = create<CourseState>((set, get) => {
     if (!loc) return
     snapshot(`update:${id}`)
     const course = clone(get().course)
-    const cur = course.modules[loc.mi].units[loc.ui].screens[loc.si]
-    course.modules[loc.mi].units[loc.ui].screens[loc.si] = { ...cur, ...patch }
+    const screens = screensAt(course, loc.mi, loc.ui)
+    screens[loc.si] = { ...screens[loc.si], ...patch }
     set({ course })
   },
 
@@ -377,12 +397,12 @@ export const useCourseStore = create<CourseState>((set, get) => {
   changeInteractionType: (screenId, type) => {
     const loc = get().locate(screenId)
     if (!loc) return
-    const cur = get().course.modules[loc.mi].units[loc.ui].screens[loc.si]
+    const cur = screensAt(get().course, loc.mi, loc.ui)[loc.si]
     if (!cur.interaction || cur.interaction.type === type) return
     // snapshot sin clave: el cambio de tipo nunca se coalesce con el tecleo.
     snapshot()
     const course = clone(get().course)
-    const s = course.modules[loc.mi].units[loc.ui].screens[loc.si]
+    const s = screensAt(course, loc.mi, loc.ui)[loc.si]
     const it = s.interaction!
     const rec = interactionRecipe(type)
     const mig = migrateInteractionData(it, type)
@@ -434,16 +454,14 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot()
     const course = clone(get().course)
     let filled = 0
-    for (const m of course.modules)
-      for (const u of m.units)
-        for (const s of u.screens) {
-          if (s.transcript.trim()) continue
-          if (s.type === 'content_placeholder' || s.status === 'esqueleto_pendiente_desarrollo') continue
-          const t = buildTranscript(s).trim()
-          if (!t) continue
-          s.transcript = t
-          filled++
-        }
+    for (const s of allScreens(course)) {
+      if (s.transcript.trim()) continue
+      if (s.type === 'content_placeholder' || s.status === 'esqueleto_pendiente_desarrollo') continue
+      const t = buildTranscript(s).trim()
+      if (!t) continue
+      s.transcript = t
+      filled++
+    }
     if (filled) set({ course })
     return filled
   },
@@ -451,9 +469,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
   setAllMinTime: (seconds) => {
     snapshot()
     const course = clone(get().course)
-    for (const m of course.modules)
-      for (const u of m.units)
-        for (const s of u.screens) s.min_time_seconds = seconds
+    for (const s of allScreens(course)) s.min_time_seconds = seconds
     set({ course })
   },
 
@@ -525,20 +541,18 @@ export const useCourseStore = create<CourseState>((set, get) => {
     set({ course })
   },
 
-  addScreen: (unitId, afterId, preset, atIndex) => {
+  addScreen: (containerId, afterId, preset, atIndex) => {
+    const target = containerScreens(get().course, containerId)
+    if (!target) return
     snapshot()
     const course = clone(get().course)
-    outer: for (const m of course.modules)
-      for (const u of m.units)
-        if (u.id === unitId) {
-          const s = blankScreen(preset)
-          const idx = atIndex != null
-            ? Math.max(0, Math.min(atIndex, u.screens.length))
-            : afterId ? u.screens.findIndex((x) => x.id === afterId) + 1 : u.screens.length
-          u.screens.splice(idx, 0, s)
-          set({ course, selectedScreenId: s.id })
-          break outer
-        }
+    const screens = containerScreens(course, containerId)!
+    const s = blankScreen(preset)
+    const idx = atIndex != null
+      ? Math.max(0, Math.min(atIndex, screens.length))
+      : afterId ? screens.findIndex((x) => x.id === afterId) + 1 : screens.length
+    screens.splice(idx, 0, s)
+    set({ course, selectedScreenId: s.id })
   },
 
   duplicateScreen: (id) => {
@@ -546,7 +560,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     if (!loc) return
     snapshot()
     const course = clone(get().course)
-    const screens = course.modules[loc.mi].units[loc.ui].screens
+    const screens = screensAt(course, loc.mi, loc.ui)
     const copy: Screen = { ...clone(screens[loc.si]), id: newId('s'), title: screens[loc.si].title + ' (copia)' }
     if (copy.interaction) copy.interaction.id = newId('i')
     screens.splice(loc.si + 1, 0, copy)
@@ -558,23 +572,19 @@ export const useCourseStore = create<CourseState>((set, get) => {
     if (!loc) return
     snapshot()
     const course = clone(get().course)
-    course.modules[loc.mi].units[loc.ui].screens.splice(loc.si, 1)
+    screensAt(course, loc.mi, loc.ui).splice(loc.si, 1)
     set({ course, selectedScreenId: get().selectedScreenId === id ? null : get().selectedScreenId })
   },
 
-  moveScreen: (id, toUnitId, toIndex) => {
+  moveScreen: (id, toContainerId, toIndex) => {
     const loc = get().locate(id)
-    if (!loc) return
+    if (!loc || !containerScreens(get().course, toContainerId)) return
     snapshot()
     const course = clone(get().course)
-    const [moved] = course.modules[loc.mi].units[loc.ui].screens.splice(loc.si, 1)
-    outer: for (const m of course.modules)
-      for (const u of m.units)
-        if (u.id === toUnitId) {
-          const clamped = Math.max(0, Math.min(toIndex, u.screens.length))
-          u.screens.splice(clamped, 0, moved)
-          break outer
-        }
+    const [moved] = screensAt(course, loc.mi, loc.ui).splice(loc.si, 1)
+    const target = containerScreens(course, toContainerId)!
+    const clamped = Math.max(0, Math.min(toIndex, target.length))
+    target.splice(clamped, 0, moved)
     set({ course })
   },
 

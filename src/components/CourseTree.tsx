@@ -86,10 +86,10 @@ function IssueBadge({ info }: { info?: ScreenIssues }) {
   )
 }
 
-function ScreenItem({ screen, unitId, issues }: { screen: Screen; unitId: string; issues?: ScreenIssues }) {
+function ScreenItem({ screen, containerId, issues }: { screen: Screen; containerId: string; issues?: ScreenIssues }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: screen.id,
-    data: { unitId },
+    data: { containerId },
   })
   const selected = useCourseStore((s) => s.selectedScreenId === screen.id)
   const select = useCourseStore((s) => s.selectScreen)
@@ -150,27 +150,28 @@ function ScreenItem({ screen, unitId, issues }: { screen: Screen; unitId: string
   )
 }
 
-/** Botón «+ Añadir pantalla»: abre el selector de recetas (AddScreenModal). */
-function AddScreenButton({ unitId }: { unitId: string }) {
+/** Botón «+ Añadir pantalla»: abre el selector de recetas (AddScreenModal).
+ *  `containerId` puede ser una unidad o un módulo (pantallas del módulo). */
+function AddScreenButton({ containerId, label = 'Añadir pantalla…' }: { containerId: string; label?: string }) {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <button className="ed-add" onClick={() => setOpen(true)}><Icon name="plus" size={13} /> Añadir pantalla…</button>
-      {open && <AddScreenModal unitId={unitId} onClose={() => setOpen(false)} />}
+      <button className="ed-add" onClick={() => setOpen(true)}><Icon name="plus" size={13} /> {label}</button>
+      {open && <AddScreenModal containerId={containerId} onClose={() => setOpen(false)} />}
     </>
   )
 }
 
 /** Punto de inserción entre pantallas: al pasar el ratón (o con Tab) aparece un
  *  divisor con «+» que abre el selector de recetas insertando justo ahí. */
-function InsertPoint({ unitId, index }: { unitId: string; index: number }) {
+function InsertPoint({ containerId, index }: { containerId: string; index: number }) {
   const [open, setOpen] = useState(false)
   return (
     <li className="ed-insert" role="presentation">
       <button aria-label="Insertar pantalla aquí" title="Insertar pantalla aquí" onClick={() => setOpen(true)}>
         <span aria-hidden="true"><Icon name="plus" size={12} /></span>
       </button>
-      {open && <AddScreenModal unitId={unitId} atIndex={index} onClose={() => setOpen(false)} />}
+      {open && <AddScreenModal containerId={containerId} atIndex={index} onClose={() => setOpen(false)} />}
     </li>
   )
 }
@@ -227,8 +228,8 @@ export function CourseTree() {
     }
     removeUnit(u.id)
   }
-  async function onRemoveModule(m: { id: string; title: string; units: { screens: Screen[] }[] }) {
-    const n = m.units.reduce((a, u) => a + u.screens.length, 0)
+  async function onRemoveModule(m: { id: string; title: string; screens: Screen[]; units: { screens: Screen[] }[] }) {
+    const n = m.screens.length + m.units.reduce((a, u) => a + u.screens.length, 0)
     if (n > 0 || m.units.length > 1) {
       const ok = await confirmDialog({
         title: 'Eliminar módulo',
@@ -262,10 +263,10 @@ export function CourseTree() {
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e
     if (!over || active.id === over.id) return
-    const toUnitId = (over.data.current?.unitId as string) ?? (active.data.current?.unitId as string)
+    const toContainerId = (over.data.current?.containerId as string) ?? (active.data.current?.containerId as string)
     const overLoc = locate(String(over.id))
     if (!overLoc) return
-    moveScreen(String(active.id), toUnitId, overLoc.si)
+    moveScreen(String(active.id), toContainerId, overLoc.si)
   }
 
   const q = filter.trim().toLowerCase()
@@ -306,6 +307,28 @@ export function CourseTree() {
                 </span>
               )}
             </p>
+            {/* Pantallas propias del módulo: siempre ANTES de sus unidades
+                (portada/presentación de módulo). Mismo tratamiento que las de
+                unidad: sortable, puntos de inserción y badge de validación. */}
+            {(() => {
+              const visible = m.screens.filter(matches)
+              if (q && visible.length === 0) return null
+              return (
+                <SortableContext items={m.screens.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                  <ul className="ed-screens ed-module-screens">
+                    {visible.map((s, i) => (
+                      <Fragment key={s.id}>
+                        {!q && <InsertPoint containerId={m.id} index={i} />}
+                        <ScreenItem screen={s} containerId={m.id} issues={issuesByScreen.get(s.id)} />
+                      </Fragment>
+                    ))}
+                  </ul>
+                </SortableContext>
+              )
+            })()}
+            {!q && (
+              <AddScreenButton containerId={m.id} label="Añadir pantalla al módulo…" />
+            )}
             {m.units.map((u, ui) => {
               const visible = u.screens.filter(matches)
               if (q && visible.length === 0) return null
@@ -350,13 +373,13 @@ export function CourseTree() {
                       {visible.map((s, i) => (
                         <Fragment key={s.id}>
                           {/* Con filtro activo los índices no se corresponden con la unidad → sin puntos de inserción */}
-                          {!q && <InsertPoint unitId={u.id} index={i} />}
-                          <ScreenItem screen={s} unitId={u.id} issues={issuesByScreen.get(s.id)} />
+                          {!q && <InsertPoint containerId={u.id} index={i} />}
+                          <ScreenItem screen={s} containerId={u.id} issues={issuesByScreen.get(s.id)} />
                         </Fragment>
                       ))}
                     </ul>
                   </SortableContext>
-                  {!q && <AddScreenButton unitId={u.id} />}
+                  {!q && <AddScreenButton containerId={u.id} />}
                 </details>
               )
             })}

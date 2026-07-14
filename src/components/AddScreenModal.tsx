@@ -10,21 +10,24 @@ import { Icon } from './Icon'
  * Las recetas «únicas por unidad» ya presentes se atenúan pero siguen siendo
  * pulsables (aviso blando, no bloqueo). Si llega `atIndex` (punto de inserción
  * elegido por el autor en el árbol), esa posición manda sobre la colocación
- * automática de la receta.
+ * automática de la receta. `containerId` puede ser una unidad o un módulo
+ * (pantallas propias del módulo, antes de sus unidades).
  */
-export function AddScreenModal({ unitId, atIndex, onClose }: { unitId: string; atIndex?: number; onClose: () => void }) {
+export function AddScreenModal({ containerId, atIndex, onClose }: { containerId: string; atIndex?: number; onClose: () => void }) {
   const course = useCourseStore((s) => s.course)
   const addScreen = useCourseStore((s) => s.addScreen)
 
-  const unit = course.modules.flatMap((m) => m.units).find((u) => u.id === unitId)
-  if (!unit) return null
+  const unit = course.modules.flatMap((m) => m.units).find((u) => u.id === containerId)
+  const container = unit ?? course.modules.find((m) => m.id === containerId)
+  if (!container) return null
+  const isModule = !unit
 
   function create(r: ScreenRecipe) {
-    if (!unit) return
+    if (!container) return
     const preset: Partial<ScreenInput> = { type: r.type, ...(r.extras ? r.extras() : {}) }
-    const title = typeof r.defaultTitle === 'function' ? r.defaultTitle(unit) : r.defaultTitle
+    const title = typeof r.defaultTitle === 'function' ? r.defaultTitle(container) : r.defaultTitle
     if (title) preset.title = title
-    addScreen(unitId, undefined, preset, atIndex ?? (r.place ? r.place(unit.screens) : undefined))
+    addScreen(containerId, undefined, preset, atIndex ?? (r.place ? r.place(container.screens) : undefined))
     onClose()
     // La pantalla queda seleccionada en el store; llevamos el foco al título
     // para que el autor pueda teclear directamente.
@@ -56,12 +59,12 @@ export function AddScreenModal({ unitId, atIndex, onClose }: { unitId: string; a
             </h3>
             <div className="ed-recipe-grid">
               {SCREEN_RECIPES.filter((r) => r.group === g).map((r) => {
-                const dup = r.uniquePerUnit && unit.screens.some((s) => s.type === r.type)
+                const dup = r.uniquePerUnit && container.screens.some((s) => s.type === r.type)
                 return (
                   <button
                     key={r.key}
                     className={`ed-recipe${dup ? ' is-dup' : ''}${r.subtle ? ' ed-recipe-blank' : ''}`}
-                    title={dup ? 'Ya existe una pantalla de este tipo en la unidad' : undefined}
+                    title={dup ? `Ya existe una pantalla de este tipo en ${isModule ? 'el módulo' : 'la unidad'}` : undefined}
                     onClick={() => create(r)}
                   >
                     <span className="ed-recipe-ico" aria-hidden="true"

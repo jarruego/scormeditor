@@ -6,9 +6,21 @@
 
 ## El árbol (`CourseTree.tsx`)
 Módulos → unidades → pantallas (reordenables con dnd-kit) + secciones «Evaluación» (test
-final) y «Materiales» (glosario/bibliografía). Añadir pantalla por unidad;
+final) y «Materiales» (glosario/bibliografía). Añadir pantalla por unidad **o por módulo**;
 duplicar/eliminar por pantalla (eliminar pide confirmación con `confirmDialog`, nombrando
 la pantalla).
+
+- **Pantallas propias del módulo** (`module.screens`, portada/presentación del bloque):
+  van **siempre antes de las unidades** del módulo — decisión deliberada: intercalarlas
+  entre unidades complicaría el orden lineal y el menú para un caso de uso dudoso. En el
+  árbol se listan bajo el título del módulo (`.ed-module-screens`, mismo `ScreenItem` con
+  puntos de inserción) con su botón «Añadir pantalla al módulo…» (mismo `AddScreenModal`;
+  las recetas evalúan `uniquePerUnit` y `defaultTitle` contra el módulo). El recorrido
+  canónico módulo→(pantallas de módulo)→unidades vive en `src/schema/traverse.ts`
+  (`screenContainers`/`allScreens`) — cualquier código nuevo que recorra pantallas debe
+  usarlo, no el doble bucle. En el store, `addScreen`/`moveScreen` aceptan como
+  contenedor el id de una unidad o de un módulo, y `Located.ui === null` señala pantalla
+  de módulo.
 
 - **Unidades plegables**: cada unidad es un `<details className="ed-tree-unit">` con
   chevron rotatorio y contador de pantallas (con filtro activo, «visibles/total»). La

@@ -1,17 +1,18 @@
 import { useId, useMemo } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { normalizeObjective } from '../validation/objectives'
+import { allScreens } from '../schema/traverse'
 
 /** Objetivos declarados en las pantallas del curso: clave normalizada → texto canónico. */
 export function useDeclaredObjectives(): Map<string, string> {
   const course = useCourseStore((s) => s.course)
   return useMemo(() => {
     const byKey = new Map<string, string>()
-    course.modules.forEach((m) => m.units.forEach((u) => u.screens.forEach((s) => {
+    allScreens(course).forEach((s) => {
       const obj = s.objective.trim()
       const key = normalizeObjective(obj)
       if (key && !byKey.has(key)) byKey.set(key, obj)
-    })))
+    })
     return byKey
   }, [course])
 }

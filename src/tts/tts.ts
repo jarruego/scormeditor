@@ -1,5 +1,6 @@
 import { useCourseStore } from '../store/courseStore'
 import type { Screen } from '../schema/course.schema'
+import { allScreens } from '../schema/traverse'
 import { buildTranscript } from './buildTranscript'
 
 /**
@@ -310,12 +311,7 @@ export async function synthesize(
 
 /** Recorre todas las pantallas del curso en orden. */
 export function eachScreen(): Screen[] {
-  const { course } = useCourseStore.getState()
-  const out: Screen[] = []
-  for (const m of course.modules)
-    for (const u of m.units)
-      for (const s of u.screens) out.push(s)
-  return out
+  return allScreens(useCourseStore.getState().course)
 }
 
 export interface NarratableScreen {

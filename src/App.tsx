@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { initAutoSave, saveProject } from './store/autosave'
 import { useCourseStore } from './store/courseStore'
 import { validateCourse } from './validation/validators'
+import { allScreens } from './schema/traverse'
 import type { Tab } from './store/courseStore'
 import { Toolbar } from './components/Toolbar'
 import { CourseTree } from './components/CourseTree'
@@ -69,7 +70,7 @@ export function App() {
       if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
         e.preventDefault()
         const st = useCourseStore.getState()
-        const ids = st.course.modules.flatMap((m) => m.units.flatMap((u) => u.screens.map((s) => s.id)))
+        const ids = allScreens(st.course).map((s) => s.id)
         if (!ids.length) return
         const i = ids.indexOf(st.selectedScreenId ?? '')
         // Sin selección (o nodo sintético): baja al primero / sube al último.

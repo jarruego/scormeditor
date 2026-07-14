@@ -1,4 +1,5 @@
 import type { Course, QuizQuestion, Screen, Unit } from '../schema/course.schema'
+import { allScreens, screenContainers } from '../schema/traverse'
 import { normalizeObjective } from './objectives'
 import { buildTranscript } from '../tts/buildTranscript'
 
@@ -24,8 +25,9 @@ interface Ctx {
   push: (i: Issue) => void
 }
 
-function screenLoc(mTitle: string, uTitle: string, s: Screen) {
-  return `${mTitle} › ${uTitle} › «${s.title || s.id}»`
+/** `uTitle` null = pantalla propia del módulo (sin tramo de unidad en la ruta). */
+function screenLoc(mTitle: string, uTitle: string | null, s: Screen) {
+  return uTitle == null ? `${mTitle} › «${s.title || s.id}»` : `${mTitle} › ${uTitle} › «${s.title || s.id}»`
 }
 
 // --- Reglas por pantalla -----------------------------------------------------
@@ -270,8 +272,7 @@ function checkGlobal(ctx: Ctx) {
   // pantalla con scored), NO los objetos assessments.unit_tests.
   const rules = c.scorm.rules
   const finalQuestions = c.assessments.final_test?.questions.length ?? 0
-  const scoredActivities = c.modules.reduce(
-    (a, m) => a + m.units.reduce((b, u) => b + u.screens.filter((s) => s.interaction?.scored).length, 0), 0)
+  const scoredActivities = allScreens(c).filter((s) => s.interaction?.scored).length
   if (rules.score_source === 'final_test' && finalQuestions === 0)
     ctx.push({ code: 'SCORM_NO_FINAL', severity: 'error', message: 'La nota sale del test final pero no hay preguntas en el test final.', location: 'SCORM', screenId: '__final__' })
   if (rules.score_source === 'final_test' && scoredActivities > 0)
@@ -306,14 +307,14 @@ function checkGlobal(ctx: Ctx) {
   // y abundan pares «casi iguales» que no deben contar como desvinculados.
   const declaredBy = new Map<string, { obj: string; screen: Screen; loc: string }>()
   const evaluatedObjectives = new Set<string>()
-  c.modules.forEach((m) => m.units.forEach((u) => u.screens.forEach((s) => {
+  screenContainers(c).forEach(({ module: m, unit: u, screens }) => screens.forEach((s) => {
     const obj = s.objective.trim()
     const key = normalizeObjective(obj)
     if (key && !declaredBy.has(key))
-      declaredBy.set(key, { obj, screen: s, loc: screenLoc(m.title || m.id, u.title || u.id, s) })
+      declaredBy.set(key, { obj, screen: s, loc: screenLoc(m.title || m.id, u ? u.title || u.id : null, s) })
     if (s.interaction?.scored && s.interaction.learning_objective)
       evaluatedObjectives.add(normalizeObjective(s.interaction.learning_objective))
-  })))
+  }))
   c.assessments.final_test?.questions.forEach((q) => q.learning_objective && evaluatedObjectives.add(normalizeObjective(q.learning_objective)))
   c.assessments.unit_tests.forEach((t) => t.questions.forEach((q) => q.learning_objective && evaluatedObjectives.add(normalizeObjective(q.learning_objective))))
   declaredBy.forEach(({ obj, screen, loc }, key) => {
@@ -338,8 +339,7 @@ export interface ValidationResult {
  *  pantalla tiene locución). Compartido con el panel de Narración (TtsPanel). */
 export function isNarrated(course: Course): boolean {
   return course.narration.mode === 'on' ||
-    (course.narration.mode === 'auto' && course.modules.some((m) =>
-      m.units.some((u) => u.screens.some((s) => s.audio_src.trim()))))
+    (course.narration.mode === 'auto' && allScreens(course).some((s) => s.audio_src.trim()))
 }
 
 export function validateCourse(course: Course): ValidationResult {
@@ -347,9 +347,17 @@ export function validateCourse(course: Course): ValidationResult {
   const ctx: Ctx = { course, narrated: isNarrated(course), push: (i) => issues.push(i) }
 
   course.modules.forEach((m) => {
+    const mTitle = m.title || m.id
+    // Pantallas propias del módulo: mismas reglas por pantalla que las de
+    // unidad (incluidas las notas editoriales, que en unidades pone checkUnit).
+    m.screens.forEach((s) => {
+      checkScreen(ctx, s, screenLoc(mTitle, null, s))
+      s.editor_notes.forEach((n) =>
+        ctx.push({ code: 'EDITOR_NOTE', severity: 'info', message: `Nota editorial: ${n}`, location: screenLoc(mTitle, null, s), screenId: s.id }))
+    })
     m.units.forEach((u) => {
-      checkUnit(ctx, u, m.title || m.id)
-      u.screens.forEach((s) => checkScreen(ctx, s, screenLoc(m.title || m.id, u.title || u.id, s)))
+      checkUnit(ctx, u, mTitle)
+      u.screens.forEach((s) => checkScreen(ctx, s, screenLoc(mTitle, u.title || u.id, s)))
     })
   })
   checkGlobal(ctx)

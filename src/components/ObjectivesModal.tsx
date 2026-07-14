@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { collectObjectives, type ObjectiveInfo } from '../validation/objectives'
+import { screenContainers } from '../schema/traverse'
 import { confirmDialog } from '../store/confirm'
 import { SettingsWindow } from './SettingsModal'
 import { Icon } from './Icon'
@@ -96,12 +97,12 @@ function AddObjective() {
 
   const groups = useMemo(
     () =>
-      course.modules.flatMap((m) =>
-        m.units.map((u) => ({
-          label: `${m.title} › ${u.title}`,
-          screens: u.screens.map((s) => ({ id: s.id, title: s.title || s.id, has: !!s.objective.trim() })),
+      screenContainers(course)
+        .filter((c) => c.unit || c.screens.length > 0)
+        .map(({ module: m, unit: u, screens }) => ({
+          label: u ? `${m.title} › ${u.title}` : m.title,
+          screens: screens.map((s) => ({ id: s.id, title: s.title || s.id, has: !!s.objective.trim() })),
         })),
-      ),
     [course],
   )
 

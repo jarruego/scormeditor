@@ -1,4 +1,5 @@
 import type { Course } from '../schema/course.schema'
+import { screenContainers } from '../schema/traverse'
 import { validateCourse, type Issue, type ValidationResult } from '../validation/validators'
 
 export interface Counts {
@@ -11,10 +12,10 @@ export interface Counts {
 
 function counts(course: Course): Counts {
   let units = 0, screens = 0, interactions = 0
-  course.modules.forEach((m) => m.units.forEach((u) => {
-    units++
-    u.screens.forEach((s) => { screens++; if (s.interaction) interactions++ })
-  }))
+  screenContainers(course).forEach(({ unit, screens: ss }) => {
+    if (unit) units++
+    ss.forEach((s) => { screens++; if (s.interaction) interactions++ })
+  })
   const questions =
     (course.assessments.final_test?.questions.length ?? 0) +
     course.assessments.unit_tests.reduce((a, t) => a + t.questions.length, 0)
@@ -34,9 +35,9 @@ export interface MatrixRow {
 
 function traceabilityMatrix(course: Course): MatrixRow[] {
   const rows: MatrixRow[] = []
-  course.modules.forEach((m) => m.units.forEach((u) => {
-    const path = `${m.title || m.id} › ${u.title || u.id}`
-    u.screens.forEach((s) => {
+  screenContainers(course).forEach(({ module: m, unit: u, screens }) => {
+    const path = u ? `${m.title || m.id} › ${u.title || u.id}` : m.title || m.id
+    screens.forEach((s) => {
       if (!s.objective && !s.interaction) return
       rows.push({
         objective: s.objective || s.interaction?.learning_objective || '—',
@@ -48,7 +49,7 @@ function traceabilityMatrix(course: Course): MatrixRow[] {
       })
     })
     // Tests de unidad: se enlazan a la primera pantalla de su unidad.
-    course.assessments.unit_tests.filter((t) => t.unit_id === u.id).forEach((t) =>
+    if (u) course.assessments.unit_tests.filter((t) => t.unit_id === u.id).forEach((t) =>
       t.questions.forEach((q) => rows.push({
         objective: q.learning_objective || '—',
         path,
@@ -57,7 +58,7 @@ function traceabilityMatrix(course: Course): MatrixRow[] {
         evaluation: `Sí (${q.points} pts)`,
         screenId: u.screens[0]?.id,
       })))
-  }))
+  })
   course.assessments.final_test?.questions.forEach((q) => {
     rows.push({ objective: q.learning_objective || '—', path: '—', screen: 'Test final', interaction: q.type, evaluation: `Sí (${q.points} pts)`, screenId: '__final__' })
   })
@@ -79,16 +80,16 @@ function qaTable(course: Course): QARow[] {
     const correct = options.filter((o) => o.correct).map((o) => o.text).join(', ') || '—'
     rows.push({ question: prompt, correct, objective: obj || '—', origin, screenId })
   }
-  course.modules.forEach((m) => m.units.forEach((u) => {
-    u.screens.forEach((s) => {
+  screenContainers(course).forEach(({ unit: u, screens }) => {
+    screens.forEach((s) => {
       const it = s.interaction
       if (it && (it.options || []).some((o) => o.correct))
         collect(it.prompt, it.options, it.learning_objective, s.title || s.id, s.id)
     })
-    course.assessments.unit_tests.filter((t) => t.unit_id === u.id).forEach((t) =>
+    if (u) course.assessments.unit_tests.filter((t) => t.unit_id === u.id).forEach((t) =>
       t.questions.forEach((q) =>
         collect(q.prompt, q.options, q.learning_objective, `Test de unidad «${t.title || t.id}»`, u.screens[0]?.id)))
-  }))
+  })
   course.assessments.final_test?.questions.forEach((q) =>
     collect(q.prompt, q.options, q.learning_objective, 'Test final', '__final__'))
   return rows

@@ -84,6 +84,8 @@ body {
 .me-menu-uprog { height: 4px; border-radius: 99px; background: var(--me-border); margin: 0 0 .35rem; overflow: hidden; }
 .me-menu-uprog-fill { height: 100%; width: 0; background: var(--me-accent); border-radius: 99px; transition: width .3s ease; }
 .me-menu ul { list-style: none; margin: 0; padding: 0; }
+/* Pantallas propias del módulo: cuelgan del título del módulo, sin rótulo de unidad */
+.me-menu-modscreens { margin: .15rem 0 .35rem; }
 .me-menu-link {
   display: flex; justify-content: space-between; align-items: center; gap: .5rem; width: 100%;
   text-align: left; background: none; border: none; padding: .4rem .5rem; border-radius: 6px;

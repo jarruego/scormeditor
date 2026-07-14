@@ -1,4 +1,4 @@
-import type { InteractionType, Screen, ScreenInput, ScreenType, Unit } from './course.schema'
+import type { InteractionType, Screen, ScreenInput, ScreenType } from './course.schema'
 import { Interaction } from './course.schema'
 import type { IconName } from '../components/Icon'
 
@@ -79,11 +79,12 @@ export type ScreenRecipe = {
   type: ScreenType
   /** Preset adicional sobre el tipo (recurso visual, interacción…). */
   extras?: () => Partial<ScreenInput>
-  /** Título inicial; si falta, el del store («Nueva pantalla»). */
-  defaultTitle?: string | ((unit: Unit) => string)
-  /** Índice de inserción en la unidad; por defecto, al final. */
+  /** Título inicial; si falta, el del store («Nueva pantalla»). Recibe el
+   *  contenedor (unidad o módulo: solo se usa su título). */
+  defaultTitle?: string | ((container: { title: string }) => string)
+  /** Índice de inserción en el contenedor; por defecto, al final. */
   place?: (screens: Screen[]) => number
-  /** Sugerir una sola pantalla de este tipo por unidad (atenúa la tarjeta, no bloquea). */
+  /** Sugerir una sola pantalla de este tipo por contenedor (atenúa la tarjeta, no bloquea). */
   uniquePerUnit?: boolean
   /** Tarjeta discreta (grupo «Otros»). */
   subtle?: boolean

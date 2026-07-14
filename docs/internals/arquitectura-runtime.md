@@ -148,6 +148,17 @@ que lo etiquete).
 - **Menú con progreso por unidad**: `buildMenu` marca cada unidad con
   `data-start`/`data-count`; `refreshMenuChecks` rellena el contador «hechas/total»
   (`.me-menu-count`) y la mini-barra (`.me-menu-uprog`).
+- **Curso sin pantallas** (estructura vacía en el editor, sin test final): `setup()`
+  corta antes de `goTo` con un mensaje amable en `#me-content` y navegación
+  deshabilitada (`refreshNavState` y `startMinTimer` toleran `SCREENS` vacío) — antes
+  rompía leyendo `SCREENS[0]`.
+- **Pantallas propias del módulo** (`module.screens`): `flatten()` las inserta en la
+  lista plana **antes** de las de sus unidades (con `unit: null` — el resto del runtime
+  ya tolera ese null: crumb, progressSnapshot, gating). En el menú cuelgan del título
+  del módulo en un bloque `.me-menu-modscreens` sin rótulo de unidad ni mini-barra
+  (`refreshMenuChecks` tolera la ausencia de contador/barra). Ese orden replica el de
+  `screenContainers()` en el editor (`src/schema/traverse.ts`) — mantener ambos en
+  sincronía.
 - **Cabecera sin marca por defecto**: `shell.brand` tiene default vacío; sin marca,
   `applyBranding` oculta `#me-brand`, añade `.me-no-brand` a la topbar y el título del
   curso pasa a ser el único texto (destacado; en móvil deja de ocultarse). El valor

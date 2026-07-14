@@ -1,4 +1,5 @@
 import type { Course, UnitTest } from '../schema/course.schema'
+import { allScreens } from '../schema/traverse'
 
 /**
  * Normaliza un objetivo de aprendizaje para compararlo con tolerancia: sin
@@ -53,7 +54,7 @@ export function collectObjectives(course: Course): ObjectiveInfo[] {
     return info
   }
 
-  course.modules.forEach((m) => m.units.forEach((u) => u.screens.forEach((s) => {
+  allScreens(course).forEach((s) => {
     const decl = entry(s.objective)
     if (decl) {
       // El texto canónico es el de la primera pantalla que lo declara (puede
@@ -68,7 +69,7 @@ export function collectObjectives(course: Course): ObjectiveInfo[] {
         evaluative: !!s.interaction.scored,
       })
     }
-  })))
+  })
 
   const addTest = (test: UnitTest | null, screenId: string | null, origin: string) => {
     if (!test) return

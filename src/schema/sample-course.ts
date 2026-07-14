@@ -44,6 +44,7 @@ export const sampleCourse: Course = {
     {
       id: 'm1',
       title: 'Módulo 1 · Conceptos básicos',
+      screens: [],
       units: [
         {
           id: 'u1',

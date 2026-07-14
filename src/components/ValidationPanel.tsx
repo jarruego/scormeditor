@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { validateCourse, type Issue, type Severity } from '../validation/validators'
+import { screenContainers } from '../schema/traverse'
 import { IssueItem } from './IssueList'
 import { Icon } from './Icon'
 
@@ -62,14 +63,13 @@ export function ValidationPanel() {
     const pathByScreen = new Map<string, string>()
     const pathByUnit = new Map<string, string>()
     const groupOrder: string[] = []
-    course.modules.forEach((m) =>
-      m.units.forEach((u) => {
-        const path = `${m.title || m.id} › ${u.title || u.id}`
-        pathByUnit.set(u.id, path)
-        groupOrder.push(path)
-        u.screens.forEach((s) => pathByScreen.set(s.id, path))
-      }),
-    )
+    screenContainers(course).forEach(({ module: m, unit: u, screens }) => {
+      if (!u && screens.length === 0) return
+      const path = u ? `${m.title || m.id} › ${u.title || u.id}` : m.title || m.id
+      if (u) pathByUnit.set(u.id, path)
+      groupOrder.push(path)
+      screens.forEach((s) => pathByScreen.set(s.id, path))
+    })
     groupOrder.push(FINAL_GROUP, GLOBAL_GROUP)
     return { pathByScreen, pathByUnit, groupOrder }
   }, [course])

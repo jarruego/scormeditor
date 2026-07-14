@@ -34,7 +34,8 @@ Reglas que NO se pueden romper:
 
 - `schema_version` debe ser **`"1.0.0"`**.
 - El contenido va en **`modules[].units[].screens[]`** (jerarquía de 3 niveles).
-  **No se admite un array `screens` en la raíz.**
+  **No se admite un array `screens` en la raíz.** (Excepción acotada: un módulo
+  puede llevar `screens` propias de portada/presentación, ver §3.)
 - `quality_checklist` es un **objeto** `{"texto del criterio": true|false}`,
   **no** un array.
 - **IDs deterministas, nunca «inventados»**: numeración secuencial por orden de
@@ -125,6 +126,7 @@ Reglas que NO se pueden romper:
   {
     "id": "m1",
     "title": "Unidad 1 - ¿Qué es un Plan de Apoyos Integrado?",
+    "screens": [ /* OPCIONAL: pantallas propias del módulo, ver abajo */ ],
     "units": [
       {
         "id": "u1",
@@ -141,6 +143,12 @@ Reglas que NO se pueden romper:
 - `status`: `"ok"` | `"esqueleto_pendiente_desarrollo"`.
 - Cada unidad **debe** tener `summary` (o una pantalla `summary`) y **al menos una
   actividad o test**, o el validador avisará.
+- `modules[].screens` (opcional, def. `[]`): pantallas **propias del módulo**
+  (portada/presentación del bloque), con el mismo formato de §4. Se muestran
+  **siempre antes** de las pantallas de sus unidades y cuelgan del título del
+  módulo en el índice, sin rótulo de unidad. Úsalo solo para portada o
+  presentación del módulo (normalmente 1 pantalla `cover` o `content`); el
+  contenido didáctico va en las unidades. Si no hace falta, **omite la clave**.
 
 ---
 
@@ -894,8 +902,50 @@ def validate_course(course: dict) -> list:
             err(f"{where}: sin feedback de acierto/error")
 
     declared, evaluated = {}, set()
+
+    def check_screen(s):
+        uid(s.get("id"), "pantalla")
+        w = f"pantalla {s.get('id')}"
+        if s.get("type") not in SCREEN_TYPES:
+            err(f"{w}: type de pantalla «{s.get('type')}» no existe (§3)")
+        if not str(s.get("title", "")).strip(): err(f"{w}: sin título")
+        if s.get("type") not in ("cover", "summary") and not str(s.get("objective", "")).strip():
+            warn(f"{w}: sin objective")
+        key = norm(s.get("objective"))
+        if key and key not in declared: declared[key] = s.get("objective")
+        vr = s.get("visual_resource") or {}
+        if vr.get("kind") == "image" and not str(vr.get("alt", "")).strip():
+            err(f"{w}: imagen sin alt")
+        if (vr.get("kind") in ("video_file", "video_youtube") or s.get("type") == "video") \
+                and not str(s.get("transcript", "")).strip():
+            err(f"{w}: vídeo sin transcript")
+        if vr.get("has_voice") and not (vr.get("tracks") or []):
+            err(f"{w}: medio con voz sin subtítulos VTT")
+        if re.search(r"^[ \t]*:::[ \t]*[\wáéíóúñ-]+[^\n]*\n(?:[ \t]*\n)*[ \t]*:::[ \t]*$",
+                     str(s.get("student_text", "")), re.M | re.I):
+            warn(f"{w}: callout vacío (::: tipo sin cuerpo, §4.1)")
+        it = s.get("interaction")
+        if it:
+            uid(it.get("id"), "interacción")
+            if it.get("type") not in INTERACTION_TYPES:
+                err(f"{w}: interaction.type «{it.get('type')}» no existe (§6). "
+                    "Ojo: «reflection» es un tipo de PANTALLA, no de interacción — "
+                    "usa pantalla type «reflection» (interaction null) o "
+                    "interacción «case_practice»")
+            lo = str(it.get("learning_objective", "")).strip()
+            if not lo: warn(f"{w}: interacción sin learning_objective")
+            if it.get("scored") and norm(lo): evaluated.add(norm(lo))
+            if it.get("type") in ("single_choice", "true_false", "classification",
+                                  "match_pairs", "scenario_decision"):
+                check_question(it.get("prompt"), it.get("options"), it.get("feedback"), w)
+            if it.get("type") == "fill_blanks" and \
+                    not re.findall(r"\[\[.+?\]\]", str((it.get("config") or {}).get("text", ""))):
+                err(f"{w}: fill_blanks sin ningún hueco [[respuesta]]")
+
     for m in course.get("modules") or []:
         uid(m.get("id"), "módulo")
+        for s in m.get("screens") or []:  # pantallas propias del módulo (§3, opcional)
+            check_screen(s)
         for u in m.get("units") or []:
             uid(u.get("id"), "unidad")
             screens = u.get("screens") or []
@@ -904,43 +954,7 @@ def validate_course(course: dict) -> list:
             if not any(s.get("interaction") for s in screens):
                 warn(f"unidad {u.get('id')}: sin actividad ni test")
             for s in screens:
-                uid(s.get("id"), "pantalla")
-                w = f"pantalla {s.get('id')}"
-                if s.get("type") not in SCREEN_TYPES:
-                    err(f"{w}: type de pantalla «{s.get('type')}» no existe (§3)")
-                if not str(s.get("title", "")).strip(): err(f"{w}: sin título")
-                if s.get("type") not in ("cover", "summary") and not str(s.get("objective", "")).strip():
-                    warn(f"{w}: sin objective")
-                key = norm(s.get("objective"))
-                if key and key not in declared: declared[key] = s.get("objective")
-                vr = s.get("visual_resource") or {}
-                if vr.get("kind") == "image" and not str(vr.get("alt", "")).strip():
-                    err(f"{w}: imagen sin alt")
-                if (vr.get("kind") in ("video_file", "video_youtube") or s.get("type") == "video") \
-                        and not str(s.get("transcript", "")).strip():
-                    err(f"{w}: vídeo sin transcript")
-                if vr.get("has_voice") and not (vr.get("tracks") or []):
-                    err(f"{w}: medio con voz sin subtítulos VTT")
-                if re.search(r"^[ \t]*:::[ \t]*[\wáéíóúñ-]+[^\n]*\n(?:[ \t]*\n)*[ \t]*:::[ \t]*$",
-                             str(s.get("student_text", "")), re.M | re.I):
-                    warn(f"{w}: callout vacío (::: tipo sin cuerpo, §4.1)")
-                it = s.get("interaction")
-                if it:
-                    uid(it.get("id"), "interacción")
-                    if it.get("type") not in INTERACTION_TYPES:
-                        err(f"{w}: interaction.type «{it.get('type')}» no existe (§6). "
-                            "Ojo: «reflection» es un tipo de PANTALLA, no de interacción — "
-                            "usa pantalla type «reflection» (interaction null) o "
-                            "interacción «case_practice»")
-                    lo = str(it.get("learning_objective", "")).strip()
-                    if not lo: warn(f"{w}: interacción sin learning_objective")
-                    if it.get("scored") and norm(lo): evaluated.add(norm(lo))
-                    if it.get("type") in ("single_choice", "true_false", "classification",
-                                          "match_pairs", "scenario_decision"):
-                        check_question(it.get("prompt"), it.get("options"), it.get("feedback"), w)
-                    if it.get("type") == "fill_blanks" and \
-                            not re.findall(r"\[\[.+?\]\]", str((it.get("config") or {}).get("text", ""))):
-                        err(f"{w}: fill_blanks sin ningún hueco [[respuesta]]")
+                check_screen(s)
 
     a = course.get("assessments") or {}
     tests = ([a["final_test"]] if a.get("final_test") else []) + (a.get("unit_tests") or [])
@@ -965,8 +979,9 @@ def validate_course(course: dict) -> list:
 
     rules = (course.get("scorm") or {}).get("rules") or {}
     nfinal = len((a.get("final_test") or {}).get("questions") or [])
-    nact = sum(1 for m in course.get("modules") or [] for u in m.get("units") or []
-               for s in u.get("screens") or [] if (s.get("interaction") or {}).get("scored"))
+    nact = sum(1 for m in course.get("modules") or []
+               for ss in [m.get("screens") or []] + [u.get("screens") or [] for u in m.get("units") or []]
+               for s in ss if (s.get("interaction") or {}).get("scored"))
     src = rules.get("score_source")
     if src == "final_test" and nfinal == 0: err("score_source final_test sin preguntas en final_test")
     if src == "unit_tests" and nact == 0: err("score_source unit_tests sin interacciones scored")

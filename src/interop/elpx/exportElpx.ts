@@ -100,6 +100,36 @@ export async function buildElpx(course: Course, assets: AssetMap = {}): Promise<
     })
   }
 
+  // Página de una pantalla (compartida por pantallas de módulo y de unidad).
+  const addScreenPage = (screen: Screen, parentPageId: string, order: number) => {
+    const blocks: ElpxBlock[] = []
+    // Bloque de contenido: recurso visual + texto de la diapositiva.
+    const contentHtml = visualHtml(screen, resolveAsset) + mdToHtml(screen.student_text, resolveAsset)
+    if (contentHtml.trim()) {
+      blocks.push({
+        blockId: odeId(stamp, screen.id + '_blk_txt'),
+        components: [
+          {
+            ...textIdevice(odeId(stamp, screen.id + '_txt'), contentHtml),
+            ideviceId: odeId(stamp, screen.id + '_txt'),
+          },
+        ],
+      })
+      summary.components++
+    }
+    // Bloque de interacción.
+    if (screen.interaction) addInteraction(blocks, screen.interaction, screen.id)
+
+    pages.push({
+      pageId: pageId('scr_' + screen.id),
+      parentPageId,
+      name: screen.title || 'Pantalla',
+      order,
+      blocks,
+    })
+    summary.pages++
+  }
+
   for (const mod of course.modules) {
     const modPageId = pageId('mod_' + mod.id)
     pages.push({
@@ -111,7 +141,10 @@ export async function buildElpx(course: Course, assets: AssetMap = {}): Promise<
     })
     summary.pages++
 
-    let unitOrder = 0
+    // Hijos del nodo módulo: primero sus pantallas propias, después las unidades.
+    let childOrder = 0
+    for (const screen of mod.screens) addScreenPage(screen, modPageId, childOrder++)
+
     for (const unit of mod.units) {
       const unitPageId = pageId('unit_' + unit.id)
       const unitBlocks: ElpxBlock[] = []
@@ -130,41 +163,13 @@ export async function buildElpx(course: Course, assets: AssetMap = {}): Promise<
         pageId: unitPageId,
         parentPageId: modPageId,
         name: unit.title || 'Unidad',
-        order: unitOrder++,
+        order: childOrder++,
         blocks: unitBlocks,
       })
       summary.pages++
 
       let scrOrder = 0
-      for (const screen of unit.screens) {
-        const scrPageId = pageId('scr_' + screen.id)
-        const blocks: ElpxBlock[] = []
-        // Bloque de contenido: recurso visual + texto de la diapositiva.
-        const contentHtml = visualHtml(screen, resolveAsset) + mdToHtml(screen.student_text, resolveAsset)
-        if (contentHtml.trim()) {
-          blocks.push({
-            blockId: odeId(stamp, screen.id + '_blk_txt'),
-            components: [
-              {
-                ...textIdevice(odeId(stamp, screen.id + '_txt'), contentHtml),
-                ideviceId: odeId(stamp, screen.id + '_txt'),
-              },
-            ],
-          })
-          summary.components++
-        }
-        // Bloque de interacción.
-        if (screen.interaction) addInteraction(blocks, screen.interaction, screen.id)
-
-        pages.push({
-          pageId: scrPageId,
-          parentPageId: unitPageId,
-          name: screen.title || 'Pantalla',
-          order: scrOrder++,
-          blocks,
-        })
-        summary.pages++
-      }
+      for (const screen of unit.screens) addScreenPage(screen, unitPageId, scrOrder++)
     }
   }
 

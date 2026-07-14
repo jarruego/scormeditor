@@ -37,11 +37,13 @@ todos los tipos de interacción).
 
 ## Mapa de la conversión
 Cada **pantalla** del editor → una **página** eXe (módulo→página raíz,
-unidad→subpágina, pantalla→subpágina de la unidad) con un bloque de contenido
-(iDevice `text` con el `student_text` convertido a HTML + el recurso visual) y, si
-la hay, un bloque con la interacción. El **test final** va como página raíz con
-una pregunta `quick-questions` por bloque; **glosario** y **bibliografía**, como
-páginas raíz de texto.
+unidad→subpágina, pantalla→subpágina de la unidad; las **pantallas propias del
+módulo** cuelgan directamente del nodo módulo, ordenadas antes de sus unidades)
+con un bloque de contenido (iDevice `text` con el `student_text` convertido a
+HTML + el recurso visual) y, si la hay, un bloque con la interacción (helper
+`addScreenPage`, común a pantallas de módulo y de unidad). El **test final** va
+como página raíz con una pregunta `quick-questions` por bloque; **glosario** y
+**bibliografía**, como páginas raíz de texto.
 
 `mapping.ts` (`NATIVE_IDEVICE`) decide iDevice por tipo de interacción:
 

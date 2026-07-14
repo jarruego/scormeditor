@@ -243,6 +243,9 @@ export type Unit = z.infer<typeof Unit>
 export const Module = z.object({
   id: z.string(),
   title: z.string().default(''),
+  /** Pantallas propias del módulo (portada/presentación): se muestran SIEMPRE
+   *  antes de las de sus unidades. Default [] = compatible con proyectos previos. */
+  screens: z.array(Screen).default([]),
   units: z.array(Unit).default([]),
 })
 export type Module = z.infer<typeof Module>

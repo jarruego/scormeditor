@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { confirmDialog } from '../store/confirm'
 import type { ScormConfig } from '../schema/course.schema'
+import { allScreens } from '../schema/traverse'
 import { SegIcons } from './SegIcons'
 import { Icon } from './Icon'
 
@@ -89,8 +90,7 @@ export function CourseSettingsSection() {
   const scorm = useCourseStore((s) => s.course.scorm)
   const updateScorm = useCourseStore((s) => s.updateScorm)
   const hasFinal = useCourseStore((s) => !!s.course.assessments.final_test)
-  const screenCount = useCourseStore((s) =>
-    s.course.modules.reduce((n, m) => n + m.units.reduce((k, u) => k + u.screens.length, 0), 0))
+  const screenCount = useCourseStore((s) => allScreens(s.course).length)
   const setAllMinTime = useCourseStore((s) => s.setAllMinTime)
   // Tiempo a aplicar en lote (no se persiste: es una herramienta, no un ajuste).
   const [bulkTime, setBulkTime] = useState(0)
