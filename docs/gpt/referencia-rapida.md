@@ -88,7 +88,12 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   frases partidas por la maquetación del PDF **reagrupadas** en un párrafo; espacio
   tras cerrar negrita (`**útil** y`, no `**útil**y`);
   encabezados `## `/`### ` con solo el título en su línea; sub-epígrafes hermanos con
-  el **mismo nivel** de encabezado (ninguno degradado a `3. **…**`); ninguna pantalla
+  el **mismo nivel** de encabezado (ninguno degradado a `3. **…**`); **párrafos
+  enteros en negrita o encabezado por culpa de la extracción, restaurados** a párrafo
+  normal (énfasis solo en lo realmente destacado); **campos de interacción sin
+  markdown de bloque** (`prompt`/`instructions`/opciones/feedback/`front`/`back`:
+  solo negrita, cursiva y enlaces; `## `, `::: ` y listas solo en `student_text` y en
+  `body` de accordion/tabs/timeline); ninguna pantalla
   arranca con contenido residual del epígrafe anterior (ni con un bloque que su
   `title` no anuncie); **no dos callouts del mismo
   tipo en una pantalla** (dos `::: important` juntos = dos pantallas fusionadas:
@@ -100,8 +105,17 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   `video_youtube`, ID en `src`), nunca como enlace de texto.
 - **Estructura**: `cover` solo portada, con el **número del tema visible** («Tema 1»,
   «Tema 2»… en `subtitle` o antepuesto al título) y sin párrafos de contenido;
+  **pantallas divididas por unidad de sentido** (una idea y una sola acción mental por
+  pantalla; pantalla nueva al cambiar la intención — definición→aplicación,
+  explicación→actividad, procedimiento→beneficios; los ~800 caracteres son alarma
+  secundaria, no el criterio; y sin fragmentar en automático: la explicación queda
+  junto a su ejemplo necesario); **toda interacción con introducción breve** (1-2
+  frases: qué hacer y para qué) y **nunca tras varios párrafos** de desarrollo;
+  **series de tipos/formatos/casos con título específico** por pantalla (el `title`
+  repetido solo señala continuación de la misma idea);
   **máximo una imagen por pantalla y siempre como `visual_resource`** (nunca `![...]`
-  en `student_text`; serie de figuras → una pantalla por punto, mismo `title`);
+  en `student_text`; serie de figuras → una pantalla por punto, titulada con su
+  punto);
   **pantalla con texto+imagen sin interacción** (ni informativa: la interactividad
   va en la pantalla siguiente, con solo una frase introductoria);
   **toda interactividad evaluable o de pregunta directa en pantalla propia** (sin

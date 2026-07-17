@@ -120,7 +120,9 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   (contado en Python, no a ojo) y con **chequeo de ritmo** — informativa ~1 de
   cada 3-4 pantallas de desarrollo (nunca >3 seguidas de solo texto), **ninguna
   pantalla de >~800 caracteres sin interactividad informativa** (repartir el texto en
-  una que lo contenga, o dividir), checkpoint aplicado cada 4-5 (mín. ⌈N/5⌉)
+  una que lo contenga, o dividir por donde cambia la idea — el recuento de caracteres
+  es alarma secundaria: la división la manda la unidad de sentido, ver ronda de
+  reglas aprendidas), checkpoint aplicado cada 4-5 (mín. ⌈N/5⌉)
   prefiriendo decidir/clasificar/ordenar a `single_choice`, tipos variados sin
   repetir dos seguidos. El guion es interno por
   defecto (va al informe final); la orden «enséñame el guion» añade una única parada
@@ -150,7 +152,8 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   en su propia pantalla; **máximo UNA imagen por pantalla y siempre como
   `visual_resource`** — nunca `![...]` en `student_text` (esa sintaxis es del editor
   humano; jul 2026, del análisis de pai-u02 (9)); serie de figuras → una pantalla por
-  punto (mismo `title`); **pantalla con texto+imagen sin NINGUNA interacción**
+  punto, titulada con **su** punto concreto (el `title` repetido queda para la
+  continuación de una misma idea); **pantalla con texto+imagen sin NINGUNA interacción**
   (tampoco informativa): la interactividad va a la pantalla siguiente con solo una
   frase introductoria; los rótulos/flechas de una infografía no se vuelcan como
   párrafos sueltos (van en `alt`/`caption`/`transcript`); **callout
@@ -183,6 +186,29 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   `..`/absolutas rechazadas (zip-slip), y el escaneo de rutas referenciadas restringido a
   cadenas que son ruta de fichero completa (una `editor_note` con `assets/…` ya no produce
   un falso faltante).
+- **Ronda de reglas aprendidas (jul 2026)**: el usuario calibró la generación con otra IA
+  (Codex) sobre las unidades 2 y 3 del curso PAI (pares generado/corregido como fixtures) y
+  aprobó 13 reglas (`reglas-aprendidas.yaml`, R001–R013), integradas en los docs del GPT.
+  Lo esencial: (a) **segmentación por unidad de sentido** — una idea y UNA sola acción
+  mental por pantalla (comprender/explorar/practicar/decidir/repasar); pantalla nueva al
+  cambiar la intención pedagógica (definición→aplicación, explicación→actividad,
+  procedimiento→beneficios); varios subtítulos o dos bloques destacados con funciones
+  distintas = señal de división; en contenidos de observación, separar cómo/qué/interpretar.
+  El **nº de caracteres pasa a alarma secundaria** (la corrección de pai-u02 subió de 53 a
+  60 pantallas sin perder cobertura). Sin fragmentar en automático: la explicación queda
+  junto a su ejemplo necesario. (b) **Interacción nunca tras varios párrafos** (vale
+  también para informativas) y **siempre con introducción breve y natural** (1-2 frases:
+  qué hacer y para qué). (c) **Series de tipos/formatos/casos con título específico** por
+  pantalla — matiza la regla del `title` repetido, que queda solo para continuación de una
+  misma idea. (d) **Formato en campos de interacción**: los campos cortos pasan por
+  `rich()` (`interactions.js`: solo negrita/cursiva/enlaces; `##`/`:::`/listas salen
+  literales), el markdown de bloque solo funciona en los cuerpos que usan `block()`
+  (`body` de accordion/tabs/timeline, `text` de image_cards) — ahora es regla normativa
+  del contrato §6. (e) **Negritas masivas de la extracción** (párrafos enteros en
+  negrita/encabezado) se restauran a párrafo normal. (f) **3+ ejemplos paralelos con
+  correspondencia** (dato→interpretación, observación→ajuste) → `flip_cards`/`accordion`.
+  Las reglas nuevas solo se aprueban con OK explícito del usuario (no se «aprende» de una
+  conversación suelta).
 - El GPT también lee una copia del contrato en el `Downloads` del usuario; al tocar el de
   `docs/gpt/` hay que **sincronizarla** (`cp`). La subida al GPT se hace desde estos
   ficheros. Dentro de las Instructions, los docs se referencian por **nombre de fichero

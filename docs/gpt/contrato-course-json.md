@@ -425,6 +425,14 @@ Estructura común a TODAS:
   pregunta directa va en pantalla propia; su `student_text` lleva como mucho una
   frase de contexto (el enunciado va en `prompt`/`instructions`) y el desarrollo, en
   la pantalla anterior (mismo `title`).
+- **Formato dentro de los campos de interacción**: los campos de texto corto
+  (`prompt`, `instructions`, `scenario`, textos de `options`, `feedback.*`,
+  `front`/`back` de tarjetas, `title`/`label` de ítems) renderizan **solo**
+  `**negrita**`, `*cursiva*` y `[enlaces](url)`; cualquier otro markdown (`## `,
+  callouts `::: tipo`, listas `- `, saltos de párrafo) se muestra **literal** — no lo
+  uses ahí. El markdown de bloque completo (párrafos, listas, encabezados) funciona
+  **solo** en los cuerpos largos: `body` de `accordion`/`tabs`/hitos de `timeline` y
+  `text` de `image_cards`.
 - `retries`: `0` = ilimitados.
 - `learning_objective`: rellénalo siempre (el validador lo pide).
 - Reglas del validador para preguntas evaluables: deben tener **respuesta

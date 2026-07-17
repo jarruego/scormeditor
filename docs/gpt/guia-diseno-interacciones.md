@@ -25,7 +25,10 @@ texto fuente, nunca sustituyéndolo ni parafraseándolo (por eso el ratio puede 
    `flags` (bit `16` = negrita) y el nombre de la fuente (contiene «Bold»/«Semibold»)
    para **conservar las negritas como `**...**`**; usa tamaño/color/recuadro para
    detectar **encabezados** (→ `## `/`### `) y **cajas destacadas** (→ callouts, ver
-   abajo). Trabaja sobre lo extraído, no de memoria.
+   abajo). Trabaja sobre lo extraído, no de memoria. **Ojo al exceso**: si la
+   extracción deja **párrafos enteros consecutivos** en negrita o como encabezado
+   (fuentes decorativas, cajas), restáuralos a párrafo normal y conserva el énfasis
+   solo en las expresiones realmente destacadas del original.
 2. **Segméntalo en bloques de contenido SUSTANCIALES**, en orden, montando primero el
    **guion de pantallas** (ver sección siguiente). Una pantalla = un
    **apartado o idea con su desarrollo completo** (varios párrafos, su lista, su
@@ -76,9 +79,10 @@ adivinar el «objetivo cognitivo»:
 | Forma del bloque fuente | Patrón de pantalla |
 |---|---|
 | Prosa de desarrollo | `content` con texto (+ imagen si el fuente la trae; máx. una) |
-| Serie de puntos, cada uno con su figura | una pantalla por punto: texto + su imagen (`visual_resource`), mismo `title` |
+| Serie de puntos, cada uno con su figura | una pantalla por punto: texto + su imagen (`visual_resource`), titulada con **su** punto |
 | 5+ ítems paralelos con desarrollo | `accordion` |
 | 2-4 bloques cortos paralelos | `tabs` o `flip_cards` (alterna entre ambos) |
+| 3+ ejemplos paralelos con correspondencia clara (dato→interpretación, observación→ajuste, valor→objetivo) | `flip_cards` (≤4) o `accordion` |
 | Proceso o secuencia de pasos | `sort_steps` (checkpoint) o `timeline` (informativa) |
 | Cronología / evolución histórica | `timeline` |
 | Caso o situación que admite decisión | `scenario_decision` (checkpoint) |
@@ -104,10 +108,14 @@ guion es barato; regenerar pantallas, no):
   reconocer una opción. Ante la duda, uno **de más** (borrar en SCORMEditor es fácil).
 - **Cierre de tema**: `flashcards` (repaso) **+ una lúdica** — `word_search`,
   `crossword` o `az_quiz`, **alternando entre temas** y con `scored: false`.
-- **Ninguna pantalla larga sin interactividad informativa.** Si una fila supera
-  **~800 caracteres** de texto y no lleva informativa: o vuelca parte del texto en una
-  que lo **contenga** (accordion/tabs, sin resumir), o divide la pantalla en dos. Si
-  lleva imagen (y por tanto no admite interacción, ver regla estructural), divídela.
+- **Ninguna pantalla larga sin interactividad informativa.** El nº de caracteres es
+  una **alarma secundaria**, no el criterio de división: la segmentación se decide
+  por **unidad de sentido**, cambio de intención pedagógica, carga visual y esfuerzo
+  mental (ver «Principio rector»). Si una fila supera **~800 caracteres** y no lleva
+  informativa, revísala: o vuelca parte del texto en una que lo **contenga**
+  (accordion/tabs, sin resumir), o divide la pantalla **por donde cambia la idea** —
+  nunca con un corte mecánico de longitud. Si lleva imagen (y por tanto no admite
+  interacción, ver regla estructural), divídela.
 - **Variedad**: no repitas el mismo tipo (informativo o evaluable) dos veces seguidas.
 
 El guion es **interno por defecto**: no se pregunta al usuario y se adjunta al informe
@@ -156,6 +164,12 @@ poder diseñar apoyos realmente pers…"`, `title = "- Religión"`).
 - **Continuación**: si un apartado/subtema se parte en **varias pantallas**, todas
   **mantienen el mismo `title`** (la diapositiva es continuación de la anterior); no
   pongas de título el primer ítem de la lista que continúa.
+- **Serie de tipos/formatos/casos: título específico.** El `title` repetido es solo
+  para la *continuación de una misma idea*. Cuando cada pantalla de una serie explica
+  un **elemento concreto con nombre propio** (un formato, un tipo, un caso:
+  «Relato narrativo», «Línea de vida», «Material gráfico»), titúlala con **ese
+  elemento**, no repitas el rótulo genérico del epígrafe («Formatos de registro») en
+  todas: el título informativo orienta más en el índice y en la navegación.
 - **Numeración de epígrafes: todo o nada (coherencia).** Si el documento numera los
   apartados (`3.1`, `3.2`…), **decídelo una vez para toda la unidad**: o **conservas la
   numeración en TODOS** los `title` o la **quitas en TODOS**. Nunca mezcles (unos con
@@ -176,8 +190,9 @@ poder diseñar apoyos realmente pers…"`, `title = "- Religión"`).
   texto.
 - **Serie de puntos ilustrados** (cada formato/ejemplo/paso del apartado con su
   figura): **una pantalla por punto**, cada una con su texto y su imagen como
-  `visual_resource`, todas con el mismo `title`. No aglutines las figuras de un
-  apartado en una sola pantalla.
+  `visual_resource`, y **titulada con su punto concreto** («Relato narrativo»,
+  «Línea de vida»), no con el rótulo genérico del apartado repetido. No aglutines
+  las figuras de un apartado en una sola pantalla.
 - El **texto interno de una infografía** (rótulos, flechas «→», etiquetas de un
   esquema) NO se vuelca como párrafos sueltos en `student_text`: la imagen ya lo
   muestra y como prosa quedan frases colgadas sin sentido. Lo esencial va en
@@ -212,7 +227,10 @@ convirtiéndolas en pantallas de texto pequeñas.** Cuándo:
   → una pestaña por bloque. Con **más de 4 ítems o textos largos, NO uses tabs** (no
   caben en horizontal): usa `accordion`.
 - **`flip_cards`**: pares término→definición, concepto→ejemplo → `front`/`back`.
-  Igual que `tabs`, **solo con 4 o menos elementos** y textos cortos.
+  Igual que `tabs`, **solo con 4 o menos elementos** y textos cortos. Detecta también
+  los **ejemplos paralelos con correspondencia clara** (un dato, valor u observación →
+  su interpretación, objetivo o actuación): tres o más de esos pares piden tarjetas
+  (o `accordion`, si son más de 4 o largos) antes que párrafos repetitivos.
 - **`timeline`**: evolución histórica, fases de un proceso con fechas/etapas →
   `milestones` en orden con `label` (fecha/fase), `title` y `body`. Ideal cuando el
   fuente narra cronología o secuencia de hitos.
@@ -240,6 +258,26 @@ pantallas: un accordion «Áreas clave» con 8 apartados es **un** accordion en 
 pantalla, no «Áreas clave (1)» / «(2)». Lo mismo con `tabs`/`flip_cards`. Dentro de un
 `item`/`tab`/`card`, si hay una lista, cada elemento en **su propia línea** con `- `
 (el editor la renderiza como lista dentro del bloque).
+
+**Nunca una interacción tras varios párrafos de desarrollo — y siempre con una
+introducción breve.** Vale para **toda** interacción, también las informativas:
+si en la misma pantalla compiten una explicación larga (varios párrafos, apartados
+o listas en `student_text`) y una interacción debajo, **sepáralas** — primero la
+pantalla de explicación, después la de exploración o práctica. En la pantalla de la
+interacción, el `student_text` lleva como mucho una **introducción breve y natural
+(1-2 frases: qué va a hacer el alumno y para qué)**, sin repetir la explicación.
+(Recuerda: una informativa que **contiene** el texto fuente es ella misma el cuerpo
+de la pantalla — eso no es «texto + interacción», es la forma correcta.)
+
+**Formato DENTRO de los campos de interacción (lo que renderiza la carcasa).** Los
+campos de texto corto — `prompt`, `instructions`, `scenario`, textos de `options`,
+`feedback.*`, `front`/`back` de tarjetas, `title`/`label` de ítems — solo renderizan
+`**negrita**`, `*cursiva*` y `[enlaces](url)`: un `## `, un callout `::: tipo`, una
+lista `- ` o un intento de párrafos ahí se muestran **literales**, con los símbolos a
+la vista. El markdown de bloque completo (párrafos, listas, encabezados) funciona
+**solo** en los cuerpos largos: `body` de `accordion`/`tabs`/hitos de `timeline` y
+`text` de `image_cards`. Si al segmentar te queda un encabezado o un callout dentro
+de un campo corto, sácalo a `student_text` o intégralo como frase.
 
 **Posición respecto al texto (`interaction_layout`):** por defecto la interacción va
 **debajo** del texto (`"bottom"`); pon `"interaction_layout": "top"` en la pantalla
@@ -298,6 +336,27 @@ cuerpo sea **realmente largo** (más de lo que se lee cómodo de una vez). **No*
 por dividir: un apartado corto pero completo es **una** pantalla, no tres frases en
 tres pantallas. Si un apartado es denso o va en lista, preséntalo con una interactividad
 informativa antes que trocearlo.
+
+**Una pantalla = una sola acción mental.** Además de una sola idea, cada pantalla debe
+exigir al alumno **una única acción**: comprender, explorar, practicar, decidir o
+repasar. Señales de que toca **pantalla nueva** aunque el epígrafe fuente sea uno:
+- **Cambia la intención pedagógica**: de definición a aplicación, de explicación a
+  actividad, de errores a evaluación, de descripción general a situación especial. Caso
+  típico: un apartado que explica **cómo se hace** un procedimiento y remata con una
+  lista distinta de **para qué sirve / qué beneficios aporta** — esos beneficios suelen
+  merecer pantalla propia tras la primera.
+- **Varios subtítulos**, o **dos bloques destacados con funciones diferentes**, en la
+  misma pantalla: divide, o traslada uno de los bloques a la pantalla vecina a la que
+  pertenece por sentido.
+- En contenidos de **observación o diagnóstico**, separa cuando el fuente lo dé:
+  *cómo* observar, *qué* señales observar y *cómo interpretar* lo observado (los
+  ejemplos observación→ajuste, en una informativa; ver tabla del guion).
+
+**Pero no fragmentes en automático.** Una explicación se queda **junto al ejemplo que
+la hace comprensible**; divide solo si **cada pantalla resultante** tiene un propósito
+propio y un título significativo. Y el nº de caracteres es una **alarma secundaria**,
+no el criterio: manda la unidad de sentido, el cambio de intención, la carga visual y
+el esfuerzo mental que se pide al alumno.
 
 **Un sub-epígrafe con texto suficiente = su propia pantalla.** No metas **dos
 sub-apartados numerados** distintos (p. ej. `3.8` y `3.9`) en una misma pantalla si cada
@@ -479,3 +538,16 @@ Convierte «reflexiona sobre…» en algo accionable siempre que puedas:
   - **Desplegable hueco**: accordion/tabs/flip_cards/timeline cuyos cuerpos casi
     repiten el título que se clica. Sin desarrollo real detrás del clic, el bloque va
     como lista en `student_text`, no como interacción.
+  - **Interacción tras un muro de texto**: varios párrafos, apartados o listas en
+    `student_text` con la interacción debajo. Separa: explicación (una pantalla) y
+    exploración/práctica (la siguiente, con 1-2 frases de introducción).
+  - **Markdown no soportado en campos de interacción**: `## `, `::: tipo` o listas en
+    `prompt`/`instructions`/opciones/feedback/`front`/`back` salen **literales**. Ahí
+    solo negrita, cursiva y enlaces; el markdown completo, en `student_text` y en los
+    `body` de accordion/tabs/timeline (y `text` de image_cards).
+  - **Párrafos enteros en negrita o como encabezado** heredados de la extracción del
+    PDF: restaura el párrafo normal y deja el énfasis solo en lo realmente destacado.
+  - **Título genérico repetido en una serie de tipos/formatos/casos**: cada pantalla
+    de la serie se titula con su elemento concreto («Relato narrativo»), no con el
+    rótulo del epígrafe («Formatos») clonado; el mismo `title` solo señala la
+    continuación de una misma idea.

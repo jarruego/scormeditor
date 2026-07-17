@@ -280,7 +280,10 @@ Si el GPT recibe una orden con esta forma, debe tratar las reglas numeradas como
 >    caracteres de cada pantalla, y pasa su chequeo de ritmo: informativa ~1 de
 >    cada 3-4 pantallas (nunca 3 seguidas de solo texto), checkpoint aplicado cada
 >    4-5 pantallas, tipos variados, y ninguna pantalla de más de ~800 caracteres
->    sin interactividad informativa (repártela en una que contenga el texto, o divide).
+>    sin interactividad informativa (repártela en una que contenga el texto, o
+>    divide). Divide siempre por unidad de sentido y cambio de intención
+>    (definición→aplicación, explicación→actividad, procedimiento→beneficios),
+>    nunca con un corte mecánico de longitud: los caracteres son solo una alarma.
 > 8. Toda evaluable o pregunta directa en SU PROPIA pantalla (sin teoría en
 >    student_text), alternando todo el repertorio (choice, V/F, huecos, parejas,
 >    clasificar, ordenar, escenario, caso). Cierre de cada tema: Tarjetas de repaso
@@ -288,8 +291,8 @@ Si el GPT recibe una orden con esta forma, debe tratar las reglas numeradas como
 >    Nunca hotspots, before_after, hidden_image, puzzle, vídeo interactivo ni
 >    html_embed: esos los añade el editor humano desde SCORMEditor.
 > 9. Máximo UNA imagen por pantalla y siempre como visual_resource, nunca ![...]
->    dentro de student_text; serie de figuras → una pantalla por punto (mismo
->    title). Si una pantalla ya lleva texto+imagen, NINGUNA interactividad en ella
+>    dentro de student_text; serie de figuras → una pantalla por punto, cada una
+>    titulada con su punto. Si una pantalla ya lleva texto+imagen, NINGUNA interactividad en ella
 >    (tampoco tabs/timeline/accordion): va en la pantalla siguiente con solo una
 >    frase introductoria. Ni callouts vacíos ni rótulos/flechas de una infografía
 >    volcados como texto suelto.
@@ -297,6 +300,16 @@ Si el GPT recibe una orden con esta forma, debe tratar las reglas numeradas como
 >     claramente más extenso y descriptivo que el título que se clica: nunca una
 >     frase que repite el rótulo. Si el fuente solo da rótulos sin desarrollo,
 >     preséntalo como lista en student_text, no como desplegable.
+> 11. Una pantalla = una idea y UNA sola acción mental (comprender, explorar,
+>     practicar, decidir o repasar). Ninguna interacción tras varios párrafos de
+>     desarrollo: pantalla propia, con 1-2 frases naturales de introducción (qué
+>     hacer y para qué). Series de tipos/formatos/casos: cada pantalla titulada
+>     con su elemento concreto, sin clonar el título genérico del epígrafe.
+> 12. En los campos de interacción (prompt, instructions, opciones, feedback,
+>     front/back) solo negrita, cursiva y enlaces: nada de ##, ::: ni listas (eso
+>     va en student_text o en los body de accordion/tabs/timeline, que sí admiten
+>     markdown completo). Y si la extracción deja párrafos enteros en negrita o
+>     como encabezado, restáuralos a párrafo normal.
 >
 > Antes de entregar: pasa el checklist de referencia-rapida.md y la revisión de
 > fidelidad contra el PDF (cada epígrafe con su pantalla, mismo orden y jerarquía).
