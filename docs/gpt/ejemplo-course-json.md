@@ -34,13 +34,14 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
       "require_interactions": true,
       "min_score": 70,
       "attempts_allowed": 2,
-      "score_source": "final_test",
+      "score_source": "mixed",
+      "mixed_final_weight": 70,
       "navigation": "mixed",
       "allow_resume": true
     }
   },
   "shell": {
-    "brand": "MECOHISA S.L.",
+    "brand": "",
     "primary_color": "#0b5fff",
     "show_sidebar": true,
     "show_progress": true,
@@ -60,8 +61,7 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
             {
               "id": "s01",
               "type": "cover",
-              "title": "Atención centrada en la persona",
-              "student_text": "Bienvenida al Tema 1. En esta unidad descubrirás el enfoque que pone a la persona en el centro de los apoyos.",
+              "title": "Tema 1. Atención centrada en la persona",
               "required": true,
               "status": "ok"
             },
@@ -90,7 +90,7 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
               "objective": "Definir la atención centrada en la persona.",
               "student_text": "La **atención centrada en la persona** organiza los apoyos a partir de las preferencias, valores y proyecto de vida de cada persona, no de la rutina del servicio.",
               "source_refs": [
-                { "doc": "Curso ACP T.1.pdf", "locator": "p.5", "transform": "reescritura" }
+                { "doc": "Curso ACP T.1.pdf", "locator": "p.5" }
               ],
               "visual_resource": {
                 "kind": "image",
@@ -125,7 +125,7 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
                   { "id": "b", "text": "Las preferencias y el proyecto de vida de la persona.", "correct": true, "feedback": "Correcto: ese es el eje de la ACP." }
                 ],
                 "config": {},
-                "feedback": { "correct": "¡Bien!", "incorrect": "Revisa la definición de ACP.", "explanation": "La ACP parte de la persona, no del servicio." },
+                "feedback": { "correct": "Correcto: la ACP organiza los apoyos desde la persona, no desde la rutina del servicio.", "incorrect": "Revisa la definición de ACP.", "explanation": "La ACP parte de la persona, no del servicio." },
                 "scored": true,
                 "points": 1,
                 "retries": 2,
@@ -324,6 +324,15 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
 - Fíjate en el **cierre del tema (s08–s09)**: `flashcards` + una lúdica con
   `scored: false`. La lúdica **alterna entre temas**: `word_search`, `crossword`,
   `az_quiz`.
+- **Nota (`score_source: "mixed"`)**: como los checkpoints van `scored: true`
+  (s05, s07), la nota es **mixta** (`mixed_final_weight: 70` → 70 % test final,
+  30 % práctica). Si dejaras `score_source: "final_test"` con checkpoints
+  evaluables, el editor avisaría (`SCORM_ACTIVITIES_IGNORED`): esos checkpoints
+  no contarían. Elige `mixed` cuando la práctica puntúe, `final_test` solo si los
+  checkpoints van `scored: false`.
+- **Marca (`shell.brand: ""`)**: vacía por defecto (la cabecera muestra solo el
+  título). `authoring_entity` sí lleva la entidad (MECOHISA S.L.) porque es
+  metadato de autoría, no la marca visible. Rellena `brand` solo si se pide.
 - **No generes** `hotspots`, `before_after`, `hidden_image`, `puzzle`, `video`
   (vídeo interactivo) ni `html_embed`: los añade el editor humano desde SCORMEditor.
 - Mantén **una sola interacción por pantalla** y `learning_objective` en todas.

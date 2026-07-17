@@ -28,6 +28,7 @@ informe de revisión.
 | Código | Sev | Causa raíz | Corrección canónica | Quién |
 |---|:-:|---|---|:-:|
 | `NO_TITLE` | ⛔ | Pantalla con `title` vacío | Ponle un título corto (2-6 palabras) descriptivo del contenido | GPT |
+| `ID_DUPLICATE` | ⛔ | Dos entidades (pantalla, interacción, módulo, unidad, test o pregunta) comparten `id` | Renombra una a un `id` único: el runtime guarda el progreso y la nota por `id`, y un duplicado los corrompe | GPT |
 | `NO_OBJECTIVE` | ⚠ | Pantalla (no `cover`/`summary`) sin `objective` | Copia **carácter a carácter** el objetivo declarado del curso que la pantalla desarrolla (no inventes uno nuevo) | GPT |
 | `SKELETON` | ⚠ | Pantalla `content_placeholder` o `status` esqueleto | Solo si el usuario pide desarrollarla: complétala desde el texto fuente. Si es un esqueleto deliberado, no tocar | Según |
 | `CALLOUT_EMPTY` | ⚠ | Emitiste `::: tipo` sin cuerpo, o con la etiqueta («Importante») como cuerpo | El cuerpo es la **frase destacada del original**; si no hay texto real para la caja, elimina el callout | GPT |

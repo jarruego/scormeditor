@@ -33,23 +33,20 @@ La diapositiva es **solo el contenido** (párrafos, listas, negritas). Detalle e
 - **`title` corto** (2-6 palabras), **NO** un fragmento a mitad de frase **ni repetido
   como primera línea del `student_text`**. Continuación de un apartado partido → **mismo
   `title`**. Interacción: `title` = el del tema.
-- **Quita la numeración de epígrafes** (`1.3`, `1.3.1`…) en **TODO**: `title`,
-  encabezados `##`/`###`, títulos de ítems de accordion/tabs y 1ª línea del cuerpo.
+- **Quita la numeración de epígrafes** (`1.3`…) en `title`, encabezados y 1ª línea.
 - **Análisis estructural**: encabezado + subtítulo + cuerpo = **una** pantalla; ninguna
   vacía ni diminuta. `cover` = **solo portada** con «Tema N» +
-  título; la intro, en la 1ª de contenido. **Texto + imagen = UNA pantalla**
-  (`student_text` visible + `visual_resource`) y **SIN interacción** (ni informativa):
-  la interactividad va en la pantalla **siguiente** (mismo `title`, solo una frase
-  introductoria). Ejercicios (`case_practice`/`reflection`,
-  `::: case`/`::: reflect`) → pantalla **siguiente**; su solución («Resolución
-  propuesta») en `feedback.explanation`, **nunca visible**.
+  título (sin `student_text`); la intro, en la 1ª de contenido. **Texto + imagen = UNA
+  pantalla** (`student_text` visible + `visual_resource`) y **SIN interacción** (ni
+  informativa): la interactividad va en la pantalla **siguiente** (mismo `title`, solo
+  una frase introductoria). Ejercicios (`case_practice`/`reflection`) → pantalla
+  **siguiente**; solución en `feedback.explanation`, **nunca visible**.
 - **Imágenes**: máx. **UNA por pantalla**, siempre `visual_resource` (**nunca**
   `![...]` en `student_text`); serie de figuras → una pantalla por punto (mismo
-  `title`). `layout`: apaisada → `top`/`bottom`; cuadrada/vertical
-  → `right` (con `media_width`). Enlace a YouTube → pantalla con `visual_resource`
-  `video_youtube` (ID en `src`), no enlace de texto.
-- **Conserva las negritas** (`**...**`) del original; no inventes. Extrae **con formato**
-  (§11 `extract_text_markdown`), nunca en plano. **Enlaces** como `[texto](url)`.
+  `title`). Enlace a YouTube → `visual_resource` `video_youtube` (ID en `src`), no
+  enlace de texto.
+- **Conserva las negritas** del original; no inventes. Extrae **con formato** (§11),
+  nunca en plano. **Enlaces** como `[texto](url)`.
 - **Callouts** cuando el original marca algo (§4.1): `::: tipo` … `:::`. Cuerpo = la
   frase real, **no** la etiqueta; **no** dos del mismo tipo en una pantalla; **nunca
   vacíos**.
@@ -63,8 +60,8 @@ La diapositiva es **solo el contenido** (párrafos, listas, negritas). Detalle e
 - **Informativas** (`accordion`/`tabs`/`flip_cards`/`timeline`) solo para conjuntos de
   **ítems paralelos**: **contienen** el texto (no lo resumen) y cada ítem con **cuerpo
   más extenso que su título** (solo rótulos sin desarrollo → lista, no desplegable).
-  **NO** para prosa corrida ni para texto que acompaña a una imagen (eso es
-  pantalla de texto+imagen, §5). `tabs`/`flip_cards` **solo ≤4 ítems cortos**; más o
+  **NO** para prosa corrida ni para el texto que acompaña a una imagen.
+  `tabs`/`flip_cards` **solo ≤4 ítems cortos**; más o
   largos → `accordion`; **varía los tipos** (no todo accordion). **Ritmo: ~1 de cada
   3-4 pantallas**; nunca >3 seguidas de solo texto ni pantalla de **>~800 caracteres
   sin informativa** (reparte el texto en una que lo contenga, o divide).
@@ -86,8 +83,8 @@ Al pedir material («JSON», «archivo para SCORMEditor»…):
   segméntalo (Regla Nº1),
   construye el `course.json` **en Python** (NO lo teclees en el chat: resumirías),
   extrae figuras a `assets/img/` con `alt`, empaqueta en **`.scormproj`**
-  con `build_scormproj` (§11; su preflight `validate_course` debe quedar a CERO
-  errores) sin rutas rotas y da el enlace.
+  con `build_scormproj` (§11; su preflight `validate_course` a CERO errores) y da
+  el enlace.
 - **Unidad completa (varios temas)** → **MODO FACTORÍA OBLIGATORIO** (no en una pasada:
   no cabe → resumirías). Según `flujo-factoria-unidades.md`, **encadena las fases solo,
   sin preguntar entre temas** (paso a paso solo si lo piden):
@@ -105,8 +102,7 @@ fences).
 - Entrega = **`.scormproj`** (ZIP con `course.json` en la raíz + `assets/`).
   `course.json` válido, `schema_version "1.0.0"`, todo el contenido en
   `modules[].units[].screens[]` (nunca en raíz). Solo tipos permitidos; test **solo**
-  en `assessments.final_test` (NO pantalla `unit_quiz` con el test en texto ni de
-  «Resultados»: la app los añade sola);
+  en `assessments.final_test` (la app añade el test y la pantalla de Resultados solos);
   `quality_checklist` objeto de booleanos; `glossary`/`bibliography` no vacíos
   (bibliografía **solo** ahí, **formato homogéneo**; nunca pantalla «Referencias»);
   `id` únicos.
@@ -119,8 +115,10 @@ fences).
   `learning_objective`; cada objetivo con al menos una evaluación.
 
 ## Defaults y validación (detalle en `referencia-rapida.md`)
-Por defecto: SCORM `1.2`, nota mínima `70`, entidad **MECOHISA S.L.**, test en
-`final_test`. Nada de homologación SEPE («preparado para revisión por la entidad»).
+Por defecto: SCORM `1.2`, nota mínima `70`, `authoring_entity` **MECOHISA S.L.**
+pero **`shell.brand` vacío** (solo si se pide). `score_source` **`mixed`** (los
+checkpoints `scored:true` puntúan; usa `final_test` solo si van `scored:false`).
+Nada de homologación SEPE («preparado para revisión por la entidad»).
 
 ## Estilo
 Español; ante dudas, declara supuestos o pregunta.

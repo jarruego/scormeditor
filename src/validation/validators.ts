@@ -1,4 +1,4 @@
-import type { Course, QuizQuestion, Screen, Unit } from '../schema/course.schema'
+import type { Course, QuizQuestion, Screen, Unit, UnitTest } from '../schema/course.schema'
 import { allScreens, screenContainers } from '../schema/traverse'
 import { normalizeObjective } from './objectives'
 import { buildTranscript } from '../tts/buildTranscript'
@@ -259,6 +259,47 @@ function checkUnit(ctx: Ctx, u: Unit, mTitle: string) {
   })
 }
 
+// --- Unicidad de IDs ---------------------------------------------------------
+// El runtime guarda el estado del alumno por id (`STATE.results[interaction.id]`,
+// `STATE.visited[screen.id]`): dos entidades con el mismo id comparten progreso y
+// nota, corrompiéndolos. El esquema Zod no comprueba unicidad, así que se valida
+// aquí (el toolkit del GPT ya lo hacía en su preflight §11: esto iguala la paridad).
+function checkIds(ctx: Ctx) {
+  const c = ctx.course
+  const seen = new Map<string, string>() // id -> primera entidad que lo usó
+  const check = (id: string | undefined, what: string, link: { screenId?: string; unitId?: string }) => {
+    if (!id) return
+    const prev = seen.get(id)
+    if (prev) {
+      ctx.push({
+        code: 'ID_DUPLICATE', severity: 'error',
+        message: `Identificador duplicado «${id}» (lo usan ${prev} y ${what}): los ids deben ser únicos en todo el curso.`,
+        location: what, ...link,
+      })
+    } else {
+      seen.set(id, what)
+    }
+  }
+  c.modules.forEach((m) => {
+    check(m.id, `módulo «${m.title || m.id}»`, {})
+    const scan = (s: Screen, unitId?: string) => {
+      check(s.id, `pantalla «${s.title || s.id}»`, { screenId: s.id, unitId })
+      if (s.interaction) check(s.interaction.id, `interacción de «${s.title || s.id}»`, { screenId: s.id, unitId })
+    }
+    m.screens.forEach((s) => scan(s))
+    m.units.forEach((u) => {
+      check(u.id, `unidad «${u.title || u.id}»`, { unitId: u.id })
+      u.screens.forEach((s) => scan(s, u.id))
+    })
+  })
+  const tests = [c.assessments.final_test, ...c.assessments.unit_tests].filter(Boolean) as UnitTest[]
+  tests.forEach((t) => {
+    const link = t === c.assessments.final_test ? { screenId: '__final__' } : { unitId: t.unit_id }
+    check(t.id, `test «${t.title || t.id}»`, link)
+    t.questions.forEach((q) => check(q.id, `pregunta de «${t.title || t.id}»`, link))
+  })
+}
+
 // --- Reglas SCORM / globales -------------------------------------------------
 function checkGlobal(ctx: Ctx) {
   const c = ctx.course
@@ -360,6 +401,7 @@ export function validateCourse(course: Course): ValidationResult {
       u.screens.forEach((s) => checkScreen(ctx, s, screenLoc(mTitle, u.title || u.id, s)))
     })
   })
+  checkIds(ctx)
   checkGlobal(ctx)
 
   const errors = issues.filter((i) => i.severity === 'error').length

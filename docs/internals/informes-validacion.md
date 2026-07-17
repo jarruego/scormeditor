@@ -7,6 +7,12 @@
 (`{ code, severity: 'error'|'warning'|'info', message, location, screenId?, unitId? }`).
 Reglas por pantalla / unidad / curso, p. ej.:
 - Pantalla marcada como esqueleto/`content_placeholder` → `warning`.
+- **Unicidad de IDs** (`checkIds`): `ID_DUPLICATE` (`error`) si dos entidades cualesquiera
+  —pantalla, interacción, módulo, unidad, test o pregunta— comparten `id`. El esquema Zod
+  no comprueba unicidad, pero el runtime guarda el estado del alumno por `id`
+  (`STATE.results[interaction.id]`, `STATE.visited[screen.id]`): un id repetido mezcla
+  progreso y nota. El preflight del GPT (`validate_course`, contrato §11) ya lo bloqueaba;
+  esto iguala la paridad en el editor.
 - `type` distinto de `cover`/`summary` **sin** `objective` → aviso (por eso el editor
   rellena `objective` aunque no se muestre como banner; ver `arquitectura-runtime.md`).
 - Imagen sin `alt`, vídeo sin `transcript`, interacción sin `learning_objective`, etc.

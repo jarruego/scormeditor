@@ -169,6 +169,20 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   mide cantidad, no fidelidad; el flujo factoría añade en la Fase 3 una revisión final
   obligatoria contra la fuente (cada epígrafe con su pantalla, mismo orden y jerarquía,
   fronteras limpias, mismo mensaje didáctico) antes de entregar.
+- **Ronda de auditoría (jul 2026)**: contraste de los docs del GPT contra el código real.
+  Cambios: (a) **marca** — `authoring_entity` = MECOHISA (autoría) pero `shell.brand`
+  **vacío** por defecto (cabecera visible); antes tres docs empujaban MECOHISA al `brand`
+  contra el contrato. (b) **`score_source` = `mixed`** por defecto (es el default del
+  esquema, `course.schema.ts`): con checkpoints `scored:true`, `final_test` los ignora y
+  el editor avisa `SCORM_ACTIVITIES_IGNORED`. (c) **Ejemplo dorado** regenerado para pasar
+  `validateCourse` a **0 errores/0 avisos** (portada sin `student_text`, feedback
+  informativo, sin `transform:"reescritura"`, `mixed`). (d) **Unicidad de IDs**:
+  `ID_DUPLICATE` (error) nuevo en `validators.ts` — el editor no la comprobaba aunque el
+  preflight §11 sí; el runtime guarda estado por `id`. (e) **Toolkit §11 blindado**:
+  `course.id` saneado para el nombre de fichero (evita traversal), rutas de asset con
+  `..`/absolutas rechazadas (zip-slip), y el escaneo de rutas referenciadas restringido a
+  cadenas que son ruta de fichero completa (una `editor_note` con `assets/…` ya no produce
+  un falso faltante).
 - El GPT también lee una copia del contrato en el `Downloads` del usuario; al tocar el de
   `docs/gpt/` hay que **sincronizarla** (`cp`). La subida al GPT se hace desde estos
   ficheros. Dentro de las Instructions, los docs se referencian por **nombre de fichero

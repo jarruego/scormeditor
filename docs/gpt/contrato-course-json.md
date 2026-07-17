@@ -1008,7 +1008,21 @@ def build_scormproj(course: dict, asset_files: dict, out_dir="/mnt/data"):
         raise ValueError(f"{len(errores)} errores de contrato (§9): corrige el course y reintenta.")
 
     blob = json.dumps(course, ensure_ascii=False)
-    referenced = set(re.findall(r'"(assets/[^"]+)"', blob))
+    # Solo cadenas JSON que son una RUTA DE FICHERO completa (sin espacios y con
+    # extensión): así una editor_note como "assets/img/p8.png: subir la figura"
+    # NO se confunde con un binario que falta (produciría un falso faltante).
+    referenced = set(re.findall(r'"(assets/[^"\s]+\.[A-Za-z0-9]+)"', blob))
+
+    # Ninguna ruta puede escapar del paquete (zip-slip): sin «..», sin ruta
+    # absoluta y sin unidad de disco. Un ZIP con "assets/../../x" reventaría al
+    # descomprimirse fuera de destino.
+    unsafe = sorted(p for p in referenced
+                    if ".." in p.split("/") or p.startswith("/") or ":" in p)
+    if unsafe:
+        raise ValueError(
+            "Rutas de asset inseguras en course.json (fuera del paquete):\n  - "
+            + "\n  - ".join(unsafe)
+        )
 
     # Toda ruta referenciada debe tener su binario (regla 3: sin rutas rotas).
     missing = sorted(referenced - set(asset_files))
@@ -1022,7 +1036,10 @@ def build_scormproj(course: dict, asset_files: dict, out_dir="/mnt/data"):
     # Assets incluidos pero NO referenciados: no rompen, pero conviene revisarlos.
     orphans = sorted(set(asset_files) - referenced)
 
-    course_id = (course.get("course") or {}).get("id") or "curso"
+    # El nombre del archivo sale de course.id: saneado para que no pueda escapar
+    # del out_dir (course.id="../../evil" escribiría dos carpetas por encima).
+    raw_id = (course.get("course") or {}).get("id") or "curso"
+    course_id = re.sub(r"[^a-z0-9._-]", "-", str(raw_id).lower()).strip(".-") or "curso"
     out_path = os.path.join(out_dir, f"{course_id}.scormproj")
     # STORE (sin comprimir), igual que la app: el reempaquetado es instantáneo y
     # los media ya vienen comprimidos. (DEFLATE también lo abriría sin problema.)

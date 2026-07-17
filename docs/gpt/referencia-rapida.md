@@ -31,10 +31,17 @@ documento) → checkpoints intercalados → casos → resumen → autoevaluació
 
 ## Valores de producción por defecto
 - SCORM `1.2`; navegación `mixed`; nota mínima `70`; `2` intentos; `allow_resume true`;
-  `min_required_screens_pct 100`; `require_interactions true`; `score_source final_test`.
+  `min_required_screens_pct 100`; `require_interactions true`.
+- **`score_source`**: por defecto **`mixed`** (`mixed_final_weight: 70` → 70 % test
+  final + 30 % actividades evaluables), coherente con que el tema lleva checkpoints
+  `scored: true`. Usa `final_test` **solo** si todos los checkpoints van
+  `scored: false` (si no, el editor avisa `SCORM_ACTIVITIES_IGNORED`: no puntúan).
 - `min_time_seconds: 0` en **todas** las pantallas: el tiempo mínimo lo fija a mano
   el editor humano en SCORMEditor; no lo estimes.
-- Si no indican otra entidad: `authoring_entity` y `shell.brand` = **«MECOHISA S.L.»**.
+- **Marca**: `authoring_entity` = **«MECOHISA S.L.»** (metadato de autoría) salvo que
+  indiquen otra entidad; **`shell.brand` vacío** por defecto (marca visible en la
+  cabecera) — rellénalo solo si se pide expresamente. No los confundas: son campos
+  distintos.
 - Unidad completa → modo factoría → un único `.scormproj` (o un SCORM por tema si lo
   piden expresamente).
 - Test de unidad en el documento: conserva las preguntas como base, reformulando solo
@@ -47,7 +54,10 @@ documento) → checkpoints intercalados → casos → resumen → autoevaluació
 Test calificable en `assessments.final_test` (`single_choice`/`true_false`). Cada
 pregunta: respuesta correcta, feedback de acierto y error, explicación, objetivo
 vinculado, puntuación y `source_refs`. Prioriza comprensión, aplicación y análisis de
-casos sobre preguntas memorísticas. Cubre todos los objetivos del tema.
+casos sobre preguntas memorísticas. Cubre todos los objetivos del tema. Con
+`score_source: "mixed"` (default), los checkpoints `scored: true` también puntúan
+(su peso = `100 − mixed_final_weight`); no dupliques las preguntas del test como
+checkpoints.
 
 ## Accesibilidad y trazabilidad
 - `alt` en toda imagen; `transcript` y subtítulos (`tracks` VTT) en audio/vídeo;
