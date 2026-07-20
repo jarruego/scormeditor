@@ -30,9 +30,17 @@
     // Pestaña de plegado del índice
     'chevron-left': '<polyline points="15 18 9 12 15 6"/>',
     'chevron-right': '<polyline points="9 18 15 12 9 6"/>',
+    // Anterior / Siguiente (barra de navegación)
+    'arrow-left': '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
+    'arrow-right': '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
     // Pantalla completa (maximizar) / restaurar
     'maximize': '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>',
     'minimize': '<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>',
+    // Reproductor de audio: reproducir / pausar
+    'play': '<polygon points="5 3 19 12 5 21 5 3"/>',
+    'pause': '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
+    // Cerrar el curso (finaliza la sesión SCORM)
+    'log-out': '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
   };
 
   function svg(name) {

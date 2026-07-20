@@ -22,6 +22,25 @@
   var audioEnabled = true;
   try { if (global.localStorage && localStorage.getItem('me-audio-enabled') === '0') audioEnabled = false; } catch (e) {}
 
+  // Velocidad de la narración (pantalla e ítems): 1/1.25/1.5/2×, recordada
+  // entre sesiones igual que audioEnabled.
+  var audioRate = 1;
+  try {
+    var savedRate = parseFloat(global.localStorage && localStorage.getItem('me-audio-rate'));
+    if (savedRate === 1 || savedRate === 1.25 || savedRate === 1.5 || savedRate === 2) audioRate = savedRate;
+  } catch (e) {}
+
+  // Volumen de la narración (pantalla e ítems): 0..1, recordado entre sesiones
+  // igual que audioRate.
+  var audioVolume = 1;
+  try {
+    var savedVol = parseFloat(global.localStorage && localStorage.getItem('me-audio-volume'));
+    if (savedVol >= 0 && savedVol <= 1) audioVolume = savedVol;
+  } catch (e) {}
+  // El alumno arrastra el seek del reproductor: mientras dura el arrastre no se
+  // pisa el valor desde 'timeupdate' (si no, el pulgar «salta» bajo el dedo).
+  var seekDragging = false;
+
   // Modo autor (previsualización del editor): navegación libre sin restricciones
   // de tiempo mínimo, interacciones obligatorias ni secuencia. En el SCORM real
   // (sin este flag) se aplican todas las reglas configuradas. En la Vista
@@ -140,13 +159,9 @@
     document.getElementById('me-course-title').textContent = COURSE.course.title || '';
     document.title = COURSE.course.title || 'Curso SCORM';
     document.documentElement.lang = (shell.language || COURSE.course.language || 'es');
-    // Rótulos personalizados de glosario y recursos (glossary_title /
-    // bibliography_title): re-rotulan el botón de la barra. Con el valor por
-    // defecto el botón conserva su texto corto de fábrica («Recursos»).
-    var gt = glossaryTitle();
-    if (gt !== 'Glosario') relabelTool('me-btn-glossary', gt);
-    var bt = bibliographyTitle();
-    if (bt !== 'Recursos y bibliografía') relabelTool('me-btn-resources', bt);
+    // Los rótulos personalizados de glosario/recursos (glossary_title /
+    // bibliography_title) los recoge buildMenu() directamente al generar las
+    // entradas del menú lateral (ya no son botones propios de la topbar).
   }
 
   function glossaryTitle() {
@@ -154,12 +169,6 @@
   }
   function bibliographyTitle() {
     return (COURSE.bibliography_title || '').trim() || 'Recursos y bibliografía';
-  }
-  function relabelTool(id, label) {
-    var btn = document.getElementById(id);
-    btn.querySelector('.me-tool-txt').textContent = label;
-    btn.title = label;
-    btn.setAttribute('aria-label', label);
   }
 
   function buildMenu() {
@@ -198,14 +207,34 @@
       html += '</div>';
     });
     // Pantallas sintéticas finales (test final y/o resultados), que van tras los
-    // módulos en SCREENS a partir del índice acumulado.
-    for (var k = idx; k < SCREENS.length; k++) {
-      html += '<div class="me-menu-unit"><ul><li><button class="me-menu-link" data-idx="' + k + '">' +
-        esc(SCREENS[k].screen.title) + '<span class="me-menu-check" aria-hidden="true"></span></button></li></ul></div>';
+    // módulos en SCREENS a partir del índice acumulado. Agrupadas bajo un
+    // rótulo propio («Evaluación»), con el mismo tratamiento visual que un
+    // módulo/tema (.me-menu-final, ver styles.css) — antes salían sueltas,
+    // sin distinguirse del resto del índice.
+    if (idx < SCREENS.length) {
+      html += '<div class="me-menu-final"><p class="me-menu-mtitle">Evaluación</p><ul>';
+      for (var k = idx; k < SCREENS.length; k++) {
+        html += '<li><button class="me-menu-link" data-idx="' + k + '">' +
+          esc(SCREENS[k].screen.title) + '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
+      }
+      html += '</ul></div>';
     }
+    // Materiales transversales del curso (Glosario, Recursos): al final del
+    // índice, con icono. Clase propia (.me-menu-material, no .me-menu-link)
+    // para que refreshMenuChecks no los confunda con pantallas navegables —
+    // abren un modal (data-modal) en vez de tener data-idx.
+    html += '<div class="me-menu-materials"><ul>' +
+      '<li><button type="button" class="me-menu-material" data-modal="glossary">' +
+      '<span data-icon="book-open" aria-hidden="true"></span>' + esc(glossaryTitle()) + '</button></li>' +
+      '<li><button type="button" class="me-menu-material" data-modal="resources">' +
+      '<span data-icon="paperclip" aria-hidden="true"></span>' + esc(bibliographyTitle()) + '</button></li>' +
+      '</ul></div>';
     nav.innerHTML = html;
+    global.MEIcons.hydrate(nav);
     nav.addEventListener('click', function (e) {
-      var b = e.target.closest('.me-menu-link'); if (!b) return;
+      var b = e.target.closest('.me-menu-link, .me-menu-material'); if (!b) return;
+      var modal = b.getAttribute('data-modal');
+      if (modal) { openModal(modal); closeMenuIfMobile(); return; }
       var target = parseInt(b.getAttribute('data-idx'), 10);
       if (canNavigateTo(target)) { goTo(target); closeMenuIfMobile(); }
       else A11Y.announce('Esa pantalla aún no está disponible. Completa las anteriores.');
@@ -220,10 +249,26 @@
     document.getElementById('me-btn-transcript').addEventListener('click', toggleTranscript);
     document.getElementById('me-btn-audio').addEventListener('click', toggleAudio);
     reflectAudioButton();
+    document.getElementById('me-btn-playpause').addEventListener('click', togglePlayPause);
+    var seekEl = document.getElementById('me-audio-seek');
+    seekEl.addEventListener('pointerdown', function () { seekDragging = true; });
+    seekEl.addEventListener('pointerup', function () { seekDragging = false; });
+    seekEl.addEventListener('input', function () {
+      var a = currentNarration();
+      if (!a || !isFinite(a.duration) || a.duration <= 0) return;
+      a.currentTime = (parseFloat(seekEl.value) / 1000) * a.duration;
+    });
+    var volEl = document.getElementById('me-audio-volume');
+    volEl.value = String(audioVolume);
+    volEl.addEventListener('input', function () { setAudioVolume(parseFloat(volEl.value)); });
+    var rateSel = document.getElementById('me-audio-rate');
+    if (rateSel) {
+      rateSel.value = String(audioRate);
+      rateSel.addEventListener('change', function () { setAudioRate(parseFloat(rateSel.value)); });
+    }
     document.getElementById('me-btn-print').addEventListener('click', function () { window.print(); });
-    document.getElementById('me-btn-glossary').addEventListener('click', function () { openModal('glossary'); });
-    document.getElementById('me-btn-resources').addEventListener('click', function () { openModal('resources'); });
     document.getElementById('me-btn-help').addEventListener('click', function () { openModal('help'); });
+    document.getElementById('me-btn-close').addEventListener('click', requestExit);
     setupFullscreen();
     document.querySelectorAll('.me-modal-close').forEach(function (b) { b.addEventListener('click', closeModals); });
     A11Y.bindShortcuts({ next: function () { goRelative(1); }, prev: function () { goRelative(-1); }, menu: toggleMenu, transcript: toggleTranscript });
@@ -398,6 +443,10 @@
   function goTo(idx, isRestore, fromNav) {
     saveTime();
     if (activeController) activeController = null;
+    // Corta cualquier audio de ítem (accordion/tabs/…) que siguiera sonando de
+    // la pantalla anterior: el DOM de la interacción se destruye al re-renderizar,
+    // pero el audio seguiría reproduciéndose de fondo si no se para explícito.
+    if (global.Interactions && global.Interactions.stopItemAudio) global.Interactions.stopItemAudio();
     current = idx;
     screenEnter = Date.now();
     var entry = SCREENS[idx];
@@ -428,6 +477,13 @@
           refreshNavState();
         },
         announce: A11Y.announce,
+        // Coordinación con la narración de pantalla: los ítems que se narran al
+        // revelarse (accordion/tabs/flip_cards/timeline/image_cards/flashcards)
+        // paran el audio de pantalla si sonaba, y respetan el mismo toggle 🔊/🔇.
+        audioEnabled: function () { return audioEnabled; },
+        audioRate: function () { return audioRate; },
+        audioVolume: function () { return audioVolume; },
+        pauseScreenNarration: function () { var a = currentNarration(); if (a) a.pause(); },
         // La etiqueta «Evaluable» solo tiene sentido si las actividades cuentan
         // para la nota; con score_source 'final_test' puntúa solo el test final.
         showScoredBadge: (COURSE.scorm.rules || {}).score_source !== 'final_test',
@@ -455,6 +511,7 @@
 
     markVisited(idx);
     playCurrentNarration();
+    refreshAudioPlayer();
     updateProgress();
     refreshMenuChecks();
     refreshNavState();
@@ -741,23 +798,122 @@
     var a = currentNarration();
     if (!a) return;
     if (!audioEnabled) { a.pause(); return; }
-    try { a.currentTime = 0; } catch (e) {}
+    // Solo suena una narración a la vez: si un ítem (accordion/tabs/…) estaba
+    // sonando, se calla antes de arrancar la de pantalla.
+    if (global.Interactions && global.Interactions.stopItemAudio) global.Interactions.stopItemAudio();
+    try { a.currentTime = 0; a.playbackRate = audioRate; a.volume = audioVolume; } catch (e) {}
     var p = a.play();
     if (p && p.catch) p.catch(function () {});
+  }
+  // Cambia la velocidad de reproducción (1/1.25/1.5/2×): se aplica al vuelo a
+  // la narración que esté sonando (de pantalla o de ítem) y se recuerda para
+  // las siguientes.
+  function setAudioRate(rate) {
+    if (rate !== 1 && rate !== 1.25 && rate !== 1.5 && rate !== 2) return;
+    audioRate = rate;
+    try { if (global.localStorage) localStorage.setItem('me-audio-rate', String(rate)); } catch (e) {}
+    var a = currentNarration();
+    if (a) { try { a.playbackRate = rate; } catch (e) {} }
+    if (global.Interactions && global.Interactions.setItemAudioRate) global.Interactions.setItemAudioRate(rate);
+  }
+  // Cambia el volumen (0..1): igual patrón que setAudioRate, se aplica al
+  // vuelo y se recuerda para las siguientes pantallas/sesiones.
+  function setAudioVolume(vol) {
+    if (!(vol >= 0 && vol <= 1)) return;
+    audioVolume = vol;
+    try { if (global.localStorage) localStorage.setItem('me-audio-volume', String(vol)); } catch (e) {}
+    var a = currentNarration();
+    if (a) { try { a.volume = vol; } catch (e) {} }
+    if (global.Interactions && global.Interactions.setItemAudioVolume) global.Interactions.setItemAudioVolume(vol);
   }
   function reflectAudioButton() {
     var btn = document.getElementById('me-btn-audio');
     if (!btn) return;
     btn.setAttribute('aria-pressed', String(audioEnabled));
     btn.classList.toggle('is-on', audioEnabled);
-    btn.querySelector('.me-tool-ico').innerHTML = global.MEIcons.svg(audioEnabled ? 'volume-on' : 'volume-off');
+    btn.querySelector('[data-icon]').innerHTML = global.MEIcons.svg(audioEnabled ? 'volume-on' : 'volume-off');
+  }
+  function setAudioEnabled(on) {
+    audioEnabled = on;
+    try { if (global.localStorage) localStorage.setItem('me-audio-enabled', on ? '1' : '0'); } catch (e) {}
+    reflectAudioButton();
   }
   function toggleAudio() {
-    audioEnabled = !audioEnabled;
-    try { if (global.localStorage) localStorage.setItem('me-audio-enabled', audioEnabled ? '1' : '0'); } catch (e) {}
-    reflectAudioButton();
+    setAudioEnabled(!audioEnabled);
     if (audioEnabled) { playCurrentNarration(); A11Y.announce('Audio activado.'); }
-    else { var a = currentNarration(); if (a) a.pause(); A11Y.announce('Audio desactivado.'); }
+    else {
+      var a = currentNarration(); if (a) a.pause();
+      if (global.Interactions && global.Interactions.stopItemAudio) global.Interactions.stopItemAudio();
+      A11Y.announce('Audio desactivado.');
+    }
+  }
+
+  // ---- Reproductor de la narración (barra inferior) ----------------------
+  // Bloque completo (play/pause, seek, volumen, velocidad): oculto si la
+  // pantalla actual no tiene audio_src. El icono 🔊/🔇 y el volumen son el
+  // mismo estado global de siempre (audioEnabled/audioVolume); el play/pause
+  // es transporte nuevo sobre el <audio> real.
+  //
+  // `.paused` NO sirve de fuente de verdad: el navegador lo pone a false en
+  // cuanto se llama a .play(), aunque el recurso no llegue a sonar nunca (ruta
+  // sin archivo subido, ver tts-narracion.md, o archivo roto) — con eso el
+  // icono se quedaría en «pausa» para siempre sin sonar nada. Solo el evento
+  // 'playing' confirma que de verdad hay audio fluyendo; narrationPlaying lo
+  // recuerda hasta el siguiente pause/ended/error.
+  var narrationPlaying = false;
+  function refreshAudioPlayer() {
+    var player = document.getElementById('me-audio-player');
+    if (!player) return;
+    var entry = SCREENS[current];
+    var hasAudio = !!(entry && !entry.isFinalTest && !entry.isResults && entry.screen.audio_src);
+    player.hidden = !hasAudio;
+    if (!hasAudio) return;
+    var a = currentNarration();
+    if (!a) return;
+    narrationPlaying = false;
+    try { a.volume = audioVolume; } catch (e) {}
+    a.addEventListener('timeupdate', updateSeekUI);
+    a.addEventListener('loadedmetadata', updateSeekUI);
+    a.addEventListener('playing', function () { narrationPlaying = true; reflectPlayPause(); });
+    a.addEventListener('pause', function () { narrationPlaying = false; reflectPlayPause(); });
+    a.addEventListener('ended', function () { narrationPlaying = false; reflectPlayPause(); });
+    a.addEventListener('error', function () { narrationPlaying = false; reflectPlayPause(); });
+    updateSeekUI();
+    reflectPlayPause();
+  }
+  function togglePlayPause() {
+    var a = currentNarration();
+    if (!a) return;
+    if (!narrationPlaying) {
+      if (!audioEnabled) setAudioEnabled(true);
+      if (global.Interactions && global.Interactions.stopItemAudio) global.Interactions.stopItemAudio();
+      var p = a.play();
+      if (p && p.catch) p.catch(function () {});
+    } else {
+      a.pause();
+    }
+  }
+  function reflectPlayPause() {
+    var btn = document.getElementById('me-btn-playpause');
+    if (!btn) return;
+    btn.querySelector('[data-icon]').innerHTML = global.MEIcons.svg(narrationPlaying ? 'pause' : 'play');
+    var label = narrationPlaying ? 'Pausar narración' : 'Reproducir narración';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+  }
+  function updateSeekUI() {
+    var a = currentNarration();
+    var seekEl = document.getElementById('me-audio-seek');
+    var timeEl = document.getElementById('me-audio-time');
+    if (!a || !seekEl) return;
+    var dur = isFinite(a.duration) && a.duration > 0 ? a.duration : 0;
+    if (!seekDragging) seekEl.value = dur ? String(Math.round((a.currentTime / dur) * 1000)) : '0';
+    if (timeEl) timeEl.textContent = formatTime(a.currentTime) + ' / ' + formatTime(dur);
+  }
+  function formatTime(s) {
+    s = Math.max(0, Math.round(s || 0));
+    var m = Math.floor(s / 60), sec = s % 60;
+    return m + ':' + (sec < 10 ? '0' : '') + sec;
   }
   function openModal(which) {
     if (which === 'glossary') {
@@ -792,7 +948,10 @@
     var last = current >= SCREENS.length - 1;
     var blocked = last || (!AUTHOR && !screenSatisfied(current));
     next.disabled = blocked && !(finalNav && !finalNav.atLast());
-    next.textContent = last ? 'Fin' : 'Siguiente ▸';
+    // Solo se toca el texto (no el icono de flecha): un textContent aquí
+    // borraría el <span data-icon> del botón en cada navegación.
+    var nextLabel = next.querySelector('.me-nav-btn-label');
+    if (nextLabel) nextLabel.textContent = last ? 'Fin' : 'Siguiente';
   }
   // El menú lateral está visible cuando #me-app NO lleva la clase me-menu-hidden
   // (cubre tanto el plegado de escritorio como el slide-over cerrado en móvil).
@@ -1280,10 +1439,7 @@
     var retryBtn = content.querySelector('#me-btn-retry');
     if (retryBtn) retryBtn.addEventListener('click', retryCourse);
     var exitBtn = content.querySelector('#me-btn-exit');
-    if (exitBtn) exitBtn.addEventListener('click', function () {
-      if (incomplete) confirmExitIncomplete();
-      else exitCourse();
-    });
+    if (exitBtn) exitBtn.addEventListener('click', requestExit);
 
     // Refuerzo del logro: la nota sube animada y, si está APTO, confeti (una
     // vez por sesión). Con prefers-reduced-motion no se anima nada.
@@ -1370,6 +1526,14 @@
   // ventana no la abrió un script), se muestra una DESPEDIDA a pantalla completa
   // que cubre la carcasa: la sesión ya está cerrada y seguir navegando no
   // persistiría nada, así que no se deja el curso interactivo detrás.
+  // Botón «Cerrar» de la cabecera y «Salir del curso» de Resultados comparten
+  // esta misma lógica: con el curso incompleto pide confirmación (el progreso
+  // queda guardado para reanudar); si no, cierra la sesión SCORM directamente.
+  function requestExit() {
+    if (evaluateCompletion() === 'incomplete') confirmExitIncomplete();
+    else exitCourse();
+  }
+
   function exitCourse() {
     finishSession();
     global.close();

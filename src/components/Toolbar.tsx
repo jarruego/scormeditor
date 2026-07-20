@@ -17,6 +17,7 @@ import { InlineRename } from './InlineRename'
 import { confirmDialog } from '../store/confirm'
 import { orphanAssetPaths } from '../schema/assetRefs'
 import { Icon } from './Icon'
+import logoUrl from '../assets/brand/logo-horizontal.svg'
 
 // Confirmación de descarte con el modal propio (no window.confirm), como el
 // resto de confirmaciones del editor.
@@ -169,7 +170,7 @@ export function Toolbar() {
 
   return (
     <header className="ed-toolbar">
-      <strong className="ed-logo">SCORMEditor</strong>
+      <img className="ed-logo-img" src={logoUrl} alt="SCORMEditor" />
       <span className="ed-course-name" data-tour="course-name">
         <InlineRename value={course.course.title} placeholder="Curso sin título"
           title="Renombrar el curso (título principal del SCORM)"

@@ -75,6 +75,16 @@ ese contrato; no conoce el tipo concreto.
   (`.me-pulse`, keyframes `me-pulse-glow`) en el **primer** ítem/carta mientras no se
   haya abierto ninguno, y **check verde** al abrir (`.is-seen`; en la carta la lengüeta
   pasa a «✓» verde). Lo visto se persiste como `{seen: {idx: true}}` vía `ctx.save`.
+- **Narración por ítem al revelar** (`accordion`/`tabs`/`flip_cards`/`timeline`/
+  `image_cards`/`flashcards`): si el ítem tiene `audio_src` propio, suena **cada vez**
+  que el ítem se abre/gira/activa (no solo la primera vez; `flashcards` ya narraba así
+  desde siempre — «cada Mostrar respuesta es su propio revelado»). Sin control de
+  «escuchar de nuevo»: si al alumno le resulta repetitivo, desactiva el audio con las
+  opciones generales de la barra inferior. El marcado de `seen[i]` (check verde,
+  gating de completado) sigue ocurriendo solo la primera vez, independiente de la
+  reproducción. Detalle completo, generación y coordinación con el audio de pantalla
+  (incluida la velocidad de reproducción) en `tts-narracion.md` («Narración por ítem» /
+  «Velocidad de reproducción»).
 - **Los interactivos de exploración bloquean hasta verlo todo**: `accordion`, `tabs`,
   `flip_cards`, `timeline` y `flashcards` devuelven `completed` solo cuando el alumno ha
   abierto/girado **todos** los apartados (flashcards: al terminar el repaso una vez;

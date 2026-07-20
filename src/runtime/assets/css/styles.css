@@ -40,15 +40,20 @@ body {
 .me-topbar {
   display: flex; align-items: center; gap: .75rem; padding: .5rem .9rem;
   background: var(--me-surface); border-bottom: 1px solid var(--me-border);
+  /* .me-topbar es un elemento de grid de #me-app: por defecto tendría
+     min-width:auto (mismo problema que .me-toolbar, ver su comentario) y no
+     encogería por debajo de sus hijos aunque .me-topbar-title sí pueda. */
+  min-width: 0;
 }
-.me-brand { font-weight: 700; color: var(--me-primary); }
-.me-course-title { color: var(--me-muted); font-size: .9rem; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Título centrado entre el ☰ y el grupo Ayuda/Cerrar: el resto de
+   herramientas vive en el menú lateral y en la barra inferior (jul 2026). */
+.me-topbar-title { flex: 1 1 auto; min-width: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.me-brand { font-weight: 700; color: var(--me-primary); margin-right: .4rem; }
+.me-course-title { color: var(--me-muted); font-size: .9rem; }
 /* Sin marca configurada (.me-no-brand): el título del curso es el único texto
    de la cabecera y toma el protagonismo. */
 .me-topbar.me-no-brand .me-course-title { color: var(--me-text); font-weight: 700; font-size: 1rem; }
-/* Herramientas (Transcripción, Glosario, Recursos, Imprimir) ancladas a la
-   derecha de la barra superior. */
-.me-topbar .me-tools { margin-left: auto; }
+.me-topbar-right { display: flex; align-items: center; gap: .2rem; }
 
 /* Body */
 .me-body { display: grid; grid-template-columns: 280px 1fr; overflow: hidden; position: relative; }
@@ -84,6 +89,17 @@ body {
 .me-menu-uprog { height: 4px; border-radius: 99px; background: var(--me-border); margin: 0 0 .35rem; overflow: hidden; }
 .me-menu-uprog-fill { height: 100%; width: 0; background: var(--me-accent); border-radius: 99px; transition: width .3s ease; }
 .me-menu ul { list-style: none; margin: 0; padding: 0; }
+/* Tema/unidad como bloque diferenciado: fondo sutil + esquinas redondeadas,
+   nada de bordes duros ni sombras — el mismo tratamiento lo llevan más abajo
+   Materiales (Glosario/Recursos) y Evaluación (Test final/Resultados), así
+   todos los "bloques" del índice se leen con el mismo lenguaje visual. */
+.me-menu-unit {
+  background: color-mix(in srgb, var(--me-bg) 65%, transparent);
+  border-radius: 8px; padding: .45rem .55rem .55rem; margin: 0 0 .4rem;
+}
+/* Separador entre módulos (si hay más de uno): línea fina, sin fondo — el
+   propio módulo no lleva tarjeta (su título ya destaca en mayúsculas). */
+.me-menu-module + .me-menu-module { border-top: 1px solid var(--me-border); padding-top: .5rem; margin-top: .5rem; }
 /* Pantallas propias del módulo: cuelgan del título del módulo, sin rótulo de unidad */
 .me-menu-modscreens { margin: .15rem 0 .35rem; }
 .me-menu-link {
@@ -96,6 +112,28 @@ body {
 .me-menu-link.is-current { background: color-mix(in srgb, var(--me-accent) 18%, white); border-left-color: var(--me-accent); font-weight: 600; }
 .me-menu-link.is-done .me-menu-check { color: var(--me-ok); font-weight: 700; }
 .me-menu-link:focus-visible { outline: 3px solid var(--me-primary); outline-offset: 1px; }
+
+/* Materiales transversales del curso (Glosario, Recursos) y Evaluación (Test
+   final/Resultados): mismo fondo sutil que un tema (.me-menu-unit), para que
+   todos los "bloques" del índice compartan el lenguaje visual. Materiales
+   además lleva un filete por encima (separación del resto del índice) y
+   clase propia en sus enlaces (no .me-menu-link): abren un modal en vez de
+   navegar, así que quedan fuera del recuento de refreshMenuChecks (ver
+   app.js/buildMenu). */
+.me-menu-materials, .me-menu-final {
+  background: color-mix(in srgb, var(--me-bg) 65%, transparent);
+  border-radius: 8px; padding: .45rem .55rem .55rem; margin: 0 0 .4rem;
+}
+.me-menu-materials { margin-top: .75rem; padding-top: .6rem; border-top: 1px solid var(--me-border); }
+.me-menu-materials ul, .me-menu-final ul { list-style: none; margin: 0; padding: 0; }
+.me-menu-material {
+  display: flex; align-items: center; gap: .5rem; width: 100%;
+  text-align: left; background: none; border: none; padding: .45rem .5rem; border-radius: 6px;
+  cursor: pointer; font: inherit; color: var(--me-text);
+}
+.me-menu-material:hover { background: var(--me-bg); }
+.me-menu-material:focus-visible { outline: 3px solid var(--me-primary); outline-offset: 1px; }
+.me-menu-material .me-ico { width: 16px; height: 16px; color: var(--me-muted); flex-shrink: 0; }
 
 /* Content. Columna flex para que la tarjeta se estire hasta llenar todo el
    alto disponible (flex de .me-screen); si el contenido es más largo, el área
@@ -207,15 +245,42 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 /* La locución es un <audio> oculto (se controla desde la barra: reproducción
    automática al entrar y botón Audio). No debe ocupar espacio. */
 .me-narration-audio { display: none; }
-/* Botón de audio activo en la barra superior. */
-#me-btn-audio.is-on { color: var(--me-primary); font-weight: 600; }
+/* Audio por ítem (accordion/tabs/flip_cards/timeline/image_cards/flashcards):
+   vive dentro del cuerpo/cara ya oculta hasta el revelado, y suena SIEMPRE que
+   el ítem se abre (no solo la primera vez; sin control de «escuchar de
+   nuevo» — si resulta repetitivo, el alumno desactiva el audio con las
+   opciones generales de la barra inferior). */
+.me-item-narration { display: none; }
+/* Botón de sonido activo en el reproductor de la barra inferior: turquesa
+   (no azul), para distinguirlo a simple vista de Anterior/Siguiente. */
+#me-btn-audio.is-on { color: var(--me-accent); font-weight: 600; }
 .me-transcript { margin: 1rem 0; border: 1px solid var(--me-border); border-radius: 6px; padding: .25rem .75rem; }
 .me-transcript summary { cursor: pointer; font-weight: 600; }
 .me-placeholder { border: 2px dashed #d09a00; background: #fff8e6; padding: 1rem; border-radius: 6px; }
 .me-forum-tag { display: inline-block; background: var(--me-primary); color: #fff; padding: .1rem .5rem; border-radius: 99px; font-size: .8rem; }
 
 /* Toolbar */
-.me-toolbar { display: flex; align-items: center; gap: .75rem; padding: .6rem .9rem; background: var(--me-surface); border-top: 1px solid var(--me-border); flex-wrap: wrap; }
+/* Grid de 3 columnas (no flex): con flex, un único hijo con margin:auto absorbe
+   el espacio libre pero NO queda centrado respecto al conjunto — el ancho de
+   Pantalla completa (columna derecha) lo empuja hacia la izquierda sin un
+   contrapeso a la izquierda. Con columnas 1fr / centro / 1fr, las dos laterales
+   reparten el espacio libre a partes iguales SIEMPRE, esté o no vacía la de la
+   derecha, así el bloque central queda realmente centrado bajo la tarjeta. */
+.me-toolbar {
+  /* Centrado clásico (flex + justify-content:center), no grid: con un solo
+     hijo flex (.me-toolbar-center) no hace falta repartir espacio entre
+     columnas — #me-btn-fullscreen sale del flujo (position:absolute, ver más
+     abajo) y no compite por sitio, así que el centrado no tiene que lidiar
+     con su ancho. position:relative aquí es el ancla de ese absolute. */
+  position: relative;
+  display: flex; justify-content: center; align-items: center;
+  gap: .75rem; padding: .6rem .9rem;
+  background: var(--me-surface); border-top: 1px solid var(--me-border);
+  /* .me-toolbar es un elemento de grid de #me-app: por defecto tendría
+     min-width:auto y no encogería por debajo de su contenido en anchos
+     ajustados (móvil), desbordando #me-app. Con min-width:0 aquí no. */
+  min-width: 0;
+}
 /* Conmutador de modo autor: solo existe en la Vista estudiante del editor
    (app.js lo crea si __AUTHOR_MODE__; nunca en el SCORM exportado). Píldora
    anclada a .me-body, sobre la esquina superior derecha del área de contenido
@@ -233,12 +298,40 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-author-toggle.is-on { border-color: var(--me-primary); color: var(--me-primary); }
 .me-author-toggle.is-on .me-author-dot { background: var(--me-primary); }
 .me-author-toggle:hover { background: var(--me-bg); }
-.me-tools { display: flex; gap: .4rem; flex-wrap: wrap; }
-/* Iconos SVG del set propio (icons.js): heredan currentColor y se centran en
-   línea con el texto del botón. */
+/* Bloque central: acotado al ancho de la diapositiva (960px, como .me-screen)
+   y centrado — width:100% + max-width dentro de un padre flex con
+   justify-content:center es el centrado clásico (una sola caja, sin
+   competir con nada: #me-btn-fullscreen ya no cuenta, ver más abajo).
+   space-between (no center) en su interior: el hueco central se autoestira
+   con el espacio sobrante y los dos grupos —audio y navegación— quedan
+   pegados a los márgenes de la diapositiva en vez de apelotonados en medio. */
+.me-toolbar-center { width: 100%; max-width: 960px; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
+.me-toolbar-audio, .me-toolbar-nav { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; max-width: 100%; min-width: 0; }
+/* Al final del bloque de audio en el HTML; en escritorio sale del flujo
+   (position:absolute, ancla en .me-toolbar) y queda pegada al borde derecho
+   de toda la barra — así no compite por espacio con el centrado. En móvil
+   vuelve al flujo normal (ver el media query), al final de esa fila. */
+#me-btn-fullscreen { position: absolute; top: 50%; right: .9rem; transform: translateY(-50%); }
+/* Reproductor de la narración: play/pause · seek+tiempo · 🔊/🔇+volumen ·
+   velocidad. Oculto entero si la pantalla no tiene audio_src (app.js). */
+.me-audio-player { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+/* Seek y volumen en gris neutro y algo más finos, para que se lean como
+   controles secundarios (no compiten con el turquesa/azul de progreso y nav). */
+.me-audio-player input[type=range] { accent-color: var(--me-muted); height: 3px; }
+.me-audio-seek { display: flex; align-items: center; gap: .4rem; }
+.me-audio-seek input[type=range] { width: 100px; }
+.me-audio-time { font-size: .72rem; color: var(--me-muted); white-space: nowrap; }
+.me-volume-slider { width: 56px; }
+/* Velocidad de la narración: más compacta y ligera (fondo transparente, borde
+   tenue) para que no compita visualmente con los botones de navegación.
+   Afecta al audio de pantalla Y al de cada ítem (ver app.js/interactions.js). */
+.me-rate select {
+  font: inherit; font-size: .78em; padding: .2rem .25rem; border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--me-border) 70%, transparent);
+  background: transparent; color: var(--me-muted); cursor: pointer;
+}
+/* Iconos SVG del set propio (icons.js): heredan currentColor. */
 .me-ico { width: 17px; height: 17px; display: block; }
-.me-tool-ico { margin-right: .4rem; display: inline-flex; }
-.me-tools .me-btn { display: inline-flex; align-items: center; justify-content: center; }
 .me-icon-btn [data-icon] { display: inline-flex; }
 .me-icon-btn .me-ico { width: 19px; height: 19px; }
 /* Barra de progreso entre Anterior y Siguiente: más gruesa y en un color propio
@@ -249,11 +342,19 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
    el tramo completado por delante queda en el tono tenue: se ve que estás
    retrocediendo sin perder de vista lo ya completado. Una marca señala la
    posición actual. */
-.me-progress { position: relative; flex: 1; height: 26px; min-width: 140px; background: var(--me-border); border-radius: 99px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+/* min-width generoso en escritorio (hay espacio de sobra en el hueco central
+   autoestirado); el media query de abajo lo recorta en móvil. */
+.me-progress { position: relative; flex: 1 1 auto; height: 26px; min-width: 240px; background: var(--me-border); border-radius: 99px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .me-progress-done { position: absolute; inset: 0 auto 0 0; height: 100%; width: 0; background: color-mix(in srgb, var(--me-progress) 32%, white); transition: width .3s ease; }
 .me-progress-bar { position: absolute; inset: 0 auto 0 0; height: 100%; width: 0; background: var(--me-progress); transition: width .3s ease; }
 .me-progress-bar::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: color-mix(in srgb, var(--me-progress) 65%, black); }
 .me-position { position: relative; z-index: 1; color: var(--me-text); font-size: .85rem; font-weight: 600; text-shadow: 0 1px 1px rgba(255,255,255,.6); }
+/* Anterior/Siguiente: menos anchos (menos padding) y con icono de flecha
+   propio (icons.js) en vez del triángulo tipográfico. */
+/* .me-btn.me-nav-btn (no solo .me-nav-btn): más especificidad que .me-btn para
+   que su padding gane pase lo que pase con el orden de las reglas. */
+.me-btn.me-nav-btn { display: inline-flex; align-items: center; gap: .35rem; padding: .5rem .75rem; }
+.me-nav-btn .me-ico { width: 15px; height: 15px; }
 
 /* Buttons */
 .me-btn { font: inherit; padding: .5rem .9rem; border-radius: 6px; border: 1px solid var(--me-border); background: var(--me-surface); cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease; }
@@ -704,8 +805,9 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-lightbox-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; box-shadow: 0 6px 40px rgba(0,0,0,.6); }
 .me-lightbox-close { position: fixed; top: .75rem; right: .75rem; width: 44px; height: 44px; border: none; border-radius: 50%; background: #fff; font-size: 1.3rem; cursor: pointer; }
 
-/* Responsive */
-@media (max-width: 760px) {
+/* Responsive: punto de corte de la versión móvil (menú slide-over, topbar
+   compacta, barra inferior apilada) en pantallas menores de 1024px. */
+@media (max-width: 1024px) {
   /* Con marca, el título del curso se sacrifica por espacio; sin marca es el
      único texto de la cabecera y se mantiene (con su ellipsis). */
   .me-course-title { display: none; }
@@ -722,28 +824,42 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
   /* En móvil el menú es un slide-over y basta con el ☰: la pestaña sobra. */
   .me-menu-tab { display: none; }
 
-  /* Barra superior compacta; las herramientas quedan en la misma fila, solo
-     con el icono (texto oculto, aria-label en cada botón) y pegadas a la
-     derecha de la cabecera. */
-  .me-topbar { gap: .5rem; padding: .5rem .6rem; flex-wrap: wrap; }
+  /* Barra superior compacta */
+  .me-topbar { gap: .5rem; padding: .5rem .6rem; }
   .me-brand { font-size: .95rem; }
-  .me-topbar .me-tools { margin-left: auto; gap: .2rem; }
-  .me-tools .me-tool-txt { display: none; }
-  .me-tool-ico { margin-right: 0; }
 
   /* Contenido con menos margen; altura mínima más contenida en móvil */
   .me-content { padding: .9rem .8rem; }
   .me-screen { padding: 1rem; min-height: clamp(260px, 50vh, 440px); }
   .me-screen h1 { font-size: 1.25rem; }
 
-  /* Barra de navegación: Anterior · progreso · Siguiente en una fila */
+  /* Barra de navegación: todo cabe en flex-wrap, pero se aprieta un poco y el
+     reproductor de audio pierde el tiempo/volumen (icono + play/pause + seek +
+     velocidad bastan en una pantalla pequeña; ver .me-toolbar-center). */
   .me-toolbar { gap: .5rem; padding: .5rem .6rem; }
+  /* Navegación arriba, audio abajo (column-reverse: el bloque de audio va
+     primero en el HTML pero se ve el segundo) — ambos de lado a lado
+     (align-self:stretch): la navegación para que la barra de progreso (ya
+     flex:1 dentro de ella) ocupe el máximo posible, y el de audio para que
+     Pantalla completa pueda anclarse a la derecha del todo (margin-left:auto)
+     sin quedar centrada junto con los controles de audio. */
+  .me-toolbar-center { flex-direction: column-reverse; align-items: center; gap: .5rem; }
+  .me-toolbar-nav, .me-toolbar-audio { align-self: stretch; }
+  #me-btn-fullscreen { margin-left: auto; }
+  .me-progress { min-width: 90px; }
+  .me-audio-time, .me-volume-slider { display: none; }
+  .me-audio-seek input[type=range] { width: 70px; }
+  /* Anterior/Siguiente se quedan en solo icono si no hay sitio para el texto */
+  .me-nav-btn-label { display: none; }
+  .me-nav-btn { padding: .5rem .6rem; }
+  /* Pantalla completa vuelve al flujo normal (su sitio en el HTML, al final
+     de la fila de audio), ya no pegada al borde con position:absolute. */
+  #me-btn-fullscreen { position: static; transform: none; }
 
   /* Objetivos táctiles cómodos (>=44px) */
   .me-btn, .me-icon-btn { min-height: 44px; }
-  /* Botones de herramientas al ancho mínimo: solo el icono, sin borde */
-  .me-tools .me-btn { min-height: 40px; min-width: 40px; padding: .3rem .4rem; border: none; }
-  .me-menu-link { padding: .6rem .5rem; }
+  .me-rate select { border: none; padding: .3rem .2rem; }
+  .me-menu-link, .me-menu-material { padding: .6rem .5rem; }
   .me-choice, .me-acc-head, .me-card { min-height: 44px; }
 }
 

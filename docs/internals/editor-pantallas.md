@@ -292,6 +292,11 @@ listas de config de interacciones lo usan con el mismo comportamiento:
 - **`QuestionListEditor`** (en `InteractionConfigEditor.tsx`): sub-editor común de
   «pregunta + opciones» que unifica los cases de `video` (con campo Segundo, `withTime`)
   y `hidden_image` — evita dos copias casi idénticas anidando ListEditor a mano.
+- **Audio por ítem** (accordion/tabs/flip_cards/timeline/image_cards/flashcards):
+  `ItemAudioButton`/`BulkItemAudioButton` (`InteractionConfigEditor.tsx`) generan el audio
+  de narración de un ítem o de todos los pendientes de la interacción; si el ítem no
+  tiene `id` aún se lo asignan en el momento. Detalle del mecanismo (guion, runtime,
+  validación) en `tts-narracion.md`.
 
 ### Editor visual de zonas de hotspots (`HotspotZonesModal`)
 Definir las zonas de `hotspots` a base de números (x/y/w/h en %) era inviable a mano, así

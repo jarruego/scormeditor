@@ -168,20 +168,6 @@ que lo etiquete).
   `[data-icon="nombre"]` se rellena al cargar (`MEIcons.hydrate`); programático:
   `MEIcons.svg('printer')`. Tamaño por CSS sobre `.me-ico`. Pensado para reutilizarse
   (p. ej. futuros iconos de callouts).
-- **Herramientas de la topbar con icono**: cada botón de `.me-tools` es
-  `<span class="me-tool-ico" data-icon="…">` + `<span class="me-tool-txt">`
-  (file-text Transcripción, volume-on/off Audio, book-open Glosario, paperclip
-  Recursos, printer Imprimir; el ☰ es `menu`, la ayuda `help-circle` y la pestaña del
-  índice `chevron-left/right`). En móvil el texto se oculta y quedan solo los iconos al
-  ancho mínimo, alineados a la derecha de la cabecera (no bajan a una fila propia);
-  el nombre accesible lo da el `aria-label` fijo de cada botón. `reflectAudioButton` y
-  `reflectMenuUI` (app.js) regeneran solo el span del icono vía `MEIcons.svg`.
-- **Rótulos de Glosario/Recursos personalizables**: `glossary_title` y
-  `bibliography_title` de `course.json` (defaults «Glosario» / «Recursos y
-  bibliografía») rotulan el título del modal y, si el autor los personaliza, también el
-  botón de la topbar (`relabelTool` en app.js: texto, `title` y `aria-label`); con el
-  valor por defecto el botón de bibliografía conserva su corto «Recursos». Se editan en
-  la cabecera de `MaterialsEditor` (ver `editor-pantallas.md`).
 - **Dimensiones de la tarjeta**: `.me-screen` se estira hasta llenar TODO el alto
   disponible del área de contenido (`.me-content` es columna flex; la tarjeta lleva
   `flex: 1 0 auto` — crece, nunca encoge: con contenido largo hay scroll normal). El
@@ -201,19 +187,9 @@ que lo etiquete).
   (renderer.js) lo pinta. No sale en la portada (`cover`, rompería el hero), ni en test
   final/resultados (pantallas sintéticas sin unidad), y si módulo y unidad repiten título
   solo se muestra uno. Lleva `padding-right` para no pisar la píldora «Evaluable».
-- **Pestaña de plegado del índice**: asa gris plana (`#me-menu-tab`, `.me-menu-tab`)
-  centrada verticalmente en el borde derecho del menú, con flecha ◂; plegado el menú,
-  asoma pegada al lateral izquierdo con ▸. Es un segundo control del mismo `toggleMenu()`
-  que el ☰ de la topbar; `reflectMenuUI()` (app.js) sincroniza `aria-expanded` de ambos y
-  el sentido de la flecha. Solo escritorio (en móvil el slide-over se maneja con el ☰ y
-  la pestaña se oculta); tampoco sale en impresión.
-- **Botón de pantalla completa**: `#me-btn-fullscreen`, último de la topbar (arriba a la
-  derecha). Fullscreen API sobre `documentElement` con fallback `webkit`; icono
-  `maximize`/`minimize` y title/aria-label se sincronizan en `fullscreenchange` (cubre
-  también la salida con Esc). Arranca `hidden` y solo se muestra si el entorno lo permite
-  (`fullscreenEnabled`): en un iframe de LMS sin `allowfullscreen` o en iPhone no
-  aparece. El iframe de la Vista estudiante lleva `allowFullScreen`
-  (`StudentPreview.tsx`) para que funcione también en la previsualización.
+
+> El chrome de navegación (topbar, menú lateral, barra inferior) vive en
+> `carcasa-navegacion.md`, doc hermano de este.
 
 ### Niveles de animación (`shell.motion`)
 `shell.motion` (`none`/`subtle` def./`rich`; editable en ⚙ Ajustes → Interfaz

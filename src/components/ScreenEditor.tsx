@@ -558,7 +558,7 @@ export function ScreenEditor() {
             <label className="ed-field"><span>Instrucciones</span>
               <input value={it.instructions} onChange={(e) => setInteraction({ ...it, instructions: e.target.value })} /></label>
 
-            <InteractionConfigEditor it={it} onChange={setInteraction} />
+            <InteractionConfigEditor it={it} screenId={id} onChange={setInteraction} />
 
             {/* 3. Evaluación: solo tipos con corrección real (o si viene puntuando
                 de un curso importado, para poder desmarcarlo). Puntos se deshabilita

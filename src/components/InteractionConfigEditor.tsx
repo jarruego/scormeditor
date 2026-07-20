@@ -6,8 +6,96 @@ import { HotspotZonesModal, type HotspotSpot } from './HotspotZonesModal'
 import { ListEditor } from './ListEditor'
 import { SegIcons } from './SegIcons'
 import { Icon } from './Icon'
+import { generateForItem, hasApiKey } from '../tts/tts'
 
 const rid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 7)}`
+
+/** Ítem narrable (accordion/tabs/flip_cards/timeline/image_cards/flashcards):
+ *  botón para generar/regenerar el audio de UN ítem a partir de su propio
+ *  texto visible (sin transcripción de ítem aparte). Si el ítem aún no tiene
+ *  `id` estable (proyectos antiguos/importados del GPT), se lo asigna en el
+ *  momento — el runtime y `tts.ts` lo necesitan para anclar el `audio_src`.
+ */
+function ItemAudioButton({
+  screenId,
+  interactionId,
+  audioSrc,
+  ensureId,
+}: {
+  screenId: string
+  interactionId: string
+  audioSrc?: string
+  ensureId: () => string
+}) {
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  async function onClick() {
+    setErr(null)
+    if (!hasApiKey()) { setErr('Falta la clave de API (Ajustes → Narración).'); return }
+    setBusy(true)
+    try {
+      await generateForItem(screenId, interactionId, ensureId())
+    } catch (e) {
+      setErr((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <span className="ed-row">
+      <button type="button" onClick={onClick} disabled={busy}>
+        {busy ? 'Generando…' : audioSrc ? '🔊 Regenerar audio' : '🔊 Generar audio'}
+      </button>
+      {err && <span className="ed-tts-msg">{err}</span>}
+    </span>
+  )
+}
+
+/** Genera de una vez los audios pendientes de todos los ítems de la
+ *  interacción (los que ya tienen audio se saltan). */
+function BulkItemAudioButton({
+  screenId,
+  interactionId,
+  items,
+  ensureIds,
+}: {
+  screenId: string
+  interactionId: string
+  items: { id?: string; audio_src?: string }[]
+  ensureIds: () => { id: string; audio_src?: string }[]
+}) {
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+  if (!items.length) return null
+  const missing = items.filter((x) => !x.audio_src).length
+  async function onClick() {
+    setMsg(null)
+    if (!hasApiKey()) { setMsg('Falta la clave de API (Ajustes → Narración).'); return }
+    setBusy(true)
+    try {
+      const withIds = ensureIds()
+      let done = 0
+      for (const x of withIds) {
+        if (x.audio_src) continue
+        await generateForItem(screenId, interactionId, x.id)
+        done++
+      }
+      setMsg(done ? `✓ ${done} audio(s) generado(s).` : 'Ya estaban todos generados.')
+    } catch (e) {
+      setMsg((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="ed-row">
+      <button type="button" onClick={onClick} disabled={busy || missing === 0}>
+        {busy ? 'Generando…' : `🔊 Generar audios de ítem pendientes (${missing})`}
+      </button>
+      {msg && <span className="ed-tts-msg">{msg}</span>}
+    </div>
+  )
+}
 
 /**
  * Editor de la parte específica (`config` / `options`) de cada tipo de
@@ -15,9 +103,11 @@ const rid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 7)}`
  */
 export function InteractionConfigEditor({
   it,
+  screenId,
   onChange,
 }: {
   it: Interaction
+  screenId: string
   onChange: (next: Interaction) => void
 }) {
   const cfg: Record<string, any> = it.config || {}
@@ -124,40 +214,68 @@ export function InteractionConfigEditor({
     // ---- Acordeón / Pestañas (título + cuerpo) ----------------------------
     case 'accordion':
     case 'tabs': {
-      const items: { title: string; body: string }[] = cfg.items || []
+      const items: { title: string; body: string; id?: string; audio_src?: string }[] = cfg.items || []
+      const ensureIds = () => {
+        const withIds = items.map((x) => (x.id ? x : { ...x, id: rid('it') }))
+        if (withIds.some((x, i) => x.id !== items[i]?.id)) setConfig({ items: withIds })
+        return withIds as { id: string; audio_src?: string }[]
+      }
       return (
-        <ListEditor
-          title={it.type === 'tabs' ? 'Pestañas' : 'Apartados del acordeón'}
-          items={items}
-          onChange={(next) => setConfig({ items: next })}
-          summary={(item) => item.title.trim() || '(sin título)'}
-          create={() => ({ title: '', body: '' })}
-          render={(item, update) => (
-            <div className="ed-stack">
-              <input value={item.title} placeholder="Título" onChange={(e) => update({ ...item, title: e.target.value })} />
-              <RichTextArea rows={2} value={item.body} onChange={(v) => update({ ...item, body: v })} />
-            </div>
-          )}
-        />
+        <>
+          <ListEditor
+            title={it.type === 'tabs' ? 'Pestañas' : 'Apartados del acordeón'}
+            items={items}
+            onChange={(next) => setConfig({ items: next })}
+            summary={(item) => item.title.trim() || '(sin título)'}
+            create={() => ({ id: rid('it'), title: '', body: '' })}
+            render={(item, update) => (
+              <div className="ed-stack">
+                <input value={item.title} placeholder="Título" onChange={(e) => update({ ...item, title: e.target.value })} />
+                <RichTextArea rows={2} value={item.body} onChange={(v) => update({ ...item, body: v })} />
+                <ItemAudioButton
+                  screenId={screenId}
+                  interactionId={it.id}
+                  audioSrc={item.audio_src}
+                  ensureId={() => { if (item.id) return item.id; const id = rid('it'); update({ ...item, id }); return id }}
+                />
+              </div>
+            )}
+          />
+          <BulkItemAudioButton screenId={screenId} interactionId={it.id} items={items} ensureIds={ensureIds} />
+        </>
       )
     }
 
     // ---- Flip cards --------------------------------------------------------
     case 'flip_cards': {
-      const cards: { front: string; back: string }[] = cfg.cards || []
+      const cards: { front: string; back: string; id?: string; audio_src?: string }[] = cfg.cards || []
+      const ensureIds = () => {
+        const withIds = cards.map((x) => (x.id ? x : { ...x, id: rid('cd') }))
+        if (withIds.some((x, i) => x.id !== cards[i]?.id)) setConfig({ cards: withIds })
+        return withIds as { id: string; audio_src?: string }[]
+      }
       return (
-        <ListEditor
-          title="Tarjetas"
-          items={cards}
-          onChange={(next) => setConfig({ cards: next })}
-          create={() => ({ front: '', back: '' })}
-          render={(c, update) => (
-            <>
-              <input value={c.front} placeholder="Anverso" onChange={(e) => update({ ...c, front: e.target.value })} />
-              <input value={c.back} placeholder="Reverso" onChange={(e) => update({ ...c, back: e.target.value })} />
-            </>
-          )}
-        />
+        <>
+          <ListEditor
+            title="Tarjetas"
+            items={cards}
+            onChange={(next) => setConfig({ cards: next })}
+            create={() => ({ id: rid('cd'), front: '', back: '' })}
+            render={(c, update) => (
+              <div className="ed-stack">
+                <input value={c.front} placeholder="Anverso" onChange={(e) => update({ ...c, front: e.target.value })} />
+                <input value={c.back} placeholder="Reverso" onChange={(e) => update({ ...c, back: e.target.value })} />
+                <ItemAudioButton
+                  screenId={screenId}
+                  interactionId={it.id}
+                  audioSrc={c.audio_src}
+                  ensureId={() => { if (c.id) return c.id; const id = rid('cd'); update({ ...c, id }); return id }}
+                />
+              </div>
+            )}
+          />
+          <BulkItemAudioButton screenId={screenId} interactionId={it.id} items={cards} ensureIds={ensureIds} />
+        </>
       )
     }
 
@@ -284,74 +402,116 @@ export function InteractionConfigEditor({
 
     // ---- Línea de tiempo ---------------------------------------------------
     case 'timeline': {
-      const milestones: { label: string; title: string; body: string }[] = cfg.milestones || []
+      const milestones: { label: string; title: string; body: string; id?: string; audio_src?: string }[] = cfg.milestones || []
+      const ensureIds = () => {
+        const withIds = milestones.map((x) => (x.id ? x : { ...x, id: rid('ms') }))
+        if (withIds.some((x, i) => x.id !== milestones[i]?.id)) setConfig({ milestones: withIds })
+        return withIds as { id: string; audio_src?: string }[]
+      }
       return (
-        <ListEditor
-          title="Hitos de la línea de tiempo (en orden)"
-          items={milestones}
-          onChange={(next) => setConfig({ milestones: next })}
-          summary={(mi) => [mi.label.trim(), mi.title.trim()].filter(Boolean).join(' · ') || '(sin hito)'}
-          create={() => ({ label: '', title: '', body: '' })}
-          render={(mi, update) => (
-            <div className="ed-stack">
-              <div className="ed-row">
-                <input style={{ maxWidth: 160 }} value={mi.label} placeholder="Fecha / fase (p. ej. 1995)"
-                  onChange={(e) => update({ ...mi, label: e.target.value })} />
-                <input value={mi.title} placeholder="Título del hito" onChange={(e) => update({ ...mi, title: e.target.value })} />
+        <>
+          <ListEditor
+            title="Hitos de la línea de tiempo (en orden)"
+            items={milestones}
+            onChange={(next) => setConfig({ milestones: next })}
+            summary={(mi) => [mi.label.trim(), mi.title.trim()].filter(Boolean).join(' · ') || '(sin hito)'}
+            create={() => ({ id: rid('ms'), label: '', title: '', body: '' })}
+            render={(mi, update) => (
+              <div className="ed-stack">
+                <div className="ed-row">
+                  <input style={{ maxWidth: 160 }} value={mi.label} placeholder="Fecha / fase (p. ej. 1995)"
+                    onChange={(e) => update({ ...mi, label: e.target.value })} />
+                  <input value={mi.title} placeholder="Título del hito" onChange={(e) => update({ ...mi, title: e.target.value })} />
+                </div>
+                <RichTextArea rows={2} value={mi.body} onChange={(v) => update({ ...mi, body: v })} />
+                <ItemAudioButton
+                  screenId={screenId}
+                  interactionId={it.id}
+                  audioSrc={mi.audio_src}
+                  ensureId={() => { if (mi.id) return mi.id; const id = rid('ms'); update({ ...mi, id }); return id }}
+                />
               </div>
-              <RichTextArea rows={2} value={mi.body} onChange={(v) => update({ ...mi, body: v })} />
-            </div>
-          )}
-        />
+            )}
+          />
+          <BulkItemAudioButton screenId={screenId} interactionId={it.id} items={milestones} ensureIds={ensureIds} />
+        </>
       )
     }
 
     // ---- Tarjetas de repaso (flashcards) ------------------------------------
     case 'flashcards': {
-      const cards: { front: string; back: string }[] = cfg.cards || []
+      const cards: { front: string; back: string; id?: string; audio_src?: string }[] = cfg.cards || []
+      const ensureIds = () => {
+        const withIds = cards.map((x) => (x.id ? x : { ...x, id: rid('cd') }))
+        if (withIds.some((x, i) => x.id !== cards[i]?.id)) setConfig({ cards: withIds })
+        return withIds as { id: string; audio_src?: string }[]
+      }
       return (
-        <ListEditor
-          title="Tarjetas de repaso (pregunta / respuesta)"
-          items={cards}
-          onChange={(next) => setConfig({ cards: next })}
-          create={() => ({ front: '', back: '' })}
-          render={(c, update) => (
-            <>
-              <input value={c.front} placeholder="Pregunta / concepto" onChange={(e) => update({ ...c, front: e.target.value })} />
-              <input value={c.back} placeholder="Respuesta / definición" onChange={(e) => update({ ...c, back: e.target.value })} />
-            </>
-          )}
-        />
+        <>
+          <ListEditor
+            title="Tarjetas de repaso (pregunta / respuesta)"
+            items={cards}
+            onChange={(next) => setConfig({ cards: next })}
+            create={() => ({ id: rid('cd'), front: '', back: '' })}
+            render={(c, update) => (
+              <div className="ed-stack">
+                <input value={c.front} placeholder="Pregunta / concepto" onChange={(e) => update({ ...c, front: e.target.value })} />
+                <input value={c.back} placeholder="Respuesta / definición" onChange={(e) => update({ ...c, back: e.target.value })} />
+                <ItemAudioButton
+                  screenId={screenId}
+                  interactionId={it.id}
+                  audioSrc={c.audio_src}
+                  ensureId={() => { if (c.id) return c.id; const id = rid('cd'); update({ ...c, id }); return id }}
+                />
+              </div>
+            )}
+          />
+          <BulkItemAudioButton screenId={screenId} interactionId={it.id} items={cards} ensureIds={ensureIds} />
+        </>
       )
     }
 
     // ---- Tarjetas de imagen (modal texto + imagen) --------------------------
     case 'image_cards': {
-      const cards: { image: string; alt: string; title: string; text: string }[] = cfg.cards || []
+      const cards: { image: string; alt: string; title: string; text: string; id?: string; audio_src?: string }[] = cfg.cards || []
+      const ensureIds = () => {
+        const withIds = cards.map((x) => (x.id ? x : { ...x, id: rid('cd') }))
+        if (withIds.some((x, i) => x.id !== cards[i]?.id)) setConfig({ cards: withIds })
+        return withIds as { id: string; audio_src?: string }[]
+      }
       return (
-        <ListEditor
-          title="Tarjetas de imagen (clic → modal con texto a la izquierda e imagen a la derecha)"
-          items={cards}
-          onChange={(next) => setConfig({ cards: next })}
-          summary={(c) => c.title.trim() || c.alt.trim() || '(sin título)'}
-          create={() => ({ image: '', alt: '', title: '', text: '' })}
-          render={(c, update) => (
-            <div className="ed-stack">
-              <div className="ed-row">
-                <input value={c.image} placeholder="Imagen (assets/img/…)"
-                  onChange={(e) => update({ ...c, image: e.target.value })} />
-                <FileButton accept="image/*" label="Subir imagen…" currentPath={c.image || undefined}
-                  makePath={(ext) => `assets/img/${it.id}-${rid('c')}.${ext}`}
-                  onUploaded={(p) => update({ ...c, image: p })} />
+        <>
+          <ListEditor
+            title="Tarjetas de imagen (clic → modal con texto a la izquierda e imagen a la derecha)"
+            items={cards}
+            onChange={(next) => setConfig({ cards: next })}
+            summary={(c) => c.title.trim() || c.alt.trim() || '(sin título)'}
+            create={() => ({ id: rid('cd'), image: '', alt: '', title: '', text: '' })}
+            render={(c, update) => (
+              <div className="ed-stack">
+                <div className="ed-row">
+                  <input value={c.image} placeholder="Imagen (assets/img/…)"
+                    onChange={(e) => update({ ...c, image: e.target.value })} />
+                  <FileButton accept="image/*" label="Subir imagen…" currentPath={c.image || undefined}
+                    makePath={(ext) => `assets/img/${it.id}-${rid('c')}.${ext}`}
+                    onUploaded={(p) => update({ ...c, image: p })} />
+                </div>
+                <input value={c.alt} placeholder="Texto alternativo de la imagen (obligatorio)"
+                  onChange={(e) => update({ ...c, alt: e.target.value })} />
+                <input value={c.title} placeholder="Título de la tarjeta"
+                  onChange={(e) => update({ ...c, title: e.target.value })} />
+                <RichTextArea rows={3} value={c.text} onChange={(v) => update({ ...c, text: v })} />
+                <ItemAudioButton
+                  screenId={screenId}
+                  interactionId={it.id}
+                  audioSrc={c.audio_src}
+                  ensureId={() => { if (c.id) return c.id; const id = rid('cd'); update({ ...c, id }); return id }}
+                />
               </div>
-              <input value={c.alt} placeholder="Texto alternativo de la imagen (obligatorio)"
-                onChange={(e) => update({ ...c, alt: e.target.value })} />
-              <input value={c.title} placeholder="Título de la tarjeta"
-                onChange={(e) => update({ ...c, title: e.target.value })} />
-              <RichTextArea rows={3} value={c.text} onChange={(v) => update({ ...c, text: v })} />
-            </div>
-          )}
-        />
+            )}
+          />
+          <BulkItemAudioButton screenId={screenId} interactionId={it.id} items={cards} ensureIds={ensureIds} />
+        </>
       )
     }
 

@@ -52,6 +52,71 @@
     return p;
   }
 
+  // --- Narración por ítem (accordion/tabs/flip_cards/timeline/image_cards/
+  // flashcards): un audio corto por ítem que suena SOLO la primera vez que se
+  // revela (nunca antes: leerlo al cargar la pantalla chafaría el propio
+  // mecanismo de descubrimiento). Solo puede sonar un audio de narración a la
+  // vez en toda la carcasa (de pantalla o de ítem): revelar un ítem para el
+  // audio de pantalla (`ctx.pauseScreenNarration`, ver app.js) y viceversa
+  // (`Interactions.stopItemAudio`, que app.js llama al navegar/activar el
+  // audio de pantalla). Como cada pantalla tiene como mucho una interacción,
+  // basta con una única referencia "activa" a nivel de módulo.
+  var activeItemAudio = null;
+  function stopItemAudio() {
+    if (activeItemAudio) { try { activeItemAudio.pause(); } catch (e) {} activeItemAudio = null; }
+  }
+  // El alumno cambia la velocidad mientras un ítem está sonando: se aplica al
+  // vuelo (app.js llama a esto desde el selector de velocidad de la barra).
+  function setItemAudioRate(rate) {
+    if (activeItemAudio) { try { activeItemAudio.playbackRate = rate; } catch (e) {} }
+  }
+  // Igual que setItemAudioRate pero para el volumen (app.js llama a esto desde
+  // el control de volumen del reproductor de la barra).
+  function setItemAudioVolume(vol) {
+    if (activeItemAudio) { try { activeItemAudio.volume = vol; } catch (e) {} }
+  }
+  // Markup del audio oculto de un ítem (vive dentro del cuerpo/cara que ya
+  // está oculto hasta el revelado). Sin control de «escuchar de nuevo»: suena
+  // siempre que el ítem se abre (ver revealItemAudio); si resulta repetitivo,
+  // el alumno desactiva el audio con las opciones generales de la barra
+  // inferior.
+  function itemAudioMarkup(src) {
+    if (!src) return '';
+    return '<span class="me-item-audio">' +
+      '<audio class="me-item-narration" preload="auto"><source src="' + esc(assetUrl(src)) + '"></audio></span>';
+  }
+  // Localiza el <audio> de un ítem ya insertado en `container`.
+  // Devuelve `{audio}` (o null si el ítem no tiene audio).
+  function wireItemAudio(container) {
+    var box = container.querySelector('.me-item-audio');
+    return box ? { audio: box.querySelector('.me-item-narration') } : null;
+  }
+  // Reproduce el audio de un ítem revelado: para cualquier otra narración (de
+  // pantalla o de otro ítem), aplica la velocidad elegida por el alumno y
+  // respeta el toggle 🔊/🔇.
+  function playItemAudio(ctx, audioEl) {
+    if (!audioEl) return;
+    stopItemAudio();
+    if (ctx && typeof ctx.pauseScreenNarration === 'function') ctx.pauseScreenNarration();
+    if (!ctx || typeof ctx.audioEnabled !== 'function' || !ctx.audioEnabled()) return;
+    try {
+      audioEl.currentTime = 0;
+      audioEl.playbackRate = (ctx.audioRate && ctx.audioRate()) || 1;
+      audioEl.volume = (ctx.audioVolume && ctx.audioVolume());
+      if (!(audioEl.volume >= 0)) audioEl.volume = 1;
+    } catch (e) {}
+    activeItemAudio = audioEl;
+    var p = audioEl.play();
+    if (p && p.catch) p.catch(function () {});
+  }
+  // Punto único de "revelado" para las 6 factories: dispara el audio del
+  // ítem. Se llama en CADA apertura (no solo la primera vez): el alumno puede
+  // reabrir un accordion/pestaña/tarjeta ya vista tantas veces como quiera y
+  // vuelve a oír la narración cada vez.
+  function revealItemAudio(ctx, entry) {
+    if (entry) playItemAudio(ctx, entry.audio);
+  }
+
   var registry = {};
   function register(type, factory) { registry[type] = factory; }
 
@@ -136,24 +201,30 @@
         '<button class="me-acc-head' + (seen[i] ? ' is-seen' : '') + '" aria-expanded="false" aria-controls="' + id + '">' +
         '<span class="me-acc-title">' + rich(it.title) + '</span>' +
         '<span class="me-seen-check" aria-hidden="true">✓</span></button>' +
-        '<div class="me-acc-body" id="' + id + '" role="region" hidden>' + block(it.body) + '</div></div>';
+        '<div class="me-acc-body" id="' + id + '" role="region" hidden>' + itemAudioMarkup(it.audio_src) + block(it.body) + '</div></div>';
     });
     html += '</div>';
     el.innerHTML = html;
     var heads = [].slice.call(el.querySelectorAll('.me-acc-head'));
+    var bodies = [].slice.call(el.querySelectorAll('.me-acc-body'));
+    var audioEls = bodies.map(function (b) { return wireItemAudio(b); });
     // Pulso en el primero para invitar al clic, solo si aún no se ha abierto ninguno
     if (!Object.keys(seen).length && heads[0]) heads[0].classList.add('me-pulse');
     heads.forEach(function (btn, i) {
       btn.addEventListener('click', function () {
         var open = btn.getAttribute('aria-expanded') === 'true';
+        stopItemAudio();
         // Exclusivo: al abrir uno se cierran los demás
-        heads.forEach(function (other) {
+        heads.forEach(function (other, j) {
           var on = other === btn && !open;
           other.classList.remove('me-pulse');
           other.setAttribute('aria-expanded', String(on));
-          document.getElementById(other.getAttribute('aria-controls')).hidden = !on;
+          bodies[j].hidden = !on;
         });
-        if (!open && !seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
+        if (!open) {
+          if (!seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
+          revealItemAudio(ctx, audioEls[i]);
+        }
       });
     });
     // Completada solo cuando se han abierto TODOS los apartados: con la regla
@@ -175,23 +246,27 @@
       tablist += '<button role="tab" id="tab-' + i + '" aria-controls="panel-' + i + '" aria-selected="' + sel + '" tabindex="' + (sel ? '0' : '-1') + '"' +
         (seen[i] ? ' class="is-seen"' : '') + '>' + rich(it.title) +
         '<span class="me-seen-check" aria-hidden="true">✓</span></button>';
-      panels += '<div role="tabpanel" id="panel-' + i + '" aria-labelledby="tab-' + i + '" ' + (sel ? '' : 'hidden') + '>' + block(it.body) + '</div>';
+      panels += '<div role="tabpanel" id="panel-' + i + '" aria-labelledby="tab-' + i + '" ' + (sel ? '' : 'hidden') + '>' + itemAudioMarkup(it.audio_src) + block(it.body) + '</div>';
     });
     tablist += '</div>';
     el.innerHTML = header(data) + '<div class="me-tabs-box">' + tablist + panels + '</div>';
     var tabs = [].slice.call(el.querySelectorAll('[role=tab]'));
+    var tabPanels = [].slice.call(el.querySelectorAll('[role=tabpanel]'));
+    var audioEls = tabPanels.map(function (p) { return wireItemAudio(p); });
     // Pulso en la segunda pestaña (la primera ya está activa) hasta que se cambie
     if (Object.keys(seen).length <= 1 && tabs[1]) tabs[1].classList.add('me-pulse');
     function activate(i) {
+      stopItemAudio();
       tabs.forEach(function (t, j) {
         var on = i === j;
         t.classList.remove('me-pulse');
         t.setAttribute('aria-selected', String(on));
         t.tabIndex = on ? 0 : -1;
-        el.querySelector('#panel-' + j).hidden = !on;
+        tabPanels[j].hidden = !on;
         if (on) t.focus();
       });
       if (!seen[i]) { seen[i] = true; tabs[i].classList.add('is-seen'); ctx.save({ seen: seen }); }
+      revealItemAudio(ctx, audioEls[i]);
     }
     tabs.forEach(function (t, i) {
       t.addEventListener('click', function () { activate(i); });
@@ -219,10 +294,11 @@
       html += '<button class="me-card' + (seen[i] ? ' is-seen' : '') + '" aria-pressed="false" data-i="' + i + '" title="Pulsa para girar la tarjeta">' +
         '<span class="me-flip-inner">' +
         '<span class="me-card-front">' + rich(c.front) + '<span class="me-flip-tab" aria-hidden="true"></span></span>' +
-        '<span class="me-card-back" aria-hidden="true">' + rich(c.back) + '</span></span></button>';
+        '<span class="me-card-back" aria-hidden="true">' + rich(c.back) + itemAudioMarkup(c.audio_src) + '</span></span></button>';
     });
     el.innerHTML = html + '</div>';
     var btns = [].slice.call(el.querySelectorAll('.me-card'));
+    var audioEls = btns.map(function (b) { return wireItemAudio(b); });
     // Pulso en la primera para invitar al clic, solo si aún no se ha girado ninguna
     if (!Object.keys(seen).length && btns[0]) btns[0].classList.add('me-pulse');
     function setFlip(btn, on) {
@@ -233,12 +309,16 @@
     btns.forEach(function (btn, i) {
       btn.addEventListener('click', function () {
         var flipped = btn.getAttribute('aria-pressed') === 'true';
+        stopItemAudio();
         // Exclusivo: al girar una se devuelven las demás a su anverso
         btns.forEach(function (b) {
           b.classList.remove('me-pulse');
           setFlip(b, b === btn && !flipped);
         });
-        if (!flipped && !seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
+        if (!flipped) {
+          if (!seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
+          revealItemAudio(ctx, audioEls[i]);
+        }
       });
     });
     // Completada solo cuando se han girado TODAS las tarjetas.
@@ -1009,24 +1089,30 @@
         (mi.label ? '<span class="me-tl-label">' + rich(mi.label) + '</span>' : '') +
         '<span class="me-tl-title">' + rich(mi.title || '') + '</span>' +
         '<span class="me-seen-check" aria-hidden="true">✓</span></button>' +
-        '<div class="me-tl-body" id="' + id + '" role="region" hidden>' + block(mi.body || '') + '</div></li>';
+        '<div class="me-tl-body" id="' + id + '" role="region" hidden>' + itemAudioMarkup(mi.audio_src) + block(mi.body || '') + '</div></li>';
     });
     html += '</ol>';
     el.innerHTML = html;
     var heads = [].slice.call(el.querySelectorAll('.me-tl-head'));
+    var bodies = [].slice.call(el.querySelectorAll('.me-tl-body'));
+    var audioEls = bodies.map(function (b) { return wireItemAudio(b); });
     // Pulso en el primer hito para invitar al clic, solo si aún no se ha abierto ninguno
     if (!Object.keys(seen).length && heads[0]) heads[0].classList.add('me-pulse');
     heads.forEach(function (btn, i) {
       btn.addEventListener('click', function () {
         var open = btn.getAttribute('aria-expanded') === 'true';
+        stopItemAudio();
         // Exclusivo: al abrir un hito se cierran los demás
-        heads.forEach(function (other) {
+        heads.forEach(function (other, j) {
           var on = other === btn && !open;
           other.classList.remove('me-pulse');
           other.setAttribute('aria-expanded', String(on));
-          document.getElementById(other.getAttribute('aria-controls')).hidden = !on;
+          bodies[j].hidden = !on;
         });
-        if (!open && !seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
+        if (!open) {
+          if (!seen[i]) { seen[i] = true; btn.classList.add('is-seen'); ctx.save({ seen: seen }); }
+          revealItemAudio(ctx, audioEls[i]);
+        }
       });
     });
     // Completada solo cuando se han desplegado TODOS los hitos.
@@ -1080,6 +1166,11 @@
     var pulseLeft = !st.idx && !(st.known || []).length;
 
     function renderCard(revealed) {
+      // Corta el audio de la carta anterior en cualquier transición (nueva
+      // carta o vuelta al anverso): el repaso no tiene un "seen" persistente
+      // como accordion/tabs, así que cada "Mostrar respuesta" es su propio
+      // revelado y suena de nuevo (repetir el repaso es justo repasar otra vez).
+      stopItemAudio();
       if (idx >= cards.length) { renderSummary(); return; }
       var c = cards[idx];
       progress.textContent = 'Tarjeta ' + (idx + 1) + ' de ' + cards.length;
@@ -1087,7 +1178,7 @@
         (!revealed && idx === 0 && pulseLeft ? ' me-pulse' : '') + '">' +
         '<span class="me-flip-tab" aria-hidden="true"></span>' +
         '<div class="me-fc-front">' + rich(c.front) + '</div>' +
-        (revealed ? '<div class="me-fc-back">' + rich(c.back) + '</div>' : '') + '</div>';
+        (revealed ? '<div class="me-fc-back">' + rich(c.back) + itemAudioMarkup(c.audio_src) + '</div>' : '') + '</div>';
       if (!revealed) {
         controls.innerHTML = '<button class="me-btn me-primary" type="button">Mostrar respuesta</button>';
         var show = function () { pulseLeft = false; renderCard(true); };
@@ -1095,6 +1186,8 @@
         // La lengüeta «+» invita a tocar la carta: el clic también revela
         stage.querySelector('.me-fc-card').addEventListener('click', show);
       } else {
+        var backAudio = wireItemAudio(stage.querySelector('.me-fc-back'));
+        revealItemAudio(ctx, backAudio);
         controls.innerHTML = '<span class="me-fc-ask">¿La sabías?</span>' +
           '<button class="me-btn me-fc-yes" type="button">✔ Sí</button>' +
           '<button class="me-btn me-fc-no" type="button">✖ Aún no</button>';
@@ -1197,12 +1290,15 @@
         '<div class="me-modal-head"><h2 class="me-modal-title">' + rich(c.title || '') + '</h2>' +
         '<button class="me-modal-close me-icon-btn" aria-label="Cerrar">✕</button></div>' +
         '<div class="me-icmodal-body">' +
-        '<div class="me-icmodal-text">' + block(c.text || '') + '</div>' +
+        '<div class="me-icmodal-text">' + block(c.text || '') + itemAudioMarkup(c.audio_src) + '</div>' +
         (c.image ? '<figure class="me-icmodal-media"><img class="me-zoomable" src="' + esc(assetUrl(c.image)) +
           '" alt="' + esc(c.alt || '') + '" tabindex="0" role="button" aria-label="Ampliar imagen"></figure>' : '') +
         '</div></div>';
+      var audioEntry = wireItemAudio(overlay.querySelector('.me-icmodal-text'));
+      revealItemAudio(ctx, audioEntry);
       var last = document.activeElement;
       function close() {
+        stopItemAudio();
         overlay.remove();
         document.removeEventListener('keydown', onKey);
         if (last && last.focus) last.focus();
@@ -2099,5 +2195,5 @@
     var f = registry[data.type];
     if (!f) { el.innerHTML = '<p class="me-warn">Tipo de interacción no soportado: ' + esc(data.type) + '</p>'; return { result: function () { return { completed: true, scored: false }; } }; }
     return f(el, data, ctx);
-  }, esc: esc, rich: rich, stripTags: stripTags, asset: assetUrl, shuffle: shuffle };
+  }, esc: esc, rich: rich, stripTags: stripTags, asset: assetUrl, shuffle: shuffle, stopItemAudio: stopItemAudio, setItemAudioRate: setItemAudioRate, setItemAudioVolume: setItemAudioVolume };
 })(window);

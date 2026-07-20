@@ -1,7 +1,7 @@
 import { useCourseStore } from '../store/courseStore'
 import type { Screen } from '../schema/course.schema'
 import { allScreens } from '../schema/traverse'
-import { buildTranscript } from './buildTranscript'
+import { buildTranscript, itemsOf, itemsKeyOf } from './buildTranscript'
 
 /**
  * Narración por voz (TTS) integrada en el editor.
@@ -346,6 +346,75 @@ function applyAudio(screenId: string, blob: Blob, cfg: TtsConfig) {
   return path
 }
 
+export interface NarratableItemEntry {
+  screenId: string
+  screenTitle: string
+  interactionId: string
+  itemId: string
+  hasAudio: boolean
+  hasText: boolean
+}
+
+/** Lista los ítems narrables (accordion/tabs/flip_cards/timeline/image_cards/
+ *  flashcards) de todo el curso, con su estado de audio — para el contador de
+ *  narración masiva y la pestaña Validación. */
+export function listNarratableItems(): NarratableItemEntry[] {
+  const out: NarratableItemEntry[] = []
+  for (const s of eachScreen()) {
+    if (!s.interaction) continue
+    for (const item of itemsOf(s.interaction)) {
+      out.push({
+        screenId: s.id,
+        screenTitle: s.title || s.id,
+        interactionId: s.interaction.id,
+        itemId: item.id,
+        hasAudio: item.audioSrc.trim().length > 0,
+        hasText: item.text.trim().length > 0,
+      })
+    }
+  }
+  return out
+}
+
+/** Guarda el audio de un ítem como asset y lo enlaza en `config.items[].audio_src`
+ *  (o `cards`/`milestones` según el tipo). */
+function applyItemAudio(screenId: string, interactionId: string, itemId: string, blob: Blob, cfg: TtsConfig) {
+  const path = `assets/media/${screenId}_${interactionId}_${itemId}_narracion.${outputExt(cfg)}`
+  const st = useCourseStore.getState()
+  st.addAsset(path, blob)
+  const screen = st.getScreen(screenId)
+  const it = screen?.interaction
+  const key = it ? itemsKeyOf(it.type) : undefined
+  if (it && key && it.id === interactionId) {
+    const cfgObj = (it.config || {}) as Record<string, any>
+    const list: any[] = Array.isArray(cfgObj[key]) ? cfgObj[key] : []
+    const nextList = list.map((raw) => (raw?.id === itemId ? { ...raw, audio_src: path } : raw))
+    st.updateScreen(screenId, { interaction: { ...it, config: { ...cfgObj, [key]: nextList } } })
+  }
+  return path
+}
+
+/**
+ * Genera (o regenera) el audio de un ítem de una interacción revelable
+ * (accordion/tabs/flip_cards/timeline/image_cards/flashcards) a partir de su
+ * propio texto visible — no hay transcripción de ítem aparte (ver `itemsOf`
+ * en `buildTranscript.ts`). Devuelve la ruta del asset creado.
+ */
+export async function generateForItem(
+  screenId: string,
+  interactionId: string,
+  itemId: string,
+  signal?: AbortSignal,
+): Promise<string> {
+  const screen = useCourseStore.getState().getScreen(screenId)
+  if (!screen?.interaction || screen.interaction.id !== interactionId) throw new Error('Interacción no encontrada.')
+  const item = itemsOf(screen.interaction).find((i) => i.id === itemId)
+  if (!item || !item.text.trim()) throw new Error('El ítem no tiene texto que locutar.')
+  const cfg = getTtsConfig()
+  const blob = await synthesize(item.text.trim(), undefined, signal)
+  return applyItemAudio(screenId, interactionId, itemId, blob, cfg)
+}
+
 /**
  * Genera (o regenera) el audio de una pantalla a partir de su transcripción.
  * Devuelve la ruta del asset creado.
@@ -393,6 +462,32 @@ export async function generateAll(opts: BulkOptions): Promise<BulkResult> {
     } catch (e) {
       if ((e as Error).name === 'AbortError') break
       result.errors.push({ id: s.id, title: s.title || s.id, message: (e as Error).message })
+    }
+  }
+  return result
+}
+
+/** Genera el audio de todos los ítems narrables (accordion/tabs/flip_cards/
+ *  timeline/image_cards/flashcards) con texto, de todo el curso (secuencial).
+ *  Mismo patrón que `generateAll` pero por ítem, no por pantalla. */
+export async function generateAllItems(opts: BulkOptions): Promise<BulkResult> {
+  const cfg = getTtsConfig()
+  if (!keyFor(cfg)) throw new Error('Falta la clave de API. Configúrala en «Narración por voz».')
+
+  const targets = listNarratableItems().filter((it) => it.hasText)
+  const result: BulkResult = { done: 0, skipped: 0, errors: [] }
+  let index = 0
+  for (const item of targets) {
+    if (opts.signal?.aborted) break
+    index++
+    if (opts.onlyMissing && item.hasAudio) { result.skipped++; continue }
+    opts.onProgress?.({ index, total: targets.length, title: item.screenTitle })
+    try {
+      await generateForItem(item.screenId, item.interactionId, item.itemId, opts.signal)
+      result.done++
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') break
+      result.errors.push({ id: item.itemId, title: item.screenTitle, message: (e as Error).message })
     }
   }
   return result

@@ -10,29 +10,24 @@
 <body>
   <a class="me-skip" href="#me-content">Saltar al contenido</a>
   <div id="me-app" class="me-menu-hidden">
-    <!-- Barra superior -->
+    <!-- Barra superior: ☰ a la izquierda, título centrado, Imprimir/Ayuda/Cerrar
+         a la derecha. El resto de herramientas vive en el menú lateral
+         (Glosario, Recursos) o en la barra inferior (Transcripción, audio,
+         Pantalla completa) — ver app.js/buildMenu y el <footer> más abajo. -->
     <header class="me-topbar" role="banner">
       <button id="me-toggle-menu" class="me-icon-btn" aria-expanded="false" aria-controls="me-menu" title="Mostrar/ocultar menú (Alt+M)" aria-label="Mostrar u ocultar el menú"><span data-icon="menu" aria-hidden="true"></span></button>
-      <span id="me-brand" class="me-brand">Curso</span>
-      <span id="me-course-title" class="me-course-title"></span>
-      <!-- Herramientas: icono SVG (icons.js) + texto; en móvil solo queda el
-           icono (el texto se oculta por CSS), de ahí el aria-label fijo. -->
-      <div class="me-tools">
-        <button id="me-btn-transcript" class="me-btn me-ghost" title="Transcripción (Alt+T)" aria-label="Transcripción">
-          <span class="me-tool-ico" data-icon="file-text" aria-hidden="true"></span><span class="me-tool-txt">Transcripción</span></button>
-        <button id="me-btn-audio" class="me-btn me-ghost is-on" aria-pressed="true" aria-label="Audio"
-          title="Activar o desactivar el audio de las diapositivas">
-          <span class="me-tool-ico" data-icon="volume-on" aria-hidden="true"></span><span class="me-tool-txt">Audio</span></button>
-        <button id="me-btn-glossary" class="me-btn me-ghost" title="Glosario" aria-label="Glosario">
-          <span class="me-tool-ico" data-icon="book-open" aria-hidden="true"></span><span class="me-tool-txt">Glosario</span></button>
-        <button id="me-btn-resources" class="me-btn me-ghost" title="Recursos" aria-label="Recursos">
-          <span class="me-tool-ico" data-icon="paperclip" aria-hidden="true"></span><span class="me-tool-txt">Recursos</span></button>
-        <button id="me-btn-print" class="me-btn me-ghost" title="Imprimir" aria-label="Imprimir">
-          <span class="me-tool-ico" data-icon="printer" aria-hidden="true"></span><span class="me-tool-txt">Imprimir</span></button>
+      <div class="me-topbar-title">
+        <span id="me-brand" class="me-brand">Curso</span>
+        <span id="me-course-title" class="me-course-title"></span>
       </div>
-      <button id="me-btn-help" class="me-icon-btn" title="Ayuda" aria-label="Ayuda"><span data-icon="help-circle" aria-hidden="true"></span></button>
-      <!-- Pantalla completa: oculto si el navegador/LMS no lo permite (ver app.js) -->
-      <button id="me-btn-fullscreen" class="me-icon-btn" title="Pantalla completa" aria-label="Pantalla completa" hidden><span data-icon="maximize" aria-hidden="true"></span></button>
+      <div class="me-topbar-right">
+        <button id="me-btn-print" class="me-icon-btn" title="Imprimir" aria-label="Imprimir"><span data-icon="printer" aria-hidden="true"></span></button>
+        <button id="me-btn-help" class="me-icon-btn" title="Ayuda" aria-label="Ayuda"><span data-icon="help-circle" aria-hidden="true"></span></button>
+        <!-- Cierra el curso: si está incompleto pide confirmación (progreso
+             guardado); si no, finaliza la sesión SCORM directamente (ver
+             requestExit en app.js, misma lógica que «Salir del curso»). -->
+        <button id="me-btn-close" class="me-icon-btn" title="Cerrar" aria-label="Cerrar y finalizar el curso"><span data-icon="log-out" aria-hidden="true"></span></button>
+      </div>
     </header>
 
     <div class="me-body">
@@ -49,15 +44,65 @@
       <main id="me-content" class="me-content" tabindex="-1" aria-live="polite"></main>
     </div>
 
-    <!-- Barra de herramientas / navegación -->
+    <!-- Barra de herramientas / navegación: bloque centrado y acotado al ancho
+         de la diapositiva (.me-toolbar-center, ver styles.css). Pantalla
+         completa vive al final del bloque de audio pero en escritorio sale
+         del flujo y queda pegada al borde derecho de toda la barra. -->
     <footer class="me-toolbar" role="contentinfo">
-      <button id="me-prev" class="me-btn me-primary">◂ Anterior</button>
-      <div class="me-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progreso del curso">
-        <div id="me-progress-done" class="me-progress-done"></div>
-        <div id="me-progress-bar" class="me-progress-bar"></div>
-        <span id="me-position" class="me-position">0 / 0</span>
+      <div class="me-toolbar-center">
+        <!-- Opciones de audio: separadas de la navegación por un hueco propio
+             (.me-toolbar-center > gap), no por un divisor visible. -->
+        <div class="me-toolbar-audio">
+          <button id="me-btn-transcript" class="me-icon-btn" title="Transcripción (Alt+T)" aria-label="Transcripción">
+            <span data-icon="file-text" aria-hidden="true"></span></button>
+
+          <!-- Reproductor de la narración de la pantalla: oculto por completo si
+               la pantalla actual no tiene audio_src (ver refreshAudioPlayer en
+               app.js). Play/pause independiente del icono de sonido: éste último
+               es el mute/volumen (persistido entre pantallas y sesiones). -->
+          <div id="me-audio-player" class="me-audio-player" hidden>
+            <button id="me-btn-playpause" class="me-icon-btn" title="Reproducir" aria-label="Reproducir narración">
+              <span data-icon="play" aria-hidden="true"></span></button>
+            <div class="me-audio-seek">
+              <input id="me-audio-seek" type="range" min="0" max="1000" value="0" step="1" aria-label="Progreso de la narración">
+              <span id="me-audio-time" class="me-audio-time" aria-hidden="true">0:00 / 0:00</span>
+            </div>
+            <button id="me-btn-audio" class="me-icon-btn is-on" aria-pressed="true" aria-label="Silenciar narración"
+              title="Activar o desactivar el sonido de la narración">
+              <span data-icon="volume-on" aria-hidden="true"></span></button>
+            <input id="me-audio-volume" class="me-volume-slider" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volumen">
+            <label class="me-rate" title="Velocidad de la narración">
+              <span class="sr-only">Velocidad de la narración</span>
+              <select id="me-audio-rate" aria-label="Velocidad de la narración">
+                <option value="1">1×</option>
+                <option value="1.25">1.25×</option>
+                <option value="1.5">1.5×</option>
+                <option value="2">2×</option>
+              </select>
+            </label>
+          </div>
+          <!-- Pantalla completa: al final del bloque de audio (oculto si el
+               navegador/LMS no lo permite, ver app.js). En escritorio sale del
+               flujo (position:absolute, ver styles.css) y queda pegada al
+               borde derecho de toda la barra; en móvil vuelve al flujo normal
+               y se queda al final de esta fila. -->
+          <button id="me-btn-fullscreen" class="me-icon-btn" title="Pantalla completa" aria-label="Pantalla completa" hidden><span data-icon="maximize" aria-hidden="true"></span></button>
+        </div>
+
+        <div class="me-toolbar-nav">
+          <button id="me-prev" class="me-btn me-primary me-nav-btn" aria-label="Pantalla anterior">
+            <span data-icon="arrow-left" aria-hidden="true"></span><span class="me-nav-btn-label">Anterior</span></button>
+
+          <div class="me-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progreso del curso">
+            <div id="me-progress-done" class="me-progress-done"></div>
+            <div id="me-progress-bar" class="me-progress-bar"></div>
+            <span id="me-position" class="me-position">0 / 0</span>
+          </div>
+
+          <button id="me-next" class="me-btn me-primary me-nav-btn" aria-label="Pantalla siguiente">
+            <span class="me-nav-btn-label">Siguiente</span><span data-icon="arrow-right" aria-hidden="true"></span></button>
+        </div>
       </div>
-      <button id="me-next" class="me-btn me-primary">Siguiente ▸</button>
     </footer>
   </div>
 

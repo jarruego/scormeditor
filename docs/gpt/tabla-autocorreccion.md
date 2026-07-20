@@ -58,6 +58,7 @@ informe de revisión.
 | `MEDIA_NO_SUBS` | ⛔ | Medio con `has_voice:true` sin `tracks` VTT | Si no tienes el VTT no marques `has_voice:true`; el fichero de subtítulos lo aporta el editor humano (deja `editor_note`) | Según |
 | `NARR_NO_TRANSCRIPT` | ⚠ | Curso narrado y pantalla sin `transcript` | Duplica el contenido de la pantalla en `transcript` (es la entrada del TTS) | GPT |
 | `NARR_NO_AUDIO` | ℹ | Hay transcripción pero falta el audio de locución | Pendiente del TTS: lo genera el editor humano en SCORMEditor. **No tocar** | Editor |
+| `NARR_ITEM_NO_AUDIO` | ℹ | Curso narrado: un ítem de accordion/tabs/flip_cards/timeline/image_cards/flashcards tiene texto pero no audio propio | Estos tipos ocultan su contenido tras el revelado y se narran por ítem (no en el audio de pantalla): pendiente del TTS por ítem, lo genera el editor humano en SCORMEditor. **No tocar** | Editor |
 
 ## Interacciones y preguntas
 

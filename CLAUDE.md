@@ -33,6 +33,9 @@ Lee el que corresponda al tocar esa área:
 - `arquitectura-runtime.md` — carcasa (`src/runtime/`): render markdown ligero, callouts
   + paleta, bloque personalizado, recursos visuales/lightbox, lenguaje visual y
   animaciones, impresión, responsive, manifiesto SCORM.
+- `carcasa-navegacion.md` — chrome de navegación de la carcasa: topbar, menú lateral
+  (bloques diferenciados, Materiales, Evaluación), barra inferior (reproductor de
+  audio, Anterior/Siguiente, Pantalla completa), punto de corte de la versión móvil.
 - `editor-ui.md` — lo transversal del editor: superficies de edición, iconos, ⚙ Ajustes,
   sync Editor↔Vista, historial deshacer/rehacer, pestañas y toolbar.
 - `editor-pantallas.md` — árbol (`CourseTree`), recetas de creación, `ScreenEditor`
@@ -64,7 +67,7 @@ Lee el que corresponda al tocar esa área:
   texto.
 - **Comportamiento o aspecto del SCORM/carcasa** → `arquitectura-runtime.md`
   (+ `interacciones.md` si es una interacción; + `evaluacion-finalizacion.md` si toca
-  nota/gating).
+  nota/gating; + `carcasa-navegacion.md` si es topbar/menú/barra inferior).
 - **Guardar/abrir/exportar/assets** → `persistencia-scormproj.md`.
 - **Exportar a eXeLearning (`.elpx`)** → `interop-elpx.md` (+ `interacciones.md` si el
   cambio afecta al `config` de una interacción, porque el mapeo lee ese shape).

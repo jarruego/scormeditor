@@ -1,7 +1,7 @@
 import type { Course, QuizQuestion, Screen, Unit, UnitTest } from '../schema/course.schema'
 import { allScreens, screenContainers } from '../schema/traverse'
 import { normalizeObjective } from './objectives'
-import { buildTranscript } from '../tts/buildTranscript'
+import { buildTranscript, itemsOf } from '../tts/buildTranscript'
 
 export type Severity = 'error' | 'warning' | 'info'
 
@@ -90,6 +90,19 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
   // Interacción
   const it = s.interaction
   if (it) {
+    // Narración por ítem (accordion/tabs/flip_cards/timeline/image_cards/
+    // flashcards): cada ítem con texto se narra con SU PROPIO audio — no el
+    // de pantalla, que ya no lo incluye (ver docs/internals/tts-narracion.md).
+    // Mismo criterio que NARR_NO_AUDIO pero a nivel de ítem; no hace falta un
+    // «NARR_ITEM_NO_TRANSCRIPT» porque el guion es el propio texto visible
+    // (siempre "existe" si el ítem no está vacío — ya cubierto por TL_EMPTY,
+    // FC_EMPTY, etc.).
+    if (ctx.narrated) {
+      itemsOf(it).forEach((item, i) => {
+        if (item.text.trim() && !item.audioSrc.trim())
+          add('NARR_ITEM_NO_AUDIO', 'info', `Pendiente de narrar: el ítem ${i + 1} de la interacción no tiene audio propio.`)
+      })
+    }
     const isQuestion = ['single_choice', 'true_false', 'classification', 'match_pairs', 'scenario_decision'].includes(it.type)
     if (isQuestion) {
       const hasCorrect =

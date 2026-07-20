@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import {
   generateAll,
+  generateAllItems,
   getTtsConfig,
   listNarratable,
+  listNarratableItems,
   modelsFor,
   providerDefaults,
   PROVIDERS,
@@ -43,19 +45,27 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
   // Recuento reactivo (depende del curso). `missingTranscript` usa el mismo
   // criterio que el aviso NARR_NO_TRANSCRIPT de validación (contenido narrable,
   // sin esqueletos), para que los números cuadren con la pestaña Validación.
+  // Los ítems (accordion/tabs/flip_cards/timeline/image_cards/flashcards) no
+  // tienen transcripción propia — su guion es su propio texto visible — así
+  // que se cuentan aparte, por `hasText`/`hasAudio` (ver NARR_ITEM_NO_AUDIO).
   const stats = useMemo(() => {
     void course
     const list = listNarratable()
     const withTranscript = list.filter((s) => s.hasTranscript)
+    const items = listNarratableItems().filter((it) => it.hasText)
     return {
       total: list.length,
       withTranscript: withTranscript.length,
       missingAudio: withTranscript.filter((s) => !s.hasAudio).length,
       missingTranscript: list.filter((s) => s.hasContent && !s.hasTranscript && !s.skeleton).length,
+      itemsTotal: items.length,
+      itemsMissingAudio: items.filter((it) => !it.hasAudio).length,
     }
   }, [course])
 
-  const willGenerate = onlyMissing ? stats.missingAudio : stats.withTranscript
+  const willGenerate = onlyMissing
+    ? stats.missingAudio + stats.itemsMissingAudio
+    : stats.withTranscript + stats.itemsTotal
   // Curso marcado como NO narrado: la generación masiva queda deshabilitada
   // (probable despiste y coste de API); el ajuste está justo encima.
   const narrationOff = course.narration.mode === 'off'
@@ -104,12 +114,28 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
     setBusy(true)
     setProgress({ index: 0, total: willGenerate, title: '' })
     try {
-      const res = await generateAll({
+      // Dos fases sobre la misma barra de progreso: primero las pantallas,
+      // luego los ítems (accordion/tabs/flip_cards/timeline/image_cards/
+      // flashcards) — funciones separadas en tts.ts porque su fuente de texto
+      // y su `audio_src` de destino son distintos, pero un único botón/resultado.
+      const screensRes = await generateAll({
         onlyMissing,
         signal: ctrl.signal,
         onProgress: (info) => setProgress(info),
       })
-      setResult(res)
+      const screensDone = screensRes.done + screensRes.skipped + screensRes.errors.length
+      const itemsRes = ctrl.signal.aborted
+        ? { done: 0, skipped: 0, errors: [] }
+        : await generateAllItems({
+            onlyMissing,
+            signal: ctrl.signal,
+            onProgress: (info) => setProgress({ index: screensDone + info.index, total: willGenerate, title: info.title }),
+          })
+      setResult({
+        done: screensRes.done + itemsRes.done,
+        skipped: screensRes.skipped + itemsRes.skipped,
+        errors: [...screensRes.errors, ...itemsRes.errors],
+      })
     } catch (e) {
       setResult({ done: 0, skipped: 0, errors: [{ id: '', title: '', message: (e as Error).message }] })
     } finally {
@@ -227,6 +253,11 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
               {stats.missingTranscript > 0 && <>
                 {' '}<strong>{stats.missingTranscript} con contenido narrable aún sin transcripción.</strong>
               </>}
+              {stats.itemsTotal > 0 && <>
+                {' '}Además, {stats.itemsTotal} ítem{stats.itemsTotal === 1 ? '' : 's'} de interacciones revelables
+                (accordion/tabs/flip_cards/timeline/image_cards/flashcards)
+                {' '}— {stats.itemsMissingAudio} sin audio propio todavía.
+              </>}
             </p>
 
             {/* Paso previo: transcripciones en bloque. Solo rellena las VACÍAS
@@ -283,8 +314,10 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
           </fieldset>
 
           <p className="ed-disclaimer">
-            El audio se guarda en cada pantalla (campo «Audio de la diapositiva») y viaja en el
-            proyecto y en el SCORM exportado. La generación tiene coste según tu proveedor de API.
+            El audio se guarda en cada pantalla (campo «Audio de la diapositiva») o, para los
+            ítems de accordion/tabs/flip_cards/timeline/image_cards/flashcards, en el propio
+            ítem — y viaja en el proyecto y en el SCORM exportado. La generación tiene coste
+            según tu proveedor de API.
           </p>
     </>
   )

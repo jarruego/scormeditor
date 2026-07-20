@@ -33,7 +33,7 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
 
 /* Toolbar */
 .ed-toolbar { display: flex; align-items: center; gap: .75rem; padding: .5rem 1rem; background: var(--c-surface); border-bottom: 1px solid var(--c-border); flex-wrap: wrap; }
-.ed-logo { color: var(--c-primary); }
+.ed-logo-img { height: 26px; width: auto; display: block; flex: none; }
 .ed-course-name { color: var(--c-muted); }
 .ed-toolbar-actions { margin-left: auto; display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
 .ed-primary { background: var(--c-primary); color: #fff; border-color: var(--c-primary); }
