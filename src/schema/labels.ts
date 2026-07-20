@@ -44,7 +44,6 @@ export const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
   hidden_image: 'Imagen oculta (preguntas)',
   az_quiz: 'Rosco A-Z (pasapalabra)',
   puzzle: 'Puzzle de imagen',
-  progress_report: 'Informe de progreso',
 }
 
 /** Icono compacto por tipo de pantalla (árbol del editor); nombres de `Icon`. */

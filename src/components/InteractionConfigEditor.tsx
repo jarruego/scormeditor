@@ -673,17 +673,6 @@ export function InteractionConfigEditor({
         </div>
       )
 
-    // ---- Informe de progreso --------------------------------------------------------
-    case 'progress_report':
-      return (
-        <p className="ed-hint">
-          Sin configuración: el panel se genera solo con el estado del alumno en cada
-          momento — nota actual, mínimo para APTO, pantallas requeridas vistas,
-          actividades pendientes/correctas con su peso en la nota y el test final.
-          Puedes insertarlo en cualquier pantalla (p. ej. al cierre de cada tema).
-        </p>
-      )
-
     // ---- HTML a medida (iframe sandbox) ------------------------------------
     case 'html_embed':
       return (

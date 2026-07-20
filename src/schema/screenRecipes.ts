@@ -350,15 +350,6 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     extras: () => ({ interaction: makeInteraction('puzzle') }),
   },
   {
-    key: 'progress-report',
-    icon: 'chart',
-    label: 'Informe de progreso',
-    description: 'Panel en vivo: actividades pendientes, aciertos, pesos y nota.',
-    group: 'otros',
-    type: 'content',
-    extras: () => ({ interaction: makeInteraction('progress_report') }),
-  },
-  {
     key: 'reflection',
     icon: 'message-dots',
     label: 'Reflexión',

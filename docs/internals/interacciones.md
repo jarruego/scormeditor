@@ -280,19 +280,9 @@ para restaurar desde `suspend_data`). Inspirados en el catálogo de eXeLearning.
   criterio accesible del drag&drop). `completed` solo al resolverlo (persistido
   `{order, solved}`). Validador: `PZ_NO_IMAGE`.
 
-### `progress_report` — informe de progreso insertable
-Panel **en vivo** del avance: nota actual, mínimo para APTO, pantallas requeridas vistas,
-nº de actividades pendientes, tabla de actividades (estado
-Pendiente/Hecha/Correcta/Parcial/Incorrecta + puntos + **peso en la nota**) y fila del
-test final. Sin configuración; insertable en cualquier pantalla (p. ej. al cierre de cada
-tema).
-- Los datos los expone `app.js` vía **`ctx.progress()`** (`progressSnapshot()`): la
-  interacción no tiene acceso directo a `STATE`/`SCREENS`. Se repinta al entrar en la
-  pantalla, así siempre está al día. Los **pesos** son los del curso completo (puntos de
-  todas las evaluables normalizados a su bloque × peso del bloque según
-  `score_source`/`mixed_final_weight`), no solo de las ya visitadas.
-- No se lista a sí mismo en la tabla. Siempre `completed: true`, nunca puntúa
-  (`PR_SCORED` avisa). Nota al pie explica el reparto práctica/test final.
+> El desglose de actividades con su estado, puntos y peso en la nota **no es una
+> interacción**: es el informe de la pantalla de resultados (`renderResults` en
+> `app.js`), ver `evaluacion-finalizacion.md`.
 
 ## Imagen en el markdown ligero
 `![alt](assets/img/… | https://…)` en **línea propia** → `<figure class="me-md-img">` con

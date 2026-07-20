@@ -46,7 +46,6 @@ export const NATIVE_IDEVICE: Record<string, string> = {
   case_practice: 'text',
   video: 'text',
   html_embed: 'text',
-  progress_report: 'text',
 }
 
 /** Motivo legible de por qué un tipo degrada a `text` (para el resumen). */
@@ -64,7 +63,6 @@ const DEGRADE_REASON: Record<string, string> = {
   case_practice: 'caso práctico → enunciado y rúbrica',
   video: 'vídeo interactivo → vídeo y preguntas',
   html_embed: 'HTML a medida → bloque HTML',
-  progress_report: 'panel de progreso → nota (no aplica en eXe)',
 }
 
 /**

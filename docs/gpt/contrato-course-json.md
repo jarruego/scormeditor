@@ -410,8 +410,8 @@ Estructura común a TODAS:
   `sort_steps`, `single_choice`, `true_false`, `classification`,
   `scenario_decision`, `case_practice`, `hotspots`, `video`, `fill_blanks`,
   `timeline`, `flashcards`, `html_embed`, `image_cards`, `before_after`,
-  `word_search`, `crossword`, `hidden_image`, `az_quiz`, `puzzle`,
-  `progress_report`. **`reflection` NO está en esta lista**: es un tipo de
+  `word_search`, `crossword`, `hidden_image`, `az_quiz`, `puzzle`.
+  **`reflection` NO está en esta lista**: es un tipo de
   *pantalla* (§3), no de interacción. Una reflexión se modela como pantalla
   `type: "reflection"` con `interaction: null`, o —si tiene tarea con
   solución/feedback— como interacción `case_practice`.
@@ -644,14 +644,6 @@ alumno intercambia piezas tocándolas hasta recomponerla. `cols`/`rows` opcional
 (2–5, por defecto 3×3). Deja `image` vacío + `editor_note` (la sube el autor):
 ```json
 "config": { "image": "assets/img/mapa-evacuacion.png", "alt": "Mapa de evacuación de la planta", "cols": 3, "rows": 3 }, "scored": false
-```
-
-**`progress_report`** — informe de progreso (informativa, sin configuración): panel
-que se genera solo con el estado del alumno — nota actual, mínimo para APTO,
-pantallas requeridas vistas, actividades pendientes/correctas con su peso en la nota
-y test final. Insertable en cualquier pantalla (típicamente al cierre de cada tema):
-```json
-"config": {}, "scored": false
 ```
 
 **`html_embed`** — animación o interactivo a medida en HTML/CSS/JS que el **autor
@@ -890,7 +882,7 @@ def validate_course(course: dict) -> list:
                          "scenario_decision", "case_practice", "hotspots", "video",
                          "fill_blanks", "timeline", "flashcards", "html_embed",
                          "image_cards", "before_after", "word_search", "crossword",
-                         "hidden_image", "az_quiz", "puzzle", "progress_report"}
+                         "hidden_image", "az_quiz", "puzzle"}
 
     def norm(t):  # misma normalización de objetivos que el editor
         t = unicodedata.normalize("NFD", str(t or "").lower())

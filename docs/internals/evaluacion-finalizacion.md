@@ -61,7 +61,8 @@ ilimitados, donde hay que acertar). `SCORM.setStatus`: `incomplete` / `passed` /
   `allow_resume: false`).
 - El **desglose de calificaciones** va plegado en un accordion (`foldHtml`/`wireFolds`,
   app.js — mismas clases `.me-acc-*` que las interacciones, así `setupPrint` lo expande
-  al imprimir). El informe de progreso pliega igual su «Detalle de actividades».
+  al imprimir); abierto por defecto si el curso está **incompleto** (para que las
+  actividades pendientes se vean sin un clic extra), plegado si ya tiene veredicto.
 - **Reintentar el curso** (solo **NO APTO** y si quedan intentos): `retryCourse()` limpia
   `STATE.interactions`/`results`/`finalScore` (práctica Y test final) pero **conserva
   `visited`** (el contenido ya se estudió; lo que se repite es la evaluación), vuelve a
@@ -69,10 +70,27 @@ ilimitados, donde hay que acertar). `SCORM.setStatus`: `incomplete` / `passed` /
   se compara con `STATE.attempts` (intentos consumidos, persistido en `suspend_data`);
   se muestra cuántos quedan o que se agotaron.
 
-## Informe de progreso (`progress_report`)
-El snapshot que consume la interacción (`progressSnapshot()` en app.js, expuesto vía
-`ctx.progress`) vive aquí porque reutiliza `computeScore`/`requiredScreens`/`isRequired`.
-Detalle de qué muestra: `interacciones.md`.
+## Desglose de calificaciones (`resultsBreakdownHtml`)
+La tabla del fold «Desglose de calificaciones» en `renderResults()` se construye a partir
+de `progressSnapshot()` (app.js), que reutiliza `computeScore`/`requiredScreens`/
+`isRequired` — no es una interacción, es parte de la pantalla de resultados.
+
+- Una fila por **pantalla evaluable** (`interaction.scored`, excluidas test final y
+  resultados) con su **estado** (Pendiente/Hecha/Correcta/Parcial/Incorrecta), **puntos**
+  (`score/maxScore`, «—» si pendiente) y **peso en la nota** (redondeado, sobre los puntos
+  de TODAS las evaluables del curso — no solo las ya visitadas — normalizados según
+  `score_source`/`mixed_final_weight`; «—» si esa evaluable no cuenta para la nota, p. ej.
+  práctica con `score_source: 'final_test'`). Fila aparte para el **test final** si aplica
+  (`finalRow`, con la misma estructura). Nota al pie explicando el reparto
+  práctica/test final cuando `source` es `final_test` o `mixed`.
+- **Saltar a la actividad**: cada fila pendiente lleva un botón «Ir a la actividad →» (o
+  «Ir al test final →») con `data-idx` = índice en `SCREENS`; su `click` llama
+  `goTo(idx, false, true)` — permitido siempre porque **ir hacia atrás en `SCREENS` no
+  tiene gating** (`canNavigateTo`: `target <= current` es siempre `true`, y Resultados es
+  la última pantalla). El intento SCORM sigue abierto: el alumno completa la actividad y
+  puede volver a Resultados (por el menú) para ver la tabla recalculada.
+- `progressSnapshot()` añade `idx` (índice en `SCREENS`) a cada item y a `finalRow`
+  precisamente para estos botones; no tiene otro consumidor.
 
 ## Pantallas sintéticas (no están en `course.json`)
 `flatten()` añade al final de `SCREENS`:

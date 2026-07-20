@@ -56,7 +56,7 @@ como página raíz con una pregunta `quick-questions` por bloque; **glosario** y
 | `match_pairs` | `relate` | nativo (plano); label de `config.groups` ↔ `text` de la opción |
 | `flip_cards`, `flashcards` | `flipcards` | nativo (plano); front→`eText`, back→`eTextBk` |
 | `before_after` | `beforeafter` | nativo (plano); 2 imágenes url/urlBk |
-| accordion, tabs, timeline, image_cards, classification, sort_steps, az_quiz, hidden_image, puzzle, hotspots, case_practice, video, html_embed, progress_report | `text` | **degradación**: el contenido se vuelca a HTML legible y editable (títulos, ítems, preguntas con la correcta marcada, imágenes…). No se pierde contenido |
+| accordion, tabs, timeline, image_cards, classification, sort_steps, az_quiz, hidden_image, puzzle, hotspots, case_practice, video, html_embed | `text` | **degradación**: el contenido se vuelca a HTML legible y editable (títulos, ítems, preguntas con la correcta marcada, imágenes…). No se pierde contenido |
 
 Lo que **no** viaja a eXe (lo gestiona de otro modo): la nota SCORM, el gating,
 los intentos, el peso de la nota. Se avisa en el resumen de la exportación.

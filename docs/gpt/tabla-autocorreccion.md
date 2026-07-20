@@ -72,7 +72,6 @@ informe de revisión.
 | `CP_NO_RUBRIC` | ⚠ | `case_practice` sin rúbrica | Añade `config.rubric` con criterios de autoevaluación verificables | GPT |
 | `FC_EMPTY` | ⛔ | `flashcards` sin tarjetas | Añade `config.cards` (`front`/`back`) con conceptos del tema, o elimina la interacción | GPT |
 | `FC_SCORED` | ⚠ | `flashcards` con `scored:true` | Pon `scored:false`: es autoevaluación de repaso | GPT |
-| `PR_SCORED` | ⚠ | `progress_report` con `scored:true` | Pon `scored:false`: es un panel informativo | GPT |
 | `IC_EMPTY` | ⛔ | `image_cards` sin tarjetas | Añade las `cards` (`alt`, `title`, `text`); `image` vacío + `editor_note` describiendo cada imagen | GPT |
 | `IC_NO_IMAGE` | ⛔ | Tarjeta de imagen sin `image` | **Esperado** si generaste el tipo: las imágenes las sube el editor humano. **No inventes rutas `assets/`** | Editor |
 

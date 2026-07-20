@@ -487,8 +487,6 @@
         // La etiqueta «Evaluable» solo tiene sentido si las actividades cuentan
         // para la nota; con score_source 'final_test' puntúa solo el test final.
         showScoredBadge: (COURSE.scorm.rules || {}).score_source !== 'final_test',
-        // Snapshot de progreso en vivo (lo consume la interacción progress_report).
-        progress: progressSnapshot,
         // Ubicación de la pantalla en el curso (miga «Módulo › Unidad» de la tarjeta).
         crumb: {
           module: entry.module ? (entry.module.title || '') : '',
@@ -592,9 +590,10 @@
     bar.parentElement.setAttribute('aria-valuenow', String(donePct));
   }
 
-  // Snapshot del estado del curso para el informe de progreso (progress_report).
-  // Los pesos son los del curso COMPLETO (puntos de todas las evaluables, no solo
-  // las ya visitadas): así el alumno ve cuánto valdrá cada actividad al terminar.
+  // Snapshot del estado del curso para el desglose de calificaciones de la
+  // pantalla de resultados (renderResults). Los pesos son los del curso COMPLETO
+  // (puntos de todas las evaluables, no solo las ya visitadas): así el alumno ve
+  // cuánto valdrá cada actividad al terminar.
   function progressSnapshot() {
     var rules = COURSE.scorm.rules || {};
     var src = rules.score_source || 'final_test';
@@ -612,7 +611,6 @@
     SCREENS.forEach(function (e, i) {
       if (e.isFinalTest || e.isResults || !e.screen.interaction) return;
       var it = e.screen.interaction;
-      if (it.type === 'progress_report') return; // el informe no se lista a sí mismo
       var r = STATE.results[it.id];
       var state;
       if (!r || !r.completed) state = 'pending';
@@ -620,6 +618,7 @@
       else if (r.correct) state = 'correct';
       else state = (r.score || 0) > 0 ? 'partial' : 'incorrect';
       items.push({
+        idx: i,
         title: e.screen.title || 'Actividad',
         unit: e.unit ? (e.unit.title || '') : '',
         scored: !!it.scored,
@@ -637,6 +636,7 @@
     if (ft && (ft.questions || []).length && finalWeight > 0) {
       var fr = STATE.results.__final__;
       finalRow = {
+        idx: SCREENS.findIndex(function (e) { return e.isFinalTest; }),
         title: ft.title || 'Test final',
         done: !!fr,
         score: fr ? (fr.score || 0) : 0,
@@ -1373,30 +1373,10 @@
     var rules = COURSE.scorm.rules || {};
     var status = evaluateCompletion();      // actualiza SCORM + STATE.finalScore
     var score = STATE.finalScore;
-    var src = rules.score_source || 'final_test';
-    var ft = COURSE.assessments && COURSE.assessments.final_test;
     var min = rules.min_score || 0;
     var incomplete = status === 'incomplete';
     var pass = status === 'passed';
-    function pct(g, m) { return m ? Math.round((g / m) * 100) : 0; }
-
-    var rows = [];
-    if (ft && (ft.questions || []).length && (src === 'final_test' || src === 'mixed')) {
-      var fr = STATE.results.__final__;
-      rows.push({ label: ft.title || 'Test final',
-        detail: fr ? (fr.score + '/' + fr.maxScore + ' (' + pct(fr.score, fr.maxScore) + '%)') : 'Sin realizar' });
-    }
-    if (src === 'unit_tests' || src === 'mixed') {
-      SCREENS.forEach(function (e) {
-        if (e.isFinalTest || e.isResults) return;
-        var it = e.screen.interaction;
-        if (it && it.scored) {
-          var r = STATE.results[it.id];
-          rows.push({ label: e.screen.title || 'Actividad',
-            detail: r ? (r.correct ? '✔ Correcta' : '✖ Incorrecta') : 'Sin responder' });
-        }
-      });
-    }
+    var p = progressSnapshot();
 
     var cls = incomplete ? 'is-warn' : (pass ? 'is-ok' : 'is-error');
     var estado = incomplete ? '⚠ Curso incompleto' : (pass ? '✔ APTO' : '✖ NO APTO');
@@ -1405,13 +1385,9 @@
       '<div class="me-result-score" aria-label="' + score + '%">' + score + '%</div>' +
       '<div class="me-result-state">' + estado + '</div>' +
       '<div class="me-result-min">Nota mínima para aprobar: ' + min + '%</div></div>';
-    if (rows.length) {
-      var tbl = '<table class="me-result-table"><tbody>';
-      rows.forEach(function (r) {
-        tbl += '<tr><th scope="row">' + esc(r.label) + '</th><td>' + esc(r.detail) + '</td></tr>';
-      });
-      tbl += '</tbody></table>';
-      html += foldHtml('me-fold-results', 'Desglose de calificaciones', tbl);
+    var evalItems = p.items.filter(function (it) { return it.scored; });
+    if (evalItems.length || p.finalRow) {
+      html += foldHtml('me-fold-results', 'Desglose de calificaciones', resultsBreakdownHtml(p, evalItems), incomplete);
     }
     if (incomplete) html += '<p class="me-instructions">Completa todas las pantallas y actividades requeridas para obtener la calificación final.</p>';
 
@@ -1440,12 +1416,66 @@
     if (retryBtn) retryBtn.addEventListener('click', retryCourse);
     var exitBtn = content.querySelector('#me-btn-exit');
     if (exitBtn) exitBtn.addEventListener('click', requestExit);
+    // Saltar a una actividad pendiente sin cerrar el intento: navegar hacia
+    // atrás en SCREENS siempre está permitido (canNavigateTo), sea cual sea el
+    // modo de navegación del curso.
+    content.querySelectorAll('.me-pr-goto').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = parseInt(btn.getAttribute('data-idx'), 10);
+        if (isNaN(idx) || idx < 0) return;
+        if (canNavigateTo(idx)) goTo(idx, false, true);
+        else A11Y.announce('Esa pantalla aún no está disponible.');
+      });
+    });
 
     // Refuerzo del logro: la nota sube animada y, si está APTO, confeti (una
     // vez por sesión). Con prefers-reduced-motion no se anima nada.
     var scoreEl = content.querySelector('.me-result-score');
     if (scoreEl) animateNumber(scoreEl, score, '%');
     if (pass && !incomplete) celebrate();
+  }
+
+  var RESULT_STATE_LABELS = {
+    pending: ['⏳', 'Pendiente', 'is-pending'],
+    done: ['✔', 'Hecha', 'is-done'],
+    correct: ['✔', 'Correcta', 'is-ok'],
+    partial: ['◐', 'Parcial', 'is-partial'],
+    incorrect: ['✖', 'Incorrecta', 'is-ko'],
+  };
+
+  // Tabla del desglose de calificaciones: una fila por pantalla evaluable (y el
+  // test final si cuenta para la nota) con su estado, puntos y peso final. Las
+  // pendientes llevan un botón para saltar directo a esa pantalla — el intento
+  // SCORM sigue abierto, así que el alumno puede completarla sin perder lo hecho.
+  function resultsBreakdownHtml(p, evalItems) {
+    var tbl = '<table class="me-pr-table"><thead><tr><th scope="col">Actividad</th><th scope="col">Estado</th>' +
+      '<th scope="col">Puntos</th><th scope="col">Peso en la nota</th><th scope="col"><span class="sr-only">Ir a la actividad</span></th></tr></thead><tbody>';
+    evalItems.forEach(function (it) {
+      var lbl = RESULT_STATE_LABELS[it.state] || RESULT_STATE_LABELS.pending;
+      var goto = it.state === 'pending'
+        ? '<button type="button" class="me-btn me-pr-goto" data-idx="' + it.idx + '">Ir a la actividad →</button>' : '';
+      tbl += '<tr><th scope="row">' + esc(it.title) + (it.unit ? ' <span class="me-pr-unit">' + esc(it.unit) + '</span>' : '') + '</th>' +
+        '<td class="me-pr-state ' + lbl[2] + '">' + lbl[0] + ' ' + lbl[1] + '</td>' +
+        '<td>' + (it.state === 'pending' ? '—' : it.score + '/' + it.maxScore) + '</td>' +
+        '<td>' + (it.weightPct ? it.weightPct + '%' : '—') + '</td>' +
+        '<td>' + goto + '</td></tr>';
+    });
+    if (p.finalRow) {
+      var f = p.finalRow;
+      var fgoto = !f.done ? '<button type="button" class="me-btn me-pr-goto" data-idx="' + f.idx + '">Ir al test final →</button>' : '';
+      tbl += '<tr class="me-pr-final"><th scope="row">' + esc(f.title) + '</th>' +
+        '<td class="me-pr-state ' + (f.done ? 'is-ok' : 'is-pending') + '">' + (f.done ? '✔ Realizado' : '⏳ Pendiente') + '</td>' +
+        '<td>' + (f.done ? f.score + '/' + f.maxScore : '—') + '</td>' +
+        '<td>' + f.weightPct + '%</td>' +
+        '<td>' + fgoto + '</td></tr>';
+    }
+    tbl += '</tbody></table>';
+    if (p.source === 'final_test') {
+      tbl += '<p class="me-pr-note">La nota del curso es la del test final; las actividades son práctica y requisito para terminar.</p>';
+    } else if (p.source === 'mixed' && p.finalRow) {
+      tbl += '<p class="me-pr-note">La nota combina la práctica (' + (100 - p.finalRow.weightPct) + '%) y el test final (' + p.finalRow.weightPct + '%).</p>';
+    }
+    return tbl;
   }
 
   // Sección plegable genérica (mismo patrón/clases que el accordion de las

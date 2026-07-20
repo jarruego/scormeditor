@@ -219,8 +219,6 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
       if (!String(c.image || '').trim()) add('PZ_NO_IMAGE', 'error', 'Puzzle sin imagen.')
       else if (!String(c.alt || '').trim()) add('IMG_NO_ALT', 'error', 'El puzzle no tiene texto alternativo (alt).')
     }
-    if (it.type === 'progress_report' && it.scored)
-      add('PR_SCORED', 'warning', 'El informe de progreso es un panel informativo: no debería puntuar (scored: false).')
     if (it.type === 'flashcards') {
       if (((it.config as any)?.cards || []).length === 0)
         add('FC_EMPTY', 'error', 'Tarjetas de repaso sin tarjetas.')

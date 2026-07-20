@@ -51,7 +51,6 @@ export const InteractionType = z.enum([
   'hidden_image',
   'az_quiz',
   'puzzle',
-  'progress_report',
 ])
 export type InteractionType = z.infer<typeof InteractionType>
 

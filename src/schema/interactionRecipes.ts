@@ -326,14 +326,6 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: false,
     supportsAttempts: false,
   },
-  {
-    type: 'progress_report',
-    icon: 'chart',
-    description: 'Consulta su avance y su nota en un panel que se actualiza solo.',
-    group: 'avanzado',
-    gradable: false,
-    supportsAttempts: false,
-  },
 ]
 
 const BY_TYPE = new Map(INTERACTION_RECIPES.map((r) => [r.type, r]))

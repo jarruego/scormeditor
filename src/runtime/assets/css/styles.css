@@ -407,10 +407,6 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-result-score { font-size: 2.6rem; font-weight: 800; line-height: 1; }
 .me-result-state { font-size: 1.2rem; font-weight: 700; margin-top: .3rem; }
 .me-result-min { font-size: .9rem; opacity: .8; margin-top: .3rem; }
-.me-result-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-.me-result-table caption { text-align: left; font-weight: 600; margin-bottom: .4rem; }
-.me-result-table th, .me-result-table td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--me-border); }
-.me-result-table td { text-align: right; white-space: nowrap; }
 .me-accordion { display: grid; gap: .4rem; }
 .me-acc-head { display: flex; align-items: center; gap: .5rem; width: 100%; text-align: left; padding: .6rem .8rem; background: var(--me-bg); border: 1px solid var(--me-border); border-radius: 6px; font: inherit; font-weight: 600; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
 .me-acc-head::before { content: '+'; display: inline-block; flex: none; font-size: 1.1em; font-weight: 700; line-height: 1; color: var(--me-accent); transition: transform .2s ease; }
@@ -745,11 +741,7 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-pz-grid.is-solved .me-pz-piece { cursor: default; }
 .me-pz-status { color: var(--me-muted); font-size: .85rem; margin: .45rem 0 0; }
 
-/* --- Informe de progreso --------------------------------------------------------- */
-.me-pr-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .6rem; margin: .5rem 0 .9rem; }
-.me-pr-cell { background: var(--me-surface); border: 1px solid var(--me-border); border-radius: 10px; padding: .7rem .5rem; text-align: center; box-shadow: var(--me-shadow-1); }
-.me-pr-big { display: block; font-size: 1.5rem; font-weight: 700; color: var(--me-primary); }
-.me-pr-cap { display: block; font-size: .78rem; color: var(--me-muted); margin-top: .15rem; }
+/* --- Desglose de calificaciones (pantalla de resultados) ------------------------- */
 .me-pr-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
 .me-pr-table th, .me-pr-table td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid var(--me-border); }
 .me-pr-table thead th { font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; color: var(--me-muted); }
@@ -762,6 +754,7 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-pr-state.is-done { color: var(--me-ok); }
 .me-pr-final th, .me-pr-final td { border-top: 2px solid var(--me-border); font-weight: 600; }
 .me-pr-note { color: var(--me-muted); font-size: .85rem; margin-top: .6rem; }
+.me-pr-goto { padding: .3rem .6rem; font-size: .82rem; white-space: nowrap; }
 
 /* --- Acciones de la pantalla de resultados ---------------------------------------- */
 .me-result-actions { display: flex; align-items: center; justify-content: center; gap: .8rem; flex-wrap: wrap; margin-top: 1.3rem; }

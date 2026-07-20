@@ -663,9 +663,6 @@ export function degradeToTextHtml(
       // El HTML a medida se conserva dentro de un aviso (queda editable en eXe).
       body += `<div>${String(cfg.html || '')}</div>`
       break
-    case 'progress_report':
-      body += '<p><em>Panel de progreso (se genera automáticamente en el SCORM original).</em></p>'
-      break
     default:
       body += optionsList(it.options || [])
   }
