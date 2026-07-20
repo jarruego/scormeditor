@@ -60,6 +60,8 @@ pestañas). El estado de qué ventana está abierta vive en el store
   pantallas» → `setAllMinTime` del store (un solo paso de deshacer). El valor del input
   NO se persiste (es una herramienta de lote, no un campo de `course.json`); sobrescribe
   el `min_time_seconds` de cada pantalla tras `confirmDialog`.
+- **Objetivos de aprendizaje** → `ObjectivesModal`, el gestor transversal de objetivos
+  (ver `editor-pantallas.md`).
 - **Interfaz (Apariencia)** → `AppearanceModal` con `AppearanceSection`: preferencias de
   presentación de la carcasa (`shell`) vía `updateShell` — **Marca y color**
   (`shell.brand`, `shell.primary_color` con picker `input[type=color]` + campo hex
@@ -67,8 +69,6 @@ pestañas). El estado de qué ventana está abierta vive en el store
   (`shell.motion`, none/subtle/rich, y `shell.motion_speed`, fast/normal/slow; ver
   `arquitectura-runtime.md`). Decisión: la apariencia NO va con finalización — es config
   de interfaz, con ventana propia.
-- **Objetivos de aprendizaje** → `ObjectivesModal`, el gestor transversal de objetivos
-  (ver `editor-pantallas.md`).
 - **Narración (Audio IA)** → `NarrationModal` con `NarrationSection`: config TTS
   (localStorage) y generación masiva; ver `tts-narracion.md`. No hay botón de narración
   suelto en la toolbar: todo entra por este menú.
@@ -82,11 +82,16 @@ Menú **Ayuda** en la `Toolbar` (tras ⚙ Ajustes) con tres entradas:
 - **Manual de usuario** → `HelpModal` (`settingsModal: 'help'`, reutiliza `SettingsWindow`
   en modo `wide`): índice lateral + contenido con scroll propio (`.ed-help`). El contenido
   vive como JSX en `HelpModal.tsx` (audiencia: autores con nociones de e-learning, tono
-  paso a paso). Las **capturas** se cargan por nombre desde `src/assets/help/*.png` vía
-  `import.meta.glob`: añadir/actualizar una = soltar el png; si falta, su figura no se
-  pinta (el manual no se rompe). Para regenerarlas se conduce la app real con Playwright
-  (receta en `.claude/skills/verify`) sobre el curso demo; ojo: para capturar un modal
-  más alto que el viewport hay que agrandar el viewport, o el PNG sale con una banda
+  paso a paso), con cobertura completa del editor (interacciones, narración, ajustes,
+  exportación). La sección «Interacciones» **no enumera los tipos a mano**: recorre en
+  vivo `INTERACTION_RECIPES`/`INTERACTION_GROUPS` (`interactionRecipes.ts`) y
+  `interactionTypeLabel` (`labels.ts`), así que un tipo nuevo aparece solo con darle su
+  entrada en el catálogo — no hay que tocar el manual. Las **capturas** se cargan por
+  nombre desde `src/assets/help/*.png` vía `import.meta.glob`: añadir/actualizar una =
+  soltar el png; si falta, su figura no se pinta (el manual no se rompe). Para
+  regenerarlas se conduce la app real con Playwright (receta en `.claude/skills/verify`)
+  sobre el curso demo; ojo: para capturar un modal más alto que el viewport hay que
+  agrandar el viewport, o el PNG sale con una banda
   gris sin pintar.
 - **Tour guiado** → `GuidedTour.tsx`: motor propio sin dependencias. Las paradas se
   declaran en `STEPS` (selector `data-tour="…"`, pestaña que debe estar activa, título y
@@ -181,8 +186,14 @@ Preferir esto a `window.confirm`.
 Implementado a mano en `src/store/courseStore.ts` (sin librerías). Pilas `past`/`future`
 de instantáneas `{ course, selectedScreenId }`, tope 50 pasos.
 - `snapshot(coalesceKey?)` apila el estado **antes** de cada mutación e invalida
-  `future`. Las mutaciones de contenido lo invocan (`updateScreen`, `addScreen`,
-  `duplicateScreen`, `deleteScreen`, `moveScreen`, `setFinalTest`, `updateScorm`).
+  `future`. Prácticamente toda mutación de contenido del store la invoca (más de 25 puntos
+  de llamada en `courseStore.ts`): desde `updateScreen`/`addScreen`/`duplicateScreen`/
+  `deleteScreen`/`moveScreen`/`setFinalTest`/`updateScorm` hasta `addModule`/`addUnit`/
+  `removeUnit`/`removeModule`, los renombrados (`updateCourseInfo`/`updateModule`/
+  `updateUnit`), `remapObjective` y `setGlossary`/`setBibliography` (y sus títulos). La
+  lista no es exhaustiva a propósito — el criterio simple es «toda mutación de contenido
+  pasa por `snapshot()`»; lo que **no** lo invoca (navegación, plegado del árbol, ajustes
+  de localStorage) queda descrito explícitamente donde corresponde.
 - **Coalescencia de tecleo**: ediciones seguidas en la misma pantalla (`update:<id>`)
   dentro de 400 ms se agrupan en un solo paso. → `Ctrl+Z` mientras escribes deshace todo
   el bloque de tecleo reciente, no carácter a carácter (decisión aceptada).

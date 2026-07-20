@@ -451,6 +451,9 @@ button.ed-pill.info:hover:not(:disabled) { background: #e8f0fe; }
 .ed-help-section p, .ed-help-section ul, .ed-help-section ol { margin: .4rem 0; }
 .ed-help-section li { margin: .25rem 0; }
 .ed-help-kbd { font-family: ui-monospace, Consolas, monospace; font-size: .82rem; background: var(--c-bg); border: 1px solid var(--c-border); border-bottom-width: 2px; border-radius: 5px; padding: .05rem .35rem; white-space: nowrap; }
+.ed-help-intgroup { margin: .9rem 0; padding: .1rem 0 .1rem .75rem; border-left: 3px solid var(--c-border); }
+.ed-help-intgroup h4 { margin-top: 0; }
+.ed-help-intgroup .ed-hint { margin-bottom: .4rem; }
 .ed-help-shot { margin: .75rem 0; }
 .ed-help-shot img { max-width: 100%; border: 1px solid var(--c-border); border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, .08); }
 .ed-help-shot figcaption { font-size: .8rem; color: var(--c-muted); margin-top: .3rem; }

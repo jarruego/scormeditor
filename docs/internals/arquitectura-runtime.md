@@ -242,8 +242,9 @@ inyecta un rótulo (`.me-print-tablabel`) con el título de cada pestaña sobre 
 interactividades **evaluables** no se expanden (no se imprimen respuestas correctas).
 
 ## Responsive / móvil
-La carcasa es 100% responsive. En `max-width:760px` el menú lateral pasa a **slide-over**
-absoluto y el cuerpo ocupa una sola columna (`.me-body, #me-app.me-menu-hidden .me-body {
+La carcasa es 100% responsive. El menú lateral pasa a **slide-over** absoluto y el cuerpo
+ocupa una sola columna (`.me-body, #me-app.me-menu-hidden .me-body {
 grid-template-columns: 1fr; }`; ojo a la especificidad: un conflicto en
-`grid-template-columns` dejó la pantalla en blanco en móvil). En vista alumno **no** se
-muestra el árbol de pantallas del editor.
+`grid-template-columns` dejó la pantalla en blanco en móvil) por debajo del punto de corte
+documentado en `carcasa-navegacion.md` («Punto de corte de la versión móvil»). En vista
+alumno **no** se muestra el árbol de pantallas del editor.

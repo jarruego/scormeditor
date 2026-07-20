@@ -17,7 +17,7 @@ export const CALLOUT_META: Record<string, CalloutMeta> = {
 }
 
 /** Tipos que se ofrecen en los selectores del editor (orden de la barra). */
-export const CALLOUT_ORDER = ['tip', 'warn', 'important', 'fact', 'reflect', 'case'] as const
+export const CALLOUT_ORDER = ['tip', 'warn', 'important', 'fact', 'reflect', 'case', 'info'] as const
 
 export const HEX_RE = /^#[0-9a-fA-F]{3,8}$/
 

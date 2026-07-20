@@ -2,6 +2,13 @@ import { useRef } from 'react'
 import { SettingsWindow } from './SettingsModal'
 import { useCourseStore } from '../store/courseStore'
 import { startTour } from './GuidedTour'
+import {
+  INTERACTION_GROUPS,
+  INTERACTION_GROUP_LABELS,
+  INTERACTION_GROUP_HINTS,
+  INTERACTION_RECIPES,
+} from '../schema/interactionRecipes'
+import { interactionTypeLabel } from '../schema/labels'
 
 /**
  * Manual de usuario integrado (menú Ayuda → «Manual de usuario»).
@@ -9,6 +16,8 @@ import { startTour } from './GuidedTour'
  * interfaz, se actualiza este fichero). Las capturas se cargan de
  * `src/assets/help/*.png` por nombre: añadir/actualizar una captura = soltar
  * el png; si falta, la figura no se pinta (el manual sigue siendo válido).
+ * El catálogo de interacciones (`INTERACTION_RECIPES`) se importa en vivo: al
+ * añadir un tipo nuevo al editor, esta sección se actualiza sola.
  */
 const SHOTS = import.meta.glob('../assets/help/*.png', {
   eager: true,
@@ -65,7 +74,10 @@ const SECTIONS: Section[] = [
         </ul>
         <p>
           Todo se procesa y se guarda <strong>en tu equipo</strong>: el editor no sube
-          tu contenido a ningún servidor.
+          tu contenido a ningún servidor. Este manual cubre el editor completo: todos
+          los tipos de pantalla e interacción, la narración por voz, los ajustes del
+          curso y la exportación. Si prefieres verlo en acción antes de leer, usa el
+          <strong> tour guiado</strong> (botón al pie de este índice).
         </p>
       </>
     ),
@@ -92,7 +104,14 @@ const SECTIONS: Section[] = [
           <li>
             <strong>Guardar</strong> (<Kbd k="Ctrl + S" />) escribe el{' '}
             <code>.scormproj</code>. En Chrome/Edge se reescribe el mismo archivo sin
-            volver a preguntar; en Firefox/Safari se descarga.
+            volver a preguntar; en Firefox/Safari se descarga. «Guardar como…» fuerza un
+            archivo nuevo.
+          </li>
+          <li>
+            <strong>Borrar recursos huérfanos (N)</strong> aparece solo si el proyecto
+            acumula imágenes o audios que ya no usa ninguna pantalla (por ejemplo tras
+            sustituir una imagen varias veces): reduce el peso del <code>.scormproj</code>.
+            Es irreversible, así que solo interesa antes de archivar el curso.
           </li>
         </ul>
         <Shot id="toolbar" caption="Barra superior: título del curso, indicador de guardado, deshacer/rehacer y los menús Archivo, Ajustes y Ayuda." />
@@ -119,15 +138,17 @@ const SECTIONS: Section[] = [
         <p>
           El panel izquierdo de la pestaña <strong>Editor</strong> es el árbol del
           curso: <strong>módulos → unidades → pantallas</strong>. La pantalla es la
-          unidad básica de contenido (lo que el alumno ve de una vez).
+          unidad básica de contenido (lo que el alumno ve de una vez). Un módulo puede
+          tener, además de sus unidades, <strong>pantallas propias</strong> (por ejemplo
+          una portada de bloque) que se muestran siempre antes que sus unidades.
         </p>
         <Shot id="arbol" caption="Árbol del curso: módulos, unidades y pantallas, con las secciones Evaluación y Materiales al final." />
         <ul>
           <li>
-            <strong>Añadir</strong>: «+ Añadir pantalla…» al pie de cada unidad abre un
-            selector de <em>recetas</em> (ver más abajo). «+ Añadir unidad» y «+ Añadir
-            módulo» crean la estructura; el lápiz renombra el curso, los módulos y las
-            unidades ahí mismo.
+            <strong>Añadir</strong>: «+ Añadir pantalla…» al pie de cada unidad (o de
+            cada módulo, para una pantalla propia) abre un selector de <em>recetas</em>{' '}
+            (ver más abajo). «+ Añadir unidad» y «+ Añadir módulo» crean la estructura;
+            el lápiz renombra el curso, los módulos y las unidades ahí mismo.
           </li>
           <li>
             <strong>Reordenar</strong>: las pantallas se arrastran por su asa; los
@@ -135,8 +156,8 @@ const SECTIONS: Section[] = [
             nombre (una unidad puede cruzar al módulo de al lado desde el extremo).
           </li>
           <li>
-            <strong>Duplicar y eliminar</strong> por pantalla (eliminar pide
-            confirmación, y siempre puedes deshacer).
+            <strong>Duplicar y eliminar</strong> por pantalla, unidad o módulo (eliminar
+            algo con contenido pide confirmación, y siempre puedes deshacer).
           </li>
           <li>
             El <strong>filtro</strong> de la parte superior busca por título o tipo de
@@ -165,8 +186,22 @@ const SECTIONS: Section[] = [
           (portada, objetivos, resumen…), Contenido (leer, ver, explorar), Práctica
           (hacer con corrección) y Evaluación (test de unidad). Cada tarjeta
           preconfigura el tipo de pantalla, el recurso y la interacción de golpe;
-          después todo sigue siendo editable. Por defecto, las de Práctica{' '}
-          <em>no puntúan</em> y las de Evaluación <em>sí</em>.
+          después todo sigue siendo editable, incluido el tipo de pantalla en
+          «Avanzado». Por defecto, las de Práctica <em>no puntúan</em> y las de
+          Evaluación <em>sí</em> — es solo el punto de partida, la decisión real de qué
+          cuenta para la nota vive en la propia interacción y en Ajustes.
+        </p>
+        <p>
+          Los diez tipos de pantalla del editor son: <strong>Portada</strong>,{' '}
+          <strong>Objetivos</strong>, <strong>Itinerario</strong> y{' '}
+          <strong>Resumen</strong> (estructura, sin interacción); <strong>Contenido</strong>{' '}
+          (el tipo más habitual: texto con o sin interacción) y <strong>Vídeo</strong>{' '}
+          (contenido); <strong>Reflexión</strong> y <strong>Debate (foro)</strong>{' '}
+          (práctica sin corrección automática: la respuesta se da en papel o en el foro
+          del campus); <strong>Test de unidad</strong> (evaluación, se coloca al final
+          de la unidad); y <strong>Pendiente de desarrollo</strong>, un marcador para
+          contenido que aún no se ha escrito (avisa en Validación a propósito, para que
+          no se olvide).
         </p>
       </>
     ),
@@ -181,84 +216,200 @@ const SECTIONS: Section[] = [
           formulario. Lo primero es el <strong>título</strong> (se edita directamente
           en la cabecera) y el <strong>objetivo de aprendizaje</strong>: qué debería
           saber hacer el alumno tras esta pantalla. Los objetivos alimentan la matriz
-          de trazabilidad del Informe, así que merece la pena rellenarlos.
+          de trazabilidad del Informe y el gestor de objetivos (ver más abajo), así que
+          merece la pena rellenarlos.
         </p>
         <Shot id="editor" caption="Editor de pantalla: título en la cabecera, objetivo, texto principal y las secciones plegables de recurso visual, audio e interacción." />
-        <h4>El texto y su formato</h4>
-        <p>
-          La caja «Texto para el estudiante» es el contenido principal. Escribes texto
-          normal y aplicas formato con la barra: <strong>negrita</strong>,{' '}
-          <em>cursiva</em>, títulos, listas, enlaces e imágenes en línea. El botón de{' '}
-          <strong>bloques destacados</strong> inserta callouts (idea clave, ejemplo,
-          advertencia…) con el color de la paleta del curso; también puedes crear
-          bloques personalizados con tu propio icono, color y título, y guardarlos como
-          preset para reutilizarlos.
-        </p>
-        <Shot id="texto" caption="El editor de texto muestra el resultado en vivo: callouts con su color real, negritas, listas… sin códigos visibles." />
-        <p>
-          Verás el resultado en vivo mientras escribes (los códigos de formato quedan
-          ocultos). Para tocar un enlace, una imagen o un bloque, usa la barra
-          contextual que aparece al situar el cursor encima.
-        </p>
         <h4>Recurso visual</h4>
         <p>
           Cada pantalla puede llevar una <strong>imagen, vídeo (archivo o YouTube) o
           audio</strong> como recurso principal. Eliges la disposición respecto al
-          texto (izquierda, derecha, arriba…) y la proporción, y ves una vista previa
-          debajo. Los archivos se suben con su botón y quedan dentro del proyecto.
-        </p>
-        <h4>Audio de locución y transcripción</h4>
-        <p>
-          La sección de audio permite adjuntar una locución por pantalla y su
-          transcripción (accesibilidad). Si configuras la narración por IA en{' '}
-          <strong>Ajustes → Narración</strong>, puedes generar el audio de la pantalla
-          — o de todo el curso en lote — a partir de la transcripción.
+          texto (izquierda, derecha, arriba, abajo), la proporción y, en YouTube, el
+          formato del marco (16:9, 4:3, 1:1, 9:16); ves una vista previa debajo. Los
+          archivos se suben con su botón y quedan dentro del proyecto (se optimizan
+          automáticamente al subir).
         </p>
         <h4>Avanzado</h4>
         <p>
           Plegado al final: el tipo de pantalla (por si quieres cambiarlo a mano), el{' '}
           <strong>tiempo mínimo</strong> en segundos antes de poder avanzar y si la
-          pantalla es <strong>obligatoria</strong> para completar el curso.
+          pantalla es <strong>obligatoria</strong> para completar el curso. El tiempo
+          mínimo también se puede aplicar a todas las pantallas de golpe desde{' '}
+          <strong>Ajustes → Curso</strong>.
+        </p>
+        <p>
+          El texto principal y su formato tienen su propia sección más abajo («Texto
+          enriquecido y bloques destacados»), y el audio de locución en «Narración y
+          audio».
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'texto',
+    title: 'Texto enriquecido y bloques destacados',
+    body: (
+      <>
+        <p>
+          La caja «Texto para el estudiante» es el contenido principal de la pantalla.
+          Escribes texto normal y aplicas formato con la barra: encabezados de sección,{' '}
+          <strong>negrita</strong>, <em>cursiva</em>, listas con o sin numerar, enlaces
+          e imágenes en línea. Verás el resultado en vivo mientras escribes (los
+          códigos de formato quedan ocultos); para tocar un enlace, una imagen o un
+          bloque, usa la barra contextual que aparece al situar el cursor encima.
+        </p>
+        <Shot id="texto" caption="El editor de texto muestra el resultado en vivo: callouts con su color real, negritas, listas… sin códigos visibles." />
+        <h4>Bloques destacados (callouts)</h4>
+        <p>
+          Tras el separador de la barra hay un botón por cada bloque estándar —{' '}
+          <strong>💡 Consejo</strong>, <strong>⚠️ Atención</strong>,{' '}
+          <strong>📌 Importante</strong>, <strong>🧠 ¿Sabías que…?</strong>,{' '}
+          <strong>💭 Reflexiona</strong> y <strong>🧪 Caso práctico</strong> — que
+          inserta el bloque con su color e icono de la paleta del curso. Cada bloque
+          insertado tiene un desplegable en su cabecera para cambiar de tipo (incluye
+          también «ℹ️ Información») y un botón para «quitar formato» conservando el
+          texto.
+        </p>
+        <p>
+          <strong>«＋ Personalizado»</strong> crea un bloque a tu medida: icono (de una
+          paleta curada), color y título libres. Puedes guardarlo como{' '}
+          <strong>preset</strong> — aparece como un chip junto a los botones estándar,
+          con una ✕ para borrarlo cuando ya no lo necesites; los presets son atajos
+          personales y no viajan dentro del curso.
+        </p>
+        <h4>Imágenes en el texto</h4>
+        <p>
+          El botón <strong>🖼 Imagen</strong> de la barra sube una imagen y la inserta
+          en la posición del cursor, como bloque propio (con su alt obligatorio). Al
+          seleccionarla, su barra integrada permite cambiar el texto alternativo, el
+          ancho (de un 25% a a tamaño completo) o sustituirla por otra.
+        </p>
+        <p>
+          Todo lo que escribes aquí se guarda como <strong>texto plano con un formato
+          ligero</strong> (nunca HTML): es lo que hace que el proyecto sea portable y
+          legible fuera del editor, y lo que impide que se cuele código no controlado
+          en el SCORM exportado.
         </p>
       </>
     ),
   },
   {
     id: 'interacciones',
-    title: 'Interacciones',
+    title: 'Interacciones: catálogo completo',
     body: (
       <>
         <p>
           Una interacción es la actividad de la pantalla: desde un acordeón informativo
           hasta una pregunta evaluable. Se añade desde la sección{' '}
           <strong>Interacción</strong> del editor de pantalla; el selector muestra
-          tarjetas agrupadas por lo que hace el alumno (presentar contenido, responder
-          preguntas, manipular elementos, juegos, medios y avanzado), con una marca ⭐
-          en las que pueden puntuar.
+          tarjetas agrupadas por lo que hace el alumno, con una marca ⭐ en las que
+          pueden puntuar.
         </p>
         <Shot id="tipos-interaccion" caption="Selector de tipo de interacción: tarjetas con descripción, agrupadas por familia didáctica." />
+        <p>El bloque de interacción del editor cuenta siempre la misma historia en cuatro partes:</p>
         <ul>
-          <li>
-            <strong>Actividad</strong>: el enunciado, las instrucciones y la
-            configuración propia de cada tipo (opciones, parejas, tarjetas, huecos,
-            zonas de la imagen…). Las listas se reordenan, duplican y pliegan desde el
-            propio editor.
-          </li>
-          <li>
-            <strong>Evaluación</strong>: si el tipo tiene corrección, puedes marcarla
-            como <em>evaluable</em>, darle puntos e intentos, y vincularla a un
-            objetivo de aprendizaje. Que las actividades cuenten para la nota depende
-            además del origen de la nota en Ajustes (ver «Ajustes del curso»).
-          </li>
-          <li>
-            <strong>Feedback</strong>: mensajes de acierto/error y una explicación
-            pedagógica opcional; varios tipos admiten además feedback por opción.
-          </li>
+          <li><strong>Actividad</strong>: enunciado, instrucciones y la configuración propia del tipo (opciones, parejas, tarjetas, huecos, zonas de la imagen…). Las listas se reordenan, duplican y pliegan desde el propio editor.</li>
+          <li><strong>Evaluación</strong> (solo en los tipos con corrección real): márcala como evaluable, dale puntos e intentos permitidos.</li>
+          <li><strong>Feedback</strong>: mensajes de acierto/error y una explicación pedagógica opcional; varios tipos admiten además feedback por opción.</li>
+          <li><strong>Cambiar tipo…</strong>: convierte la interacción en otra conservando lo que sea compatible (por ejemplo, una pregunta de opción única en verdadero/falso); si algo se fuera a perder, te avisa antes de aplicarlo.</li>
         </ul>
         <p>
-          «Cambiar tipo…» convierte la interacción en otra conservando lo que sea
-          compatible (por ejemplo, una pregunta de opción única en verdadero/falso); si
-          algo se fuera a perder, te avisa antes.
+          A continuación, las {INTERACTION_RECIPES.length} interacciones disponibles,
+          agrupadas por lo que hace el alumno — la misma agrupación que verás en el
+          selector:
+        </p>
+        {INTERACTION_GROUPS.map((g) => (
+          <div key={g} className="ed-help-intgroup">
+            <h4>{INTERACTION_GROUP_LABELS[g]}</h4>
+            <p className="ed-hint">{INTERACTION_GROUP_HINTS[g]}</p>
+            <ul>
+              {INTERACTION_RECIPES.filter((r) => r.group === g).map((r) => (
+                <li key={r.type}>
+                  <strong>{interactionTypeLabel(r.type)}</strong>
+                  {r.gradable ? ' ⭐' : ''} — {r.description}
+                  {r.supportsAttempts ? ' Admite límite de intentos.' : ''}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+        <p>
+          Algunas piezas merecen una mención aparte:
+        </p>
+        <ul>
+          <li>
+            <strong>Zonas interactivas (imagen)</strong> se definen con un editor visual
+            en modal: arrastra sobre la imagen para dibujar cada zona, arrastra una zona
+            para moverla y usa su tirador para redimensionarla.
+          </li>
+          <li>
+            <strong>HTML a medida (código)</strong> es la única pieza que admite código
+            pegado por el autor (HTML, CSS y JavaScript en tres cajas); corre siempre
+            aislado en un sandbox sin acceso a la nota ni al resto de la página, así que
+            nunca puede puntuar ni leer datos del curso.
+          </li>
+          <li>
+            Los cuatro <strong>juegos didácticos</strong> (sopa de letras, crucigrama,
+            rosco A-Z e imagen oculta) se autoevalúan sin botón «Comprobar»: el propio
+            juego marca el acierto al resolverse, con puntuación proporcional a lo
+            acertado.
+          </li>
+        </ul>
+      </>
+    ),
+  },
+  {
+    id: 'narracion',
+    title: 'Narración y audio',
+    body: (
+      <>
+        <p>
+          Cada pantalla admite dos piezas de audio independientes: el{' '}
+          <strong>recurso visual de tipo audio/vídeo</strong> (el contenido en sí) y el{' '}
+          <strong>audio de locución</strong> — la voz que narra la pantalla, con su
+          propio reproductor en la barra inferior de la Vista estudiante (play/pausa,
+          progreso, volumen y velocidad).
+        </p>
+        <h4>Transcripción y audio de pantalla</h4>
+        <p>
+          La sección «Audio de locución y transcripción» del editor de pantalla tiene un
+          botón <strong>«↻ Regenerar transcripción desde el contenido»</strong> que
+          construye un guion a partir del texto y, si la interacción es informativa, de
+          su enunciado — así no hay que redactarlo dos veces. La transcripción es
+          también la <strong>alternativa textual</strong> obligatoria de cualquier vídeo
+          o audio con voz (el alumno la abre con un botón, sin que aparezca duplicada en
+          el cuerpo).
+        </p>
+        <p>
+          Con la transcripción lista, <strong>«Generar audio»</strong> sintetiza la voz
+          y la adjunta a la pantalla — o hazlo para todo el curso de una vez desde{' '}
+          <strong>Ajustes → Narración</strong>.
+        </p>
+        <h4>Narración por ítem</h4>
+        <p>
+          En las interacciones que ocultan contenido hasta un gesto de revelado
+          (acordeón, pestañas, tarjetas giratorias, línea de tiempo, tarjetas de imagen
+          y fichas de repaso), cada ítem puede llevar su <strong>propio audio</strong>{' '}
+          — sonará cada vez que el alumno lo abra o lo gire, no solo la primera vez. Se
+          genera con el botón junto a cada ítem en el editor de la interacción, o todos
+          de golpe con «🔊 Generar audios de ítem pendientes».
+        </p>
+        <h4>Narración por IA (Ajustes → Narración)</h4>
+        <Shot id="narracion" caption="Ajustes → Narración: proveedor, voz, clave de API y generación masiva de audio para todo el curso." />
+        <p>
+          Elige el proveedor de síntesis de voz — <strong>Google Gemini</strong> (con
+          nivel gratuito) u <strong>OpenAI</strong> (pago por uso, de céntimos) —, la voz
+          y pega tu <strong>clave de API</strong>: se guarda solo en tu navegador, nunca
+          en el proyecto ni en ningún servidor de SCORMEditor. Desde aquí,{' '}
+          <strong>«Generar N audios»</strong> encadena en una sola pasada las
+          transcripciones que falten, el audio de cada pantalla narrable y el de cada
+          ítem revelable, con una barra de progreso.
+        </p>
+        <p>
+          El ajuste <strong>«Curso narrado»</strong> (auto/sí/no, en la misma ventana)
+          decide si Validación avisa de las pantallas «pendientes de narrar»: en{' '}
+          <em>auto</em> (por defecto) se activa solo si ya hay algún audio en el curso,
+          para no generar ruido en cursos que no llevan voz.
         </p>
       </>
     ),
@@ -272,8 +423,9 @@ const SECTIONS: Section[] = [
           El <strong>test final</strong> se edita desde el nodo «Evaluación → Test
           final» del árbol: preguntas con sus opciones (marca la correcta con el
           círculo), feedback y objetivo vinculado por pregunta. Puedes elegir que se
-          muestre una pregunta por pantalla y ver el recuento vivo de preguntas y
-          puntos.
+          muestre <strong>una pregunta por pantalla</strong> — con un navegador de
+          preguntas numerado y sin perder la posibilidad de repetir solo las falladas —
+          y ver el recuento vivo de preguntas y puntos.
         </p>
         <Shot id="test-final" caption="Editor del test final: preguntas plegables con opciones, correcta y feedback." />
         <p>
@@ -287,37 +439,64 @@ const SECTIONS: Section[] = [
     ),
   },
   {
+    id: 'objetivos',
+    title: 'Objetivos de aprendizaje',
+    body: (
+      <>
+        <p>
+          Los objetivos no son una lista separada que rellenas aparte: nacen al escribir
+          el campo «Objetivo de aprendizaje» de cada pantalla (con autocompletado de los
+          ya usados) y se vinculan también desde cada pregunta del test final. El
+          gestor <strong>Ajustes → Objetivos de aprendizaje</strong> los reúne a todos en
+          un solo sitio: qué pantallas declaran cada objetivo y qué evaluaciones lo
+          cubren, con chips que te llevan directamente allí.
+        </p>
+        <p>
+          Desde ahí puedes <strong>renombrar</strong> un objetivo (se actualiza en todos
+          sus usos a la vez — renombrarlo a un texto ya existente los fusiona, así que
+          hazlo con cuidado) o <strong>quitarlo</strong> por completo. Un objetivo
+          declarado en alguna pantalla pero que ninguna evaluación cubre aparece como
+          aviso en Validación: es la señal de que ese contenido se explica pero no se
+          comprueba que se haya aprendido.
+        </p>
+      </>
+    ),
+  },
+  {
     id: 'ajustes',
     title: 'Ajustes del curso',
     body: (
       <>
-        <p>El menú <strong>⚙ Ajustes</strong> agrupa cuatro ventanas:</p>
+        <p>El menú <strong>⚙ Ajustes</strong> agrupa varias ventanas independientes:</p>
         <ul>
           <li>
             <strong>Curso (Finalización)</strong>: las reglas SCORM — nota mínima para
             aprobar, <strong>origen de la nota</strong> (solo el test final, solo las
             actividades evaluables, o mixto con el peso que decidas), porcentaje de
             pantallas que hay que ver, si las interacciones obligatorias bloquean el
-            avance, intentos y tipo de navegación (libre, secuencial o mixta). Incluye
-            una herramienta para aplicar un tiempo mínimo a todas las pantallas de
-            golpe.
+            avance, número de intentos del curso y tipo de navegación (libre, secuencial
+            o mixta). Incluye una herramienta para aplicar un tiempo mínimo a todas las
+            pantallas de golpe.
           </li>
           <li>
-            <strong>Objetivos de aprendizaje</strong>: reúne todos los objetivos del
-            curso, dónde se declaran y qué evaluaciones los cubren; permite
-            renombrarlos o quitarlos en todos los usos a la vez.
+            <strong>Objetivos de aprendizaje</strong>: ver la sección anterior.
           </li>
           <li>
             <strong>Interfaz (Apariencia)</strong>: la marca y el color principal del
-            curso que verá el alumno, y el nivel de animaciones.
+            curso que verá el alumno, y el nivel e intensidad de las animaciones de la
+            carcasa.
           </li>
           <li>
-            <strong>Narración (Audio IA)</strong>: proveedor de voz, clave de API (se
-            guarda solo en tu navegador) y generación de audio en lote para todas las
-            pantallas con transcripción.
+            <strong>Narración (Audio IA)</strong>: ver «Narración y audio» más arriba.
           </li>
         </ul>
         <Shot id="ajustes" caption="Ajustes del curso: nota mínima, origen de la nota, navegación y reglas de finalización." />
+        <p>
+          Cuando el origen de la nota es <strong>mixto</strong>, el peso del test final
+          se reparte por porcentaje entre los dos bloques (test final y actividades
+          evaluables), no por suma de puntos: así unas pocas preguntas del test final no
+          quedan diluidas frente a muchas actividades de práctica.
+        </p>
       </>
     ),
   },
@@ -352,10 +531,11 @@ const SECTIONS: Section[] = [
         <p>
           La pestaña <strong>Validación</strong> revisa el curso entero:{' '}
           <strong>errores</strong> (cosas que romperían la experiencia, como una
-          pregunta sin opción correcta) y <strong>avisos</strong> (mejorables). Cada
-          aviso enlaza con la pantalla o el ajuste correspondiente. El recuento aparece
-          también como badge en la propia pestaña, y el árbol marca las pantallas
-          afectadas.
+          pregunta sin opción correcta o dos pantallas con el mismo identificador) y{' '}
+          <strong>avisos</strong> (mejorables, como un objetivo sin evaluar o una
+          pantalla pendiente de narrar). Cada aviso enlaza con la pantalla o el ajuste
+          correspondiente. El recuento aparece también como badge en la propia pestaña,
+          y el árbol marca las pantallas afectadas.
         </p>
         <Shot id="validacion" caption="Panel de validación: errores y avisos con enlace directo a la pantalla afectada." />
         <p>
@@ -370,13 +550,13 @@ const SECTIONS: Section[] = [
   },
   {
     id: 'exportar',
-    title: 'Exportar y subir a Moodle',
+    title: 'Exportar: SCORM ZIP y eXeLearning',
     body: (
       <>
         <p>
           Cuando el curso esté listo (idealmente sin errores de validación):{' '}
           <strong>Archivo → Exportar SCORM ZIP</strong>. El ZIP resultante es el
-          paquete completo.
+          paquete completo, con solo los recursos que realmente usa el curso.
         </p>
         <p>En Moodle:</p>
         <ol>
@@ -391,6 +571,24 @@ const SECTIONS: Section[] = [
         <p>
           Si más adelante cambias algo, edita el <strong>proyecto</strong> y vuelve a
           exportar y subir el ZIP: el ZIP no se edita nunca directamente.
+        </p>
+        <h4>Exportar a eXeLearning (.elpx)</h4>
+        <p>
+          <strong>Archivo → Exportar a eXeLearning (.elpx)</strong> convierte el curso a
+          un paquete que se abre con «Importar» en eXeLearning 4.0.1 o posterior, para
+          seguir editándolo allí (por ejemplo, si otra persona del equipo trabaja con esa
+          herramienta). La mayoría de interacciones se convierten a su equivalente nativo
+          de eXe (opción única, verdadero/falso, emparejar, sopa de letras, crucigrama,
+          rellenar huecos, tarjetas giratorias, comparador antes/después…); las que no
+          tienen equivalente se vuelcan como contenido HTML legible y editable, sin
+          perder la información.
+        </p>
+        <p>
+          Al terminar, un resumen indica cuántas páginas y actividades se generaron y
+          qué se reconvirtió. Ten en cuenta que <strong>no viajan</strong> la nota SCORM,
+          el bloqueo de navegación ni los intentos: eXeLearning no tiene ese concepto —
+          gestiona su propio paquete de forma independiente al SCORM que exportas desde
+          aquí.
         </p>
       </>
     ),

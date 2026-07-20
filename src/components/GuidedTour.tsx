@@ -40,7 +40,7 @@ const STEPS: TourStep[] = [
   {
     target: '[data-tour="file-menu"]',
     title: 'Menú Archivo',
-    body: 'Abrir y guardar el proyecto, empezar uno nuevo (vacío o demo) y, cuando el curso esté listo, «Exportar SCORM ZIP»: el paquete final que se sube a Moodle.',
+    body: 'Abrir y guardar el proyecto, empezar uno nuevo (vacío o demo) y, cuando el curso esté listo, «Exportar SCORM ZIP»: el paquete final que se sube a Moodle. También puedes exportar a eXeLearning (.elpx) si prefieres seguir editando allí.',
   },
   {
     target: '[data-tour="tabs"]',
@@ -60,9 +60,15 @@ const STEPS: TourStep[] = [
     body: 'Aquí se edita la pantalla seleccionada: título, objetivo de aprendizaje, el texto con formato (negritas, listas, bloques destacados…), el recurso visual, el audio y la interacción.',
   },
   {
+    target: '[data-tour="content"]',
+    tab: 'editor',
+    title: 'La interacción de la pantalla',
+    body: 'Cada pantalla puede llevar una interacción: desde un acordeón informativo hasta un crucigrama o una pregunta evaluable. Hay 23 tipos agrupados por lo que hace el alumno; el manual las describe todas una a una.',
+  },
+  {
     target: '[data-tour="settings-menu"]',
     title: 'Menú Ajustes',
-    body: 'Las reglas del curso: nota mínima y origen de la nota, finalización y navegación; el gestor de objetivos; la apariencia (marca, color, animaciones) y la narración por voz (IA).',
+    body: 'Las reglas del curso: nota mínima y origen de la nota, finalización y navegación; el gestor de objetivos; la apariencia (marca, color, animaciones) y la narración por voz (IA): transcripción, audio por pantalla o por ítem, y generación masiva.',
   },
   {
     target: '[data-tour="content"]',

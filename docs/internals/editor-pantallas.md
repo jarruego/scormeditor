@@ -111,7 +111,7 @@ desplegable «Tipo de pantalla» queda como ajuste avanzado). Decisiones:
 - Tras crear, el foco salta al input de Título (`data-field="screen-title"` en
   `ScreenEditor`). «En blanco» (tarjeta discreta, borde discontinuo) es la vía de escape
   sin preconfigurar.
-- `addScreen(unitId, afterId?, preset?, atIndex?)` tipa el preset como
+- `addScreen(containerId, afterId?, preset?, atIndex?)` tipa el preset como
   `Partial<ScreenInput>` (`z.input` del esquema: los campos con default son opcionales).
 - **Puntos de inserción** (`InsertPoint`, `.ed-insert`): entre cada par de pantallas del
   árbol hay una zona fina que al pasar el ratón (o enfocar con Tab) revela un divisor con

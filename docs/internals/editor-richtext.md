@@ -91,6 +91,20 @@ abre el mismo panel vacío. El editor de enlace y el panel de bloque personaliza
 paneles inline bajo la barra (no flotantes); **Esc** los cierra (`handleEscClose` en el
 `onKeyDown` del contenedor).
 
+### Botones de bloque destacado y presets (`RichTextArea.tsx`)
+Tras el separador de la barra hay un botón por cada callout **estándar** — `CALLOUT_TYPES`
+(6 fijos: 💡 Consejo, ⚠️ Atención, 📌 Importante, 🧠 ¿Sabías que…?, 💭 Reflexiona, 🧪 Caso
+práctico) — que inserta el bloque con la selección actual como contenido inicial
+(`insertCallout`). El séptimo tipo del catálogo (`info`, «ℹ️ Información») no tiene botón
+rápido por espacio en la barra, pero sigue siendo alcanzable desde el `<select>` de
+cabecera de cualquier callout ya insertado (`CALLOUT_ORDER` en `calloutMeta.ts`, que sí lo
+incluye) — así un callout `info` de un proyecto importado se puede recrear o reasignar sin
+tocar el markdown a mano. Tras los botones estándar, «＋ Personalizado» abre
+`CustomBlockPanel` en modo insertar (icono/color/título libres) y, a su derecha, un chip
+por cada **preset guardado** (`customBlocks.ts`, localStorage) con su icono y una ✕ para
+borrarlo (`deletePreset`) — los presets son atajos de autor, no se serializan en el
+documento.
+
 ## Imágenes en el texto
 Botón **🖼 Imagen** en la barra: `<label>` con `<input type="file">` oculto vestido de
 botón (`.ed-rta-imgbtn`); sube con `optimizeImage`, guarda el asset
