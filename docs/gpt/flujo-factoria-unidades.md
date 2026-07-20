@@ -233,7 +233,7 @@ unidad o un tema. **La factoría se encarga sola de conseguirlo con este flujo**
 fases son el procedimiento interno, no órdenes que deba dar el usuario.
 
 **Petición directa (la habitual):**
-> Genera el `.scormproj` de la Unidad 2.
+> Genera el `.scormproj` de la Unidad N.
 
 > Genérame el curso completo (un `.scormproj` por unidad).
 
@@ -255,7 +255,7 @@ de la petición directa que re-ancla en el mensaje las reglas que más se incump
 Si el GPT recibe una orden con esta forma, debe tratar las reglas numeradas como
 **bloqueantes**: si alguna falla, corrige y regenera antes de entregar.
 
-> Adjunto el PDF. Genera el .scormproj COMPLETO de la Unidad 2 en modo factoría
+> Adjunto el PDF. Genera el .scormproj COMPLETO de la Unidad N en modo factoría
 > autónomo: encadena inventario → temas parciales → fusión sin preguntarme nada
 > entre temas. Si te quedas sin espacio, guarda parciales y di solo «continúa».
 >
@@ -310,19 +310,26 @@ Si el GPT recibe una orden con esta forma, debe tratar las reglas numeradas como
 >     va en student_text o en los body de accordion/tabs/timeline, que sí admiten
 >     markdown completo). Y si la extracción deja párrafos enteros en negrita o
 >     como encabezado, restáuralos a párrafo normal.
+> 13. IDs únicos en todo el curso (pantallas, interacciones, módulos, unidades,
+>     tests, preguntas). authoring_entity = «MECOHISA S.L.» pero shell.brand VACÍO.
+>     Como habrá checkpoints scored:true, usa score_source "mixed" (con
+>     mixed_final_weight), no "final_test". El preflight validate_course (contrato
+>     §11) debe quedar a CERO errores y CERO avisos antes de empaquetar; no me
+>     entregues el paquete si queda alguno.
 >
 > Antes de entregar: pasa el checklist de referencia-rapida.md y la revisión de
 > fidelidad contra el PDF (cada epígrafe con su pantalla, mismo orden y jerarquía).
 > En el informe final: % de cobertura por tema, nº de ** conservadas y resultado
 > del checklist punto por punto.
 
-(Adaptando «Unidad 2» a lo que se pida. El informe punto por punto del final no es
+(Sustituye «Unidad N» por lo que se pida —una unidad, un tema o el curso completo—.
+El informe punto por punto del final no es
 decorativo: obliga a autoevaluarse contra la lista y mejora el cumplimiento. Si el
 usuario detecta un incumplimiento, la corrección más eficaz es en el mismo chat:
 «Incumples la regla N. Corrígelo y regenera el .scormproj».)
 
 **Con guion previo (una parada para revisar el troceo):**
-> Genera el `.scormproj` de la Unidad 2 y enséñame antes el guion de pantallas.
+> Genera el `.scormproj` de la Unidad N y enséñame antes el guion de pantallas.
 
 Comportamiento: inventario + extracción + **guion completo de la unidad** (la tabla de
 la guía: pantalla, epígrafe fuente, forma del bloque, **nº de caracteres**,
