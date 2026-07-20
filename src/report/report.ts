@@ -40,7 +40,7 @@ function traceabilityMatrix(course: Course): MatrixRow[] {
     screens.forEach((s) => {
       if (!s.objective && !s.interaction) return
       rows.push({
-        objective: s.objective || s.interaction?.learning_objective || '—',
+        objective: s.objective || '—',
         path,
         screen: `${s.title || s.id} (${s.type})`,
         interaction: s.interaction ? s.interaction.type : '—',
@@ -84,7 +84,7 @@ function qaTable(course: Course): QARow[] {
     screens.forEach((s) => {
       const it = s.interaction
       if (it && (it.options || []).some((o) => o.correct))
-        collect(it.prompt, it.options, it.learning_objective, s.title || s.id, s.id)
+        collect(it.prompt, it.options, s.objective, s.title || s.id, s.id)
     })
     if (u) course.assessments.unit_tests.filter((t) => t.unit_id === u.id).forEach((t) =>
       t.questions.forEach((q) =>

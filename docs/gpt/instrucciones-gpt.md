@@ -75,8 +75,9 @@ procedimiento→beneficios). «Enséñame el guion» → entrégalo y espera el 
   pantalla propia con 1-2 frases de intro (qué hacer y para qué). En sus campos,
   solo **negrita**/cursiva/enlaces; `##`/`:::`/listas, solo en `student_text` y en
   `body` de accordion/tabs/timeline.
-- Cada interacción: `prompt`, `instructions`, `learning_objective`, `feedback`,
-  `source_refs`, `scored`, `points`, `retries`.
+- Cada interacción: `prompt`, `instructions`, `feedback`, `source_refs`, `scored`,
+  `points`, `retries` (NO lleva `learning_objective`: evalúa el `objective` de su
+  propia pantalla).
 
 ## Entrega (con Code Interpreter)
 Al pedir material («JSON», «archivo para SCORMEditor»…):
@@ -112,7 +113,8 @@ fences).
   `quality_checklist`, `status`, `source_refs`.
 - **Objetivos**: pocos, derivados del contenido + petición + normativa (**NO uno por
   pantalla**); texto **EXACTO** reutilizado en `objective` y copiado en cada
-  `learning_objective`; cada objetivo con al menos una evaluación.
+  `learning_objective` de pregunta de test (la interacción no lleva ese campo: evalúa
+  el `objective` de su pantalla); cada objetivo con al menos una evaluación.
 
 ## Defaults y validación (detalle en `referencia-rapida.md`)
 Por defecto: SCORM `1.2`, nota mínima `70`, `authoring_entity` **MECOHISA S.L.**

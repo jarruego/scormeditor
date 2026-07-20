@@ -185,17 +185,15 @@ export const useCourseStore = create<CourseState>((set, get) => {
   }
 
   // Sustituye un objetivo por otro texto ('' = quitarlo) en todos sus usos:
-  // pantallas, interacciones y preguntas de test (comparación normalizada).
+  // pantallas (las interacciones heredan el de su pantalla, no tienen uso
+  // propio) y preguntas de test (comparación normalizada).
   function remapObjective(from: string, to: string) {
     const key = normalizeObjective(from)
     if (!key) return
     snapshot()
     const course = clone(get().course)
     const apply = (v: string) => (normalizeObjective(v) === key ? to : v)
-    for (const s of allScreens(course)) {
-      s.objective = apply(s.objective)
-      if (s.interaction) s.interaction.learning_objective = apply(s.interaction.learning_objective ?? '')
-    }
+    for (const s of allScreens(course)) s.objective = apply(s.objective)
     const tests = [...course.assessments.unit_tests, ...(course.assessments.final_test ? [course.assessments.final_test] : [])]
     for (const t of tests)
       for (const q of t.questions) q.learning_objective = apply(q.learning_objective ?? '')

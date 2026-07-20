@@ -76,8 +76,9 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
 ## Checklist de validación antes de entregar
 - JSON válido, sin `screens` en la raíz; tipos de pantalla e interacción permitidos;
   `id` únicos.
-- Cada interacción con `learning_objective`; preguntas evaluables con respuesta
-  correcta, feedback y `source_refs`.
+- Cada pantalla con `objective` (la interacción evalúa el de su propia pantalla, no
+  lleva uno propio); preguntas evaluables con respuesta correcta, feedback y
+  `source_refs`.
 - `final_test` presente si `score_source=final_test`; `glossary`/`bibliography` no
   vacíos; `quality_checklist` es objeto de booleanos.
 - Imágenes con `alt`; audio/vídeo con `transcript` y subtítulos; `scorm.identifier` no

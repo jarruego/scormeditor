@@ -9,7 +9,7 @@ import { InteractionTypeModal } from './InteractionTypeModal'
 import { SegIcons } from './SegIcons'
 import { RichTextArea } from './RichTextArea'
 import { InteractionConfigEditor } from './InteractionConfigEditor'
-import { ObjectiveInput, ObjectiveSelect } from './ObjectiveSelect'
+import { ObjectiveInput } from './ObjectiveSelect'
 import { FileButton } from './FileButton'
 import { generateForScreen, hasApiKey } from '../tts/tts'
 import { buildTranscript, INFORMATIVE } from '../tts/buildTranscript'
@@ -282,9 +282,6 @@ export function ScreenEditor() {
       type: t,
       scored,
       points: scored ? 1 : 0,
-      // Prerrelleno: casi siempre la interacción evalúa el objetivo de su
-      // propia pantalla (se puede cambiar en el desplegable si no es el caso).
-      learning_objective: screen?.objective.trim() ?? '',
       // Estado inicial útil del tipo (opciones precargadas, config mínima).
       ...interactionRecipe(t).seed?.(),
     })
@@ -298,7 +295,7 @@ export function ScreenEditor() {
     if (mig.lossy) {
       const ok = await confirmDialog({
         title: 'Cambiar el tipo de interacción',
-        message: `Parte del contenido de «${interactionTypeLabel(it.type)}» no se puede conservar al pasar a «${interactionTypeLabel(t)}» y se descartará (el enunciado, el feedback y el objetivo se mantienen).`,
+        message: `Parte del contenido de «${interactionTypeLabel(it.type)}» no se puede conservar al pasar a «${interactionTypeLabel(t)}» y se descartará (el enunciado y el feedback se mantienen).`,
         confirmLabel: 'Cambiar tipo',
         danger: true,
       })
@@ -589,8 +586,6 @@ export function ScreenEditor() {
                     </label>
                   )}
                 </div>
-                <label className="ed-field"><span>Objetivo vinculado</span>
-                  <ObjectiveSelect value={it.learning_objective} onChange={(v) => setInteraction({ ...it, learning_objective: v })} /></label>
               </Fold>
             )}
 

@@ -1,93 +1,105 @@
-# Editor de texto enriquecido (`RichTextArea` + `cmMarkdown`)
+# Editor de texto enriquecido (`RichTextArea` + `mdDialect`)
 
 > Doc interno de SCORMEditor. Índice en `CLAUDE.md`. El render del markdown ligero en la
 > carcasa (sintaxis, callouts, bloque personalizado) está en `arquitectura-runtime.md`.
 
 `RichTextArea` (`src/components/RichTextArea.tsx`) es la caja de texto de `student_text`
-y de otros campos (feedback, escenarios…). Está sobre **CodeMirror 6** en modo **«vista
-viva»** (estilo Obsidian): el valor sigue siendo **markdown en texto plano** (la
-invariante no cambia — no hay HTML ni WYSIWYG que lo guarde; CodeMirror opera sobre texto
-plano y se ve idéntico en «Vista estudiante»), pero la caja **muestra el resultado** y
-**oculta los marcadores** de sintaxis. Un WYSIWYG «puro» alternativo
-(ProseMirror/Lexical) se descartó por peso y por crear un segundo renderizador que
-divergiría del runtime.
+y de otros campos (feedback, escenarios…). Es un editor **WYSIWYG real sobre
+TipTap/ProseMirror**: el valor que entra y sale de `onChange` sigue siendo el **markdown
+ligero en texto plano** del proyecto (la invariante no cambia — nunca se guarda HTML); el
+puente entre ambos mundos es `src/text/mdDialect.ts` (`mdToJson`/`jsonToMd`), un módulo
+puro sin dependencias que parsea ese markdown a un documento ProseMirror (JSON) y lo
+serializa de vuelta.
 
-## Configuración CodeMirror (`src/components/cmMarkdown.ts`)
-- `mdHighlighting` (`HighlightStyle`): negrita en negrita, `##/###` grandes, enlaces,
-  código.
-- `livePreview` (`ViewPlugin`): oculta **siempre** con `Decoration.replace` los
-  marcadores (`**`, `#`, `[ ]( )`, `URL`) — nunca se revelan por cursor ni por selección,
-  para que ni el clic simple ni el doble clic ni seleccionar un bloque hagan reaparecer
-  los `**`/`:::` ni desplacen el contenido — y sustituye la cabecera `::: tipo …` por un
-  **chip** legible (icono + título / etiqueta del callout). Sus rangos se exponen como
-  `atomicRanges` para que las flechas salten los marcadores ocultos. Todo por línea: solo
-  `replace` de **una** línea (nunca cruza saltos → sin decoraciones de bloque, más
-  robusto).
-- `calloutDecorations`: fondo/filete de color por línea para los bloques `:::`. El color
-  sale de `calloutColor(type, rest)`: los `custom` con su hex validado y los predefinidos
-  con su color de paleta (`CALLOUT_COLORS`, **alineado con `runtime/styles.css`** para
-  que en el editor se vea el MISMO color que de verdad, no gris). Se expone como
-  `--cm-callout-color`.
-- `editorTheme(rows*1.5)`: aspecto alineado con las variables del editor; `rows` → alto
-  mínimo.
+## `mdDialect.ts`: el puente markdown ↔ ProseMirror
+La referencia semántica es el renderizador de la carcasa (`renderer.js` `mdToHtml` +
+`interactions.js` `rich`): este módulo **replica sus regex y su orden de aplicación**
+(enlaces primero, luego `**negrita**`, luego `*cursiva*`) para que el editor jamás
+interprete un texto de forma distinta a como lo verá el alumno. No hay AST intermedio
+compartido con el runtime — son implementaciones paralelas deliberadamente alineadas, no
+un import cruzado (el runtime es HTML/CSS/JS plano sin build, ver `CLAUDE.md`).
 
-Como los marcadores no se revelan nunca, **editar el crudo** (URL de un enlace,
-color/icono/título de un bloque, quitar negrita…) se hace siempre por los controles de la
-barra — no tecleando entre los `**`; para casos límite el texto plano subyacente sigue
-ahí (deshacer, seleccionar todo, etc.).
+Dos garantías, verificadas por `scripts/test-md-dialect.ts` (`npx tsx
+scripts/test-md-dialect.ts`):
+- **Round-trip exacto**: `jsonToMd(mdToJson(x)) === x` para un corpus canónico de casos
+  (negrita/cursiva anidadas, listas con numeración no consecutiva, callouts con y sin
+  cierre, imágenes con/sin ancho…). Algunos casos de entrada se **normalizan** de forma
+  aceptada (viñetas con `*`/`•`/`–` → `-`, `1)` → `1.`…): para esos solo se exige
+  equivalencia de render, no igualdad byte a byte.
+- **Equivalencia de render**: para todos los strings del proyecto demo
+  (`docs/internals/demo-scormeditor.scormproj`), el `mdToHtml` **real** de la carcasa
+  (evaluado en un sandbox `vm` de Node, cargando los `.js` del runtime tal cual) produce
+  el mismo HTML antes y después del round-trip. Si esto se cumple, abrir un texto con el
+  editor y guardarlo sin tocar nada no puede cambiar lo que ve el alumno.
 
-## Imágenes en el texto
-Botón **🖼 Imagen**: es un `<label>` con `<input type="file">` oculto (vestido de botón,
-`.ed-rta-imgbtn`); sube la imagen con `optimizeImage`, la guarda como asset
-(`assets/img/txt-<ts>.<ext>`) e inserta `![](ruta)` en línea propia con el cursor sobre
-ella. El render y sus invariantes: `interacciones.md` / `arquitectura-runtime.md`.
-Las líneas `![alt|ancho](ruta)` se **sustituyen enteras** por la imagen (`ImgWidget` en
-`cmMarkdown.ts`; el markdown nunca se ve — la variante con el texto visible confundía
-porque el alt parecía un enlace). Al clicar la imagen se selecciona (contorno +
-`selectionSet` en el plugin) y aparece la **barra contextual «Imagen»** bajo el editor
-(mismo patrón que la barra de bloque): campo de **alt** (se sanea `]`/`|`), select de
-**tamaño** (Tamaño real / 25–100 % → sufijo `|NN` en el markdown), **↻ Sustituir…** (sube
-otra y borra el binario anterior si nadie más lo usa) y **🗑 Quitar** (borra la línea y
-el asset vía `removeAsset`, que respeta referencias). El detector de enlaces de
-`analyze()` ignora los `[…](…)` precedidos de `!` para no ofrecer «Editar enlace» sobre
-una imagen. Los blobs de assets se resuelven a object URLs cacheadas (`imageUrl`); si la
-ruta no existe en assets el widget muestra «imagen no encontrada».
+Al tocar el dialecto (nueva marca inline, nuevo tipo de bloque) hay que mantener alineadas
+tres cosas: las regex de `mdDialect.ts`, las de `renderer.js`/`interactions.js` en el
+runtime, y añadir el caso nuevo al corpus del test. **Ejecutar el test es obligatorio**
+tras cualquier cambio en el dialecto — es la única red de seguridad contra una regresión
+silenciosa en lo que ve el alumno.
+
+## Esquema del editor (`EXTENSIONS` en `RichTextArea.tsx`)
+`StarterKit` de TipTap **recortado** a lo que el dialecto soporta: encabezados solo
+`level: 2 | 3` (`##`/`###`), `link` sin autolink (se inserta siempre por el editor de
+enlace, nunca detectando URLs sueltas), y **desactivados** `strike`, `code`, `codeBlock`,
+`blockquote`, `horizontalRule`, `underline` — no existen en el dialecto ni los renderiza
+la carcasa; dejarlos activos permitiría crear contenido que luego no se ve igual. Dos
+nodos propios en `src/components/tiptap/`:
+- **`CalloutNode`** (`CalloutNode.tsx`): el bloque `::: tipo … :::`. `content: 'block+'`,
+  `isolating: true` (no se fusiona con el párrafo de fuera al editar en el borde) y
+  `defining: true`. Su `NodeView` (React) pinta cabecera con icono/etiqueta, un `<select>`
+  para cambiar de tipo (estándar, presets personalizados guardados o «Personalizado a
+  medida…») y un botón «quitar formato» (`unwrap`: sustituye el nodo por su contenido en
+  el documento, conservando el texto). Un `addKeyboardShortcuts` propio maneja Enter sobre
+  un párrafo vacío al final del bloque para «salir» de él (ProseMirror no hace
+  `liftEmptyBlock` automático en nodos `isolating`).
+- **`ImageFigureNode`** (`ImageFigureNode.tsx`): `![alt|ancho](ruta)` como nodo **atómico**
+  de bloque propio (nunca inline, igual que en la carcasa). Su `NodeView` resuelve la ruta
+  del asset a una object URL cacheada (`imgUrlCache`, con limpieza en `import.meta.hot` en
+  dev) y trae su propia barra integrada: alt, `<select>` de ancho (Tamaño real / 25–100 %),
+  «Sustituir…» (sube otra imagen y borra el binario anterior si nadie más lo usa vía
+  `removeAsset`) y «Quitar».
+
+`SelectAllFix` (extensión pequeña definida en `RichTextArea.tsx`) sustituye el `Mod-a` por
+defecto de ProseMirror: la `AllSelection` que crea Ctrl/Cmd+A no queda bien sincronizada al
+colapsarla luego con teclado (Fin, flechas) —con clic de ratón sí— y el Intro dejaba de
+partir el párrafo (confirmado con Playwright, no era flakiness del test). Se reemplaza por
+una `TextSelection` que cubre todo el documento: mismo resultado visible, navegación con
+teclado fiable después.
+
+`CustomBlockPanel.tsx` es el formulario de icono/color/título del bloque «Personalizado»;
+lo comparten la barra (insertar uno nuevo) y el propio `CalloutNode` (editar el que ya
+existe) para no duplicar el marcado. `IconPicker.tsx` es el popover de emoji curados (no
+un selector de emoji del sistema). Los presets guardados (`customBlocks.ts`, localStorage)
+son independientes del documento — es una lista de atajos, no se serializa en el markdown.
+
+## Sincronización controlada
+El componente sigue siendo **controlado** (`value`/`onChange`, misma interfaz que antes de
+TipTap): al montar, `content: mdToJson(value)`; cada `onUpdate` serializa con `jsonToMd` y
+llama `onChange`. Para no reaplicar por sync externo (deshacer global, carga de proyecto)
+el mismo cambio que el editor acaba de emitir —lo que rompería el cursor—, se guarda en un
+ref (`lastEmittedRef`) el último markdown que **este** editor produjo; el `useEffect` que
+escucha `value` solo llama a `editor.commands.setContent(..., { emitUpdate: false })`
+cuando el valor entrante difiere de ese ref.
 
 ## Barra de formato y edición contextual
-La **barra** conmuta de verdad: `B`/`I` usan el árbol de sintaxis (`syntaxTree`) para, si
-la selección ya está dentro de `StrongEmphasis`/`Emphasis`, **quitar** los marcadores en
-vez de añadirlos. Edición **contextual** (según lo que hay bajo el cursor, recalculado en
-`updateListener`):
-- Cursor en un **enlace** → el botón pasa a «Editar enlace» y abre un popover
-  (texto/URL, con «Quitar»). El editor de enlace se **abre automáticamente** al entrar el
-  cursor en un `[texto](url)` y se cierra al salir; «Cancelar» lo descarta hasta salir y
-  volver a entrar (`dismissedLinkRef`).
-- Cursor dentro de un **bloque `:::`** → aparece una **barra de bloque** con un
-  `<select>` para **cambiar el tipo** — incluye los tipos estándar, los **presets
-  personalizados guardados** (valor `preset:<id>`, que reescriben la cabecera con su
-  color/icono/título) y «Personalizado a medida…» que abre el diálogo precargado — y
-  **«Quitar formato»** (`unwrapBlock`), que **conserva el texto**: elimina solo la línea
-  de cabecera `::: …` y la de cierre `:::` (cada una con su salto de línea; se despachan
-  en coordenadas del documento original, sin solaparse), dejando el contenido interior
-  como texto plano. No es un borrado destructivo, así que no lleva estilo `ed-danger`.
+El estado de la barra (qué botones están «encendidos») es reactivo vía `useEditorState`
+(selector con `editor.isActive(...)`): solo re-renderiza cuando cambia algo de eso, no en
+cada pulsación. El botón de enlace es contextual: si el cursor está dentro de un enlace
+(`getMarkRange`) pasa a «Editar enlace» y precarga texto/URL; si no, «Insertar enlace»
+abre el mismo panel vacío. El editor de enlace y el panel de bloque personalizado son
+paneles inline bajo la barra (no flotantes); **Esc** los cierra (`handleEscClose` en el
+`onKeyDown` del contenedor).
 
-Las barras contextuales (bloque, imagen y enlace) **flotan** sobre la parte superior de
-la caja (`.ed-rta-floats`, `position:absolute` dentro de `.ed-rta-editwrap`), de modo que
-aparecer o desaparecer **no empuja** el editor; el contenedor lleva
-`pointer-events:none` (salvo las propias barras) para no bloquear los clics del editor.
-**Esc** cierra los paneles flotantes visibles (`handleEscClose` en el `onKeyDown` de
-`.ed-rta`): el diálogo personalizado, el enlace (Cancelar) y las barras de bloque/imagen
-(ocultadas por firma con `dismissedBlock`/`dismissedImg`, que se reactivan al salir y
-volver). La barra de formato lleva `onMouseDown={preventDefault}` para **no robar el
-foco** al editor (si no, el botón pulsado se quedaba resaltado y con foco).
+## Imágenes en el texto
+Botón **🖼 Imagen** en la barra: `<label>` con `<input type="file">` oculto vestido de
+botón (`.ed-rta-imgbtn`); sube con `optimizeImage`, guarda el asset
+(`assets/img/txt-<ts>.<ext>`) e inserta un nodo `imageFigure` en la posición del cursor.
+Comparte camino con el botón «Sustituir…» del propio nodo. El render final y sus
+invariantes de seguridad: `interacciones.md` / `arquitectura-runtime.md`.
 
 ## Integración en formularios (avisos importantes)
-- `RichTextArea` **no debe envolverse en un `<label>`** (usar
-  `<div className="ed-field">`). Un `<label>` asocia su primer control etiquetable y le
-  reenvía **clics** y **:hover**; como CodeMirror no es un control etiquetable, el label
-  apuntaría al **primer botón de la barra** (la «B»), de modo que pasar el ratón la
-  resaltaba y clicar en cualquier parte del campo aplicaba negrita. El editor añade
-  además `onClick={preventDefault}` en su contenedor como salvaguarda.
-- El componente es **controlado**: sincroniza el valor externo (deshacer global, carga de
-  proyecto) comparando el doc actual antes de despachar, para no entrar en bucle ni mover
-  el cursor.
+- `RichTextArea` **no debe envolverse en un `<label>`**: un `<label>` asocia su primer
+  control etiquetable y le reenvía clic/`:hover`. Usar `<div className="ed-field">`.
+- El documento ProseMirror vive solo en memoria del editor; `course.json` únicamente
+  contiene el markdown ligero que produce `jsonToMd` — nunca el JSON del documento ni HTML.

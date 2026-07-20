@@ -90,8 +90,6 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
   // Interacción
   const it = s.interaction
   if (it) {
-    if (!it.learning_objective.trim())
-      add('INT_NO_OBJECTIVE', 'warning', 'Interacción sin objetivo de aprendizaje vinculado.')
     const isQuestion = ['single_choice', 'true_false', 'classification', 'match_pairs', 'scenario_decision'].includes(it.type)
     if (isQuestion) {
       const hasCorrect =
@@ -353,8 +351,8 @@ function checkGlobal(ctx: Ctx) {
     const key = normalizeObjective(obj)
     if (key && !declaredBy.has(key))
       declaredBy.set(key, { obj, screen: s, loc: screenLoc(m.title || m.id, u ? u.title || u.id : null, s) })
-    if (s.interaction?.scored && s.interaction.learning_objective)
-      evaluatedObjectives.add(normalizeObjective(s.interaction.learning_objective))
+    if (s.interaction?.scored && key)
+      evaluatedObjectives.add(key)
   }))
   c.assessments.final_test?.questions.forEach((q) => q.learning_objective && evaluatedObjectives.add(normalizeObjective(q.learning_objective)))
   c.assessments.unit_tests.forEach((t) => t.questions.forEach((q) => q.learning_objective && evaluatedObjectives.add(normalizeObjective(q.learning_objective))))

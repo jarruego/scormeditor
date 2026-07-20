@@ -37,8 +37,8 @@ Lee el que corresponda al tocar esa área:
   sync Editor↔Vista, historial deshacer/rehacer, pestañas y toolbar.
 - `editor-pantallas.md` — árbol (`CourseTree`), recetas de creación, `ScreenEditor`
   (formulario por tipo, sección Interacción, `ListEditor`), objetivos, `FinalTestEditor`.
-- `editor-richtext.md` — `RichTextArea` + `cmMarkdown` (vista viva, barras contextuales,
-  imágenes en el texto).
+- `editor-richtext.md` — `RichTextArea` (WYSIWYG sobre TipTap/ProseMirror) + `mdDialect.ts`
+  (puente markdown ligero ↔ ProseMirror), nodos callout/imagen, barra contextual.
 - `interacciones.md` — motor `interactions.js` (factory/contrato, restauración,
   Comprobar/intentos, drag&drop, `interaction_layout`) y notas por tipo.
 - `evaluacion-finalizacion.md` — navegación/gating, `computeScore` por `score_source`

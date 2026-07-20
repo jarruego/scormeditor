@@ -15,17 +15,19 @@ Reglas por pantalla / unidad / curso, p. ej.:
   esto iguala la paridad en el editor.
 - `type` distinto de `cover`/`summary` **sin** `objective` → aviso (por eso el editor
   rellena `objective` aunque no se muestre como banner; ver `arquitectura-runtime.md`).
-- Imagen sin `alt`, vídeo sin `transcript`, interacción sin `learning_objective`, etc.
+- Imagen sin `alt`, vídeo sin `transcript`, etc.
 - **Preguntas de tests** (final y de unidad): mismas exigencias que las interacciones de
   pantalla — enunciado, respuesta correcta y feedback (`checkQuizQuestions`). Las del test
   final llevan `screenId: '__final__'`; las de tests de unidad llevan `unitId`.
 - **Cobertura de objetivos**: un issue `OBJ_NOT_EVALUATED` **por objetivo** no evaluado,
-  enlazado (`screenId`) a la primera pantalla que lo declara. Cuentan como evaluación las
-  interacciones `scored`, el test final y los tests de unidad. La comparación es
-  **normalizada** (`normalizeObjective` en `src/validation/objectives.ts`: sin acentos,
-  minúsculas, espacios colapsados, sin puntuación final) porque la vinculación histórica
-  era texto libre y abundan pares «casi iguales»; `ObjectiveSelect` usa el mismo
-  normalizador. No endurecer a comparación exacta.
+  enlazado (`screenId`) a la primera pantalla que lo declara. El objetivo de una
+  interacción es siempre el `objective` de su propia pantalla (no tiene uno propio ni se
+  valida por separado); cuentan como evaluación las interacciones `scored` de esa pantalla,
+  el test final y los tests de unidad. La comparación es **normalizada**
+  (`normalizeObjective` en `src/validation/objectives.ts`: sin acentos, minúsculas,
+  espacios colapsados, sin puntuación final) porque la vinculación de las preguntas de
+  test era texto libre y abundan pares «casi iguales»; `ObjectiveSelect` (preguntas de
+  test) usa el mismo normalizador. No endurecer a comparación exacta.
 - **Origen de la nota** (`score_source`): ojo a la semántica real del runtime
   (`computeScore` en `app.js`): `'unit_tests'` = **actividades evaluables** (interacciones
   de pantalla con `scored`), no `assessments.unit_tests`. Reglas: `SCORM_NO_FINAL`

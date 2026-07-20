@@ -57,17 +57,15 @@ export function collectObjectives(course: Course): ObjectiveInfo[] {
   allScreens(course).forEach((s) => {
     const decl = entry(s.objective)
     if (decl) {
-      // El texto canónico es el de la primera pantalla que lo declara (puede
-      // haber aparecido antes como vínculo de una interacción).
-      if (decl.declaredIn.length === 0) decl.text = s.objective.trim()
       decl.declaredIn.push({ id: s.id, title: s.title || s.id })
-    }
-    if (s.interaction?.learning_objective) {
-      entry(s.interaction.learning_objective)?.usedBy.push({
-        screenId: s.id,
-        label: `Interacción en «${s.title || s.id}»`,
-        evaluative: !!s.interaction.scored,
-      })
+      // El objetivo de la interacción es siempre el de su pantalla (no tiene
+      // uno propio): si es evaluable, cuenta como evaluación de este objetivo.
+      if (s.interaction?.scored)
+        decl.usedBy.push({
+          screenId: s.id,
+          label: `Interacción en «${s.title || s.id}»`,
+          evaluative: true,
+        })
     }
   })
 

@@ -255,15 +255,17 @@ details.ed-fold[open] > summary { border-bottom: 1px solid var(--c-border); }
 .ed-rta { display: grid; gap: .3rem; }
 .ed-rta-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
 .ed-rta-bar button { padding: .2rem .5rem; font-size: .85rem; line-height: 1.2; }
-/* Imagen ![alt](ruta) dentro del editor: el widget sustituye la línea entera.
-   Sin ancho fijado se ve como miniatura; con `|NN` ocupa ese % de la caja
-   (WYSIWYG). Al clicarla se selecciona (contorno) y sale la barra contextual. */
-.cm-md-img { display: inline-block; vertical-align: text-bottom; max-width: 100%; cursor: pointer; }
-.cm-md-img img { display: block; max-height: 120px; max-width: 100%; border: 1px solid var(--c-border); border-radius: 6px; }
-.cm-md-img.has-width { display: block; }
-.cm-md-img.has-width img { max-height: none; }
-.cm-md-img.is-selected img { outline: 3px solid var(--c-primary); outline-offset: 1px; }
-.cm-md-img.is-missing { color: var(--c-muted); font-style: italic; font-size: .85rem; }
+.ed-rta-bar button.is-on { background: var(--c-primary); color: #fff; border-color: var(--c-primary); }
+/* Imagen en línea propia (nodo "imageFigure", nunca inline): sin ancho fijado
+   se ve como miniatura para no romper el flujo de edición; con ancho ocupa ese
+   % de la caja (WYSIWYG con la diapositiva). La barra bajo la imagen edita
+   alt/ancho/sustituir/quitar — integrada en el propio bloque, no flotante. */
+.ed-imgnode { margin: .4rem 0; }
+.ed-imgnode img { display: block; max-height: 160px; max-width: 100%; border: 1px solid var(--c-border); border-radius: 6px; }
+.ed-imgnode.has-width img { max-height: none; }
+.ed-imgnode.is-selected img { outline: 3px solid var(--c-primary); outline-offset: 1px; }
+.ed-imgnode-missing { color: var(--c-muted); font-style: italic; font-size: .85rem; padding: .4rem; border: 1px dashed var(--c-border); border-radius: 6px; }
+.ed-imgnode .ed-rta-imgbar { margin-top: .3rem; }
 
 /* El botón de imagen es un <label> con input file oculto; se viste de botón. */
 .ed-rta-imgbtn { padding: .2rem .5rem; font-size: .85rem; line-height: 1.2; border: 1px solid var(--c-border); background: var(--c-surface); border-radius: 8px; cursor: pointer; transition: background-color .12s ease, border-color .12s ease; }
@@ -291,28 +293,37 @@ details.ed-fold[open] > summary { border-bottom: 1px solid var(--c-border); }
 .ed-rta-swatches input[type=color] { width: 32px; height: 28px; padding: 0; border: 1px solid var(--c-border); border-radius: 6px; background: none; }
 .ed-rta-custom-actions { display: flex; gap: .4rem; }
 .ed-rta-editblock { border-color: var(--c-primary); color: var(--c-primary); }
-/* Editor CodeMirror: la caja muestra el formato (negrita, encabezados, bloques). */
-.ed-rta-cm .cm-editor { width: 100%; max-height: 60vh; }
-.ed-rta-cm .cm-scroller { overflow: auto; }
-/* Bloques "::: …" pintados como caja de color mientras se editan. */
-.ed-rta-cm .cm-line.cm-callout { border-left: 3px solid var(--cm-callout-color, var(--c-border)); padding-left: .55rem;
-  background: color-mix(in srgb, var(--cm-callout-color, #7787bf) 14%, transparent); }
-.ed-rta-cm .cm-line.cm-callout-start { border-top-left-radius: 6px; margin-top: .15rem; }
-.ed-rta-cm .cm-line.cm-callout-end { border-bottom-left-radius: 6px; margin-bottom: .15rem; }
-.ed-rta-cm .cm-line.cm-callout-fence { color: var(--c-muted); }
-/* «Chip» de cabecera del bloque (sustituye a "::: tipo …" en vista viva). */
-.ed-rta-cm .cm-callout-chip { font-weight: 700; color: color-mix(in srgb, var(--cm-callout-color, var(--c-text)) 75%, black); }
-/* Barra contextual del bloque bajo el cursor (cambiar tipo / eliminar). */
+/* Área editable (TipTap/ProseMirror): caja con el mismo aspecto que antes. */
+.ed-rta-cm { border: 1px solid var(--c-border); border-radius: 6px; background: #fff; }
+.ed-rta-cm:focus-within { outline: 3px solid var(--c-primary); outline-offset: 1px; }
+.ed-rta-cm .ProseMirror { padding: .45rem .55rem; min-height: var(--ed-rta-minh, 9em); max-height: 60vh; overflow: auto; line-height: 1.5; }
+.ed-rta-cm .ProseMirror:focus { outline: none; }
+.ed-rta-cm .ProseMirror p { margin: 0 0 .5em; }
+.ed-rta-cm .ProseMirror p:last-child { margin-bottom: 0; }
+.ed-rta-cm .ProseMirror h2 { font-size: 1.2em; font-weight: 700; margin: .6em 0 .3em; }
+.ed-rta-cm .ProseMirror h3 { font-size: 1.08em; font-weight: 700; margin: .6em 0 .3em; }
+.ed-rta-cm .ProseMirror ul, .ed-rta-cm .ProseMirror ol { margin: 0 0 .5em; padding-left: 1.4em; }
+.ed-rta-cm .ProseMirror a { color: var(--c-primary); text-decoration: underline; }
+.ed-rta-cm .ProseMirror p.is-empty::before {
+  content: attr(data-placeholder); float: left; height: 0; color: var(--c-muted); pointer-events: none; }
+/* Bloque destacado (nodo "callout"): caja de color con cabecera y controles
+   integrados (select de tipo, editar/quitar formato) — nada flotante, todo
+   vive dentro del propio bloque. Color alineado con la carcasa real. */
+.ed-callout-node { border-left: 3px solid var(--cm-callout-color, var(--c-border)); border-radius: 6px;
+  padding: .5rem .6rem; margin: .5rem 0; background: color-mix(in srgb, var(--cm-callout-color, #7787bf) 12%, white); }
+.ed-callout-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; margin-bottom: .3rem; }
+.ed-callout-title { font-weight: 700; font-size: .92rem; color: color-mix(in srgb, var(--cm-callout-color, var(--c-text)) 75%, black); }
+.ed-callout-controls { display: flex; align-items: center; gap: .3rem; opacity: .55; transition: opacity .12s ease; }
+.ed-callout-node:hover .ed-callout-controls, .ed-callout-node:focus-within .ed-callout-controls { opacity: 1; }
+.ed-callout-controls select { width: auto; font-size: .78rem; padding: .1rem .3rem; }
+.ed-callout-controls button { padding: .15rem .3rem; }
+.ed-callout-body > *:first-child { margin-top: 0; }
+.ed-callout-body > *:last-child { margin-bottom: 0; }
+/* Barra genérica (imagen / enlace): etiqueta + controles inline. */
 .ed-rta-blockbar { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; padding: .35rem .5rem;
   border: 1px solid var(--c-border); border-radius: 6px; background: color-mix(in srgb, var(--c-primary) 5%, white); }
 .ed-rta-blocklbl { font-size: .8rem; color: var(--c-muted); }
 .ed-rta-blockbar select { width: auto; }
-/* Barras contextuales flotantes sobre la parte superior de la caja: absolutas,
-   no empujan el editor. El contenedor deja pasar los clics salvo en las barras. */
-.ed-rta-editwrap { position: relative; }
-.ed-rta-floats { position: absolute; top: .5rem; left: .6rem; right: .6rem; z-index: 15; display: flex; flex-direction: column; gap: .4rem; pointer-events: none; }
-.ed-rta-floats > * { pointer-events: auto; box-shadow: 0 8px 22px rgba(0, 0, 0, .22); }
-/* Barra contextual de imagen (cursor sobre una línea ![alt](ruta)) */
 .ed-rta-imgbar .ed-rta-imgalt { flex: 1; min-width: 160px; width: auto; }
 /* Editor de enlace: misma tira que la barra de imagen (etiqueta + inputs inline). */
 .ed-rta-linkedit .ed-rta-linktext { flex: 1; min-width: 110px; width: auto; }

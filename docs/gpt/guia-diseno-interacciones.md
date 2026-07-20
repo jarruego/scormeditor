@@ -395,10 +395,11 @@ aprendizajes evaluables distintos haya — **ni una cuota fija ni uno por diapos
 - Pantallas `objectives`/`route`: usa el objetivo principal del tema; **no** inventes
   meta-objetivos tipo «Presentar el recorrido del tema» (nunca tendrían evaluación y
   ensucian la trazabilidad).
-- **Cobertura**: cada objetivo declarado debe tener al menos una evaluación —
-  interacción `scored` o pregunta del test — cuyo `learning_objective` copie su texto
-  literal. Si un objetivo se queda sin pregunta, falta una pregunta (o sobra el
-  objetivo).
+- **Cobertura**: cada objetivo declarado debe tener al menos una evaluación — una
+  interacción `scored` en una pantalla con ese `objective` (la interacción no lleva
+  `learning_objective` propio: evalúa el de su pantalla), o una pregunta del test cuyo
+  `learning_objective` copie el texto literal. Si un objetivo se queda sin evaluación,
+  falta una interacción evaluable o una pregunta (o sobra el objetivo).
 
 ## Detectar bloques destacados (callouts) en el documento de origen
 Los documentos suelen traer ya «cajas», recuadros de color o frases con intención de
@@ -451,7 +452,8 @@ Reglas de oro:
   las `flashcards` y las lúdicas de cierre (`word_search`/`crossword`/`az_quiz`)
   llevan `scored: false`.
 - Las evaluables llevan respuesta correcta + `feedback` (acierto/error) +
-  `explanation`. Siempre `learning_objective` y `source_refs`.
+  `explanation`. Siempre `source_refs` (el objetivo lo pone la pantalla: la
+  interacción no lleva `learning_objective` propio).
 - No abuses de `single_choice`: si puedes pedir **clasificar, ordenar o decidir**,
   el aprendizaje es más profundo que reconocer una opción.
 - **Tipos reservados al editor humano — NO los generes**: `hotspots`, `before_after`,

@@ -63,7 +63,6 @@ informe de revisión.
 
 | Código | Sev | Causa raíz | Corrección canónica | Quién |
 |---|:-:|---|---|:-:|
-| `INT_NO_OBJECTIVE` | ⚠ | Interacción con `learning_objective` vacío | Copia **carácter a carácter** un objetivo declarado en las pantallas | GPT |
 | `Q_NO_PROMPT` | ⛔ | Pregunta sin enunciado | Redáctalo a partir del contenido que evalúa | GPT |
 | `Q_NO_CORRECT` | ⛔ | Ninguna opción con `correct:true` (o, en `classification`/`match_pairs`, opciones sin `group`) | Marca la correcta; en clasificación, asigna a cada `option` su `group` | GPT |
 | `Q_NO_FEEDBACK` | ⛔ | `feedback.correct` e `incorrect` vacíos | Escribe ambos, pedagógicos: por qué es correcta / qué repasar. Nunca un «¡Bien!» vacío | GPT |
@@ -122,7 +121,7 @@ editor.
 | `SCORM_MIXED_NO_ACTIVITIES` | ⚠ | Nota mixta sin actividades evaluables | Marca `scored:true` en los checkpoints (o añádelos) | GPT |
 | `SCORM_ACTIVITIES_IGNORED` | ⚠ | Hay actividades `scored` pero la nota sale solo del test final: no contarán | Decisión del autor: propón `score_source:"mixed"` y aplica lo que él decida | Según |
 | `SCORM_NO_ID` | ⛔ | `scorm.identifier` vacío | Genera uno estable a partir de `course.id` (MAYÚSCULAS y guiones bajos) | GPT |
-| `OBJ_NOT_EVALUATED` | ℹ | Objetivo declarado sin evaluación que lo mida. Causa 1 (la habitual): el `learning_objective` no está copiado **carácter a carácter** del `objective`. Causa 2: falta la evaluación | Causa 1: corrige el texto para que coincida exactamente. Causa 2: añade una pregunta al test o un checkpoint `scored` con ese objetivo | GPT |
+| `OBJ_NOT_EVALUATED` | ℹ | Objetivo declarado sin evaluación que lo mida. Causa 1 (la habitual): el `learning_objective` de una pregunta de test no está copiado **carácter a carácter** del `objective`. Causa 2: falta la evaluación (ni una interacción `scored` en una pantalla con ese `objective`, ni una pregunta de test) | Causa 1: corrige el texto para que coincida exactamente. Causa 2: añade una pregunta al test, o marca `scored` una interacción de una pantalla con ese objetivo | GPT |
 
 > Esta tabla se deriva de los validadores de SCORMEditor (`validators.ts`) y se
 > mantiene sincronizada con ellos. Si un informe trae un código que no figura aquí,

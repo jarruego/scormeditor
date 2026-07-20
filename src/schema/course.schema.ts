@@ -184,7 +184,6 @@ export const Interaction = z.object({
     .default(1)
     .describe('Intentos permitidos para comprobar la respuesta. 1 por defecto, 0 = ilimitados'),
   retries: z.number().int().min(0).default(0).describe('DEPRECADO: usar attempts'),
-  learning_objective: z.string().default('').describe('Objetivo de aprendizaje vinculado'),
   source_refs: z.array(SourceRef).default([]),
 })
 export type Interaction = z.infer<typeof Interaction>

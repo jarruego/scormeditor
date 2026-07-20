@@ -207,11 +207,12 @@ El bloque cuenta una historia en 4 partes (no una pila plana de campos al mismo 
 2. **Actividad** (siempre visible): Enunciado, Instrucciones y el
    `InteractionConfigEditor` del tipo.
 3. **Fold «Evaluación»** (solo si el tipo es `gradable` — o `scored` importado):
-   Evaluable, Puntos, Intentos y **Objetivo vinculado**. `defaultOpen={it.scored}` y
-   **resumen vivo** en el `<summary>`: «Evaluación — evaluable · 2 puntos · 1 intento» /
-   «Evaluación — no puntúa» (se recalcula en cada render; el estado abierto/cerrado sigue
-   siendo del autor). En tipos no evaluables el objetivo vinculado no se muestra (la
-   cobertura `OBJ_NOT_EVALUATED` solo cuenta `scored`).
+   Evaluable, Puntos e Intentos. `defaultOpen={it.scored}` y **resumen vivo** en el
+   `<summary>`: «Evaluación — evaluable · 2 puntos · 1 intento» / «Evaluación — no puntúa»
+   (se recalcula en cada render; el estado abierto/cerrado sigue siendo del autor). No hay
+   objetivo propio de la interacción: es siempre el `objective` de su pantalla (ver
+   «Objetivos de aprendizaje» más abajo); la cobertura `OBJ_NOT_EVALUATED` solo cuenta
+   `scored`.
 4. **Fold «Feedback»** (plegado; resumen «personalizado»/«por defecto» — comparado contra
    los defaults del esquema, `FB_DEFAULTS` vía `Interaction.parse`): acierto, error y
    explicación pedagógica, con hint «respaldo general» cuando el tipo tiene además
@@ -318,9 +319,15 @@ que el case `hotspots` de `InteractionConfigEditor` abre un **editor visual en m
 
 ## Objetivos de aprendizaje
 
-### Objetivo vinculado = desplegable, no texto libre
-El campo «Objetivo vinculado» (interacción del `ScreenEditor` y pregunta del
-`FinalTestEditor`) es `ObjectiveSelect` (`src/components/ObjectiveSelect.tsx`): un
+### Las interacciones no tienen objetivo propio
+El objetivo de aprendizaje de una interacción **es siempre el de su pantalla**
+(`screen.objective`): no existe un campo `learning_objective` en la interacción, no hay
+selector propio en el `ScreenEditor` y no se valida por separado. Simplifica el modelo (un
+objetivo por pantalla, no dos textos que pueden desincronizarse) y es la semántica real:
+una interacción evalúa el contenido de la pantalla donde vive.
+Las **preguntas de test** (final y de unidad) sí llevan su propio `learning_objective`
+—no están ancladas a una pantalla concreta— y su campo «Objetivo vinculado» en
+`FinalTestEditor` es `ObjectiveSelect` (`src/components/ObjectiveSelect.tsx`): un
 `<select>` con los objetivos **declarados en las pantallas** del curso. Motivo: la
 cobertura `OBJ_NOT_EVALUATED` (ver `informes-validacion.md`) casa por **texto exacto**, y
 el texto libre producía objetivos «casi iguales» que nunca casaban. Si el valor guardado
@@ -334,17 +341,16 @@ objetivos, incluidas las pantallas sin interacción) no puede ser un desplegable
 es `ObjectiveInput` (mismo fichero), un input **con `datalist`** que sugiere los
 objetivos ya declarados pero admite escribir uno nuevo. Ambos comparten
 `useDeclaredObjectives()`.
-**Prerrelleno** (para no escribir dos veces lo mismo): una interacción nueva hereda el
-`objective` de su pantalla, y una pregunta nueva del test final se prerrellena con el
-**primer objetivo aún sin evaluación** (`uncoveredObjectives()` en
-`src/validation/objectives.ts`) — así «+ Añadir pregunta» va recorriendo solo los
-objetivos pendientes. Son valores iniciales editables, no un vínculo automático: el
-desplegable sigue mandando.
+**Prerrelleno** de preguntas del test final: la nueva se prerrellena con el **primer
+objetivo aún sin evaluación** (`uncoveredObjectives()` en `src/validation/objectives.ts`)
+— así «+ Añadir pregunta» va recorriendo solo los objetivos pendientes. Es un valor
+inicial editable, no un vínculo automático: el desplegable sigue mandando.
 
 ### Gestor de objetivos (⚙ Ajustes › Objetivos de aprendizaje)
 Los objetivos **no son una entidad** del `course.json`: viven como texto repetido en
-`screen.objective`, `interaction.learning_objective` y `question.learning_objective`. El
-gestor (`src/components/ObjectivesModal.tsx`, `settingsModal: 'objectives'`) los reúne
+`screen.objective` y `question.learning_objective` (las interacciones no tienen uno
+propio: heredan el de su pantalla). El gestor (`src/components/ObjectivesModal.tsx`,
+`settingsModal: 'objectives'`) los reúne
 con `collectObjectives()` (`src/validation/objectives.ts`): por clave normalizada, con
 las pantallas que lo declaran y las evaluaciones vinculadas (chips que navegan al editor
 vía `goToScreen`, incluido `__final__`). Acciones sobre **todos los usos a la vez** para

@@ -7,9 +7,10 @@ plantilla de la **forma exacta** (claves, anidación, shape de cada interacción
 deben existir como ficheros reales en el ZIP.
 
 Fíjate en los **objetivos**: son un conjunto pequeño y su texto se repite **idéntico**
-allí donde aparece (en `objective` de las pantallas que lo desarrollan, en el
-`learning_objective` de las interacciones y en las preguntas del test). En un curso
-real, varias pantallas de desarrollo compartirán el mismo `objective`.
+allí donde aparece (en `objective` de las pantallas que lo desarrollan y en el
+`learning_objective` de las preguntas del test; la interacción de una pantalla no
+lleva objetivo propio, evalúa el `objective` de esa pantalla). En un curso real, varias
+pantallas de desarrollo compartirán el mismo `objective`.
 
 ```json
 {
@@ -129,7 +130,6 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
                 "scored": true,
                 "points": 1,
                 "retries": 2,
-                "learning_objective": "Definir la atención centrada en la persona.",
                 "source_refs": [ { "doc": "Curso ACP T.1.pdf", "locator": "p.5" } ]
               },
               "required": true,
@@ -159,7 +159,6 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
                 "scored": false,
                 "points": 0,
                 "retries": 0,
-                "learning_objective": "Reconocer los principios de la ACP.",
                 "source_refs": [ { "doc": "Curso ACP T.1.pdf", "locator": "p.7" } ]
               },
               "required": true,
@@ -188,7 +187,6 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
                 "scored": true,
                 "points": 1,
                 "retries": 2,
-                "learning_objective": "Aplicar la ACP a una decisión cotidiana.",
                 "source_refs": [ { "doc": "Curso ACP T.1.pdf", "locator": "p.9" } ]
               },
               "required": true,
@@ -218,7 +216,6 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
                 "scored": false,
                 "points": 0,
                 "retries": 0,
-                "learning_objective": "Reconocer los principios de la ACP.",
                 "source_refs": [ { "doc": "Curso ACP T.1.pdf", "locator": "p.5-9" } ]
               },
               "required": true,
@@ -241,7 +238,6 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
                 "scored": false,
                 "points": 0,
                 "retries": 0,
-                "learning_objective": "Reconocer los principios de la ACP.",
                 "source_refs": [ { "doc": "Curso ACP T.1.pdf", "locator": "p.5-9" } ]
               },
               "required": true,
@@ -335,7 +331,8 @@ real, varias pantallas de desarrollo compartirán el mismo `objective`.
   metadato de autoría, no la marca visible. Rellena `brand` solo si se pide.
 - **No generes** `hotspots`, `before_after`, `hidden_image`, `puzzle`, `video`
   (vídeo interactivo) ni `html_embed`: los añade el editor humano desde SCORMEditor.
-- Mantén **una sola interacción por pantalla** y `learning_objective` en todas.
+- Mantén **una sola interacción por pantalla**; no le añadas `learning_objective`, ese
+  campo solo existe en las preguntas de test.
 - Si una pantalla referencia una imagen pero no tienes el binario, pon
   `visual_resource.kind = "none"` y anótalo en `editor_notes`.
 - Para las formas concretas de `sort_steps`, `classification`, `match_pairs`,

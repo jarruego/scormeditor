@@ -43,9 +43,10 @@ minimalistas (caja 24×24, trazo 1.8 redondeado, `currentColor`), sin dependenci
   usan un **chevron CSS propio** (borde girado) en vez del marcador nativo.
 - **Excepciones deliberadas** (NO migrar a SVG): la paleta de emojis de los bloques
   personalizados y los botones de callouts del `RichTextArea` (muestran el icono real
-  que viaja en `course.json` y pinta la carcasa), `cmMarkdown.ts` (chips de callouts =
-  contenido), todo `src/runtime/`, y el informe exportado (`report.ts`, documento
-  autónomo). Los mensajes de estado transitorios usan «✓»/«Error:» tipográficos.
+  que viaja en `course.json` y pinta la carcasa), la cabecera del `CalloutNode` de TipTap
+  (icono/etiqueta = contenido, ver `editor-richtext.md`), todo `src/runtime/`, y el
+  informe exportado (`report.ts`, documento autónomo). Los mensajes de estado
+  transitorios usan «✓»/«Error:» tipográficos.
 
 ## ⚙ Ajustes: menú con ventanas independientes (no nodo del árbol)
 **Ajustes** es un **menú desplegable ⚙** en la `Toolbar` (junto a «Archivo ▾») con

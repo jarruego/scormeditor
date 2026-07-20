@@ -200,9 +200,10 @@ Reglas que NO se pueden romper:
   facilitada; su número lo manda el contenido (tantos como aprendizajes evaluables
   distintos haya), **no una cuota fija ni uno por pantalla**. Todas las pantallas que
   desarrollan el mismo objetivo **repiten su texto EXACTO, carácter a carácter** (cada
-  pantalla declara solo su objetivo principal). Los `learning_objective` de
-  interacciones y preguntas del test se **copian literalmente** de ese conjunto: así el
-  editor traza objetivo ↔ pantalla ↔ evaluación.
+  pantalla declara solo su objetivo principal). La interacción de una pantalla **no
+  lleva objetivo propio**: evalúa el `objective` de esa misma pantalla. Los
+  `learning_objective` de las preguntas del test sí son un campo propio y se **copian
+  literalmente** de ese conjunto: así el editor traza objetivo ↔ pantalla ↔ evaluación.
 - `min_time_seconds`: control de permanencia mínima (no antifraude duro). **Pon
   siempre `0`**: el tiempo mínimo por pantalla lo fija a mano el editor humano en
   SCORMEditor después; el GPT no debe estimarlo ni inventarlo.
@@ -401,7 +402,6 @@ Estructura común a TODAS:
   "scored": true,
   "points": 1,
   "retries": 2,
-  "learning_objective": "Texto del objetivo vinculado.",
   "source_refs": []
 }
 ```
@@ -434,7 +434,8 @@ Estructura común a TODAS:
   **solo** en los cuerpos largos: `body` de `accordion`/`tabs`/hitos de `timeline` y
   `text` de `image_cards`.
 - `retries`: `0` = ilimitados.
-- `learning_objective`: rellénalo siempre (el validador lo pide).
+- La interacción no lleva `learning_objective`: evalúa el `objective` de su propia
+  pantalla (§4). No lo añadas al JSON.
 - Reglas del validador para preguntas evaluables: deben tener **respuesta
   correcta** y **feedback** (acierto/error).
 - **No te preocupes del orden de las opciones**: la carcasa **baraja** al mostrar las
@@ -777,8 +778,9 @@ preguntas.
 3. Toda imagen (`kind="image"`) con `alt`.
 4. Todo vídeo con `transcript`; medios con voz (`has_voice:true`) con `tracks` VTT.
 5. Toda pregunta evaluable con **respuesta correcta** y **feedback**.
-6. Toda interacción con `learning_objective` **copiado literalmente** de un
-   `objective` declarado en pantallas; cada objetivo declarado con al menos una
+6. Toda pregunta de test con `learning_objective` **copiado literalmente** de un
+   `objective` declarado en pantallas (la interacción no lleva este campo: evalúa el
+   `objective` de su propia pantalla); cada objetivo declarado con al menos una
    evaluación (interacción `scored` o pregunta del test) que lo mida.
 7. Cada unidad con `summary` (o pantalla `summary`) y al menos una actividad/test.
 8. `glossary` y `bibliography` no vacíos.
@@ -940,9 +942,9 @@ def validate_course(course: dict) -> list:
                     "Ojo: «reflection» es un tipo de PANTALLA, no de interacción — "
                     "usa pantalla type «reflection» (interaction null) o "
                     "interacción «case_practice»")
-            lo = str(it.get("learning_objective", "")).strip()
-            if not lo: warn(f"{w}: interacción sin learning_objective")
-            if it.get("scored") and norm(lo): evaluated.add(norm(lo))
+            # La interacción no lleva learning_objective propio: evalúa el
+            # objective de su propia pantalla (§6).
+            if it.get("scored") and key: evaluated.add(key)
             if it.get("type") in ("single_choice", "true_false", "classification",
                                   "match_pairs", "scenario_decision"):
                 check_question(it.get("prompt"), it.get("options"), it.get("feedback"), w)
@@ -982,8 +984,9 @@ def validate_course(course: dict) -> list:
 
     for key, txt in declared.items():
         if key not in evaluated:
-            warn(f"objetivo sin evaluación que lo mida: «{txt}» — copia su texto EXACTO "
-                 "en el learning_objective de una interacción scored o pregunta de test")
+            warn(f"objetivo sin evaluación que lo mida: «{txt}» — añade una interacción "
+                 "scored en una pantalla con ese objective, o copia su texto EXACTO en "
+                 "el learning_objective de una pregunta de test")
 
     rules = (course.get("scorm") or {}).get("rules") or {}
     nfinal = len((a.get("final_test") or {}).get("questions") or [])

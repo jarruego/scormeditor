@@ -191,7 +191,6 @@ export async function buildElpx(course: Course, assets: AssetMap = {}): Promise<
         points: q.points,
         attempts: 1,
         retries: 0,
-        learning_objective: q.learning_objective,
         source_refs: [],
       }
       const comp = convertInteraction(synthetic, ctx)

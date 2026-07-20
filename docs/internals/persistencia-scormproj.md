@@ -24,7 +24,7 @@ guardado: confundía.)
   manifiesto y carcasa y dejaría de ser SCORM. El primer Ctrl+S pide destino
   `.scormproj`.
 - **MIME por extensión al abrir**: JSZip devuelve los blobs de las entradas **sin tipo**,
-  y los object URLs de la vista previa (`StudentPreview`, `useObjectUrl`, `cmMarkdown`)
+  y los object URLs de la vista previa (`StudentPreview`, `useObjectUrl`, `ImageFigureNode`)
   heredan ese vacío. PNG/JPEG sobreviven porque el navegador los detecta por contenido,
   pero **SVG y VTT no** (un `<img>` con SVG sin `image/svg+xml` no se pinta).
   `typedBlob()` (autosave.ts, mapa `MIME_BY_EXT`) reenvuelve cada blob con el MIME de su

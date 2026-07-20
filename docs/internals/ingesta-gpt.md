@@ -164,8 +164,9 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   test en texto). (5) **Objetivos**: conjunto reducido derivado del contenido + petición
   del usuario + normativa facilitada (NO un micro-objetivo por pantalla, sin cuota fija);
   texto **exacto** reutilizado entre las pantallas del mismo objetivo (`objective` = solo
-  el principal de cada pantalla) y copiado literal en cada `learning_objective`
-  (interacciones y test); cada objetivo con al menos una evaluación; en `objectives`/
+  el principal de cada pantalla) y copiado literal en cada `learning_objective` de
+  pregunta de test (la interacción no lleva ese campo: evalúa el `objective` de su
+  propia pantalla); cada objetivo con al menos una evaluación; en `objectives`/
   `route` el objetivo principal del tema, no meta-objetivos («Presentar el recorrido»).
   Casa con la cobertura normalizada `OBJ_NOT_EVALUATED` del editor
   (`informes-validacion.md`). (6) **Revisión de fidelidad**: el ratio de palabras ≥0.95
