@@ -248,7 +248,18 @@ tipo actual se marca (`.ed-recipe.is-current`). Lo abren dos caminos del `Screen
     body}`, `cards {image, alt, title, text}`); la migración pasa por el ítem
     canónico `{title, body, label, image, alt}` vía `TITLED_ADAPTERS`, y los
     campos que el destino no conserva (label de timeline, image/alt de
-    image_cards) se descartan marcando `lossy`.
+    image_cards) se descartan marcando `lossy`. El campo «detalle» de estos
+    tipos (`body`/`front`+`back`/`text`) siempre se edita con `RichTextArea`
+    completo (negrita, cursiva, listas, bloques personalizados…), porque el
+    runtime los renderiza con `block()` (markdown de bloque completo, el mismo
+    que el cuerpo del acordeón) — **no** con `rich()` (solo inline). El
+    título/etiqueta (`title`/`label`) es un `<input>` plano a propósito en
+    todos ellos (encabezado corto, se renderiza con `rich()`, sin formato de
+    bloque). En `flip_cards` las dos caras conviven superpuestas dentro de un
+    único `<button>` (truco del volteo 3D); `.me-card-front`/`.me-card-back`
+    son `flex-direction: column` para que varios bloques (párrafo + lista +
+    callout) se apilen en vertical en vez de quedar en fila y recortarse por
+    el `overflow: hidden` de la carta.
   - `questions` (video ↔ hidden_image): `config.questions`.
 - **Sin familia común** → `options`/`config` parten del `seed()` del tipo nuevo.
   Quedan fuera a propósito: az_quiz/crossword (sus «respuestas» exigen una

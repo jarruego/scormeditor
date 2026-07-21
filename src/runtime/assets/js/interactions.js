@@ -293,8 +293,8 @@
     cards.forEach(function (c, i) {
       html += '<button class="me-card' + (seen[i] ? ' is-seen' : '') + '" aria-pressed="false" data-i="' + i + '" title="Pulsa para girar la tarjeta">' +
         '<span class="me-flip-inner">' +
-        '<span class="me-card-front">' + rich(c.front) + '<span class="me-flip-tab" aria-hidden="true"></span></span>' +
-        '<span class="me-card-back" aria-hidden="true">' + rich(c.back) + itemAudioMarkup(c.audio_src) + '</span></span></button>';
+        '<span class="me-card-front">' + block(c.front) + '<span class="me-flip-tab" aria-hidden="true"></span></span>' +
+        '<span class="me-card-back" aria-hidden="true">' + block(c.back) + itemAudioMarkup(c.audio_src) + '</span></span></button>';
     });
     el.innerHTML = html + '</div>';
     var btns = [].slice.call(el.querySelectorAll('.me-card'));
@@ -1177,8 +1177,8 @@
       stage.innerHTML = '<div class="me-fc-card' + (revealed ? ' is-revealed' : '') +
         (!revealed && idx === 0 && pulseLeft ? ' me-pulse' : '') + '">' +
         '<span class="me-flip-tab" aria-hidden="true"></span>' +
-        '<div class="me-fc-front">' + rich(c.front) + '</div>' +
-        (revealed ? '<div class="me-fc-back">' + rich(c.back) + itemAudioMarkup(c.audio_src) + '</div>' : '') + '</div>';
+        '<div class="me-fc-front">' + block(c.front) + '</div>' +
+        (revealed ? '<div class="me-fc-back">' + block(c.back) + itemAudioMarkup(c.audio_src) + '</div>' : '') + '</div>';
       if (!revealed) {
         controls.innerHTML = '<button class="me-btn me-primary" type="button">Mostrar respuesta</button>';
         var show = function () { pulseLeft = false; renderCard(true); };

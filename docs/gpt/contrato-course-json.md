@@ -795,7 +795,8 @@ preguntas.
 - [ ] Es un único objeto JSON válido (sin texto extra, sin fences).
 - [ ] `schema_version` = `"1.0.0"`.
 - [ ] Contenido en `modules[].units[].screens[]` (no array plano).
-- [ ] `type` de pantalla e interacción dentro de los enums permitidos.
+- [ ] `type` de pantalla e interacción, y `status` de pantalla/unidad (enums
+      DISTINTOS: `borrador` no existe en unidad), dentro de los enums permitidos.
 - [ ] Cada interacción usa el `config`/`options` correcto de su tipo (§6).
 - [ ] Test calificable en `assessments.final_test`.
 - [ ] `bibliography` usa `ref`; `quality_checklist` es objeto de booleanos.
@@ -883,6 +884,13 @@ def validate_course(course: dict) -> list:
                          "fill_blanks", "timeline", "flashcards", "html_embed",
                          "image_cards", "before_after", "word_search", "crossword",
                          "hidden_image", "az_quiz", "puzzle"}
+    # "status" tiene un enum DISTINTO por nivel — "borrador" existe solo en pantalla.
+    # Confundirlos (p. ej. copiar el status de una pantalla a su unidad) pasaba
+    # inadvertido aquí y solo se veía al abrir el .scormproj en el editor real
+    # (detectado en producción, ingesta Moodle: unit.status="borrador" propagado
+    # desde screen.status cuando toda una lección venía marcada (MODIFICAR)).
+    SCREEN_STATUS = {"ok", "esqueleto_pendiente_desarrollo", "borrador"}
+    UNIT_STATUS = {"ok", "esqueleto_pendiente_desarrollo"}
 
     def norm(t):  # misma normalización de objetivos que el editor
         t = unicodedata.normalize("NFD", str(t or "").lower())
@@ -911,6 +919,9 @@ def validate_course(course: dict) -> list:
         if s.get("type") not in SCREEN_TYPES:
             err(f"{w}: type de pantalla «{s.get('type')}» no existe (§3)")
         if not str(s.get("title", "")).strip(): err(f"{w}: sin título")
+        if "status" in s and s.get("status") not in SCREEN_STATUS:
+            err(f"{w}: status «{s.get('status')}» no existe — pantalla admite "
+                f"{sorted(SCREEN_STATUS)}")
         if s.get("type") not in ("cover", "summary") and not str(s.get("objective", "")).strip():
             warn(f"{w}: sin objective")
         key = norm(s.get("objective"))
@@ -951,6 +962,12 @@ def validate_course(course: dict) -> list:
         for u in m.get("units") or []:
             uid(u.get("id"), "unidad")
             screens = u.get("screens") or []
+            if "status" in u and u.get("status") not in UNIT_STATUS:
+                err(f"unidad {u.get('id')}: status «{u.get('status')}» no existe — unidad "
+                    f"admite {sorted(UNIT_STATUS)} (NUNCA «borrador», eso es solo de pantalla; "
+                    "si la unidad tiene lecciones marcadas (MODIFICAR)/(BORRAR)/etc., el rastro "
+                    "va en el status/editor_notes de CADA pantalla afectada, no en la unidad — "
+                    "omite la clave 'status' en la unidad o dale 'ok')")
             if not (str(u.get("summary", "")).strip() or any(s.get("type") == "summary" for s in screens)):
                 warn(f"unidad {u.get('id')}: sin summary ni pantalla summary")
             if not any(s.get("interaction") for s in screens):

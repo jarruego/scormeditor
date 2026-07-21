@@ -108,7 +108,13 @@ Ambas caras viven **siempre en el DOM** (`.me-flip-inner` gira con `rotateY`; ca
 apiladas en la misma celda de grid para que la altura sea la del contenido mayor;
 `backface-visibility` oculta el reverso). El lector de pantalla usa `aria-hidden`
 alternado, **no** el atributo `hidden`. La impresión no las expande por JS (`setupPrint`):
-`print.css` aplana el giro y muestra las dos caras.
+`print.css` aplana el giro y muestra las dos caras. `front`/`back` se renderizan con
+`block()` (markdown de bloque completo: listas, bloques personalizados…), igual que el
+resto de tipos «título + detalle»; ambas caras viven dentro de un único `<button>` (el
+truco del volteo lo exige), así que `.me-card-front`/`.me-card-back` fuerzan
+`flex-direction: column` para que varios bloques se apilen en vertical en vez de quedar
+en fila (con `overflow: hidden` eso recortaba silenciosamente todo salvo el primer
+párrafo).
 
 ### `case_practice` — sin campo de texto
 Decisión deliberada: el alumno piensa/escribe su respuesta **en papel** (hint

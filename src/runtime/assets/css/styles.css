@@ -440,10 +440,15 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-card-front, .me-card-back {
   grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden;
   position: relative; overflow: hidden;
-  display: flex; align-items: center; justify-content: center; text-align: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
   padding: .75rem; border: 1px solid var(--me-border); border-radius: 8px;
   background: var(--me-surface); box-shadow: var(--me-shadow-1); transition: box-shadow .15s ease;
 }
+/* Con texto corto (lo habitual) el bloque queda centrado como una tarjeta; las
+   listas y los bloques personalizados (::: tip, etc.) se leen mejor a la
+   izquierda y a ancho completo, así que se excluyen del centrado. */
+.me-card-front ul, .me-card-front ol, .me-card-back ul, .me-card-back ol,
+.me-card-front .me-callout, .me-card-back .me-callout { text-align: left; width: 100%; }
 .me-card:hover .me-card-front, .me-card:hover .me-card-back { box-shadow: var(--me-shadow-2); }
 .me-card-back { transform: rotateY(180deg); background: color-mix(in srgb, var(--me-accent) 14%, white); border-color: color-mix(in srgb, var(--me-accent) 45%, white); }
 /* Lengüeta de la esquina: «+» que invita a girar; pasa a «✓» verde una vez vista */
@@ -556,6 +561,8 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-fc-card.me-pulse { animation: me-reveal .2s ease-out, me-pulse-glow 1.6s ease-out infinite; }
 .me-fc-front { font-weight: 600; font-size: 1.05rem; }
 .me-fc-back { border-top: 1px dashed var(--me-border); padding-top: .75rem; animation: me-reveal .2s ease-out; }
+.me-fc-front ul, .me-fc-front ol, .me-fc-back ul, .me-fc-back ol,
+.me-fc-front .me-callout, .me-fc-back .me-callout { text-align: left; }
 .me-fc-controls { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; justify-content: center; }
 .me-fc-ask { font-weight: 600; }
 .me-fc-yes { border-color: var(--me-ok); color: var(--me-ok); font-weight: 600; }

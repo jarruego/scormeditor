@@ -263,8 +263,8 @@ export function InteractionConfigEditor({
             create={() => ({ id: rid('cd'), front: '', back: '' })}
             render={(c, update) => (
               <div className="ed-stack">
-                <input value={c.front} placeholder="Anverso" onChange={(e) => update({ ...c, front: e.target.value })} />
-                <input value={c.back} placeholder="Reverso" onChange={(e) => update({ ...c, back: e.target.value })} />
+                <RichTextArea rows={1} value={c.front} onChange={(v) => update({ ...c, front: v })} />
+                <RichTextArea rows={1} value={c.back} onChange={(v) => update({ ...c, back: v })} />
                 <ItemAudioButton
                   screenId={screenId}
                   interactionId={it.id}
@@ -455,8 +455,8 @@ export function InteractionConfigEditor({
             create={() => ({ id: rid('cd'), front: '', back: '' })}
             render={(c, update) => (
               <div className="ed-stack">
-                <input value={c.front} placeholder="Pregunta / concepto" onChange={(e) => update({ ...c, front: e.target.value })} />
-                <input value={c.back} placeholder="Respuesta / definición" onChange={(e) => update({ ...c, back: e.target.value })} />
+                <RichTextArea rows={1} value={c.front} onChange={(v) => update({ ...c, front: v })} />
+                <RichTextArea rows={1} value={c.back} onChange={(v) => update({ ...c, back: v })} />
                 <ItemAudioButton
                   screenId={screenId}
                   interactionId={it.id}

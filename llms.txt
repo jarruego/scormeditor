@@ -28,6 +28,12 @@
   validador → causa → corrección canónica, para corregir un curso a partir del
   informe de validación que exporta el editor.
 
+## Fuentes de origen alternativas
+
+- [Ingesta desde backup Moodle](docs/gpt/ingesta-moodle.md): cómo generar cursos a
+  partir de un backup Moodle (`moodle2`) en vez de PDF/Word — solo cambia el paso de
+  extracción; el resto del contrato y el flujo de fábrica se aplican igual.
+
 ## Optional
 
 - [Instrucciones del GPT](docs/gpt/instrucciones-gpt.md): system prompt del GPT de

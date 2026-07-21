@@ -26,9 +26,12 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   (así el Knowledge se consulta de verdad, no solo por RAG). Motivo: el campo
   Instructions tiene un **límite duro de 8000 caracteres** (verificar con `wc -m` tras
   editar `instrucciones-gpt.md`).
-- **7 ficheros de conocimiento en `docs/gpt/`** (mantenerlos al día si cambia el formato
+- **8 ficheros de conocimiento en `docs/gpt/`** (mantenerlos al día si cambia el formato
   `.scormproj`, el esquema de `course.json`, `autosave.ts` o el `renderer.js`):
-  - `instrucciones-gpt.md`: system prompt (Instructions). Solo guardarraíles.
+  - `instrucciones-gpt.md`: system prompt (Instructions). Solo guardarraíles. **Límite
+    duro de 8000 caracteres** (verificar con un conteo de codepoints, no `wc -m`: la
+    consola puede contar bytes en vez de caracteres) — casi sin margen (~8000/8000),
+    cualquier adición exige recortar en otro sitio.
   - `contrato-course-json.md`: referencia normativa del `course.json`; §1 incluye la
     regla de **IDs deterministas** (secuenciales por orden: `m1/u1/s01…`, `sNN_i01`,
     `A01/Q01…`; al corregir se conservan los existentes — los IDs «inventados»
@@ -67,6 +70,32 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
     su fila en esta tabla (misma disciplina que sincronizar el contrato); y si una
     conversación con el usuario fija un criterio de corrección nuevo, se vuelca a la
     fila correspondiente al cerrar la tarea.
+  - `ingesta-moodle.md` (jul 2026): fuente alternativa a PDF/Word — backup Moodle
+    (`moodle2`: `moodle_backup.xml`+`activities/`+`sections/`+`files/`+`questions.xml`).
+    Solo sustituye el **paso de extracción** (función Python `extract_moodle_backup`,
+    estándar/sin dependencias, distinta de `extract_text_markdown` que es solo para
+    PDF): el resto del contrato y del flujo de fábrica no cambian, el GPT enriquece
+    igual (portada, objetivos, interactividades, cierre). Reglas propias de esta
+    fuente: las páginas de Moodle son una **pista** de corte y de orden (nunca perder
+    ni reordenar contenido), **no un molde 1:1** — páginas seguidas con el mismo
+    `title` o fragmentos de una misma lista se fusionan en una pantalla/interactividad
+    bien formada, igual que con un PDF (corregido jul 2026 tras detectar en producción
+    que la versión anterior, «nunca fusionar dos páginas», producía títulos repetidos
+    y contenido fragmentado — peor que con PDF); el `title` de página de Moodle
+    **nunca** se copia literal (dato de gestión interna, no editorial); y las **cajas
+    `caja-COLOR`** se conservan crudas (marcador `[CAJA]`) para que el GPT las
+    clasifique en un callout por el rótulo de su `<h4>`, con una tabla de partida.
+    **`check_moodle_titles`** (función Python, preflight mecánico igual en espíritu a
+    `validate_course` §11 pero para calidad editorial): tras tres rondas donde reglas
+    en prosa sobre títulos se incumplían de una forma nueva cada vez (copiar el título
+    de página → copiar un `##` repetido → títulos de ítem genéricos por plantilla
+    «Aspecto 1»/«Clave 2» + títulos de pantalla truncados a mitad de frase), se
+    sustituyó/complementó la prosa por un chequeo mecánico obligatorio a CERO WARN
+    antes de empaquetar cada `.scormproj` — detecta ítems con título de plantilla,
+    títulos truncados (recorte literal del arranque del cuerpo), numeración de Moodle
+    sin quitar en encabezados, negritas `**` desemparejadas y títulos duplicados.
+    Distinto de la herramienta determinista `scripts/moodle-import/` (mapeo literal sin
+    enriquecer, ver más abajo): son dos vías paralelas para el mismo tipo de fuente.
 - **Criterios de contenido acordados, viven en esos docs:** (1) **Regla Nº1** —
   conservar el texto de origen **casi al 100%** (ratio ≥0.95), sin resumir ni reescribir;
   extraer **con formato** (negritas, cajas→callouts) vía PyMuPDF `get_text("dict")`, no en
@@ -215,6 +244,16 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   ficheros. Dentro de las Instructions, los docs se referencian por **nombre de fichero
   suelto** (así los ve el Knowledge del GPT), no por ruta: mover la carpeta en el repo no
   afecta al GPT.
+- **`scripts/moodle-import/` (Node, jul 2026)**: herramienta de línea de comandos
+  determinista, alternativa a `ingesta-moodle.md` para el mismo tipo de fuente (backup
+  Moodle). Hace un **mapeo literal** página→pantalla y quiz→`assessments.final_test`,
+  **sin** enriquecimiento pedagógico (nada de portada/objetivos/interactividades
+  variadas/cierre) — pensada para cursos que solo existen en Moodle y donde no hace
+  falta o no es viable pasar por el GPT (p. ej. muchos cursos a la vez, o sin acceso al
+  GPT). Genera 1 `.scormproj` por sección de Moodle con lección(es)+quiz. Ver su
+  `README.md` propio. **No confundir con `ingesta-moodle.md`**: mismo origen de datos,
+  resultado muy distinto en riqueza pedagógica — el GPT es la vía a preferir cuando se
+  quiere el mismo nivel de curso que con PDF/Word.
 - **`llms.txt` en la raíz del repo**: índice de los docs de `docs/gpt/` para que un
   asistente **distinto de ChatGPT** (Claude, Gemini, un script con API…) pueda generar
   `.scormproj` válidos partiendo de ese punto de entrada. Mientras el repo sea privado

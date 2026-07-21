@@ -51,8 +51,10 @@ Lee el que corresponda al tocar esa área:
   Access, ciclo de vida de los assets, indicador de guardado.
 - `tts-narracion.md` — transcripción, `audio_src`, generación TTS (panel y por pantalla).
 - `informes-validacion.md` — `validators.ts` (errores/avisos) y el informe (`report.ts`).
-- `ingesta-gpt.md` — el GPT generador y los **7 docs de conocimiento** de `docs/gpt/` (los
-  que se suben a ChatGPT), la invariante de ingesta y los criterios de contenido acordados.
+- `ingesta-gpt.md` — el GPT generador y los **8 docs de conocimiento** de `docs/gpt/` (los
+  que se suben a ChatGPT), la invariante de ingesta, los criterios de contenido acordados
+  y la ingesta alternativa desde backup Moodle (`ingesta-moodle.md`, vs. el importador
+  determinista `scripts/moodle-import/`).
 - `interop-elpx.md` — exportador `.elpx` (eXeLearning ≥ 4.0.1) en `src/interop/elpx/`:
   herramienta aparte y opcional (menú Archivo, `import()` dinámico), formato ODE 2.0,
   mapa de conversión de interacciones a iDevices y degradaciones. **No** toca runtime,
