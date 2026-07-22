@@ -3,6 +3,7 @@ import { SettingsWindow } from './SettingsModal'
 import { Icon } from './Icon'
 import { confirmDialog } from '../store/confirm'
 import { useCloudSessionStore } from '../cloud/session'
+import { signInWithMagicLink } from '../cloud/auth'
 import { listMembers, inviteMember, updateMemberRole, removeMember } from '../cloud/members'
 import type { CloudMember, OrgRole } from '../cloud/types'
 
@@ -48,13 +49,21 @@ export function CloudTeamModal({
   }, [orgId])
 
   async function onInvite() {
-    if (!inviteEmail.trim()) return
+    const email = inviteEmail.trim()
+    if (!email) return
     setBusy(true)
     setError(null)
     try {
-      await inviteMember(orgId, inviteEmail.trim(), inviteRole)
+      await inviteMember(orgId, email, inviteRole)
       setInviteEmail('')
+      // El alta en el equipo no manda correo por sí sola (es solo un cambio
+      // en la base de datos) — se le envía el enlace de acceso aquí mismo,
+      // en el mismo gesto de "Añadir", para que no haga falta avisarla aparte.
+      const { error: linkError } = await signInWithMagicLink(email)
       await refresh()
+      if (linkError) {
+        setError(`Se añadió al equipo, pero no se pudo enviar el enlace de acceso: ${linkError}`)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
       setBusy(false)
@@ -136,7 +145,7 @@ export function CloudTeamModal({
         {isOwner ? (
           <div className="ed-row">
             <label className="ed-field">
-              <span>Añadir por correo (debe tener ya cuenta creada en Supabase)</span>
+              <span>Añadir por correo (debe tener ya cuenta creada en Supabase) — le llegará su enlace de acceso al añadirla</span>
               <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="compañero@mecohisa.com"
                 onKeyDown={(e) => { if (e.key === 'Enter') void onInvite() }} />
             </label>
