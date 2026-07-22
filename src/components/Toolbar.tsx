@@ -47,10 +47,11 @@ export function Toolbar() {
   const cloudTitle = useCourseStore((s) => s.cloudTitle)
   const cloudStale = useCourseStore((s) => s.cloudStale)
   const cloudLockHolderEmail = useCourseStore((s) => s.cloudLockHolderEmail)
+  const cloudSyncing = useCourseStore((s) => s.cloudSyncing)
   const undo = useCourseStore((s) => s.undo)
   const redo = useCourseStore((s) => s.redo)
-  const canUndo = useCourseStore((s) => s.past.length > 0)
-  const canRedo = useCourseStore((s) => s.future.length > 0)
+  const canUndo = useCourseStore((s) => s.past.length > 0) && !cloudLockHolderEmail
+  const canRedo = useCourseStore((s) => s.future.length > 0) && !cloudLockHolderEmail
   const updateCourseInfo = useCourseStore((s) => s.updateCourseInfo)
   const pruneOrphanAssets = useCourseStore((s) => s.pruneOrphanAssets)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -218,7 +219,7 @@ export function Toolbar() {
         <button
           className={`ed-docstate ${isCloudMode ? (isStale ? 'is-stale' : isSynced ? 'is-saved' : 'is-dirty') : (isSaved ? 'is-saved' : 'is-dirty')}`}
           data-tour="docstate"
-          disabled={saving}
+          disabled={saving || cloudSyncing}
           onClick={() => void onSaveClick()}
           title={
             isCloudMode
@@ -232,7 +233,7 @@ export function Toolbar() {
                 : 'Cambios sin guardar. Pulsa para guardar el proyecto (Ctrl+S). Tus cambios se conservan automáticamente por si cierras sin guardar.')
           }
         >
-          {saving ? (
+          {saving || cloudSyncing ? (
             <>{isCloudMode ? 'Subiendo…' : 'Guardando…'}</>
           ) : isCloudMode ? (
             // El título del curso ya se ve al lado, en la cabecera — repetirlo

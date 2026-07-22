@@ -496,9 +496,8 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
   /**
    * Baja la última versión subida por cualquiera (incluida otra persona) y
    * reemplaza el curso abierto con ella. Es el sentido contrario de
-   * «Actualizar en la nube» (que solo sube) — hoy no hay ningún aviso
-   * automático de «hay una versión más reciente», así que esto es manual:
-   * úsalo cuando sepas que alguien más ha subido cambios.
+   * «Actualizar en la nube» (que solo sube) — se usa tanto a mano como desde
+   * el aviso automático de «hay una versión más reciente» (`src/cloud/watch.ts`).
    */
   async function onPullLatest() {
     if (!cloudDocumentId || !cloudOrgId) return
@@ -513,8 +512,15 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
       if (kind === false) throw new Error('El proyecto descargado no es válido.')
       // loadProjectFromBlob desvincula siempre (ver su comentario): al ser el
       // mismo documento que ya estaba abierto, se re-vincula con su mismo id.
+      // setCloudVersion DESPUÉS de setCloudLink: setCloudLink resetea
+      // cloudVersionId a null al detectar un documento "nuevo" (porque acaba
+      // de venir de la desvinculación de loadProjectFromBlob) — si se llamara
+      // antes, ese reset lo pisaría y quedaría en null para siempre, dando un
+      // falso «hay una versión más reciente» en cada recarga (bug real: así
+      // se manifestaba).
       const title = useCourseStore.getState().course.course.title || 'Curso sin título'
       useCourseStore.getState().setCloudLink(cloudDocumentId, cloudOrgId, title)
+      useCourseStore.getState().setCloudVersion(version.id)
       await persistToIndexedDb()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))

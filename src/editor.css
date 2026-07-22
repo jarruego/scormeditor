@@ -78,8 +78,15 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
 
 /* Main layout (en la pestaña Editor las columnas reales las pone App.tsx:
    ancho del árbol redimensionable + separador de 6px + contenido) */
-.ed-main { display: grid; grid-template-columns: 320px 6px 1fr; overflow: hidden; }
+.ed-main { display: grid; grid-template-columns: 320px 6px 1fr; overflow: hidden; position: relative; }
 .ed-main-full { grid-template-columns: 1fr; }
+/* Bloqueo estricto de edición (otra persona tiene el documento abierto):
+   banda de aviso + cristal transparente que bloquea clics sobre árbol y
+   editor sin tocar su disposición en grid (position:absolute lo saca del
+   flujo, así que no cuenta como columna). */
+.ed-lock-banner { display: flex; align-items: center; gap: .6rem; padding: .5rem 1rem; background: #fdecea; color: #7a1a14; border-bottom: 1px solid #f3b9b2; font-size: .85rem; }
+.ed-lock-banner span { flex: 1; }
+.ed-lock-overlay { position: absolute; inset: 0; z-index: 5; cursor: not-allowed; }
 /* Separador arrastrable del árbol (doble clic pliega/despliega) */
 .ed-splitter { cursor: col-resize; background: var(--c-border); touch-action: none; }
 .ed-splitter:hover { background: var(--c-primary); }

@@ -3,16 +3,21 @@ import { useCloudSessionStore } from './session'
 import { getSupabase, CLOUD_SCHEMA } from './client'
 import { getLatestVersion } from './documents'
 import { acquireDocumentLock, releaseDocumentLock, getDocumentLock } from './locks'
+import { saveCurrentProject } from './sync'
 import { confirmDialog } from '../store/confirm'
 
 /**
  * Sigue el documento-nube vinculado (`courseStore.cloudDocumentId`) mientras
  * esté abierto: avisa casi al instante si alguien sube una versión nueva
  * (Realtime sobre `document_versions`, no sondeo — una sola conexión que
- * solo habla cuando cambia algo de verdad) y mantiene un bloqueo blando
- * («structural», ver la migración) para que el resto del equipo sepa que lo
- * tienes abierto. Blando a propósito: informa, no impide — el modelo de
- * versiones inmutables ya evita perder trabajo si dos personas suben a la vez.
+ * solo habla cuando cambia algo de verdad) y mantiene un bloqueo de edición
+ * («structural», ver las migraciones) para que solo una persona edite las
+ * diapositivas a la vez. El bloqueo es ESTRICTO en el cliente (App.tsx pone
+ * en solo lectura el árbol/editor mientras `cloudLockHolderEmail` diga que lo
+ * tiene otro) pero sin ceremonia de servidor: cualquier editor puede «tomar
+ * el control» cuando quiera (`forceTakeDocumentLock`) y al desposeído se lo
+ * avisa aquí mismo, por el mismo canal de Realtime que ya escuchaba
+ * `document_locks` — no hace falta un mecanismo aparte de notificación.
  */
 
 // Latido bien por debajo del TTL (60s) del RPC de bloqueo: si el latido
@@ -20,16 +25,49 @@ import { confirmDialog } from '../store/confirm'
 // bloqueo caduca solo — no hace falta liberarlo a mano para que se cure.
 const HEARTBEAT_MS = 25_000
 
+// Debounce del auto-sync a la nube: sube sola tras unos minutos SIN cambios
+// nuevos (no cada X tiempo mientras editas sin parar) — mismo patrón que el
+// autoguardado local (`scheduleSave` en autosave.ts), solo que con una espera
+// mucho mayor porque aquí cada subida es un ZIP completo a Storage, no una
+// escritura local gratis (ver conversación: coste de Supabase Storage si se
+// subiera en cada cambio).
+const AUTOSYNC_DEBOUNCE_MS = 2 * 60_000
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let channel: any = null
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null
 let staleNotified = false
+let autoSyncTimer: ReturnType<typeof setTimeout> | null = null
+let autoSyncUnsub: (() => void) | null = null
+// Distingue «primera comprobación tras abrir» (nunca hubo control que perder,
+// aunque otro ya lo tuviera) de una transición real «lo tenía yo → me lo han
+// quitado» — sin esto, abrir un documento ya bloqueado por otra persona
+// mostraría por error el aviso de «te han apartado». Se reinicia en `attach`.
+let lockBaselineSet = false
 
 async function refreshLockPresence(documentId: string) {
   try {
     const lock = await getDocumentLock(documentId)
     const myId = useCloudSessionStore.getState().session?.user.id
-    useCourseStore.getState().setCloudLockHolder(lock && lock.holderId !== myId ? lock.holderEmail : null)
+    const otherEmail = lock && lock.holderId !== myId ? lock.holderEmail : null
+    const hadControl = lockBaselineSet && useCourseStore.getState().cloudLockHolderEmail === null
+    useCourseStore.getState().setCloudLockHolder(otherEmail)
+    lockBaselineSet = true
+    // Transición «lo tenía yo → ahora lo tiene otro»: alguien ha pulsado
+    // «Tomar el control» sobre mi bloqueo todavía vivo. Se avisa con un
+    // modal (no basta con que la pastilla/banda cambien en silencio — a
+    // media edición conviene que sea imposible no darse cuenta) y se quita
+    // el foco de cualquier campo, para que la solo-lectura que va a aparecer
+    // no deje un input editable a medio escribir.
+    if (hadControl && otherEmail) {
+      ;(document.activeElement as HTMLElement | null)?.blur?.()
+      await confirmDialog({
+        title: 'Has perdido el control de este documento',
+        message: `${otherEmail} ha tomado el control. Ahora ves las diapositivas en solo lectura — pulsa «Tomar el control» cuando quieras recuperarlo. Tus cambios de este navegador no se han perdido.`,
+        confirmLabel: 'Entendido',
+        hideCancel: true,
+      })
+    }
   } catch {
     // Fallo puntual comprobando quién lo tiene abierto: no interrumpe la edición.
   }
@@ -78,6 +116,37 @@ function stopHeartbeat() {
   }
 }
 
+async function runAutoSync(documentId: string) {
+  const { cloudDocumentId, projectDirty, cloudStale } = useCourseStore.getState()
+  // Puede haber cambiado (o desvinculado) el documento mientras esperábamos,
+  // o haber quedado obsoleto (cloudStale): en ese caso no se auto-sube — se
+  // deja en manos del usuario resolverlo desde ☁ Nube, no se le insiste solo
+  // cada dos minutos con el mismo modal.
+  if (cloudDocumentId !== documentId || !projectDirty || cloudStale) return
+  await saveCurrentProject()
+}
+
+function scheduleAutoSync(documentId: string) {
+  if (autoSyncTimer) clearTimeout(autoSyncTimer)
+  autoSyncTimer = setTimeout(() => void runAutoSync(documentId), AUTOSYNC_DEBOUNCE_MS)
+}
+
+function startAutoSync(documentId: string) {
+  stopAutoSync()
+  autoSyncUnsub = useCourseStore.subscribe((state, prev) => {
+    if (state.course !== prev.course || state.assets !== prev.assets) scheduleAutoSync(documentId)
+  })
+}
+
+function stopAutoSync() {
+  if (autoSyncTimer) {
+    clearTimeout(autoSyncTimer)
+    autoSyncTimer = null
+  }
+  autoSyncUnsub?.()
+  autoSyncUnsub = null
+}
+
 async function subscribeRealtime(documentId: string) {
   const supabase = await getSupabase()
   if (!supabase) return
@@ -105,14 +174,17 @@ async function unsubscribeRealtime() {
 
 async function attach(documentId: string) {
   staleNotified = false
+  lockBaselineSet = false
   await subscribeRealtime(documentId)
   await refreshStaleness(documentId)
   await refreshLockPresence(documentId)
   await startHeartbeat(documentId)
+  startAutoSync(documentId)
 }
 
 async function detach(documentId: string | null) {
   stopHeartbeat()
+  stopAutoSync()
   await unsubscribeRealtime()
   if (documentId) {
     try {

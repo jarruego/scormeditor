@@ -24,6 +24,9 @@ export async function saveCurrentProject(): Promise<void> {
       return
     }
     if (!projectDirty) return // ya sincronizado, nada que subir
+    // Flag global (no local a la Toolbar): así el auto-sync en segundo plano
+    // (src/cloud/watch.ts) también se refleja en el indicador «Subiendo…».
+    useCourseStore.getState().setCloudSyncing(true)
     try {
       const blob = await buildProjectBlob()
       const versionId = await uploadVersion(cloudOrgId, cloudDocumentId, blob)
@@ -37,6 +40,8 @@ export async function saveCurrentProject(): Promise<void> {
         confirmLabel: 'Entendido',
         hideCancel: true,
       })
+    } finally {
+      useCourseStore.getState().setCloudSyncing(false)
     }
     return
   }

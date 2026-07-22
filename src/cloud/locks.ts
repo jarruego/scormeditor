@@ -29,6 +29,22 @@ export async function releaseDocumentLock(documentId: string): Promise<void> {
   if (error) throw error
 }
 
+/**
+ * «Tomar el control»: a diferencia de `acquireDocumentLock` (que nunca roba un
+ * bloqueo ajeno todavía vivo, solo renueva el tuyo o toma uno ya caducado),
+ * esta SÍ lo fuerza — pensada para el botón explícito de la banda de solo
+ * lectura, nunca para el latido silencioso. Quien lo tenía se entera solo
+ * (Realtime sobre `document_locks`, ver `src/cloud/watch.ts`), no hace falta
+ * avisarle desde aquí.
+ */
+export async function forceTakeDocumentLock(documentId: string, ttlSeconds = 60): Promise<void> {
+  const supabase = await requireSupabase()
+  const { error } = await supabase.rpc('force_take_document_lock', {
+    p_document_id: documentId, p_scope: 'structural', p_scope_ref: '', p_ttl_seconds: ttlSeconds,
+  })
+  if (error) throw error
+}
+
 /** Quién tiene el documento abierto ahora mismo (null = nadie, o ya caducó). */
 export async function getDocumentLock(documentId: string): Promise<DocumentLockInfo | null> {
   const supabase = await requireSupabase()

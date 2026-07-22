@@ -91,6 +91,12 @@ interface CourseState {
   setCloudVersion: (versionId: string | null) => void
   setCloudStale: (stale: boolean) => void
   setCloudLockHolder: (email: string | null) => void
+  /** true mientras una subida a la nube está en curso — tanto si la disparó
+   *  el usuario (Ctrl+S) como si lo hizo el auto-sync (`src/cloud/watch.ts`).
+   *  Vive en el store (no en el componente) precisamente para que ambos
+   *  orígenes compartan el mismo indicador «Subiendo…» en la Toolbar. */
+  cloudSyncing: boolean
+  setCloudSyncing: (syncing: boolean) => void
   hydrate: (course: Course, assets: AssetMap) => void
   replaceAssets: (assets: AssetMap) => void
 
@@ -258,6 +264,8 @@ export const useCourseStore = create<CourseState>((set, get) => {
   setCloudVersion: (versionId) => set({ cloudVersionId: versionId, cloudStale: false }),
   setCloudStale: (stale) => set({ cloudStale: stale }),
   setCloudLockHolder: (email) => set({ cloudLockHolderEmail: email }),
+  cloudSyncing: false,
+  setCloudSyncing: (syncing) => set({ cloudSyncing: syncing }),
   hydrate: (course, assets) => {
     resetCoalesce()
     set({ course, assets, importError: null, past: [], future: [], selectedScreenId: allScreens(course)[0]?.id ?? null })

@@ -3,6 +3,8 @@ import { initAutoSave } from './store/autosave'
 import { saveCurrentProject } from './cloud/sync'
 import { initCloudSession } from './cloud/session'
 import { startCloudWatch } from './cloud/watch'
+import { forceTakeDocumentLock } from './cloud/locks'
+import { confirmDialog } from './store/confirm'
 import { useCourseStore } from './store/courseStore'
 import { validateCourse } from './validation/validators'
 import { allScreens } from './schema/traverse'
@@ -30,6 +32,24 @@ export function App() {
     s.selectedScreenId === '__final__' || s.selectedScreenId === '__glossary__' || s.selectedScreenId === '__bibliography__'
       ? s.selectedScreenId
       : null)
+
+  // Bloqueo estricto: mientras `cloudLockHolderEmail` diga que lo tiene otro,
+  // el árbol y el editor de pantallas quedan en solo lectura (ver
+  // `src/cloud/watch.ts` para cómo se detecta y se avisa al desposeído).
+  const cloudDocumentId = useCourseStore((s) => s.cloudDocumentId)
+  const cloudLockHolderEmail = useCourseStore((s) => s.cloudLockHolderEmail)
+  const locked = !!cloudDocumentId && !!cloudLockHolderEmail
+  async function onTakeControl() {
+    if (!cloudDocumentId || !cloudLockHolderEmail) return
+    const ok = await confirmDialog({
+      title: 'Tomar el control',
+      message: `${cloudLockHolderEmail} tiene este documento abierto ahora mismo. Si tomas el control, pasará a ver las diapositivas en solo lectura al instante. ¿Continuar?`,
+      confirmLabel: 'Tomar el control',
+      danger: true,
+    })
+    if (!ok) return
+    await forceTakeDocumentLock(cloudDocumentId)
+  }
 
   useEffect(() => {
     initAutoSave()
@@ -89,10 +109,12 @@ export function App() {
       const key = e.key.toLowerCase()
       if (key === 'z' && !e.shiftKey) {
         e.preventDefault()
-        useCourseStore.getState().undo()
+        // En solo lectura (otro tiene el control) deshacer/rehacer también
+        // mutarían las diapositivas, así que se bloquean igual que el resto.
+        if (!useCourseStore.getState().cloudLockHolderEmail) useCourseStore.getState().undo()
       } else if ((key === 'z' && e.shiftKey) || key === 'y') {
         e.preventDefault()
-        useCourseStore.getState().redo()
+        if (!useCourseStore.getState().cloudLockHolderEmail) useCourseStore.getState().redo()
       } else if (key === 's') {
         e.preventDefault()
         void saveCurrentProject()
@@ -135,10 +157,22 @@ export function App() {
         ))}
       </div>
 
+      {/* Solo en la pestaña Editor: Vista estudiante/Validación/Informe siguen
+          consultables con normalidad aunque otro tenga el control — leer no
+          es editar. */}
+      {tab === 'editor' && locked && (
+        <div className="ed-lock-banner">
+          <Icon name="ban" size={14} />
+          <span><strong>{cloudLockHolderEmail}</strong> tiene este documento abierto ahora mismo — estás viendo las diapositivas en solo lectura.</span>
+          <button className="ed-btn-solid ed-danger" onClick={() => void onTakeControl()}>Tomar el control</button>
+        </div>
+      )}
+
       {/* Con el árbol plegado el aside no se renderiza: si siguiera en el grid
           (aunque fuera con display:none) los ítems se recolocarían de columna. */}
       <div className={`ed-main ${tab === 'editor' ? '' : 'ed-main-full'}`}
         style={tab === 'editor' ? { gridTemplateColumns: treeW === 0 ? '6px 1fr' : `${treeW}px 6px 1fr` } : undefined}>
+        {tab === 'editor' && locked && <div className="ed-lock-overlay" aria-hidden="true" />}
         {tab === 'editor' && (
           <>
             {treeW > 0 && (
