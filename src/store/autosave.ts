@@ -296,6 +296,8 @@ export async function initAutoSave() {
     }
   } catch (e) {
     console.error('No se pudo restaurar el proyecto', e)
+  } finally {
+    useCourseStore.getState().setAutosaveReady()
   }
 
   useCourseStore.subscribe((state, prev) => {

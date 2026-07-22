@@ -370,6 +370,10 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
       if (kind === false) throw new Error('El proyecto descargado no es válido.')
       await clearLocalLink()
       useCourseStore.getState().setCloudLink(doc.id, doc.org_id, doc.title)
+      // Sin esto, cloudVersionId se queda en null y la comprobación de «hay
+      // una versión más reciente» (src/cloud/watch.ts) la da siempre por
+      // distinta — mismo bug ya corregido en onPullLatest.
+      useCourseStore.getState().setCloudVersion(version.id)
       await persistToIndexedDb()
       onClose()
     } catch (e) {
@@ -734,10 +738,12 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
                         <button className="ed-btn-ghost" disabled={busy} onClick={() => void onLocateLinked()} title="Ir a la carpeta donde está guardado este proyecto">
                           <Icon name="folder" size={13} /> Ver ubicación
                         </button>
-                        <button className="ed-btn-ghost" disabled={busy} onClick={() => void onPullLatest()}
-                          title="Bajar la última versión subida por cualquiera del equipo (sustituye el curso abierto)">
-                          <Icon name="refresh" size={13} /> Descargar la última versión
-                        </button>
+                        {cloudStale && (
+                          <button className="ed-btn-ghost" disabled={busy} onClick={() => void onPullLatest()}
+                            title="Bajar la última versión subida por cualquiera del equipo (sustituye el curso abierto)">
+                            <Icon name="refresh" size={13} /> Descargar la última versión
+                          </button>
+                        )}
                         {canEdit && projectDirty && (
                           <button className="ed-btn-solid ed-btn-cloud" disabled={busy} onClick={() => void onUpdateLinked()}>
                             <Icon name="cloud" size={14} /> Actualizar en la nube

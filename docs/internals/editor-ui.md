@@ -49,9 +49,11 @@ minimalistas (caja 24×24, trazo 1.8 redondeado, `currentColor`), sin dependenci
   transitorios usan «✓»/«Error:» tipográficos.
 
 ## ⚙ Ajustes: menú con ventanas independientes (no nodo del árbol)
-**Ajustes** es un **menú desplegable ⚙** en la `Toolbar` (junto a «Archivo ▾») con
-opciones **independientes**, cada una con **su propia ventana** (no un modal con
-pestañas). El estado de qué ventana está abierta vive en el store
+**Ajustes** es un **menú desplegable ⚙**, con opciones **independientes**, cada una con
+**su propia ventana** (no un modal con pestañas). Vive en `EditTools` (`Toolbar.tsx`),
+junto a Deshacer/Rehacer, en la fila de **pestañas** (no en la barra superior): son
+herramientas de la **edición del curso abierto**, no chrome general de la app — ver
+«Pestañas y toolbar» más abajo. El estado de qué ventana está abierta vive en el store
 (`settingsModal: SettingsModalKind`):
 - **Curso (Finalización)** → `CourseSettingsModal` con `CourseSettingsSection`:
   `scorm.rules` + `mastery_score` (nota mínima, `score_source`, `mixed_final_weight`,
@@ -78,7 +80,7 @@ Escape/clic-fuera/✕, y `busy` opcional que bloquea el cierre (la narración lo
 existiendo y su aviso remite a «⚙ Ajustes → Narración».
 
 ## Ayuda: manual integrado y tour guiado
-Menú **Ayuda** en la `Toolbar` (tras ⚙ Ajustes) con tres entradas:
+Menú **Ayuda** en la `Toolbar` (barra superior, junto a «Archivo ▾») con tres entradas:
 - **Manual de usuario** → `HelpModal` (`settingsModal: 'help'`, reutiliza `SettingsWindow`
   en modo `wide`): índice lateral + contenido con scroll propio (`.ed-help`). El contenido
   vive como JSX en `HelpModal.tsx` (audiencia: autores con nociones de e-learning, tono
@@ -199,13 +201,26 @@ de instantáneas `{ course, selectedScreenId }`, tope 50 pasos.
   el bloque de tecleo reciente, no carácter a carácter (decisión aceptada).
 - El historial se **vacía** al cargar otro documento (`hydrate`, `importJson`,
   `resetSample`, `setCourse`). La navegación (`selectScreen`) **no** genera pasos.
-- UI: botones ↶/↷ en `Toolbar.tsx`; atajos en `App.tsx` (`Ctrl/Cmd+Z`,
-  `Ctrl/Cmd+Mayús+Z` o `Ctrl+Y`). El autosave persiste los cambios solos.
+- UI: botones ↶/↷ (icono solo) en `EditTools` (`Toolbar.tsx`), fila de pestañas; atajos en
+  `App.tsx` (`Ctrl/Cmd+Z`, `Ctrl/Cmd+Mayús+Z` o `Ctrl+Y`). El autosave persiste los
+  cambios solos.
 
 ## Pestañas y toolbar
 `courseStore.activeTab: Tab` (`'editor'|'preview'|'validation'|'report'`) es la fuente
-única de la pestaña activa (también para que el badge de validación navegue a ella). La
-`Toolbar` muestra el título del curso editable (`InlineRename` → `updateCourseInfo`), el
-indicador de guardado (ver `persistencia-scormproj.md`), los menús «Archivo ▾»,
-«⚙ Ajustes» y «Ayuda», y el badge de validación `.ed-status`. Clases del editor con
-prefijo `ed-`.
+única de la pestaña activa (también para que el badge de validación navegue a ella).
+
+El chrome se reparte en **dos filas**, agrupado por a qué escala pertenece cada cosa —
+no por dónde «cabía» — para que Deshacer nunca comparta caja con Ayuda general:
+- **`Toolbar`** (barra superior): identidad del proyecto y chrome de la **app**. A la
+  izquierda, logo + título del curso editable (`InlineRename` → `updateCourseInfo`) +
+  pastilla de estado de guardado (`.ed-docstate`, ver `persistencia-scormproj.md`) — el
+  grupo que responde a «¿en qué proyecto trabajo y está a salvo?». A la derecha, el chip
+  de cuenta/nube (`.ed-session-chip`; sesión de usuario, no del documento) y los menús
+  «Archivo ▾»/«Ayuda ▾», que no dependen del curso abierto.
+- **`.ed-tabs`** (fila de pestañas): a la izquierda, el conmutador de vista
+  (Editor/Vista estudiante/Validación/Informe) con el badge `.ed-status`. A la derecha,
+  **`EditTools`**: Deshacer/Rehacer (icono solo, sin texto) y «⚙ Ajustes» — herramientas
+  de la edición del curso, por eso comparten fila con el propio selector de vista y no la
+  barra superior.
+
+Clases del editor con prefijo `ed-`.

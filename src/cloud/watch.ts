@@ -131,6 +131,12 @@ async function startHeartbeat(documentId: string) {
     // una versión nueva, sin depender solo de Realtime para converger.
     await refreshLockPresence(documentId)
     await refreshStaleness(documentId)
+    // El rol también puede cambiar mientras el documento sigue abierto (te
+    // ascienden/degradan desde ☁ Nube en otra pestaña) — sin esto, un
+    // «viewer» recién ascendido a editor seguiría sin ver «Tomar el control»
+    // hasta recargar, y viceversa: un editor recién degradado lo seguiría
+    // viendo.
+    await refreshMyRole()
   }
   await tick()
   heartbeatTimer = setInterval(() => void tick(), HEARTBEAT_MS)

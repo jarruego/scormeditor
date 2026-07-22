@@ -70,6 +70,12 @@ interface CourseState {
   projectDirty: boolean // cambios sin guardar en el archivo de proyecto
   setProjectDirty: (dirty: boolean) => void
   setLinked: (name: string | null) => void
+  /** true en cuanto `initAutoSave()` terminó de intentar restaurar desde
+   *  IndexedDB (haya encontrado algo o no). Antes de esto no se puede saber
+   *  si «no hay nada vinculado» es el estado real o solo que aún no se ha
+   *  comprobado — lo usa `WelcomeGate` para no parpadear al arrancar. */
+  autosaveReady: boolean
+  setAutosaveReady: () => void
   /** Documento-nube vinculado (mutuamente excluyente con `linkedFileName`: un
    *  proyecto es local O es nube, nunca las dos cosas — ver `docs/internals/
    *  persistencia-scormproj.md`). `null` = no vinculado a ningún documento-nube. */
@@ -253,6 +259,8 @@ export const useCourseStore = create<CourseState>((set, get) => {
   projectDirty: false,
   setProjectDirty: (dirty) => set({ projectDirty: dirty }),
   setLinked: (name) => set({ linkedFileName: name }),
+  autosaveReady: false,
+  setAutosaveReady: () => set({ autosaveReady: true }),
   cloudDocumentId: null,
   cloudOrgId: null,
   cloudTitle: null,

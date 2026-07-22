@@ -99,6 +99,26 @@ para que, tras recargar, el indicador diga la verdad. `initAutoSave()` (una vez 
 `App.tsx`) restaura esa copia, re-vincula el `projectHandle` y se suscribe a cambios de
 `course`/`assets` → marca `projectDirty` y agenda recuperación.
 
+## Pantalla de bienvenida (`WelcomeGate`) — solo si no hay nada que retomar
+Por defecto el store arranca con `sampleCourse` (la demo) sin vincular a nada. Si
+`initAutoSave()` no encuentra copia en IndexedDB, ese estado por defecto se queda tal
+cual — y sin `WelcomeGate` el usuario vería la demo cargada en silencio sin haberlo
+decidido. `WelcomeGate` (`src/components/WelcomeGate.tsx`) es un overlay a pantalla
+completa montado en `App.tsx` que se muestra solo cuando **las tres cosas** son ciertas:
+`autosaveReady` (a `true` en el `finally` de `initAutoSave()`, para no parpadear mientras
+IndexedDB responde) y `!linkedFileName && !projectDirty && !cloudDocumentId` (nada
+vinculado, nada sin guardar, ningún documento-nube). En cuanto hay algo que retomar —
+autoguardado, archivo local o documento-nube — no se interpone: la app entra directa,
+como siempre.
+
+Ofrece: Empezar en blanco (`resetEmpty`), Ver la demo (cierra el overlay sin tocar el
+curso, ya es el que se ve), Abrir un archivo (`openProject`/`openProjectFromFile`,
+mismo flujo que «Archivo → Abrir») y, si `isCloudConfigured()`, Abrir de la nube
+(`setSettingsModal('cloud')`, reutiliza `CloudModal` tal cual). Elegir cualquier opción
+la descarta **para siempre** vía `localStorage` (`ed:startGateDismissed`, mismo patrón
+que `WelcomeTip` en `GuidedTour.tsx`): es una pantalla de primer arranque, no un aviso
+recurrente en cada recarga sin cambios.
+
 ## Permisos del File System Access — transparentes (sin botón «Reconectar»)
 Los permisos del handle no sobreviven a un reload. **No** hay botón de reconectar: al
 **Guardar**, `ensurePermission(handle, true)` re-pide permiso en ese momento; si el

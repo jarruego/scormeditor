@@ -114,7 +114,7 @@ const SECTIONS: Section[] = [
             Es irreversible, así que solo interesa antes de archivar el curso.
           </li>
         </ul>
-        <Shot id="toolbar" caption="Barra superior: título del curso, indicador de guardado, deshacer/rehacer y los menús Archivo, Ajustes y Ayuda." />
+        <Shot id="toolbar" caption="Barra superior: título del curso, indicador de guardado y los menús Archivo/Ayuda. Debajo, en la fila de pestañas: Deshacer/Rehacer y ⚙ Ajustes." />
         <p>
           Junto al título verás el <strong>indicador de estado</strong>: «Sin guardar»
           (punto) o «Guardado» (✓). Es además un botón: pulsarlo guarda. Aunque cierres

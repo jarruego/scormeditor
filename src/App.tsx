@@ -9,7 +9,7 @@ import { useCourseStore } from './store/courseStore'
 import { validateCourse } from './validation/validators'
 import { allScreens } from './schema/traverse'
 import type { Tab } from './store/courseStore'
-import { Toolbar } from './components/Toolbar'
+import { Toolbar, EditTools } from './components/Toolbar'
 import { CourseTree } from './components/CourseTree'
 import { ScreenEditor } from './components/ScreenEditor'
 import { FinalTestEditor } from './components/FinalTestEditor'
@@ -19,6 +19,7 @@ import { StudentPreview } from './components/StudentPreview'
 import { ReportPanel } from './components/ReportPanel'
 import { ConfirmModal } from './components/ConfirmModal'
 import { GuidedTour, WelcomeTip } from './components/GuidedTour'
+import { WelcomeGate } from './components/WelcomeGate'
 import { Icon } from './components/Icon'
 
 export function App() {
@@ -176,6 +177,7 @@ export function App() {
             )}
           </button>
         ))}
+        <EditTools />
       </div>
 
       {/* Solo en la pestaña Editor: Vista estudiante/Validación/Informe siguen
@@ -225,6 +227,7 @@ export function App() {
       <ConfirmModal />
       <GuidedTour />
       <WelcomeTip />
+      <WelcomeGate />
     </div>
   )
 }

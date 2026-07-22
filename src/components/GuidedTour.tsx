@@ -35,7 +35,7 @@ const STEPS: TourStep[] = [
   {
     target: '[data-tour="docstate"]',
     title: 'El estado de guardado',
-    body: 'Tu documento es un archivo .scormproj. Este indicador muestra si hay cambios sin guardar; pulsarlo (o Ctrl+S) guarda. Aunque cierres sin guardar, el trabajo se conserva en el navegador como red de seguridad.',
+    body: 'Este indicador dice dónde vive tu proyecto: un archivo .scormproj en tu equipo, un documento en la nube, o —si aún no elegiste ninguno— solo este navegador (sin portabilidad). Pulsarlo (o Ctrl+S) guarda en el destino que corresponda.',
   },
   {
     target: '[data-tour="file-menu"]',

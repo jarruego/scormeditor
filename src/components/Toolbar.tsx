@@ -35,6 +35,27 @@ function confirmDiscard() {
   })
 }
 
+// Cierra un menú desplegable al hacer clic fuera o pulsar Escape. Compartido
+// por Toolbar (Archivo/Ayuda) y EditTools (Ajustes).
+function useMenuDismiss(open: boolean, ref: React.RefObject<HTMLDivElement>, close: () => void) {
+  useEffect(() => {
+    if (!open) return
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) close()
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') close()
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+}
+
 export function Toolbar() {
   const course = useCourseStore((s) => s.course)
   const assets = useCourseStore((s) => s.assets)
@@ -48,10 +69,6 @@ export function Toolbar() {
   const cloudStale = useCourseStore((s) => s.cloudStale)
   const cloudLockHolderEmail = useCourseStore((s) => s.cloudLockHolderEmail)
   const cloudSyncing = useCourseStore((s) => s.cloudSyncing)
-  const undo = useCourseStore((s) => s.undo)
-  const redo = useCourseStore((s) => s.redo)
-  const canUndo = useCourseStore((s) => s.past.length > 0) && !cloudLockHolderEmail
-  const canRedo = useCourseStore((s) => s.future.length > 0) && !cloudLockHolderEmail
   const updateCourseInfo = useCourseStore((s) => s.updateCourseInfo)
   const pruneOrphanAssets = useCourseStore((s) => s.pruneOrphanAssets)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -63,40 +80,25 @@ export function Toolbar() {
   const settingsModal = useCourseStore((s) => s.settingsModal)
   const setSettingsModal = useCourseStore((s) => s.setSettingsModal)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false)
   const [helpMenuOpen, setHelpMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-  const settingsMenuRef = useRef<HTMLDivElement>(null)
   const helpMenuRef = useRef<HTMLDivElement>(null)
   const fsOk = isFsSupported()
 
-  // Cierra un menú desplegable al hacer clic fuera o pulsar Escape.
-  function useMenuDismiss(open: boolean, ref: React.RefObject<HTMLDivElement>, close: () => void) {
-    useEffect(() => {
-      if (!open) return
-      function onDown(e: MouseEvent) {
-        if (ref.current && !ref.current.contains(e.target as Node)) close()
-      }
-      function onKey(e: KeyboardEvent) {
-        if (e.key === 'Escape') close()
-      }
-      document.addEventListener('mousedown', onDown)
-      document.addEventListener('keydown', onKey)
-      return () => {
-        document.removeEventListener('mousedown', onDown)
-        document.removeEventListener('keydown', onKey)
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open])
-  }
   useMenuDismiss(menuOpen, menuRef, () => setMenuOpen(false))
-  useMenuDismiss(settingsMenuOpen, settingsMenuRef, () => setSettingsMenuOpen(false))
   useMenuDismiss(helpMenuOpen, helpMenuRef, () => setHelpMenuOpen(false))
 
   // Local y nube son mutuamente excluyentes (courseStore.setCloudLink): un
   // proyecto está SIEMPRE en uno de los dos modos, nunca los dos — de ahí
   // que un único indicador/gesto de guardado baste (ver src/cloud/sync.ts).
   const isCloudMode = !!cloudDocumentId
+  // Un proyecto vive en uno de TRES sitios, no dos: archivo local vinculado,
+  // documento-nube, o (si no se ha elegido ninguno todavía) solo la copia de
+  // recuperación en IndexedDB de este navegador — invisible y no portable.
+  // El indicador tiene que decir cuál de los tres es, no solo si hay cambios
+  // sin guardar: «Guardado» a secas no dice si eso significa un archivo en tu
+  // equipo o solo este navegador.
+  const isBrowserOnly = !isCloudMode && !linkedFileName
   const isSaved = !!linkedFileName && !projectDirty
   // «Sincronizado» significa dos cosas a la vez: nada tuyo pendiente de subir
   // Y nada ajeno pendiente de bajar (cloudStale, que viene de Realtime en
@@ -200,24 +202,22 @@ export function Toolbar() {
   }
 
   return (
+    <>
     <header className="ed-toolbar">
       <img className="ed-logo-img" src={logoUrl} alt="SCORMEditor" />
-      <span className="ed-course-name" data-tour="course-name">
-        <InlineRename value={course.course.title} placeholder="Curso sin título"
-          title="Renombrar el curso (título principal del SCORM)"
-          onChange={(title) => updateCourseInfo({ title })} />
-      </span>
 
-      {/* Estado del documento (guardado) + estado de cuenta (nube), como un
-          único bloque «en conjunto»: dos botones independientes pero unidos
-          visualmente (segmented pill), para que se lean como una sola pieza
-          de información en vez de dos indicadores sueltos por la Toolbar.
-          El de guardado usa un único gesto (clic o Ctrl+S) adaptado al modo
-          activo — escribe en disco si es local, sube una versión si es
-          nube (src/cloud/sync.ts). Nunca los dos modos a la vez. */}
-      <div className="ed-doc-status">
+      {/* Identidad del proyecto: título + estado de guardado, agrupados y
+          pegados al logo para que quede inequívoco en qué se trabaja y si
+          está a salvo. El estado de cuenta (nube) es un concepto aparte —
+          va en el bloque de la derecha, junto a los menús globales. */}
+      <div className="ed-toolbar-project">
+        <span className="ed-course-name" data-tour="course-name">
+          <InlineRename value={course.course.title} placeholder="Curso sin título"
+            title="Renombrar el curso (título principal del SCORM)"
+            onChange={(title) => updateCourseInfo({ title })} />
+        </span>
         <button
-          className={`ed-docstate ${isCloudMode ? (isStale ? 'is-stale' : isSynced ? 'is-saved' : 'is-dirty') : (isSaved ? 'is-saved' : 'is-dirty')}`}
+          className={`ed-docstate ${isCloudMode ? (isStale ? 'is-stale' : isSynced ? 'is-saved' : 'is-dirty') : isBrowserOnly ? 'is-dirty' : (isSaved ? 'is-saved' : 'is-dirty')}`}
           data-tour="docstate"
           disabled={saving || cloudSyncing}
           onClick={() => void onSaveClick()}
@@ -228,23 +228,27 @@ export function Toolbar() {
                 : isSynced
                 ? `Sincronizado con la nube («${cloudTitle}»).${cloudLockHolderEmail ? ` ${cloudLockHolderEmail} lo tiene abierto también ahora mismo.` : ''} Ctrl+S para forzar una subida.`
                 : `Cambios sin subir a la nube («${cloudTitle}»).${cloudLockHolderEmail ? ` ${cloudLockHolderEmail} lo tiene abierto también ahora mismo.` : ''} Pulsa para subir (Ctrl+S).`)
+              : isBrowserOnly
+              ? 'Sin guardar en ningún archivo: los cambios solo viven en este navegador (recuperación automática si cierras sin querer), no son portables ni tienen copia fuera de aquí. Pulsa para guardar como archivo .scormproj en tu equipo (Ctrl+S).'
               : (isSaved
-                ? `Proyecto guardado en ${linkedFileName}. Ctrl+S para volver a guardar.`
-                : 'Cambios sin guardar. Pulsa para guardar el proyecto (Ctrl+S). Tus cambios se conservan automáticamente por si cierras sin guardar.')
+                ? `Guardado en tu equipo: ${linkedFileName}. Ctrl+S para volver a guardar.`
+                : `Cambios sin guardar en tu equipo (${linkedFileName}). Pulsa para guardar (Ctrl+S). Mientras tanto se conservan automáticamente en este navegador por si cierras sin guardar.`)
           }
         >
           {saving || cloudSyncing ? (
             <>{isCloudMode ? 'Subiendo…' : 'Guardando…'}</>
           ) : isCloudMode ? (
-            // El título del curso ya se ve al lado, en la cabecera — repetirlo
-            // aquí sería ruido; queda solo en el tooltip (hover), no en pantalla.
             <><Icon name={isStale ? 'refresh' : 'cloud'} size={12} /> {isStale ? 'Nueva versión' : isSynced ? 'Sincronizado' : 'Sin subir'}</>
+          ) : isBrowserOnly ? (
+            <><Icon name="dot" size={12} /> Solo en este navegador</>
           ) : (
-            <><Icon name={isSaved ? 'check' : 'dot'} size={12} />{' '}
-              {isSaved ? `Guardado · ${linkedFileName}` : `Sin guardar${linkedFileName ? ` · ${linkedFileName}` : ''}`}</>
+            <><Icon name={isSaved ? 'folder' : 'dot'} size={12} />{' '}
+              {isSaved ? `Guardado en tu equipo · ${linkedFileName}` : `Sin guardar en tu equipo · ${linkedFileName}`}</>
           )}
         </button>
+      </div>
 
+      <div className="ed-toolbar-actions">
         {isCloudConfigured() && (
           <button
             className={`ed-session-chip ${cloudSession ? 'is-connected' : ''}`}
@@ -254,13 +258,6 @@ export function Toolbar() {
             <Icon name="cloud" size={13} /> {cloudSession ? cloudSession.user.email : 'Nube: sin conectar'}
           </button>
         )}
-      </div>
-
-      <div className="ed-toolbar-actions">
-        <button onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)" aria-label="Deshacer">
-          <Icon name="undo" size={14} /> Deshacer</button>
-        <button onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Mayús+Z)" aria-label="Rehacer">
-          <Icon name="redo" size={14} /> Rehacer</button>
 
         <input ref={fileRef} type="file" accept=".scormproj,.zip,application/zip" hidden onChange={onImportFile} />
         <div className="ed-menu" ref={menuRef} data-tour="file-menu">
@@ -352,38 +349,6 @@ export function Toolbar() {
           )}
         </div>
 
-        <div className="ed-menu" ref={settingsMenuRef} data-tour="settings-menu">
-          <button
-            className="ed-menu-trigger"
-            aria-haspopup="menu"
-            aria-expanded={settingsMenuOpen}
-            onClick={() => setSettingsMenuOpen((o) => !o)}
-            title="Ajustes del curso y de narración"
-          >
-            <Icon name="settings" size={14} /> Ajustes <Icon name="chevron-down" size={12} />
-          </button>
-          {settingsMenuOpen && (
-            <div className="ed-menu-list" role="menu">
-              <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('course') }}
-                title="Nota mínima, finalización, peso de la nota, navegación…">
-                Curso (Finalización)
-              </button>
-              <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('objectives') }}
-                title="Ver, renombrar, quitar y añadir objetivos de aprendizaje del curso">
-                Objetivos de aprendizaje
-              </button>
-              <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('appearance') }}
-                title="Presentación de la carcasa: animaciones…">
-                Interfaz (Apariencia)
-              </button>
-              <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('narration') }}
-                title="Proveedor/clave de API, voz y generación de audio">
-                Narración (Audio IA)
-              </button>
-            </div>
-          )}
-        </div>
-
         <div className="ed-menu" ref={helpMenuRef} data-tour="help-menu">
           <button
             className="ed-menu-trigger"
@@ -415,6 +380,7 @@ export function Toolbar() {
       </div>
 
       {importError && <div className="ed-import-error"><Icon name="alert-octagon" size={14} /> {importError}</div>}
+    </header>
 
       {settingsModal === 'shortcuts' && <ShortcutsModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'course' && <CourseSettingsModal onClose={() => setSettingsModal(null)} />}
@@ -423,6 +389,67 @@ export function Toolbar() {
       {settingsModal === 'narration' && <NarrationModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'help' && <HelpModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'cloud' && <CloudModal onClose={() => setSettingsModal(null)} />}
-    </header>
+    </>
+  )
+}
+
+// Deshacer/Rehacer + Ajustes: herramientas ligadas a la EDICIÓN del curso
+// (historial de cambios y configuración de contenido), no a la app en
+// general — de ahí que vivan en la fila de pestañas (junto a «Editor»,
+// «Vista estudiante»…) y no arriba, junto a Archivo/Ayuda.
+export function EditTools() {
+  const undo = useCourseStore((s) => s.undo)
+  const redo = useCourseStore((s) => s.redo)
+  const cloudLockHolderEmail = useCourseStore((s) => s.cloudLockHolderEmail)
+  const canUndo = useCourseStore((s) => s.past.length > 0) && !cloudLockHolderEmail
+  const canRedo = useCourseStore((s) => s.future.length > 0) && !cloudLockHolderEmail
+  const setSettingsModal = useCourseStore((s) => s.setSettingsModal)
+  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false)
+  const settingsMenuRef = useRef<HTMLDivElement>(null)
+  useMenuDismiss(settingsMenuOpen, settingsMenuRef, () => setSettingsMenuOpen(false))
+
+  return (
+    <div className="ed-tabs-tools">
+      <button className="ed-icon-btn" onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)" aria-label="Deshacer">
+        <Icon name="undo" size={16} />
+      </button>
+      <button className="ed-icon-btn" onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Mayús+Z)" aria-label="Rehacer">
+        <Icon name="redo" size={16} />
+      </button>
+
+      <span className="ed-tabs-divider" aria-hidden="true" />
+
+      <div className="ed-menu" ref={settingsMenuRef} data-tour="settings-menu">
+        <button
+          className="ed-menu-trigger"
+          aria-haspopup="menu"
+          aria-expanded={settingsMenuOpen}
+          onClick={() => setSettingsMenuOpen((o) => !o)}
+          title="Ajustes del curso y de narración"
+        >
+          <Icon name="settings" size={14} /> Ajustes <Icon name="chevron-down" size={12} />
+        </button>
+        {settingsMenuOpen && (
+          <div className="ed-menu-list" role="menu">
+            <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('course') }}
+              title="Nota mínima, finalización, peso de la nota, navegación…">
+              Curso (Finalización)
+            </button>
+            <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('objectives') }}
+              title="Ver, renombrar, quitar y añadir objetivos de aprendizaje del curso">
+              Objetivos de aprendizaje
+            </button>
+            <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('appearance') }}
+              title="Presentación de la carcasa: animaciones…">
+              Interfaz (Apariencia)
+            </button>
+            <button role="menuitem" onClick={() => { setSettingsMenuOpen(false); setSettingsModal('narration') }}
+              title="Proveedor/clave de API, voz y generación de audio">
+              Narración (Audio IA)
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
