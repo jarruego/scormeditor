@@ -1,6 +1,7 @@
 node_modules
 dist-scorm
 dist
+.env
 # Configuración local de Claude Code (rutas y permisos de cada máquina)
 .claude/
 *.tsbuildinfo

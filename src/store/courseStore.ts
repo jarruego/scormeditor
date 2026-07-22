@@ -45,7 +45,7 @@ function containerScreens(course: Course, containerId: string): Screen[] | null 
 export type Tab = 'editor' | 'preview' | 'validation' | 'report'
 
 /** Ventana de ajustes abierta (vive en el store para poder abrirla desde Validación). */
-export type SettingsModalKind = 'course' | 'narration' | 'appearance' | 'objectives' | 'shortcuts' | 'help'
+export type SettingsModalKind = 'course' | 'narration' | 'appearance' | 'objectives' | 'shortcuts' | 'help' | 'cloud'
 
 /** Instantánea para el historial de deshacer/rehacer. */
 type CourseSnapshot = { course: Course; selectedScreenId: string | null }
@@ -70,6 +70,13 @@ interface CourseState {
   projectDirty: boolean // cambios sin guardar en el archivo de proyecto
   setProjectDirty: (dirty: boolean) => void
   setLinked: (name: string | null) => void
+  /** Documento-nube vinculado (mutuamente excluyente con `linkedFileName`: un
+   *  proyecto es local O es nube, nunca las dos cosas — ver `docs/internals/
+   *  persistencia-scormproj.md`). `null` = no vinculado a ningún documento-nube. */
+  cloudDocumentId: string | null
+  cloudOrgId: string | null
+  cloudTitle: string | null
+  setCloudLink: (documentId: string | null, orgId: string | null, title: string | null) => void
   hydrate: (course: Course, assets: AssetMap) => void
   replaceAssets: (assets: AssetMap) => void
 
@@ -219,6 +226,10 @@ export const useCourseStore = create<CourseState>((set, get) => {
   projectDirty: false,
   setProjectDirty: (dirty) => set({ projectDirty: dirty }),
   setLinked: (name) => set({ linkedFileName: name }),
+  cloudDocumentId: null,
+  cloudOrgId: null,
+  cloudTitle: null,
+  setCloudLink: (documentId, orgId, title) => set({ cloudDocumentId: documentId, cloudOrgId: orgId, cloudTitle: title }),
   hydrate: (course, assets) => {
     resetCoalesce()
     set({ course, assets, importError: null, past: [], future: [], selectedScreenId: allScreens(course)[0]?.id ?? null })
@@ -249,7 +260,16 @@ export const useCourseStore = create<CourseState>((set, get) => {
 
   resetSample: () => {
     resetCoalesce()
-    set({ course: sampleCourse, importError: null, past: [], future: [], selectedScreenId: allScreens(sampleCourse)[0]?.id ?? null })
+    // Un curso «nuevo» no es continuación de nada: desvincula el archivo
+    // local y la nube que hubiera antes (si no, un Ctrl+S posterior podría
+    // sobrescribir en silencio el proyecto anterior con este). El handle de
+    // File System Access en sí se limpia aparte, en el llamante (Toolbar),
+    // vía clearLocalLink() — courseStore no puede importar autosave.ts sin
+    // crear un ciclo.
+    set({
+      course: sampleCourse, importError: null, past: [], future: [], selectedScreenId: allScreens(sampleCourse)[0]?.id ?? null,
+      linkedFileName: null, cloudDocumentId: null, cloudOrgId: null, cloudTitle: null, projectDirty: true,
+    })
   },
 
   resetEmpty: () => {
@@ -262,7 +282,11 @@ export const useCourseStore = create<CourseState>((set, get) => {
       course: { title: 'Curso nuevo' },
       modules: [{ id: newId('m'), title: 'Módulo 1', units: [{ id: newId('u'), title: 'Unidad 1', screens: [cover] }] }],
     })
-    set({ course, assets: {}, importError: null, past: [], future: [], selectedScreenId: cover.id })
+    // Mismo motivo que en resetSample: desvincula archivo local y nube previos.
+    set({
+      course, assets: {}, importError: null, past: [], future: [], selectedScreenId: cover.id,
+      linkedFileName: null, cloudDocumentId: null, cloudOrgId: null, cloudTitle: null, projectDirty: true,
+    })
   },
 
   addModule: () => {

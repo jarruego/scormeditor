@@ -12,6 +12,7 @@ export function SettingsWindow({
   onClose,
   busy = false,
   wide = false,
+  headerExtra,
   children,
 }: {
   title: string
@@ -19,6 +20,8 @@ export function SettingsWindow({
   busy?: boolean
   /** Ventana extra ancha (p. ej. el selector de recetas, con tarjetas en grid). */
   wide?: boolean
+  /** Contenido opcional entre el título y el botón de cerrar (p. ej. selector de organización + acceso a Equipo en la ventana Nube). */
+  headerExtra?: React.ReactNode
   children: React.ReactNode
 }) {
   const close = () => { if (!busy) onClose() }
@@ -36,6 +39,7 @@ export function SettingsWindow({
         onMouseDown={(e) => e.stopPropagation()}>
         <header className="ed-modal-head">
           <strong>{title}</strong>
+          {headerExtra}
           <button className="ed-modal-x ed-icobtn" onClick={close} disabled={busy} aria-label="Cerrar"><Icon name="x" size={16} /></button>
         </header>
         <div className="ed-modal-body">{children}</div>

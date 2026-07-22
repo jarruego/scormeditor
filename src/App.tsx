@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { initAutoSave, saveProject } from './store/autosave'
+import { initAutoSave } from './store/autosave'
+import { saveCurrentProject } from './cloud/sync'
+import { initCloudSession } from './cloud/session'
 import { useCourseStore } from './store/courseStore'
 import { validateCourse } from './validation/validators'
 import { allScreens } from './schema/traverse'
@@ -30,6 +32,7 @@ export function App() {
 
   useEffect(() => {
     initAutoSave()
+    void initCloudSession()
   }, [])
 
   // Árbol lateral redimensionable (plan UX fase 9): ancho persistido; arrastrar
@@ -90,7 +93,7 @@ export function App() {
         useCourseStore.getState().redo()
       } else if (key === 's') {
         e.preventDefault()
-        void saveProject()
+        void saveCurrentProject()
       } else if (key === '/') {
         e.preventDefault()
         useCourseStore.getState().setSettingsModal('shortcuts')

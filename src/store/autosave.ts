@@ -58,10 +58,13 @@ function scheduleSave() {
   timer = setTimeout(doSave, 800)
 }
 
-/** Persiste el proyecto en IndexedDB (recuperación), incluido el flag «sin guardar». */
-async function persistToIndexedDb() {
-  const { course, assets, projectDirty } = useCourseStore.getState()
-  await kvSet('project', { course, assets, dirty: projectDirty })
+/** Persiste el proyecto en IndexedDB (recuperación), incluido el flag «sin
+ *  guardar» y el vínculo de nube (para no «olvidarlo» al recargar la página).
+ *  Exportada para que la nube fuerce la persistencia inmediata tras
+ *  abrir/subir un documento, igual que ya hace `openProject`. */
+export async function persistToIndexedDb() {
+  const { course, assets, projectDirty, cloudDocumentId, cloudOrgId, cloudTitle } = useCourseStore.getState()
+  await kvSet('project', { course, assets, dirty: projectDirty, cloudDocumentId, cloudOrgId, cloudTitle })
 }
 
 async function doSave() {
@@ -74,8 +77,10 @@ async function doSave() {
 
 // --- Empaquetado / lectura del archivo de proyecto (.scormproj = ZIP) --------
 
-/** Construye el ZIP del proyecto en memoria: course.json + assets/ . */
-async function buildProjectBlob(): Promise<Blob> {
+/** Construye el ZIP del proyecto en memoria: course.json + assets/ . Se
+ *  reutiliza tal cual para subir a la nube (`src/cloud/documents.ts`): un
+ *  documento-nube es el mismo ZIP, solo cambia dónde vive. */
+export async function buildProjectBlob(): Promise<Blob> {
   const { course, assets } = useCourseStore.getState()
   const zip = new JSZip()
   zip.file('course.json', JSON.stringify(course, null, 2))
@@ -116,8 +121,14 @@ function typedBlob(name: string, blob: Blob): Blob {
  *   (misma decisión que eXeLearning con su content.xml). De la carcasa no se
  *   importa nada: solo entran los assets que el curso referencia.
  * Devuelve el formato detectado ('project' | 'scorm') o false si el JSON no valida.
+ *
+ * Se exporta para que abrir un documento-nube (`src/cloud/documents.ts`)
+ * reutilice el mismo parser que abrir un `.scormproj` local: el formato es
+ * idéntico, solo cambia de dónde viene el blob. Como «cargar contenido
+ * nuevo» siempre desvincula cualquier documento-nube anterior, el llamante
+ * de la nube debe fijar el vínculo (`setCloudLink`) DESPUÉS de llamar aquí.
  */
-async function loadProjectFromBlob(blob: Blob): Promise<'project' | 'scorm' | false> {
+export async function loadProjectFromBlob(blob: Blob): Promise<'project' | 'scorm' | false> {
   const zip = await JSZip.loadAsync(blob)
   const courseFile = zip.file('course.json') || zip.file('data/course.json')
   if (!courseFile)
@@ -143,10 +154,23 @@ async function loadProjectFromBlob(blob: Blob): Promise<'project' | 'scorm' | fa
   // dejaría de ser SCORM (perdería manifiesto y carcasa). Queda «Sin guardar»
   // para que el primer Ctrl+S pida un destino .scormproj nuevo.
   useCourseStore.getState().setProjectDirty(isScormZip)
+  // Cargar contenido nuevo siempre desvincula cualquier documento-nube
+  // anterior (un proyecto es local o es nube, nunca las dos cosas). Se hace
+  // aquí, al final, para no desvincular nada si el import fallaba antes.
+  useCourseStore.getState().setCloudLink(null, null, null)
   return isScormZip ? 'scorm' : 'project'
 }
 
 // --- Abrir / Guardar proyecto ------------------------------------------------
+
+/** Desvincula cualquier archivo local (handle) — usado al importar un ZIP
+ *  SCORM (nunca se vincula) y al abrir un documento-nube (`src/cloud/`), que
+ *  por definición no tiene archivo local asociado. */
+export async function clearLocalLink() {
+  projectHandle = null
+  await kvSet('projectHandle', null)
+  useCourseStore.getState().setLinked(null)
+}
 
 /** Abre un `.scormproj` con el diálogo de archivo (Chrome/Edge) y lo vincula. */
 export async function openProject(): Promise<boolean> {
@@ -168,9 +192,7 @@ export async function openProject(): Promise<boolean> {
     await persistToIndexedDb()
   } else if (kind === 'scorm') {
     // Importado desde un ZIP SCORM: sin vincular (ver loadProjectFromBlob).
-    projectHandle = null
-    await kvSet('projectHandle', null)
-    useCourseStore.getState().setLinked('')
+    await clearLocalLink()
     await persistToIndexedDb()
   }
   return kind !== false
@@ -209,6 +231,10 @@ export async function saveProject(): Promise<void> {
       projectHandle = handle
       await kvSet('projectHandle', handle)
       useCourseStore.getState().setLinked(handle.name)
+      // Crear un archivo local nuevo desvincula cualquier documento-nube: a
+      // partir de aquí esta copia se guarda en disco, no en la nube (acción
+      // explícita en sentido contrario si se quiere volver a subir).
+      useCourseStore.getState().setCloudLink(null, null, null)
     }
     if (!(await ensurePermission(projectHandle, true))) return // permiso denegado
     await writeHandle(projectHandle, blob)
@@ -245,7 +271,10 @@ export async function initAutoSave() {
   started = true
 
   try {
-    const saved = await kvGet<{ course: unknown; assets: AssetMap; dirty?: boolean }>('project')
+    const saved = await kvGet<{
+      course: unknown; assets: AssetMap; dirty?: boolean
+      cloudDocumentId?: string | null; cloudOrgId?: string | null; cloudTitle?: string | null
+    }>('project')
     if (saved?.course) {
       const parsed = safeParseCourse(migrate(saved.course))
       if (parsed.success) {
@@ -253,6 +282,11 @@ export async function initAutoSave() {
         // Restauramos el estado «sin guardar» para no afirmar «Guardado» si los
         // últimos cambios no llegaron a escribirse en el archivo antes de recargar.
         useCourseStore.getState().setProjectDirty(!!saved.dirty)
+        // Restauramos también el vínculo de nube: sin esto, recargar la
+        // página con un documento-nube abierto lo «olvidaría» en silencio.
+        if (saved.cloudDocumentId) {
+          useCourseStore.getState().setCloudLink(saved.cloudDocumentId, saved.cloudOrgId ?? null, saved.cloudTitle ?? null)
+        }
       }
     }
     if (fsSupported) {

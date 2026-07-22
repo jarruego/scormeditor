@@ -5,17 +5,21 @@ import {
   isFsSupported,
   openProject,
   openProjectFromFile,
-  saveProject,
   saveProjectAs,
+  clearLocalLink,
 } from '../store/autosave'
+import { saveCurrentProject } from '../cloud/sync'
 import { CourseSettingsModal, AppearanceModal, NarrationModal } from './SettingsModal'
 import { ObjectivesModal } from './ObjectivesModal'
 import { ShortcutsModal } from './ShortcutsModal'
 import { HelpModal } from './HelpModal'
+import { CloudModal } from './CloudModal'
 import { startTour } from './GuidedTour'
 import { InlineRename } from './InlineRename'
 import { confirmDialog } from '../store/confirm'
 import { orphanAssetPaths } from '../schema/assetRefs'
+import { isCloudConfigured } from '../cloud/client'
+import { useCloudSessionStore } from '../cloud/session'
 import { Icon } from './Icon'
 import logoUrl from '../assets/brand/logo-horizontal.svg'
 
@@ -39,6 +43,8 @@ export function Toolbar() {
   const importError = useCourseStore((s) => s.importError)
   const linkedFileName = useCourseStore((s) => s.linkedFileName)
   const projectDirty = useCourseStore((s) => s.projectDirty)
+  const cloudDocumentId = useCourseStore((s) => s.cloudDocumentId)
+  const cloudTitle = useCourseStore((s) => s.cloudTitle)
   const undo = useCourseStore((s) => s.undo)
   const redo = useCourseStore((s) => s.redo)
   const canUndo = useCourseStore((s) => s.past.length > 0)
@@ -47,6 +53,8 @@ export function Toolbar() {
   const pruneOrphanAssets = useCourseStore((s) => s.pruneOrphanAssets)
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const cloudSession = useCloudSessionStore((s) => s.session)
   // Qué ventana de ajustes está abierta. Vive en el store para que Validación
   // pueda abrirla desde sus enlaces («abrir ajustes»).
   const settingsModal = useCourseStore((s) => s.settingsModal)
@@ -82,9 +90,23 @@ export function Toolbar() {
   useMenuDismiss(settingsMenuOpen, settingsMenuRef, () => setSettingsMenuOpen(false))
   useMenuDismiss(helpMenuOpen, helpMenuRef, () => setHelpMenuOpen(false))
 
+  // Local y nube son mutuamente excluyentes (courseStore.setCloudLink): un
+  // proyecto está SIEMPRE en uno de los dos modos, nunca los dos — de ahí
+  // que un único indicador/gesto de guardado baste (ver src/cloud/sync.ts).
+  const isCloudMode = !!cloudDocumentId
   const isSaved = !!linkedFileName && !projectDirty
+  const isSynced = isCloudMode && !projectDirty
   // Recursos que ya no usa ninguna diapositiva (peso muerto en el .scormproj).
   const orphanCount = useMemo(() => orphanAssetPaths(course, assets).length, [course, assets])
+
+  async function onSaveClick() {
+    setSaving(true)
+    try {
+      await saveCurrentProject()
+    } finally {
+      setSaving(false)
+    }
+  }
 
   async function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -149,10 +171,10 @@ export function Toolbar() {
   }
 
   async function onNewDemo() {
-    if (await confirmDiscard()) resetSample()
+    if (await confirmDiscard()) { await clearLocalLink(); resetSample() }
   }
   async function onNewEmpty() {
-    if (await confirmDiscard()) resetEmpty()
+    if (await confirmDiscard()) { await clearLocalLink(); resetEmpty() }
   }
   async function onOpen() {
     if (await confirmDiscard()) void openProject()
@@ -177,20 +199,51 @@ export function Toolbar() {
           onChange={(title) => updateCourseInfo({ title })} />
       </span>
 
-      {/* Estado del documento: un único concepto de guardado = el archivo. */}
-      <button
-        className={`ed-docstate ${isSaved ? 'is-saved' : 'is-dirty'}`}
-        data-tour="docstate"
-        onClick={() => void saveProject()}
-        title={
-          isSaved
-            ? `Proyecto guardado en ${linkedFileName}. Ctrl+S para volver a guardar.`
-            : 'Cambios sin guardar. Pulsa para guardar el proyecto (Ctrl+S). Tus cambios se conservan automáticamente por si cierras sin guardar.'
-        }
-      >
-        <Icon name={isSaved ? 'check' : 'dot'} size={12} />{' '}
-        {isSaved ? `Guardado · ${linkedFileName}` : `Sin guardar${linkedFileName ? ` · ${linkedFileName}` : ''}`}
-      </button>
+      {/* Estado del documento (guardado) + estado de cuenta (nube), como un
+          único bloque «en conjunto»: dos botones independientes pero unidos
+          visualmente (segmented pill), para que se lean como una sola pieza
+          de información en vez de dos indicadores sueltos por la Toolbar.
+          El de guardado usa un único gesto (clic o Ctrl+S) adaptado al modo
+          activo — escribe en disco si es local, sube una versión si es
+          nube (src/cloud/sync.ts). Nunca los dos modos a la vez. */}
+      <div className="ed-doc-status">
+        <button
+          className={`ed-docstate ${isCloudMode ? (isSynced ? 'is-saved' : 'is-dirty') : (isSaved ? 'is-saved' : 'is-dirty')}`}
+          data-tour="docstate"
+          disabled={saving}
+          onClick={() => void onSaveClick()}
+          title={
+            isCloudMode
+              ? (isSynced
+                ? `Sincronizado con la nube («${cloudTitle}»). Ctrl+S para forzar una subida.`
+                : `Cambios sin subir a la nube («${cloudTitle}»). Pulsa para subir (Ctrl+S).`)
+              : (isSaved
+                ? `Proyecto guardado en ${linkedFileName}. Ctrl+S para volver a guardar.`
+                : 'Cambios sin guardar. Pulsa para guardar el proyecto (Ctrl+S). Tus cambios se conservan automáticamente por si cierras sin guardar.')
+          }
+        >
+          {saving ? (
+            <>{isCloudMode ? 'Subiendo…' : 'Guardando…'}</>
+          ) : isCloudMode ? (
+            // El título del curso ya se ve al lado, en la cabecera — repetirlo
+            // aquí sería ruido; queda solo en el tooltip (hover), no en pantalla.
+            <><Icon name="cloud" size={12} /> {isSynced ? 'Sincronizado' : 'Sin subir'}</>
+          ) : (
+            <><Icon name={isSaved ? 'check' : 'dot'} size={12} />{' '}
+              {isSaved ? `Guardado · ${linkedFileName}` : `Sin guardar${linkedFileName ? ` · ${linkedFileName}` : ''}`}</>
+          )}
+        </button>
+
+        {isCloudConfigured() && (
+          <button
+            className={`ed-session-chip ${cloudSession ? 'is-connected' : ''}`}
+            onClick={() => setSettingsModal('cloud')}
+            title={cloudSession ? `Conectado a la nube como ${cloudSession.user.email}. Pulsa para gestionar equipo y proyectos.` : 'Nube: sin conectar. Pulsa para iniciar sesión.'}
+          >
+            <Icon name="cloud" size={13} /> {cloudSession ? cloudSession.user.email : 'Nube: sin conectar'}
+          </button>
+        )}
+      </div>
 
       <div className="ed-toolbar-actions">
         <button onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)" aria-label="Deshacer">
@@ -210,17 +263,60 @@ export function Toolbar() {
           </button>
           {menuOpen && (
             <div className="ed-menu-list" role="menu">
-              <button role="menuitem" onClick={() => runMenu(fsOk ? onOpen : () => fileRef.current?.click())} title="Abrir un proyecto .scormproj">
-                Abrir proyecto…
-              </button>
-              <button role="menuitem" onClick={() => runMenu(() => void saveProject())} title="Guardar el proyecto (Ctrl+S)">
-                Guardar{linkedFileName ? '' : ' proyecto…'}
-              </button>
-              {fsOk && (
-                <button role="menuitem" onClick={() => runMenu(() => void saveProjectAs())} title="Guardar una copia en un archivo nuevo">
-                  Guardar como…
-                </button>
+              <p className={`ed-menu-modeline ${isCloudMode ? 'is-cloud' : 'is-local'}`}>
+                {isCloudMode
+                  ? <><Icon name="cloud" size={13} /> Nube</>
+                  : <><Icon name="folder" size={13} /> Local{linkedFileName ? ` · ${linkedFileName}` : ' · sin guardar todavía'}</>}
+              </p>
+
+              {isCloudMode ? (
+                <>
+                  <button role="menuitem" className="ed-menu-cloud-item" onClick={() => runMenu(() => void onSaveClick())} title="Sube una versión nueva a la nube (Ctrl+S)">
+                    <Icon name="cloud" size={13} /> Actualizar en la nube
+                  </button>
+                  <button role="menuitem" className="ed-menu-cloud-item" onClick={() => runMenu(() => setSettingsModal('cloud'))} title="Elegir otro proyecto de la nube">
+                    <Icon name="cloud" size={13} /> Abrir otro proyecto de la nube…
+                  </button>
+                  <button role="menuitem" className="ed-menu-cloud-item" onClick={() => runMenu(() => setSettingsModal('cloud'))} title="Ver el equipo, cambiar de organización o de rol">
+                    <Icon name="cloud" size={13} /> Gestionar equipo…
+                  </button>
+                  <hr className="ed-menu-sep" />
+                  <button role="menuitem" onClick={() => runMenu(fsOk ? onOpen : () => fileRef.current?.click())} title="Reemplaza el curso abierto por uno local; deja de estar vinculado a la nube">
+                    <Icon name="folder" size={13} /> Abrir proyecto local…
+                  </button>
+                  {fsOk && (
+                    <button role="menuitem" onClick={() => runMenu(() => void saveProjectAs())} title="Crea una copia en un archivo local y desvincula este curso de la nube">
+                      <Icon name="folder" size={13} /> Guardar copia local…
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <button role="menuitem" onClick={() => runMenu(fsOk ? onOpen : () => fileRef.current?.click())} title="Abrir un proyecto .scormproj">
+                    <Icon name="folder" size={13} /> Abrir proyecto…
+                  </button>
+                  <button role="menuitem" onClick={() => runMenu(() => void onSaveClick())} title="Guardar el proyecto (Ctrl+S)">
+                    <Icon name="folder" size={13} /> Guardar{linkedFileName ? '' : ' proyecto…'}
+                  </button>
+                  {fsOk && (
+                    <button role="menuitem" onClick={() => runMenu(() => void saveProjectAs())} title="Guardar una copia en un archivo nuevo">
+                      <Icon name="folder" size={13} /> Guardar como…
+                    </button>
+                  )}
+                  {isCloudConfigured() && (
+                    <>
+                      <hr className="ed-menu-sep" />
+                      <button role="menuitem" className="ed-menu-cloud-item" onClick={() => runMenu(() => setSettingsModal('cloud'))} title="Elegir un proyecto guardado en la nube del equipo">
+                        <Icon name="cloud" size={13} /> Abrir desde la nube…
+                      </button>
+                      <button role="menuitem" className="ed-menu-cloud-item" onClick={() => runMenu(() => setSettingsModal('cloud'))} title="Subir este curso a la nube para compartirlo con el equipo">
+                        <Icon name="cloud" size={13} /> Subir a la nube…
+                      </button>
+                    </>
+                  )}
+                </>
               )}
+
               {orphanCount > 0 && (
                 <button role="menuitem"
                   onClick={() => runMenu(() => void onPruneOrphans())}
@@ -305,7 +401,6 @@ export function Toolbar() {
             </div>
           )}
         </div>
-
       </div>
 
       {importError && <div className="ed-import-error"><Icon name="alert-octagon" size={14} /> {importError}</div>}
@@ -316,6 +411,7 @@ export function Toolbar() {
       {settingsModal === 'appearance' && <AppearanceModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'narration' && <NarrationModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'help' && <HelpModal onClose={() => setSettingsModal(null)} />}
+      {settingsModal === 'cloud' && <CloudModal onClose={() => setSettingsModal(null)} />}
     </header>
   )
 }
