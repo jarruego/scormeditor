@@ -447,6 +447,11 @@ button.ed-pill.info:hover:not(:disabled) { background: #e8f0fe; }
 .ed-btn-solid { border: none; color: #fff; font-weight: 600; }
 .ed-btn-cloud { background: var(--c-cloud); }
 .ed-btn-cloud:hover:not(:disabled) { background: color-mix(in srgb, var(--c-cloud) 82%, black); border: none; }
+/* .ed-danger a secas es un botón "ghost" (fondo rosa claro + texto oscuro);
+   combinado con .ed-btn-solid necesita su propio fondo sólido, si no el texto
+   blanco de .ed-btn-solid queda casi invisible sobre el rosa claro. */
+.ed-btn-solid.ed-danger { background: #b3261e; border-color: transparent; color: #fff; }
+.ed-btn-solid.ed-danger:hover:not(:disabled) { background: color-mix(in srgb, #b3261e 82%, black); border-color: transparent; color: #fff; }
 .ed-btn-ghost { border: none; background: none; color: var(--c-muted); }
 .ed-btn-ghost:hover:not(:disabled) { background: var(--c-bg); color: var(--c-text); border: none; }
 

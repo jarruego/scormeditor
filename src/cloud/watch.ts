@@ -8,16 +8,21 @@ import { confirmDialog } from '../store/confirm'
 
 /**
  * Sigue el documento-nube vinculado (`courseStore.cloudDocumentId`) mientras
- * esté abierto: avisa casi al instante si alguien sube una versión nueva
- * (Realtime sobre `document_versions`, no sondeo — una sola conexión que
- * solo habla cuando cambia algo de verdad) y mantiene un bloqueo de edición
- * («structural», ver las migraciones) para que solo una persona edite las
- * diapositivas a la vez. El bloqueo es ESTRICTO en el cliente (App.tsx pone
- * en solo lectura el árbol/editor mientras `cloudLockHolderEmail` diga que lo
- * tiene otro) pero sin ceremonia de servidor: cualquier editor puede «tomar
- * el control» cuando quiera (`forceTakeDocumentLock`) y al desposeído se lo
- * avisa aquí mismo, por el mismo canal de Realtime que ya escuchaba
- * `document_locks` — no hace falta un mecanismo aparte de notificación.
+ * esté abierto: avisa si alguien sube una versión nueva o cambia quién tiene
+ * el bloqueo de edición («structural», ver las migraciones), y mantiene ese
+ * bloqueo para que solo una persona edite las diapositivas a la vez. El
+ * bloqueo es ESTRICTO en el cliente (App.tsx pone en solo lectura el
+ * árbol/editor mientras `cloudLockHolderEmail` diga que lo tiene otro) pero
+ * sin ceremonia de servidor: cualquier editor puede «tomar el control» cuando
+ * quiera (`forceTakeDocumentLock`).
+ *
+ * Doble vía de aviso, no solo Realtime: Realtime sobre `document_versions`/
+ * `document_locks` es la vía rápida (casi al instante) cuando el canal está
+ * sano, pero cada latido del bloqueo (cada 25s, ya es una conexión que se
+ * abre igualmente) hace también de respaldo por sondeo — así, si Realtime
+ * fallara en silencio (canal caído, RLS que no deja pasar el evento…),
+ * cualquier cliente converge solo en ≤25s en vez de quedarse esperando un
+ * aviso que nunca llega hasta que alguien recarga la página.
  */
 
 // Latido bien por debajo del TTL (60s) del RPC de bloqueo: si el latido
@@ -104,6 +109,13 @@ async function startHeartbeat(documentId: string) {
     } catch {
       // red intermitente: se reintenta en el siguiente latido, sin avisar
     }
+    // Respaldo de sondeo sobre el mismo latido (no una conexión nueva): si
+    // Realtime no ha entregado el evento — canal caído en silencio, RLS que
+    // no deja pasar el postgres_changes, lo que sea — esto garantiza que en
+    // ≤25s cualquier cliente se entera igual de un «tomar el control» o de
+    // una versión nueva, sin depender solo de Realtime para converger.
+    await refreshLockPresence(documentId)
+    await refreshStaleness(documentId)
   }
   await tick()
   heartbeatTimer = setInterval(() => void tick(), HEARTBEAT_MS)
@@ -162,7 +174,14 @@ async function subscribeRealtime(documentId: string) {
       { event: '*', schema: CLOUD_SCHEMA, table: 'document_locks', filter: `document_id=eq.${documentId}` },
       () => void refreshLockPresence(documentId),
     )
-    .subscribe()
+    .subscribe((status, err) => {
+      // Si el canal falla (error/timeout), no queda constancia en ningún
+      // sitio por defecto: el latido (arriba) sigue haciendo de respaldo,
+      // pero esto deja rastro en consola para poder diagnosticarlo.
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.error('[cloud/watch] Realtime no disponible, usando solo el respaldo por latido (25s):', status, err)
+      }
+    })
 }
 
 async function unsubscribeRealtime() {

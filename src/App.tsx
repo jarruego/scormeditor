@@ -49,6 +49,10 @@ export function App() {
     })
     if (!ok) return
     await forceTakeDocumentLock(cloudDocumentId)
+    // Optimista: no esperamos a que Realtime (o el respaldo por latido de
+    // hasta 25s, ver src/cloud/watch.ts) nos confirme que ya lo tenemos —
+    // acabamos de conseguirlo nosotros mismos, así que se refleja al momento.
+    useCourseStore.getState().setCloudLockHolder(null)
   }
 
   useEffect(() => {
