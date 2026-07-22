@@ -77,6 +77,20 @@ interface CourseState {
   cloudOrgId: string | null
   cloudTitle: string | null
   setCloudLink: (documentId: string | null, orgId: string | null, title: string | null) => void
+  /** Id de la versión (`document_versions.id`) que corresponde al contenido
+   *  cargado ahora mismo — la referencia para saber si hay una versión más
+   *  reciente subida por otra persona (`cloudStale`). */
+  cloudVersionId: string | null
+  /** true si Realtime ha visto una versión más reciente que `cloudVersionId`
+   *  (subida por cualquiera, incluido tú desde otra pestaña/dispositivo). */
+  cloudStale: boolean
+  /** Email de quien tiene el bloqueo «structural» activo de este documento
+   *  (null = nadie más lo tiene abierto, o no se ha comprobado). */
+  cloudLockHolderEmail: string | null
+  /** Marca la versión sincronizada; limpia `cloudStale` (ya estás al día). */
+  setCloudVersion: (versionId: string | null) => void
+  setCloudStale: (stale: boolean) => void
+  setCloudLockHolder: (email: string | null) => void
   hydrate: (course: Course, assets: AssetMap) => void
   replaceAssets: (assets: AssetMap) => void
 
@@ -229,7 +243,21 @@ export const useCourseStore = create<CourseState>((set, get) => {
   cloudDocumentId: null,
   cloudOrgId: null,
   cloudTitle: null,
-  setCloudLink: (documentId, orgId, title) => set({ cloudDocumentId: documentId, cloudOrgId: orgId, cloudTitle: title }),
+  cloudVersionId: null,
+  cloudStale: false,
+  cloudLockHolderEmail: null,
+  setCloudLink: (documentId, orgId, title) => {
+    // Renombrar llama a esto con el MISMO documentId, solo para actualizar
+    // el título — no debe invalidar la versión/aviso/bloqueo ya conocidos.
+    // Cambiar de documento de verdad (o desvincular) sí los invalida.
+    const sameDoc = documentId !== null && documentId === get().cloudDocumentId
+    set(sameDoc
+      ? { cloudDocumentId: documentId, cloudOrgId: orgId, cloudTitle: title }
+      : { cloudDocumentId: documentId, cloudOrgId: orgId, cloudTitle: title, cloudVersionId: null, cloudStale: false, cloudLockHolderEmail: null })
+  },
+  setCloudVersion: (versionId) => set({ cloudVersionId: versionId, cloudStale: false }),
+  setCloudStale: (stale) => set({ cloudStale: stale }),
+  setCloudLockHolder: (email) => set({ cloudLockHolderEmail: email }),
   hydrate: (course, assets) => {
     resetCoalesce()
     set({ course, assets, importError: null, past: [], future: [], selectedScreenId: allScreens(course)[0]?.id ?? null })

@@ -50,9 +50,13 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
 .ed-docstate { font-size: .8rem; padding: .2rem .6rem; border-radius: 99px; border: 1px solid transparent; cursor: pointer; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ed-docstate.is-saved { background: #e7f6ec; color: #0c5a26; }
 .ed-docstate.is-dirty { background: #fff4e0; color: #7a4a00; font-weight: 600; }
+/* Versión más reciente en la nube (Realtime, src/cloud/watch.ts): distinto del
+   simple «sin subir» porque el cambio pendiente es ajeno, no tuyo. */
+.ed-docstate.is-stale { background: #fdecea; color: #7a1a14; font-weight: 600; }
 /* Conservar el color del pill también en hover (pisa el hover del botón base) */
 .ed-docstate.is-saved:hover:not(:disabled) { background: #ddf0e3; border-color: transparent; }
 .ed-docstate.is-dirty:hover:not(:disabled) { background: #ffedcc; border-color: transparent; }
+.ed-docstate.is-stale:hover:not(:disabled) { background: #fbdcd8; border-color: transparent; }
 /* Badge de errores/avisos junto a la pestaña «Validación» (solo si hay alguno) */
 .ed-status { font-size: .75rem; padding: .1rem .5rem; margin-left: .4rem; border-radius: 99px; vertical-align: middle; }
 .ed-status.err { background: #fdecea; color: #7a1a14; }

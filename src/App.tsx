@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { initAutoSave } from './store/autosave'
 import { saveCurrentProject } from './cloud/sync'
 import { initCloudSession } from './cloud/session'
+import { startCloudWatch } from './cloud/watch'
 import { useCourseStore } from './store/courseStore'
 import { validateCourse } from './validation/validators'
 import { allScreens } from './schema/traverse'
@@ -33,6 +34,7 @@ export function App() {
   useEffect(() => {
     initAutoSave()
     void initCloudSession()
+    startCloudWatch()
   }, [])
 
   // Árbol lateral redimensionable (plan UX fase 9): ancho persistido; arrastrar

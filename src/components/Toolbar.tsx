@@ -45,6 +45,8 @@ export function Toolbar() {
   const projectDirty = useCourseStore((s) => s.projectDirty)
   const cloudDocumentId = useCourseStore((s) => s.cloudDocumentId)
   const cloudTitle = useCourseStore((s) => s.cloudTitle)
+  const cloudStale = useCourseStore((s) => s.cloudStale)
+  const cloudLockHolderEmail = useCourseStore((s) => s.cloudLockHolderEmail)
   const undo = useCourseStore((s) => s.undo)
   const redo = useCourseStore((s) => s.redo)
   const canUndo = useCourseStore((s) => s.past.length > 0)
@@ -95,7 +97,13 @@ export function Toolbar() {
   // que un único indicador/gesto de guardado baste (ver src/cloud/sync.ts).
   const isCloudMode = !!cloudDocumentId
   const isSaved = !!linkedFileName && !projectDirty
-  const isSynced = isCloudMode && !projectDirty
+  // «Sincronizado» significa dos cosas a la vez: nada tuyo pendiente de subir
+  // Y nada ajeno pendiente de bajar (cloudStale, que viene de Realtime en
+  // src/cloud/watch.ts). Si alguien más ha subido una versión, el proyecto
+  // NO está sincronizado aunque projectDirty sea false — de ahí el estado
+  // «isStale» aparte, con su propio aviso en vez de mentir con la pastilla verde.
+  const isStale = isCloudMode && cloudStale
+  const isSynced = isCloudMode && !projectDirty && !cloudStale
   // Recursos que ya no usa ninguna diapositiva (peso muerto en el .scormproj).
   const orphanCount = useMemo(() => orphanAssetPaths(course, assets).length, [course, assets])
 
@@ -208,15 +216,17 @@ export function Toolbar() {
           nube (src/cloud/sync.ts). Nunca los dos modos a la vez. */}
       <div className="ed-doc-status">
         <button
-          className={`ed-docstate ${isCloudMode ? (isSynced ? 'is-saved' : 'is-dirty') : (isSaved ? 'is-saved' : 'is-dirty')}`}
+          className={`ed-docstate ${isCloudMode ? (isStale ? 'is-stale' : isSynced ? 'is-saved' : 'is-dirty') : (isSaved ? 'is-saved' : 'is-dirty')}`}
           data-tour="docstate"
           disabled={saving}
           onClick={() => void onSaveClick()}
           title={
             isCloudMode
-              ? (isSynced
-                ? `Sincronizado con la nube («${cloudTitle}»). Ctrl+S para forzar una subida.`
-                : `Cambios sin subir a la nube («${cloudTitle}»). Pulsa para subir (Ctrl+S).`)
+              ? (isStale
+                ? `Hay una versión más reciente en la nube: alguien ha subido cambios después de tu última sincronización. Pulsa para abrir ☁ Nube y decidir (bajarla, o subir la tuya igualmente).`
+                : isSynced
+                ? `Sincronizado con la nube («${cloudTitle}»).${cloudLockHolderEmail ? ` ${cloudLockHolderEmail} lo tiene abierto también ahora mismo.` : ''} Ctrl+S para forzar una subida.`
+                : `Cambios sin subir a la nube («${cloudTitle}»).${cloudLockHolderEmail ? ` ${cloudLockHolderEmail} lo tiene abierto también ahora mismo.` : ''} Pulsa para subir (Ctrl+S).`)
               : (isSaved
                 ? `Proyecto guardado en ${linkedFileName}. Ctrl+S para volver a guardar.`
                 : 'Cambios sin guardar. Pulsa para guardar el proyecto (Ctrl+S). Tus cambios se conservan automáticamente por si cierras sin guardar.')
@@ -227,7 +237,7 @@ export function Toolbar() {
           ) : isCloudMode ? (
             // El título del curso ya se ve al lado, en la cabecera — repetirlo
             // aquí sería ruido; queda solo en el tooltip (hover), no en pantalla.
-            <><Icon name="cloud" size={12} /> {isSynced ? 'Sincronizado' : 'Sin subir'}</>
+            <><Icon name={isStale ? 'refresh' : 'cloud'} size={12} /> {isStale ? 'Nueva versión' : isSynced ? 'Sincronizado' : 'Sin subir'}</>
           ) : (
             <><Icon name={isSaved ? 'check' : 'dot'} size={12} />{' '}
               {isSaved ? `Guardado · ${linkedFileName}` : `Sin guardar${linkedFileName ? ` · ${linkedFileName}` : ''}`}</>

@@ -63,8 +63,8 @@ function scheduleSave() {
  *  Exportada para que la nube fuerce la persistencia inmediata tras
  *  abrir/subir un documento, igual que ya hace `openProject`. */
 export async function persistToIndexedDb() {
-  const { course, assets, projectDirty, cloudDocumentId, cloudOrgId, cloudTitle } = useCourseStore.getState()
-  await kvSet('project', { course, assets, dirty: projectDirty, cloudDocumentId, cloudOrgId, cloudTitle })
+  const { course, assets, projectDirty, cloudDocumentId, cloudOrgId, cloudTitle, cloudVersionId } = useCourseStore.getState()
+  await kvSet('project', { course, assets, dirty: projectDirty, cloudDocumentId, cloudOrgId, cloudTitle, cloudVersionId })
 }
 
 async function doSave() {
@@ -273,7 +273,7 @@ export async function initAutoSave() {
   try {
     const saved = await kvGet<{
       course: unknown; assets: AssetMap; dirty?: boolean
-      cloudDocumentId?: string | null; cloudOrgId?: string | null; cloudTitle?: string | null
+      cloudDocumentId?: string | null; cloudOrgId?: string | null; cloudTitle?: string | null; cloudVersionId?: string | null
     }>('project')
     if (saved?.course) {
       const parsed = safeParseCourse(migrate(saved.course))
@@ -286,6 +286,7 @@ export async function initAutoSave() {
         // página con un documento-nube abierto lo «olvidaría» en silencio.
         if (saved.cloudDocumentId) {
           useCourseStore.getState().setCloudLink(saved.cloudDocumentId, saved.cloudOrgId ?? null, saved.cloudTitle ?? null)
+          useCourseStore.getState().setCloudVersion(saved.cloudVersionId ?? null)
         }
       }
     }

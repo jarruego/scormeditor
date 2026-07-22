@@ -12,13 +12,22 @@ import { useCloudSessionStore } from './session'
  * así que este orquestador solo necesita mirar cuál está activo.
  */
 export async function saveCurrentProject(): Promise<void> {
-  const { cloudDocumentId, cloudOrgId, projectDirty, linkedFileName } = useCourseStore.getState()
+  const { cloudDocumentId, cloudOrgId, projectDirty, linkedFileName, cloudStale } = useCourseStore.getState()
 
   if (cloudDocumentId && cloudOrgId) {
+    if (cloudStale) {
+      // No subir a ciegas encima de una versión que no has visto: se abre
+      // ☁ Nube para decidir con conocimiento de causa (bajarla primero, o
+      // subir de todas formas si sabes que tu cambio debe ganar — ninguna
+      // versión se pierde nunca, quedan todas en el historial).
+      useCourseStore.getState().setSettingsModal('cloud')
+      return
+    }
     if (!projectDirty) return // ya sincronizado, nada que subir
     try {
       const blob = await buildProjectBlob()
-      await uploadVersion(cloudOrgId, cloudDocumentId, blob)
+      const versionId = await uploadVersion(cloudOrgId, cloudDocumentId, blob)
+      useCourseStore.getState().setCloudVersion(versionId)
       useCourseStore.getState().setProjectDirty(false)
       await persistToIndexedDb()
     } catch (e) {

@@ -223,6 +223,8 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
   const cloudDocumentId = useCourseStore((s) => s.cloudDocumentId)
   const cloudOrgId = useCourseStore((s) => s.cloudOrgId)
   const projectDirty = useCourseStore((s) => s.projectDirty)
+  const cloudStale = useCourseStore((s) => s.cloudStale)
+  const cloudLockHolderEmail = useCourseStore((s) => s.cloudLockHolderEmail)
 
   // Organizaciones (+ tu rol en cada una) al iniciar sesión; preselecciona la ya vinculada, si la hay.
   useEffect(() => {
@@ -384,8 +386,9 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
     try {
       const title = uploadTitle.trim() || 'Curso sin título'
       const blob = await buildProjectBlob()
-      const id = await createCloudDocument({ orgId, folderId: uploadFolderId, title, courseSlug: course.course.id, blob })
-      useCourseStore.getState().setCloudLink(id, orgId, title)
+      const { documentId, versionId } = await createCloudDocument({ orgId, folderId: uploadFolderId, title, courseSlug: course.course.id, blob })
+      useCourseStore.getState().setCloudLink(documentId, orgId, title)
+      useCourseStore.getState().setCloudVersion(versionId)
       useCourseStore.getState().setProjectDirty(false)
       await persistToIndexedDb()
       await refreshDocs(orgId)
@@ -483,6 +486,36 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
       if (orgId !== cloudOrgId) setOrgId(cloudOrgId)
       const linked = list.find((d) => d.id === cloudDocumentId)
       setCurrentFolderId(linked?.folder_id ?? null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /**
+   * Baja la última versión subida por cualquiera (incluida otra persona) y
+   * reemplaza el curso abierto con ella. Es el sentido contrario de
+   * «Actualizar en la nube» (que solo sube) — hoy no hay ningún aviso
+   * automático de «hay una versión más reciente», así que esto es manual:
+   * úsalo cuando sepas que alguien más ha subido cambios.
+   */
+  async function onPullLatest() {
+    if (!cloudDocumentId || !cloudOrgId) return
+    if (projectDirty && !(await confirmDiscard())) return
+    setBusy(true)
+    setError(null)
+    try {
+      const version = await getLatestVersion(cloudDocumentId)
+      if (!version) throw new Error('Este proyecto todavía no tiene ninguna versión subida.')
+      const blob = await downloadVersionBlob(version.storage_path)
+      const kind = await loadProjectFromBlob(blob)
+      if (kind === false) throw new Error('El proyecto descargado no es válido.')
+      // loadProjectFromBlob desvincula siempre (ver su comentario): al ser el
+      // mismo documento que ya estaba abierto, se re-vincula con su mismo id.
+      const title = useCourseStore.getState().course.course.title || 'Curso sin título'
+      useCourseStore.getState().setCloudLink(cloudDocumentId, cloudOrgId, title)
+      await persistToIndexedDb()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -682,11 +715,22 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
                     <div className="ed-cloud-session-row">
                       <div>
                         <strong>{course.course.title || 'Curso sin título'}</strong>
-                        <p className="ed-hint">{projectDirty ? 'Hay cambios sin subir a la nube.' : 'Sincronizado con la nube.'}</p>
+                        <p className="ed-hint">
+                          {cloudStale
+                            ? 'Alguien ha subido una versión más reciente — descárgala antes de seguir, o sube la tuya igualmente si sabes que debe ganar.'
+                            : projectDirty ? 'Hay cambios sin subir a la nube.' : 'Sincronizado con la nube.'}
+                        </p>
+                        {cloudLockHolderEmail && (
+                          <p className="ed-hint">{cloudLockHolderEmail} lo tiene abierto también ahora mismo.</p>
+                        )}
                       </div>
                       <div className="ed-cloud-row-actions">
                         <button className="ed-btn-ghost" disabled={busy} onClick={() => void onLocateLinked()} title="Ir a la carpeta donde está guardado este proyecto">
                           <Icon name="folder" size={13} /> Ver ubicación
+                        </button>
+                        <button className="ed-btn-ghost" disabled={busy} onClick={() => void onPullLatest()}
+                          title="Bajar la última versión subida por cualquiera del equipo (sustituye el curso abierto)">
+                          <Icon name="refresh" size={13} /> Descargar la última versión
                         </button>
                         {canEdit && projectDirty && (
                           <button className="ed-btn-solid ed-btn-cloud" disabled={busy} onClick={() => void onUpdateLinked()}>

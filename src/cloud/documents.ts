@@ -65,7 +65,7 @@ export async function downloadVersionBlob(storagePath: string): Promise<Blob> {
  * blob, queda un objeto huérfano en Storage (caso raro, sin limpieza
  * automática todavía).
  */
-export async function uploadVersion(orgId: string, documentId: string, blob: Blob): Promise<void> {
+export async function uploadVersion(orgId: string, documentId: string, blob: Blob): Promise<string> {
   const supabase = await requireSupabase()
   const versionId = crypto.randomUUID()
   const storagePath = `${orgId}/${documentId}/${versionId}.zip`
@@ -78,16 +78,17 @@ export async function uploadVersion(orgId: string, documentId: string, blob: Blo
     .from('document_versions')
     .insert({ id: versionId, document_id: documentId, storage_path: storagePath, size_bytes: blob.size })
   if (dbErr) throw dbErr
+  return versionId
 }
 
-/** Crea el documento (fila) y sube su primera versión. Devuelve el id del documento. */
+/** Crea el documento (fila) y sube su primera versión. Devuelve el id del documento y de esa versión. */
 export async function createCloudDocument(opts: {
   orgId: string
   folderId: string | null
   title: string
   courseSlug: string
   blob: Blob
-}): Promise<string> {
+}): Promise<{ documentId: string; versionId: string }> {
   const supabase = await requireSupabase()
   const { data: doc, error: docErr } = await supabase
     .from('documents')
@@ -95,8 +96,8 @@ export async function createCloudDocument(opts: {
     .select()
     .single()
   if (docErr) throw docErr
-  await uploadVersion(opts.orgId, doc.id, opts.blob)
-  return doc.id as string
+  const versionId = await uploadVersion(opts.orgId, doc.id, opts.blob)
+  return { documentId: doc.id as string, versionId }
 }
 
 /** Mueve un documento a otra carpeta (o a «sin carpeta» con `null`). */
