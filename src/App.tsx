@@ -38,7 +38,12 @@ export function App() {
   // `src/cloud/watch.ts` para cómo se detecta y se avisa al desposeído).
   const cloudDocumentId = useCourseStore((s) => s.cloudDocumentId)
   const cloudLockHolderEmail = useCourseStore((s) => s.cloudLockHolderEmail)
+  const cloudMyRole = useCourseStore((s) => s.cloudMyRole)
   const locked = !!cloudDocumentId && !!cloudLockHolderEmail
+  // Solo owner/editor pueden tomar el control (el RPC ya lo exige igual —
+  // esto es solo para no ofrecerle el botón a un viewer que nunca podría
+  // usarlo con éxito).
+  const canTakeControl = cloudMyRole === 'owner' || cloudMyRole === 'editor'
   async function onTakeControl() {
     if (!cloudDocumentId || !cloudLockHolderEmail) return
     const ok = await confirmDialog({
@@ -48,11 +53,23 @@ export function App() {
       danger: true,
     })
     if (!ok) return
-    await forceTakeDocumentLock(cloudDocumentId)
-    // Optimista: no esperamos a que Realtime (o el respaldo por latido de
-    // hasta 25s, ver src/cloud/watch.ts) nos confirme que ya lo tenemos —
-    // acabamos de conseguirlo nosotros mismos, así que se refleja al momento.
-    useCourseStore.getState().setCloudLockHolder(null)
+    try {
+      await forceTakeDocumentLock(cloudDocumentId)
+      // Optimista: no esperamos a que Realtime (o el respaldo por latido de
+      // hasta 25s, ver src/cloud/watch.ts) nos confirme que ya lo tenemos —
+      // acabamos de conseguirlo nosotros mismos, así que se refleja al momento.
+      useCourseStore.getState().setCloudLockHolder(null)
+    } catch (e) {
+      // P. ej. un viewer sin permiso de edición (rechazado por la propia
+      // función SQL) o un fallo de red: sin este catch quedaba como promesa
+      // rechazada sin manejar, en silencio para quien lo pulsaba.
+      await confirmDialog({
+        title: 'No se pudo tomar el control',
+        message: e instanceof Error ? e.message : String(e),
+        confirmLabel: 'Entendido',
+        hideCancel: true,
+      })
+    }
   }
 
   useEffect(() => {
@@ -168,7 +185,9 @@ export function App() {
         <div className="ed-lock-banner">
           <Icon name="ban" size={14} />
           <span><strong>{cloudLockHolderEmail}</strong> tiene este documento abierto ahora mismo — estás viendo las diapositivas en solo lectura.</span>
-          <button className="ed-btn-solid ed-danger" onClick={() => void onTakeControl()}>Tomar el control</button>
+          {canTakeControl && (
+            <button className="ed-btn-solid ed-danger" onClick={() => void onTakeControl()}>Tomar el control</button>
+          )}
         </div>
       )}
 

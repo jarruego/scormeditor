@@ -97,6 +97,13 @@ interface CourseState {
    *  orígenes compartan el mismo indicador «Subiendo…» en la Toolbar. */
   cloudSyncing: boolean
   setCloudSyncing: (syncing: boolean) => void
+  /** Tu rol en `cloudOrgId` (null = todavía no se ha comprobado, o sin
+   *  sesión). Solo 'owner'/'editor' pueden «tomar el control» — con esto en
+   *  el store global (no solo en el modal ☁ Nube) la Toolbar/App.tsx pueden
+   *  ocultar esa acción a los 'viewer' sin repetir la consulta. Tipo inline
+   *  (no importado de src/cloud/types) para no acoplar el store a la nube. */
+  cloudMyRole: 'owner' | 'editor' | 'viewer' | null
+  setCloudMyRole: (role: 'owner' | 'editor' | 'viewer' | null) => void
   hydrate: (course: Course, assets: AssetMap) => void
   replaceAssets: (assets: AssetMap) => void
 
@@ -266,6 +273,8 @@ export const useCourseStore = create<CourseState>((set, get) => {
   setCloudLockHolder: (email) => set({ cloudLockHolderEmail: email }),
   cloudSyncing: false,
   setCloudSyncing: (syncing) => set({ cloudSyncing: syncing }),
+  cloudMyRole: null,
+  setCloudMyRole: (role) => set({ cloudMyRole: role }),
   hydrate: (course, assets) => {
     resetCoalesce()
     set({ course, assets, importError: null, past: [], future: [], selectedScreenId: allScreens(course)[0]?.id ?? null })

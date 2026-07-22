@@ -49,6 +49,10 @@ Lee el que corresponda al tocar esa área:
   `__results__`.
 - `persistencia-scormproj.md` — el documento `.scormproj`, autosave/IndexedDB, File System
   Access, ciclo de vida de los assets, indicador de guardado.
+- `nube-sincronizacion.md` — `src/cloud/`: organizaciones/roles en Supabase, guardado en
+  la nube (orquestador único + auto-sync con debounce), detección de versión más reciente
+  (Realtime + respaldo por sondeo) y bloqueo de edición (blando de servidor + estricto de
+  cliente, «tomar el control»). Migraciones SQL (aplicación manual, sin CLI enlazado).
 - `tts-narracion.md` — transcripción, `audio_src`, generación TTS (panel y por pantalla).
 - `informes-validacion.md` — `validators.ts` (errores/avisos) y el informe (`report.ts`).
 - `ingesta-gpt.md` — el GPT generador y los **8 docs de conocimiento** de `docs/gpt/` (los
@@ -71,6 +75,9 @@ Lee el que corresponda al tocar esa área:
   (+ `interacciones.md` si es una interacción; + `evaluacion-finalizacion.md` si toca
   nota/gating; + `carcasa-navegacion.md` si es topbar/menú/barra inferior).
 - **Guardar/abrir/exportar/assets** → `persistencia-scormproj.md`.
+- **Nube: sincronización, bloqueo de edición, organizaciones/roles** →
+  `nube-sincronizacion.md` (+ `persistencia-scormproj.md`, porque un documento-nube es el
+  mismo ZIP que el `.scormproj`).
 - **Exportar a eXeLearning (`.elpx`)** → `interop-elpx.md` (+ `interacciones.md` si el
   cambio afecta al `config` de una interacción, porque el mapeo lee ese shape).
 - **Contenido generado por GPT / criterios de ingesta** → `ingesta-gpt.md`.

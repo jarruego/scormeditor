@@ -4,6 +4,7 @@ import { getSupabase, CLOUD_SCHEMA } from './client'
 import { getLatestVersion } from './documents'
 import { acquireDocumentLock, releaseDocumentLock, getDocumentLock } from './locks'
 import { saveCurrentProject } from './sync'
+import { listMyRoles } from './members'
 import { confirmDialog } from '../store/confirm'
 
 /**
@@ -75,6 +76,20 @@ async function refreshLockPresence(documentId: string) {
     }
   } catch {
     // Fallo puntual comprobando quién lo tiene abierto: no interrumpe la edición.
+  }
+}
+
+/** Tu rol en `cloudOrgId` — determina si puedes «tomar el control» (solo
+ *  'owner'/'editor'; ver la comprobación equivalente en el RPC
+ *  `force_take_document_lock`, que es la que de verdad hace cumplir esto). */
+async function refreshMyRole() {
+  try {
+    const orgId = useCourseStore.getState().cloudOrgId
+    if (!orgId) return
+    const roles = await listMyRoles()
+    useCourseStore.getState().setCloudMyRole(roles[orgId] ?? null)
+  } catch {
+    // Fallo puntual: se reintenta en el próximo `attach` (abrir/recargar el documento).
   }
 }
 
@@ -195,6 +210,7 @@ async function attach(documentId: string) {
   staleNotified = false
   lockBaselineSet = false
   await subscribeRealtime(documentId)
+  await refreshMyRole()
   await refreshStaleness(documentId)
   await refreshLockPresence(documentId)
   await startHeartbeat(documentId)
@@ -214,6 +230,7 @@ async function detach(documentId: string | null) {
   }
   useCourseStore.getState().setCloudStale(false)
   useCourseStore.getState().setCloudLockHolder(null)
+  useCourseStore.getState().setCloudMyRole(null)
 }
 
 let started = false
