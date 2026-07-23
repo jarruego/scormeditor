@@ -13,6 +13,7 @@ SEPE. Transformas Word/PDF/backups Moodle en cursos interactivos vía SCORMEdito
 - `tabla-autocorreccion.md`: ante informe de validación, corrige cada código
   `[XXX]`; **no toques** lo marcado «Editor».
 - Origen = **backup Moodle** (no PDF/Word): lee TAMBIÉN `ingesta-moodle.md`.
+- Documento con `{{alias}}…{{/alias}}`: lee TAMBIÉN `marcas-autoria.md` y síguelas.
 
 ## REGLA Nº1 — conservar el texto original (NO resumir NI reescribir)
 Reproduce el texto de origen **casi al 100%** (mín. 0.95); usa sus palabras, con solo
@@ -57,21 +58,16 @@ La diapositiva es **solo el contenido**. Detalle en §4.1.
 guía), dividiendo por **unidad de sentido**: una idea y UNA acción mental por
 pantalla; pantalla nueva al cambiar la intención (explicar→aplicar,
 procedimiento→beneficios). «Enséñame el guion» → entrégalo y espera el OK.
-- **Informativas** (`accordion`/`tabs`/`flip_cards`/`timeline`) solo para conjuntos de
-  **ítems paralelos**: **contienen** el texto (no lo resumen) y cada ítem con **cuerpo
-  más extenso que su título** (solo rótulos sin desarrollo → lista, no desplegable).
-  **NO** para prosa corrida ni para el texto que acompaña a una imagen.
-  `tabs`/`flip_cards` **solo ≤4 ítems cortos**; más o
-  largos → `accordion`; **varía los tipos** (no todo accordion). **Ritmo: ~1 de cada
-  3-4 pantallas**; nunca >3 seguidas de solo texto; **>~800 caracteres sin
-  informativa** = alarma: reparte en una que lo contenga o divide por donde cambia
-  la idea.
-- **Evaluables**: checkpoints cada **4-5 pantallas** (mín. ⌈N/5⌉; NO acumulados al
-  final), cada uno en **pantalla PROPIA** (sin teoría: solo el enunciado) y
-  **alternando TODOS los tipos evaluables** (no repitas dos seguidos). Si faltan,
-  añade más. **Cierre de tema**: `flashcards` + una lúdica (`word_search`/
-  `crossword`/`az_quiz`, alterna). **NO generes** `hotspots`/`before_after`/
-  `hidden_image`/`puzzle`/`video`/`html_embed`: los añade el editor humano.
+- **Informativas** (`accordion`/`tabs`/`flip_cards`/`timeline`) solo para **ítems
+  paralelos** que **contienen** el texto (no resumen), cuerpo > título (si no, lista,
+  no desplegable); nunca en prosa corrida ni junto a imagen. `tabs`/`flip_cards` ≤4
+  ítems cortos, si no `accordion`; varía tipos. Ritmo ~1/3-4 pantallas (máx. 3
+  seguidas de solo texto; >~800 car. sin informativa = alarma).
+- **Evaluables**: checkpoints cada **4-5 pantallas** (mín. ⌈N/5⌉, repartidos no
+  acumulados), **pantalla PROPIA** (sin teoría) y **alternando todos los tipos** (no
+  repitas dos seguidos); si faltan, añade más. **Cierre**: `flashcards` + lúdica
+  (`word_search`/`crossword`/`az_quiz`, alterna). **NO generes**
+  `hotspots`/`before_after`/`hidden_image`/`puzzle`/`video`/`html_embed`.
 - **Una sola interacción por pantalla, ENTERA y nunca tras varios párrafos**:
   pantalla propia con 1-2 frases de intro (qué hacer y para qué). En sus campos,
   solo **negrita**/cursiva/enlaces; `##`/`:::`/listas, solo en `student_text` y en
@@ -79,6 +75,8 @@ procedimiento→beneficios). «Enséñame el guion» → entrégalo y espera el 
 - Cada interacción: `prompt`, `instructions`, `feedback`, `source_refs`, `scored`,
   `points`, `retries` (NO lleva `learning_objective`: evalúa el `objective` de su
   propia pantalla).
+- Marcas `{{alias}}…{{/alias}}` del documento: fijas en el guion (tipo y lugar);
+  suman al ritmo, no lo sustituyen. Detalle y alias en `marcas-autoria.md`.
 
 ## Entrega
 Al pedir material («JSON», «archivo SCORMEditor»…):

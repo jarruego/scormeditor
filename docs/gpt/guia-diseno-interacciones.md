@@ -66,6 +66,13 @@ escribe** (así el ritmo sale desigual y el resultado varía entre generaciones)
 **diseñan de golpe en un guion** del tema, sobre el texto ya extraído. El guion es una
 tabla con **una fila por pantalla prevista**:
 
+**Paso 0 — marcas de autoría.** Antes de aplicar la tabla de «forma del bloque fuente»
+de más abajo, escanea el texto en busca de marcas `{{alias}}…{{/alias}}` que el propio
+documento pueda traer (ver `marcas-autoria.md`): cada una fija su fila del guion con el
+tipo ya decidido por el autor, no por la heurística. La tabla de abajo solo decide las
+filas que quedan **sin marca**. Si el documento no trae ninguna, este paso no cambia
+nada del criterio habitual.
+
 | # | Epígrafe fuente | Forma del bloque | Caracteres | Pantalla | Interacción | ¿Evaluable? |
 
 **«Caracteres»** es el nº de caracteres del texto que llevará la pantalla
@@ -117,6 +124,11 @@ guion es barato; regenerar pantallas, no):
   nunca con un corte mecánico de longitud. Si lleva imagen (y por tanto no admite
   interacción, ver regla estructural), divídela.
 - **Variedad**: no repitas el mismo tipo (informativo o evaluable) dos veces seguidas.
+- **Filas fijadas por marca (paso 0)**: cuentan para este chequeo igual que una
+  automática (una `{{acordeon}}` ya cubre el hueco de informativa de su tramo); el
+  relleno automático solo entra donde, con las marcas puestas, el ritmo siga
+  incumplido. Si el documento trae más marcas de las que el ritmo pediría, se
+  respetan todas — el documento manda por encima del ritmo aproximado.
 
 El guion es **interno por defecto**: no se pregunta al usuario y se adjunta al informe
 final. Si la orden incluye **«enséñame el guion»**, entrega la tabla completa de la

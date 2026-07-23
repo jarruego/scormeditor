@@ -421,6 +421,8 @@ Estructura común a TODAS:
   elegir y ajustar a mano una imagen, un medio o un código. El enum los admite (el
   editor los soporta), pero no los emitas. Los vídeos de YouTube del fuente **sí**
   van: como `visual_resource` `video_youtube` (§5), no como interacción `video`.
+  Sigue vetados aunque el documento fuente los pida por marca de autoría (ver
+  `marcas-autoria.md`).
 - **Una evaluable no comparte pantalla con teoría**: la interactividad evaluable o de
   pregunta directa va en pantalla propia; su `student_text` lleva como mucho una
   frase de contexto (el enunciado va en `prompt`/`instructions`) y el desarrollo, en

@@ -154,6 +154,10 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   **alternando todo el repertorio evaluable** sin repetir tipo dos veces seguidas y
   prefiriendo decidir/clasificar/ordenar a `single_choice`; ante la duda, un
   checkpoint de más (borrar en SCORMEditor es fácil; crear, no).
+- **Marcas de autoría** (`{{alias}}…{{/alias}}`, `marcas-autoria.md`) si el documento
+  las trae: todas seguidas (tipo y, si había, contenido literal); las de tipo vetado,
+  con su `editor_notes`; `quality_checklist`: `"Marcas de interactividad del
+  documento respetadas": true`.
 - **Objetivos**: conjunto reducido derivado del contenido, de la petición del usuario
   y de la normativa facilitada (no uno distinto por pantalla); texto **idéntico**
   reutilizado entre pantallas, interacciones y preguntas del test; cada objetivo con

@@ -55,10 +55,11 @@ Lee el que corresponda al tocar esa área:
   cliente, «tomar el control»). Migraciones SQL (aplicación manual, sin CLI enlazado).
 - `tts-narracion.md` — transcripción, `audio_src`, generación TTS (panel y por pantalla).
 - `informes-validacion.md` — `validators.ts` (errores/avisos) y el informe (`report.ts`).
-- `ingesta-gpt.md` — el GPT generador y los **8 docs de conocimiento** de `docs/gpt/` (los
-  que se suben a ChatGPT), la invariante de ingesta, los criterios de contenido acordados
-  y la ingesta alternativa desde backup Moodle (`ingesta-moodle.md`, vs. el importador
-  determinista `scripts/moodle-import/`).
+- `ingesta-gpt.md` — el GPT generador y los **9 docs de conocimiento** de `docs/gpt/` (los
+  que se suben a ChatGPT), la invariante de ingesta, los criterios de contenido acordados,
+  las **marcas de autoría** (`{{alias}}…{{/alias}}`) con las que el propio documento
+  fuente puede pedir una interactividad concreta, y la ingesta alternativa desde backup
+  Moodle (`ingesta-moodle.md`, vs. el importador determinista `scripts/moodle-import/`).
 - `interop-elpx.md` — exportador `.elpx` (eXeLearning ≥ 4.0.1) en `src/interop/elpx/`:
   herramienta aparte y opcional (menú Archivo, `import()` dinámico), formato ODE 2.0,
   mapa de conversión de interacciones a iDevices y degradaciones. **No** toca runtime,

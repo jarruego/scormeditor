@@ -26,7 +26,7 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   (así el Knowledge se consulta de verdad, no solo por RAG). Motivo: el campo
   Instructions tiene un **límite duro de 8000 caracteres** (verificar con `wc -m` tras
   editar `instrucciones-gpt.md`).
-- **8 ficheros de conocimiento en `docs/gpt/`** (mantenerlos al día si cambia el formato
+- **9 ficheros de conocimiento en `docs/gpt/`** (mantenerlos al día si cambia el formato
   `.scormproj`, el esquema de `course.json`, `autosave.ts` o el `renderer.js`):
   - `instrucciones-gpt.md`: system prompt (Instructions). Solo guardarraíles. **Límite
     duro de 8000 caracteres** (verificar con un conteo de codepoints, no `wc -m`: la
@@ -96,6 +96,30 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
     sin quitar en encabezados, negritas `**` desemparejadas y títulos duplicados.
     Distinto de la herramienta determinista `scripts/moodle-import/` (mapeo literal sin
     enriquecer, ver más abajo): son dos vías paralelas para el mismo tipo de fuente.
+  - `marcas-autoria.md` (jul 2026): capa **opcional y aditiva** sobre la ingesta
+    automática. El autor del documento (PDF/Word/página Moodle) puede marcar en su
+    propio texto qué interactividad quiere y dónde con bloques `{{alias}}…{{/alias}}`
+    (alias en español, p. ej. `acordeon`, `opcion_unica`, `decision`; catálogo
+    completo en el doc). El GPT las escanea antes de montar el guion de pantallas: cada
+    marca fija su fila (tipo ya decidido, no por la heurística de «forma del bloque»);
+    el resto del guion se sigue rellenando con el criterio automático de siempre
+    (**aditivo, no sustituye**: documento sin marcas = comportamiento idéntico al
+    anterior). Las marcas cuentan para el ritmo (informativa ~1/3-4, checkpoint
+    cada 4-5): si ya lo cubren, no se añade nada automático ahí; si el documento trae
+    más marcas de las que el ritmo pediría, se respetan todas — el documento manda por
+    encima del límite aproximado. Los tipos vetados al GPT (`hotspots`,
+    `before_after`, `hidden_image`, `puzzle`, `video`, `html_embed`) **siguen
+    vetados** aunque el documento los marque (mismo motivo que el veto automático:
+    piden ajuste manual de imagen/código): no se genera interacción, solo un
+    `editor_notes` pidiéndolo al editor humano. Mini-sintaxis opcional dentro de la
+    marca para contenido literal (opción correcta con `*`, V/F, parejas `término →
+    correspondencia`, huecos `[[palabra]]` reutilizando el marcador del contrato):
+    si el autor ya lo escribe así, el GPT lo usa literal en vez de inventarlo; si no,
+    redacta la interacción a partir del bloque marcado igual que un checkpoint
+    automático. Complemento **solo para autores humanos** (no conocimiento de GPT,
+    lenguaje sin jerga JSON): `docs/guia-marcas-para-autores.md`, con el mismo
+    catálogo de alias en prosa pedagógica — mantener los dos sincronizados si cambia
+    un alias o se añade un tipo.
 - **Criterios de contenido acordados, viven en esos docs:** (1) **Regla Nº1** —
   conservar el texto de origen **casi al 100%** (ratio ≥0.95), sin resumir ni reescribir;
   extraer **con formato** (negritas, cajas→callouts) vía PyMuPDF `get_text("dict")`, no en
