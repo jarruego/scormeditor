@@ -103,11 +103,16 @@ interface CourseState {
    *  orígenes compartan el mismo indicador «Subiendo…» en la Toolbar. */
   cloudSyncing: boolean
   setCloudSyncing: (syncing: boolean) => void
-  /** Tu rol en `cloudOrgId` (null = todavía no se ha comprobado, o sin
-   *  sesión). Solo 'owner'/'editor' pueden «tomar el control» — con esto en
-   *  el store global (no solo en el modal ☁ Nube) la Toolbar/App.tsx pueden
-   *  ocultar esa acción a los 'viewer' sin repetir la consulta. Tipo inline
-   *  (no importado de src/cloud/types) para no acoplar el store a la nube. */
+  /** Tu rol EFECTIVO sobre `cloudDocumentId` (null = todavía no se ha
+   *  comprobado, o sin acceso). Desde los permisos por carpeta (migración
+   *  `20260723000004_permisos_por_carpeta`) ya NO es tu rol de organización:
+   *  puede haber una concesión de `folder_access` sobre la carpeta de ESTE
+   *  documento que no coincida con tu rol de organización (p. ej. 'viewer'
+   *  de la organización con 'editor' concedido justo en esta carpeta). Solo
+   *  'owner'/'editor' pueden «tomar el control» — con esto en el store
+   *  global (no solo en el modal ☁ Nube) la Toolbar/App.tsx pueden ocultar
+   *  esa acción sin repetir la consulta. Tipo inline (no importado de
+   *  src/cloud/types) para no acoplar el store a la nube. */
   cloudMyRole: 'owner' | 'editor' | 'viewer' | null
   setCloudMyRole: (role: 'owner' | 'editor' | 'viewer' | null) => void
   hydrate: (course: Course, assets: AssetMap) => void

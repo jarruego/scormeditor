@@ -1,11 +1,26 @@
 import { getSupabase, CLOUD_BUCKET } from './client'
-import type { CloudOrganization, CloudDocument, CloudDocumentVersion } from './types'
+import type { CloudOrganization, CloudDocument, CloudDocumentVersion, EffectiveRole } from './types'
 
 function requireSupabase() {
   return getSupabase().then((s) => {
     if (!s) throw new Error('La nube no está configurada en este editor.')
     return s
   })
+}
+
+/** Tu rol EFECTIVO sobre un documento concreto: 'owner' (administras la
+ *  organización), 'editor'/'viewer' (concesión de `folder_access` sobre la
+ *  carpeta que lo contiene) o null (sin acceso — no debería ocurrir si el
+ *  documento se pudo listar/abrir, pero un documento sin carpeta es siempre
+ *  null para quien no sea owner). Es el mismo cálculo que hace el servidor
+ *  en cada política RLS (`scormeditor.document_role`), expuesto para que el
+ *  cliente pueda decidir qué mostrar (p. ej. el botón «Tomar el control»,
+ *  ver `src/cloud/watch.ts`) sin adivinar ni duplicar la lógica. */
+export async function documentRole(documentId: string): Promise<EffectiveRole> {
+  const supabase = await requireSupabase()
+  const { data, error } = await supabase.rpc('document_role', { p_document_id: documentId })
+  if (error) throw error
+  return (data as EffectiveRole) ?? null
 }
 
 export async function listOrganizations(): Promise<CloudOrganization[]> {

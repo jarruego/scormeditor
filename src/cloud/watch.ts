@@ -1,10 +1,9 @@
 import { useCourseStore } from '../store/courseStore'
 import { useCloudSessionStore } from './session'
 import { getSupabase, CLOUD_SCHEMA } from './client'
-import { getLatestVersion } from './documents'
+import { getLatestVersion, documentRole } from './documents'
 import { acquireDocumentLock, releaseDocumentLock, getDocumentLock } from './locks'
 import { saveCurrentProject } from './sync'
-import { listMyRoles } from './members'
 import { confirmDialog } from '../store/confirm'
 
 /**
@@ -79,15 +78,18 @@ async function refreshLockPresence(documentId: string) {
   }
 }
 
-/** Tu rol en `cloudOrgId` — determina si puedes «tomar el control» (solo
- *  'owner'/'editor'; ver la comprobación equivalente en el RPC
- *  `force_take_document_lock`, que es la que de verdad hace cumplir esto). */
-async function refreshMyRole() {
+/** Tu rol EFECTIVO sobre ESTE documento — determina si puedes «tomar el
+ *  control» (solo 'owner'/'editor'; ver la comprobación equivalente en el
+ *  RPC `force_take_document_lock`, que es la que de verdad hace cumplir
+ *  esto). Desde los permisos por carpeta (migración
+ *  `20260723000004_permisos_por_carpeta`) ya NO es tu rol de organización:
+ *  un 'viewer' de la organización puede tener 'editor' concedido justo en la
+ *  carpeta de este documento, y viceversa — por eso se consulta por
+ *  documento (`document_role`, cloud/documents.ts), no por organización. */
+async function refreshMyRole(documentId: string) {
   try {
-    const orgId = useCourseStore.getState().cloudOrgId
-    if (!orgId) return
-    const roles = await listMyRoles()
-    useCourseStore.getState().setCloudMyRole(roles[orgId] ?? null)
+    const role = await documentRole(documentId)
+    useCourseStore.getState().setCloudMyRole(role)
   } catch {
     // Fallo puntual: se reintenta en el próximo `attach` (abrir/recargar el documento).
   }
@@ -119,10 +121,17 @@ async function startHeartbeat(documentId: string) {
   stopHeartbeat()
   const tick = async () => {
     if (document.visibilityState !== 'visible') return // pestaña en segundo plano: no renueva, se deja caducar
-    try {
-      await acquireDocumentLock(documentId)
-    } catch {
-      // red intermitente: se reintenta en el siguiente latido, sin avisar
+    // Un viewer (sin permiso de edición en la carpeta de este documento) NUNCA
+    // podría adquirir el bloqueo — el propio RPC lo rechaza por RLS — así que
+    // ni se intenta: evita ensuciar los logs de Postgres cada 25s con un
+    // rechazo esperado y evita una llamada de red que sabemos que va a fallar.
+    const myRole = useCourseStore.getState().cloudMyRole
+    if (myRole === 'owner' || myRole === 'editor') {
+      try {
+        await acquireDocumentLock(documentId)
+      } catch {
+        // red intermitente: se reintenta en el siguiente latido, sin avisar
+      }
     }
     // Respaldo de sondeo sobre el mismo latido (no una conexión nueva): si
     // Realtime no ha entregado el evento — canal caído en silencio, RLS que
@@ -136,7 +145,7 @@ async function startHeartbeat(documentId: string) {
     // «viewer» recién ascendido a editor seguiría sin ver «Tomar el control»
     // hasta recargar, y viceversa: un editor recién degradado lo seguiría
     // viendo.
-    await refreshMyRole()
+    await refreshMyRole(documentId)
   }
   await tick()
   heartbeatTimer = setInterval(() => void tick(), HEARTBEAT_MS)
@@ -180,20 +189,34 @@ function stopAutoSync() {
   autoSyncUnsub = null
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function isForThisDocument(documentId: string, payload: any): boolean {
+  return (payload?.new?.document_id ?? payload?.old?.document_id) === documentId
+}
+
 async function subscribeRealtime(documentId: string) {
   const supabase = await getSupabase()
   if (!supabase) return
   channel = supabase
     .channel(`doc:${documentId}`)
     .on(
+      // Sin `filter`: Realtime lo rechazaba con «invalid column for filter
+      // document_id» en este proyecto (persistía incluso con
+      // REPLICA IDENTITY FULL, así que no es solo cosa de la clave primaria
+      // — probablemente algo de cómo valida columnas fuera de `public`, sin
+      // forma de diagnosticarlo más desde aquí). Se suscribe a la tabla
+      // entera y se descarta en el cliente lo que no sea de este documento:
+      // más ruido de red, pero RLS ya limita la entrega a lo que este
+      // usuario podría ver de todos modos, y no depende de nada que no
+      // controlemos por código.
       'postgres_changes',
-      { event: 'INSERT', schema: CLOUD_SCHEMA, table: 'document_versions', filter: `document_id=eq.${documentId}` },
-      () => void refreshStaleness(documentId),
+      { event: 'INSERT', schema: CLOUD_SCHEMA, table: 'document_versions' },
+      (payload) => { if (isForThisDocument(documentId, payload)) void refreshStaleness(documentId) },
     )
     .on(
       'postgres_changes',
-      { event: '*', schema: CLOUD_SCHEMA, table: 'document_locks', filter: `document_id=eq.${documentId}` },
-      () => void refreshLockPresence(documentId),
+      { event: '*', schema: CLOUD_SCHEMA, table: 'document_locks' },
+      (payload) => { if (isForThisDocument(documentId, payload)) void refreshLockPresence(documentId) },
     )
     .subscribe((status, err) => {
       // Si el canal falla (error/timeout), no queda constancia en ningún
@@ -216,7 +239,7 @@ async function attach(documentId: string) {
   staleNotified = false
   lockBaselineSet = false
   await subscribeRealtime(documentId)
-  await refreshMyRole()
+  await refreshMyRole(documentId)
   await refreshStaleness(documentId)
   await refreshLockPresence(documentId)
   await startHeartbeat(documentId)

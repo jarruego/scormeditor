@@ -41,11 +41,14 @@ no, el cliente ve un 404/PGRST202 al llamar al RPC nuevo).
   `scormeditor.org_creators` (migración `20260723000001`), sin RLS que la exponga al
   cliente — se gestiona solo desde el SQL Editor (`insert`/`delete` a mano). Cualquier
   otra cuenta autenticada que llame a `create_organization()` recibe un error explícito.
-- **Roles** (`OrgRole` en `src/cloud/types.ts`): `owner` administra la organización
-  (invita/expulsa, borra en firme); `owner`/`editor` pueden subir versiones, mover/crear
-  carpetas y tomar el control de la edición; `viewer` solo lee. Aplicado por RLS en cada
-  tabla — el cliente (`canEdit` en `CloudModal.tsx`, `cloudMyRole` en el store) solo
-  oculta acciones que fallarían igualmente en el servidor, nunca es la barrera real.
+- **Roles, dos niveles** (ver «Permisos por carpeta» más abajo para el detalle): el
+  `OrgRole` (`owner`/`editor`/`viewer`, `src/cloud/types.ts`) rige lo que es de la
+  organización entera (invitar miembros, crear carpetas, papelera); qué carpetas/
+  documentos concretos puede ver o editar cada `editor`/`viewer` lo decide
+  `folder_access`, una concesión aparte que el `owner` gestiona por carpeta. El `owner`
+  sigue viendo/editando todo, siempre. Aplicado por RLS en cada tabla — el cliente
+  (`canEdit`/`canEditFolder` en `CloudModal.tsx`, `cloudMyRole` en el store) solo oculta
+  acciones que fallarían igualmente en el servidor, nunca es la barrera real.
 
 ## Guardado: un único orquestador, dos disparadores
 `saveCurrentProject()` (`src/cloud/sync.ts`) es el **único** camino para subir a la
@@ -93,16 +96,22 @@ capas:
    `getDocumentLock` en `src/cloud/locks.ts`): un latido cada 25s
    (`HEARTBEAT_MS`, bien por debajo del TTL de 60s del RPC) mientras la pestaña está
    visible; en background no renueva y se deja caducar solo — no hace falta liberarlo a
-   mano para que se cure. `acquire_document_lock` (RPC) **nunca** roba un bloqueo todavía
-   vivo de otra persona, solo renueva el tuyo o toma uno ya caducado.
+   mano para que se cure. `acquire_document_lock` (RPC, SECURITY INVOKER a propósito: su
+   INSERT pasa por las políticas RLS de `document_locks` sin duplicarlas aquí) **nunca**
+   roba un bloqueo todavía vivo de otra persona, solo renueva el tuyo o toma uno ya
+   caducado. El latido solo intenta adquirir si `cloudMyRole` es `owner`/`editor` — un
+   `viewer` nunca podría (RLS lo rechazaría igual), así que ni se llama: evita ensuciar
+   los logs de Postgres cada 25s con un rechazo esperado.
 2. **Estricto, de cliente** (`App.tsx` + `cloudLockHolderEmail` en el store): mientras
    `document_locks` diga que lo tiene otro, el árbol y el editor de pantallas quedan en
    solo lectura (cristal `position:absolute` sobre `.ed-main`, sin tocar su grid; Deshacer/
    Rehacer también bloqueados, botón y atajo). Vista estudiante/Validación/Informe se
-   pueden seguir consultando con normalidad — leer no es editar. Cualquier `owner`/`editor`
-   puede **«Tomar el control»** (`forceTakeDocumentLock`, RPC `force_take_document_lock`,
-   migración `20260723000003`) — esta sí roba un bloqueo vivo. El botón no se ofrece a los
-   `viewer` (`cloudMyRole` en el store, ver arriba), aunque la barrera real es el RPC.
+   pueden seguir consultando con normalidad — leer no es editar. Quien puede editar ESTE
+   documento (`cloudMyRole` en el store — rol EFECTIVO sobre el documento abierto, no el
+   rol de organización; lo calcula `document_role()`, ver «Permisos por carpeta») puede
+   **«Tomar el control»** (`forceTakeDocumentLock`, RPC `force_take_document_lock`,
+   migración `20260723000003`) — esta sí roba un bloqueo vivo. El botón no se ofrece a
+   quien no puede editar (`cloudMyRole`), aunque la barrera real es el RPC.
 
 Deliberadamente **sin ceremonia de servidor** (sin «solicitar turno», sin cola): para un
 equipo pequeño y de confianza, cualquiera con permiso de edición puede tomar el control
@@ -119,6 +128,58 @@ al instante por actualización **optimista** del store (no espera a Realtime/lat
 
 Si el otro cierra la pestaña o dejar de renovar (TTL 60s), el control vuelve solo al
 siguiente latido — no hace falta pulsar nada.
+
+## Permisos por carpeta (`folder_access`)
+Pensado para un centro con varios profesores: cada uno debe ver/editar SOLO sus propios
+cursos, no los de los demás — el `OrgRole` a secas no distingue eso (un `editor` de la
+organización veía/editaba todo). `folder_access (folder_id, user_id, role: 'editor'|
+'viewer')` añade ese segundo nivel, deny-by-default: una carpeta nueva no la ve nadie más
+que el `owner` hasta que este concede acceso explícito.
+
+- **Se combina así**: `owner` de la organización → ve/edita TODO siempre (es quien
+  concede/revoca, tiene que poder llegar a todas partes). `editor`/`viewer` de
+  organización → sin concesión en `folder_access`, no ve la carpeta en absoluto; con
+  concesión, su rol EFECTIVO en esa carpeta es el de la concesión, **no** el de la
+  organización — de ahí que un `viewer` de organización pueda ser `editor` en una carpeta
+  concreta (el caso real que motivó esto), y viceversa.
+- **Documento sin carpeta** (`folder_id is null`): exclusivo del `owner`. Un `editor`/
+  `viewer` de organización ya no puede crear ni ver documentos sin carpeta — en la
+  práctica, todo proyecto de un profesor vive dentro de una carpeta suya.
+- **Concesión automática al crear una carpeta**: un trigger (`grant_creator_folder_access`)
+  concede 'editor' a quien la crea (si no es ya `owner`, que no lo necesita) — si no, la
+  crearía y se quedaría sin poder volver a usarla.
+- **Varias personas, misma carpeta**: no es "un dueño por carpeta", es muchos-a-muchos
+  (co-tutoría) — varios `editor` y/o `viewer` a la vez sobre la misma carpeta.
+- **Funciones de resolución** (`folder_role`, `document_role`, y los booleanos
+  `can_view_folder`/`can_edit_folder`/`can_view_document`/`can_edit_document`): mismo
+  patrón SECURITY DEFINER que `org_role`/`is_org_member`/`document_org` de la migración
+  inicial. Sustituyen el `org_role(org_id) in (...)` de casi todas las políticas RLS de
+  `folders`/`documents`/`document_versions`/`document_locks` y las 2 políticas de Storage
+  que miran el documento (la de purgar en firme sigue siendo solo `owner`, y sigue
+  mirando el `org_id` del primer segmento de la ruta — purgar no es un permiso de
+  carpeta). **Crear** una carpeta nueva NO cambia: sigue siendo un permiso de
+  organización (`editor`+), porque no hay carpeta todavía sobre la que comprobar nada.
+- **RPCs de gestión** (`list_folder_access`/`grant_folder_access`/`revoke_folder_access`,
+  mismo patrón que `list_members`/`invite_member`): exclusivas del `owner` de la
+  organización — conceder solo a alguien YA miembro (por email). Cliente:
+  `src/cloud/folders.ts` + ventana `FolderAccessModal.tsx` (botón «Gestionar acceso»,
+  icono de personas, en cada carpeta del explorador — visible solo si `isOwner`).
+- **Cliente**: `myFolderRoles` (`CloudModal.tsx`, desde `listMyFolderRoles()`) son tus
+  concesiones explícitas; `canEditFolder(folderId)` = `isOwner || myFolderRoles[folderId]
+  === 'editor'`. Rige renombrar/borrar/mover carpetas y documentos, y qué carpetas
+  ofrece el selector al subir un proyecto nuevo (`editableFolders`; sin carpetas
+  editables y sin ser owner, se muestra un aviso pidiendo acceso en vez del formulario).
+  Para el documento que tienes abierto AHORA MISMO no se usa esto, sino `cloudMyRole`
+  del store (rol efectivo por-documento que mantiene `src/cloud/watch.ts` vía
+  `document_role()`, ver más arriba) — es quien gobierna «Actualizar en la nube» y
+  «Tomar el control» sobre ese documento en concreto.
+
+**Migración de datos existentes**: los documentos/carpetas creados ANTES de esta
+migración no tienen ninguna fila en `folder_access` (no existía la tabla) y su
+`created_by` está a `null` (nunca se rellenaba) — tras aplicarla, solo el `owner` los ve
+hasta conceder acceso a mano, carpeta por carpeta. No hay forma de inferir
+automáticamente «esta carpeta es de fulano»: no quedaba rastro de quién subió qué en el
+esquema anterior.
 
 ## Lista de migraciones (orden cronológico, aplicar a mano en el SQL Editor)
 - `20260721000000_esquema_inicial.sql` — todo el esquema base: tablas, RLS, RPCs de

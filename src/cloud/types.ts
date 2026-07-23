@@ -7,6 +7,25 @@
 
 export type OrgRole = 'owner' | 'editor' | 'viewer'
 
+/** Rol de una concesión de `folder_access` — independiente de `OrgRole`: un
+ *  'viewer' de la organización puede tener 'editor' concedido en una carpeta
+ *  concreta (y viceversa, un 'editor' de la organización puede no tener
+ *  ninguna concesión y no ver esa carpeta). */
+export type FolderRole = 'editor' | 'viewer'
+
+/** Rol EFECTIVO sobre una carpeta/documento concretos: 'owner' si administra
+ *  toda la organización (ve/edita todo, sin necesitar concesión), el rol de
+ *  `folder_access` si lo hay, o null si no hay acceso en absoluto. */
+export type EffectiveRole = OrgRole | null
+
+/** Fila de `list_folder_access()`: una concesión con el email resuelto. */
+export interface CloudFolderAccess {
+  user_id: string
+  email: string
+  role: FolderRole
+  created_at: string
+}
+
 export interface CloudOrganization {
   id: string
   name: string

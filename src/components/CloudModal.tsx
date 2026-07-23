@@ -12,11 +12,12 @@ import {
   listOrganizations, createOrganization, listDocuments, createCloudDocument,
   getLatestVersion, downloadVersionBlob, renameDocument, moveDocumentToFolder, trashDocument,
 } from '../cloud/documents'
-import { listFolders, createFolder, renameFolder, deleteFolder } from '../cloud/folders'
+import { listFolders, createFolder, renameFolder, deleteFolder, listMyFolderRoles } from '../cloud/folders'
 import { listMyRoles } from '../cloud/members'
 import { saveCurrentProject } from '../cloud/sync'
-import type { CloudOrganization, CloudDocument, CloudFolder, OrgRole } from '../cloud/types'
+import type { CloudOrganization, CloudDocument, CloudFolder, OrgRole, FolderRole } from '../cloud/types'
 import { buildProjectBlob, loadProjectFromBlob, clearLocalLink, persistToIndexedDb } from '../store/autosave'
+import { FolderAccessModal } from './FolderAccessModal'
 
 type SortBy = 'name' | 'updated'
 
@@ -79,12 +80,16 @@ function CloudRename({ value, onCommit, title }: { value: string; onCommit: (nex
   )
 }
 
-/** Botón «Mover a…» con desplegable (mismo patrón que los menús Archivo/Ajustes de la Toolbar). */
-function MoveMenu({ doc, folders, onMove, disabled }: {
+/** Botón «Mover a…» con desplegable (mismo patrón que los menús Archivo/Ajustes de la Toolbar).
+ *  `folders` debe llegar ya filtrada a carpetas donde el usuario tiene acceso de edición — mover
+ *  a una carpeta solo de lectura, o quitarle la carpeta («Sin carpeta», exclusivo del owner de
+ *  la organización — sin carpeta no hay concesión que comprobar), lo rechazaría el servidor. */
+function MoveMenu({ doc, folders, onMove, disabled, isOwner }: {
   doc: CloudDocument
   folders: CloudFolder[]
   onMove: (folderId: string | null) => void
   disabled: boolean
+  isOwner: boolean
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -105,7 +110,7 @@ function MoveMenu({ doc, folders, onMove, disabled }: {
       </button>
       {open && (
         <div className="ed-menu-list" role="menu">
-          {doc.folder_id !== null && (
+          {isOwner && doc.folder_id !== null && (
             <button role="menuitem" onClick={() => { setOpen(false); onMove(null) }}>— Sin carpeta —</button>
           )}
           {targets.map((f) => (
@@ -187,8 +192,25 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
   const [uploadFolderId, setUploadFolderId] = useState<string | null>(null)
 
   const [myRoles, setMyRoles] = useState<Record<string, OrgRole>>({})
+  // Rol de ORGANIZACIÓN: sigue gobernando lo que es de la organización entera
+  // (crear carpetas, gestionar equipo, papelera, «Sin carpeta»). Para
+  // editar/renombrar/mover/subir dentro de una carpeta o documento concretos
+  // manda `canEditFolder` (permisos por carpeta, migración
+  // `20260723000004_permisos_por_carpeta`), no este `canEdit` plano.
   const isOwner = !!orgId && myRoles[orgId] === 'owner'
   const canEdit = !!orgId && (myRoles[orgId] === 'owner' || myRoles[orgId] === 'editor')
+  // Tus concesiones explícitas de `folder_access` (no incluye las carpetas
+  // que ves solo por ser owner de la organización — para eso ya basta `isOwner`).
+  const [myFolderRoles, setMyFolderRoles] = useState<Record<string, FolderRole>>({})
+  const canEditFolder = (folderId: string | null) => isOwner || (folderId !== null && myFolderRoles[folderId] === 'editor')
+  // Carpetas donde SÍ se puede subir/mover — el destino de un documento
+  // nuevo, o de «Mover a…», nunca puede ser una carpeta de solo lectura.
+  const editableFolders = useMemo(
+    () => folders.filter((f) => canEditFolder(f.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [folders, myFolderRoles, isOwner],
+  )
+  const [folderAccessTarget, setFolderAccessTarget] = useState<CloudFolder | null>(null)
   const currentOrg = orgs.find((o) => o.id === orgId)
 
   useEffect(() => {
@@ -225,16 +247,25 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
   const projectDirty = useCourseStore((s) => s.projectDirty)
   const cloudStale = useCourseStore((s) => s.cloudStale)
   const cloudLockHolderEmail = useCourseStore((s) => s.cloudLockHolderEmail)
+  // Rol EFECTIVO sobre el documento que tienes abierto ahora mismo (no el rol
+  // de organización): lo calcula/mantiene src/cloud/watch.ts al vuelo, así
+  // que aquí solo se lee — gobierna «Actualizar en la nube» sobre ESE
+  // documento, que puede depender de una concesión de carpeta distinta de tu
+  // rol de organización.
+  const cloudMyRole = useCourseStore((s) => s.cloudMyRole)
+  const canEditCurrent = cloudMyRole === 'owner' || cloudMyRole === 'editor'
 
-  // Organizaciones (+ tu rol en cada una) al iniciar sesión; preselecciona la ya vinculada, si la hay.
+  // Organizaciones (+ tu rol en cada una, + tus concesiones por carpeta) al
+  // iniciar sesión; preselecciona la ya vinculada, si la hay.
   useEffect(() => {
-    if (!session) { setOrgs([]); setOrgId(null); setMyRoles({}); return }
+    if (!session) { setOrgs([]); setOrgId(null); setMyRoles({}); setMyFolderRoles({}); return }
     setBusy(true)
     setError(null)
-    Promise.all([listOrganizations(), listMyRoles()])
-      .then(([list, roles]) => {
+    Promise.all([listOrganizations(), listMyRoles(), listMyFolderRoles()])
+      .then(([list, roles, folderRoles]) => {
         setOrgs(list)
         setMyRoles(roles)
+        setMyFolderRoles(folderRoles)
         setOrgId(cloudOrgId && list.some((o) => o.id === cloudOrgId) ? cloudOrgId : (list[0]?.id ?? null))
       })
       .catch((e) => setError(e instanceof Error ? e.message : String(e)))
@@ -256,6 +287,17 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     setUploadFolderId(currentFolderId)
   }, [currentFolderId])
+
+  // Quien no es owner NO puede subir «Sin carpeta» (el servidor lo rechaza:
+  // sin carpeta no hay concesión que comprobar). Si la carpeta que se estaba
+  // explorando (o ninguna) no es editable para esta persona, se cae a la
+  // primera carpeta editable que tenga — así el <select> controlado nunca
+  // queda desincronizado con lo que de verdad se va a subir.
+  useEffect(() => {
+    if (isOwner) return
+    if (uploadFolderId && editableFolders.some((f) => f.id === uploadFolderId)) return
+    setUploadFolderId(editableFolders[0]?.id ?? null)
+  }, [isOwner, editableFolders, uploadFolderId])
 
   // Documentos + carpetas al cambiar de organización; vuelve a la raíz del explorador.
   useEffect(() => {
@@ -279,6 +321,10 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
       setNewFolderName('')
       setCreatingFolder(false)
       setFolders(await listFolders(orgId))
+      // Quien crea la carpeta se concede 'editor' sobre ella automáticamente
+      // (trigger en el servidor) — sin esto, `myFolderRoles` no lo reflejaría
+      // hasta la próxima vez que se abriera ☁ Nube.
+      setMyFolderRoles(await listMyFolderRoles())
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -562,18 +608,21 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
     setOrgs([])
     setDocs([])
     setMyRoles({})
+    setMyFolderRoles({})
     setFolders([])
     setCurrentFolderId(null)
     setTeamModalOpen(false)
     setTrashModalOpen(false)
+    setFolderAccessTarget(null)
   }
 
   function docRow(d: CloudDocument) {
+    const editable = canEditFolder(d.folder_id)
     return (
       <div key={d.id} className="ed-cloud-row">
         <div className="ed-cloud-row-info">
           <div>
-            {canEdit ? (
+            {editable ? (
               <CloudRename value={d.title} title="Renombrar proyecto" onCommit={(next) => void onRenameDocument(d, next)} />
             ) : (
               <strong>{d.title}</strong>
@@ -582,15 +631,16 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
           <span className="ed-hint">{fmtDate(d.updated_at)} · {fmtBytes(d.size_bytes)}</span>
         </div>
         <div className="ed-cloud-row-actions">
-          {canEdit && folders.length > 0 && (
-            <MoveMenu doc={d} folders={folders} disabled={busy} onMove={(folderId) => void onMoveDocument(d.id, folderId)} />
+          {editable && editableFolders.length > 0 && (
+            <MoveMenu doc={d} folders={editableFolders} isOwner={isOwner} disabled={busy}
+              onMove={(folderId) => void onMoveDocument(d.id, folderId)} />
           )}
           {d.id === cloudDocumentId ? (
             <span className="ed-hint">Abierto</span>
           ) : (
             <button className="ed-btn-solid ed-btn-cloud" disabled={busy} onClick={() => void onOpenDoc(d)}>Abrir</button>
           )}
-          {canEdit && (
+          {editable && (
             <button className="ed-icobtn ed-icobtn-danger" disabled={busy} onClick={() => void onTrashDocument(d)} title="Eliminar proyecto (papelera)" aria-label={`Eliminar «${d.title}»`}>
               <Icon name="trash" size={14} />
             </button>
@@ -603,13 +653,14 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
   function folderTile(f: CloudFolder) {
     const inside = docsByFolder.get(f.id) ?? []
     const totalSize = inside.reduce((sum, d) => sum + d.size_bytes, 0)
+    const editable = canEditFolder(f.id)
     return (
       <div key={f.id} className="ed-cloud-row ed-cloud-folder-tile" onClick={() => setCurrentFolderId(f.id)}
         role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setCurrentFolderId(f.id) }}>
         <div className="ed-cloud-row-info">
           <div>
             <Icon name="folder" size={16} />{' '}
-            {canEdit ? (
+            {editable ? (
               <CloudRename value={f.name} title="Renombrar carpeta" onCommit={(next) => void onRenameFolder(f.id, next)} />
             ) : (
               <strong>{f.name}</strong>
@@ -618,8 +669,16 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
           <span className="ed-hint">{inside.length} proyecto(s) · {fmtBytes(totalSize)} · {fmtDate(f.updated_at)}</span>
         </div>
         <div className="ed-cloud-row-actions">
+          {isOwner && (
+            <button className="ed-icobtn" disabled={busy}
+              onClick={(e) => { e.stopPropagation(); setFolderAccessTarget(f) }}
+              onKeyDown={(e) => e.stopPropagation()}
+              title="Gestionar quién tiene acceso a esta carpeta" aria-label={`Gestionar acceso a «${f.name}»`}>
+              <Icon name="users" size={14} />
+            </button>
+          )}
           <Icon name="chevron-right" size={14} />
-          {canEdit && (
+          {editable && (
             <button className="ed-icobtn ed-icobtn-danger" disabled={busy}
               onClick={(e) => { e.stopPropagation(); void onDeleteFolder(f.id) }}
               onKeyDown={(e) => e.stopPropagation()}
@@ -744,32 +803,37 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
                             <Icon name="refresh" size={13} /> Descargar la última versión
                           </button>
                         )}
-                        {canEdit && projectDirty && (
+                        {canEditCurrent && projectDirty && (
                           <button className="ed-btn-solid ed-btn-cloud" disabled={busy} onClick={() => void onUpdateLinked()}>
                             <Icon name="cloud" size={14} /> Actualizar en la nube
                           </button>
                         )}
                       </div>
                     </div>
-                  ) : canEdit ? (
+                  ) : isOwner || editableFolders.length > 0 ? (
                     <div className="ed-cloud-session-row">
                       <label className="ed-field">
                         <span>Título del proyecto nuevo</span>
                         <input value={uploadTitle} onChange={(e) => setUploadTitle(e.target.value)} />
                       </label>
-                      {folders.length > 0 && (
+                      {(isOwner ? folders.length > 0 : editableFolders.length > 0) && (
                         <label className="ed-field ed-field-narrow">
                           <span>Carpeta</span>
                           <select value={uploadFolderId ?? ''} onChange={(e) => setUploadFolderId(e.target.value || null)}>
-                            <option value="">— Sin carpeta —</option>
-                            {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                            {isOwner && <option value="">— Sin carpeta —</option>}
+                            {(isOwner ? folders : editableFolders).map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
                           </select>
                         </label>
                       )}
-                      <button className="ed-btn-solid ed-btn-cloud" disabled={busy || !uploadTitle.trim()} onClick={() => void onUploadNew()}>
+                      <button className="ed-btn-solid ed-btn-cloud" disabled={busy || !uploadTitle.trim() || (!isOwner && !uploadFolderId)} onClick={() => void onUploadNew()}>
                         <Icon name="cloud" size={14} /> Subir a la nube
                       </button>
                     </div>
+                  ) : canEdit ? (
+                    <p className="ed-hint">
+                      Todavía no tienes ninguna carpeta con acceso de edición. Pide al propietario de la organización
+                      que te conceda acceso a una (o crea tú una nueva, más abajo — quedará tuya automáticamente).
+                    </p>
                   ) : (
                     <p className="ed-hint">Eres viewer en esta organización: puedes ver y abrir proyectos, pero no subir nuevos.</p>
                   )}
@@ -853,6 +917,11 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
       {trashModalOpen && currentOrg && (
         <CloudTrashModal orgId={currentOrg.id} orgName={currentOrg.name} isOwner={isOwner}
           onClose={() => { setTrashModalOpen(false); if (orgId) void refreshDocs(orgId) }} />
+      )}
+
+      {folderAccessTarget && (
+        <FolderAccessModal folderId={folderAccessTarget.id} folderName={folderAccessTarget.name}
+          onClose={() => setFolderAccessTarget(null)} />
       )}
     </>
   )
