@@ -97,26 +97,36 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
     Distinto de la herramienta determinista `scripts/moodle-import/` (mapeo literal sin
     enriquecer, ver más abajo): son dos vías paralelas para el mismo tipo de fuente.
   - `marcas-autoria.md` (jul 2026): capa **opcional y aditiva** sobre la ingesta
-    automática. El autor del documento (PDF/Word/página Moodle) puede marcar en su
-    propio texto qué interactividad quiere y dónde con bloques `{{alias}}…{{/alias}}`
-    (alias en español, p. ej. `acordeon`, `opcion_unica`, `decision`; catálogo
-    completo en el doc). El GPT las escanea antes de montar el guion de pantallas: cada
-    marca fija su fila (tipo ya decidido, no por la heurística de «forma del bloque»);
-    el resto del guion se sigue rellenando con el criterio automático de siempre
-    (**aditivo, no sustituye**: documento sin marcas = comportamiento idéntico al
-    anterior). Las marcas cuentan para el ritmo (informativa ~1/3-4, checkpoint
-    cada 4-5): si ya lo cubren, no se añade nada automático ahí; si el documento trae
-    más marcas de las que el ritmo pediría, se respetan todas — el documento manda por
-    encima del límite aproximado. Los tipos vetados al GPT (`hotspots`,
-    `before_after`, `hidden_image`, `puzzle`, `video`, `html_embed`) **siguen
-    vetados** aunque el documento los marque (mismo motivo que el veto automático:
-    piden ajuste manual de imagen/código): no se genera interacción, solo un
-    `editor_notes` pidiéndolo al editor humano. Mini-sintaxis opcional dentro de la
-    marca para contenido literal (opción correcta con `*`, V/F, parejas `término →
-    correspondencia`, huecos `[[palabra]]` reutilizando el marcador del contrato):
-    si el autor ya lo escribe así, el GPT lo usa literal en vez de inventarlo; si no,
-    redacta la interacción a partir del bloque marcado igual que un checkpoint
-    automático. Complemento **solo para autores humanos** (no conocimiento de GPT,
+    automática, con dos familias de marca `{{alias}}…{{/alias}}` (alias en español).
+    **Marca de corte** `{{diapositiva}}`: fija el contenido EXACTO de una pantalla —
+    ni se parte ni se fusiona con lo vecino, y **manda incluso sobre reglas de
+    estructura** normalmente estrictas (evaluable siempre en pantalla propia,
+    texto+imagen+interacción nunca juntos); si se salta alguna, queda anotado en
+    `editor_notes` como decisión editorial del autor, no error de segmentación. El
+    documento no tiene que estar cubierto de cortes: puede haber cero, uno o varios,
+    y el resto se sigue segmentando por el criterio automático. **Marcas de
+    interactividad** (p. ej. `acordeon`, `opcion_unica`, `decision`; catálogo completo
+    en el doc): fijan el tipo, no el límite de pantalla — pueden ir anidadas dentro de
+    una `{{diapositiva}}` (como mucho una, por el límite de un `interaction` por
+    pantalla; con más de una, solo la primera cuenta y el resto se saca a una pantalla
+    automática con nota) o sueltas en el texto. El GPT escanea ambas antes de montar
+    el guion de pantallas (paso 0): cada una fija su fila; el resto del guion se sigue
+    rellenando con el criterio automático de siempre (**aditivo, no sustituye**:
+    documento sin marcas = comportamiento idéntico al anterior). Cuentan para el
+    ritmo (informativa ~1/3-4, checkpoint cada 4-5): si ya lo cubren, no se añade nada
+    automático ahí (nunca DENTRO de una `{{diapositiva}}`, solo antes o después); si
+    el documento trae más marcas de las que el ritmo pediría, se respetan todas — el
+    documento manda por encima del límite aproximado. Los tipos vetados al GPT
+    (`hotspots`, `before_after`, `hidden_image`, `puzzle`, `video`, `html_embed`)
+    **siguen vetados** aunque el documento los marque (mismo motivo que el veto
+    automático: piden ajuste manual de imagen/código): no se genera interacción, solo
+    un `editor_notes` pidiéndolo al editor humano. Mini-sintaxis opcional dentro de
+    una marca de interactividad para contenido literal (opción correcta con `*`, V/F,
+    parejas `término → correspondencia`, huecos `[[palabra]]` reutilizando el
+    marcador del contrato): si el autor ya lo escribe así, el GPT lo usa literal en
+    vez de inventarlo; si no, redacta la interacción a partir del bloque marcado
+    igual que un checkpoint automático. Complemento **solo para autores humanos** (no
+    conocimiento de GPT,
     lenguaje sin jerga JSON): `docs/guia-marcas-para-autores.md`, con el mismo
     catálogo de alias en prosa pedagógica — mantener los dos sincronizados si cambia
     un alias o se añade un tipo.

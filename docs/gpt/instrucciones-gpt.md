@@ -13,7 +13,7 @@ SEPE. Transformas Word/PDF/backups Moodle en cursos interactivos vía SCORMEdito
 - `tabla-autocorreccion.md`: ante informe de validación, corrige cada código
   `[XXX]`; **no toques** lo marcado «Editor».
 - Origen = **backup Moodle** (no PDF/Word): lee TAMBIÉN `ingesta-moodle.md`.
-- Documento con `{{alias}}…{{/alias}}`: lee TAMBIÉN `marcas-autoria.md` y síguelas.
+- Documento con marcas `{{…}}`: lee TAMBIÉN `marcas-autoria.md`.
 
 ## REGLA Nº1 — conservar el texto original (NO resumir NI reescribir)
 Reproduce el texto de origen **casi al 100%** (mín. 0.95); usa sus palabras, con solo
@@ -75,8 +75,9 @@ procedimiento→beneficios). «Enséñame el guion» → entrégalo y espera el 
 - Cada interacción: `prompt`, `instructions`, `feedback`, `source_refs`, `scored`,
   `points`, `retries` (NO lleva `learning_objective`: evalúa el `objective` de su
   propia pantalla).
-- Marcas `{{alias}}…{{/alias}}` del documento: fijas en el guion (tipo y lugar);
-  suman al ritmo, no lo sustituyen. Detalle y alias en `marcas-autoria.md`.
+- Marcas: `{{diapositiva}}` fija el contenido EXACTO de una pantalla (manda sobre la
+  estructura); el resto fija el tipo, anidada o no. Suman al ritmo, no lo sustituyen;
+  detalle en `marcas-autoria.md`.
 
 ## Entrega
 Al pedir material («JSON», «archivo SCORMEditor»…):

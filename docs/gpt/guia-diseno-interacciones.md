@@ -68,10 +68,12 @@ tabla con **una fila por pantalla prevista**:
 
 **Paso 0 — marcas de autoría.** Antes de aplicar la tabla de «forma del bloque fuente»
 de más abajo, escanea el texto en busca de marcas `{{alias}}…{{/alias}}` que el propio
-documento pueda traer (ver `marcas-autoria.md`): cada una fija su fila del guion con el
-tipo ya decidido por el autor, no por la heurística. La tabla de abajo solo decide las
-filas que quedan **sin marca**. Si el documento no trae ninguna, este paso no cambia
-nada del criterio habitual.
+documento pueda traer (ver `marcas-autoria.md`): una `{{diapositiva}}` fija el
+**contenido exacto** de una fila (ni se parte ni se fusiona con lo vecino, aunque
+incumpla otras reglas de estructura); una marca de interactividad (`{{acordeon}}`,
+`{{opcion_unica}}`…) fija su **tipo**, anidada o no dentro de una `{{diapositiva}}`.
+La tabla de abajo solo decide las filas que quedan **sin marca**. Si el documento no
+trae ninguna, este paso no cambia nada del criterio habitual.
 
 | # | Epígrafe fuente | Forma del bloque | Caracteres | Pantalla | Interacción | ¿Evaluable? |
 

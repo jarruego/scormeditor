@@ -426,7 +426,9 @@ Estructura común a TODAS:
 - **Una evaluable no comparte pantalla con teoría**: la interactividad evaluable o de
   pregunta directa va en pantalla propia; su `student_text` lleva como mucho una
   frase de contexto (el enunciado va en `prompt`/`instructions`) y el desarrollo, en
-  la pantalla anterior (mismo `title`).
+  la pantalla anterior (mismo `title`). Excepción: dentro de una marca de corte
+  `{{diapositiva}}` del documento fuente, que manda incluso sobre esta regla (ver
+  `marcas-autoria.md`).
 - **Formato dentro de los campos de interacción**: los campos de texto corto
   (`prompt`, `instructions`, `scenario`, textos de `options`, `feedback.*`,
   `front`/`back` de tarjetas, `title`/`label` de ítems) renderizan **solo**
