@@ -18,11 +18,14 @@ Nada del formato de `course.json` sabe que existe la nube.
 
 ## Modelo de datos (Supabase, esquema `scormeditor`)
 Proyecto Supabase **compartido** con el CRM de academyhub: todo SCORMEditor vive en el
-esquema `scormeditor`, nunca en `public` (ese es del CRM). Migraciones en
-`supabase/migrations/`, aplicadas **a mano** en el SQL Editor del dashboard — este repo
-no tiene el CLI de Supabase enlazado ni ningún pipeline que las despliegue solo. Tras
-crear o tocar una migración, hay que pegarla y ejecutarla ahí para que surta efecto (si
-no, el cliente ve un 404/PGRST202 al llamar al RPC nuevo).
+esquema `scormeditor`, nunca en `public` (ese es del CRM). Esquema completo en
+**`supabase/schema.sql`** — un único fichero autosuficiente con el estado actual
+(tablas, funciones, triggers, RLS, Storage, Realtime), pensado para pegarlo entero en el
+SQL Editor de un proyecto Supabase nuevo y recrearlo todo de una vez. No es un historial
+de migraciones: para cambios de esquema, se edita ese mismo fichero (no se crean
+ficheros de migración fechados sueltos) y se pega en el SQL Editor lo que corresponda —
+este repo no tiene el CLI de Supabase enlazado ni ningún pipeline que lo despliegue solo,
+así que un cambio en `schema.sql` no surte efecto hasta que se ejecuta a mano ahí.
 
 - `organizations` / `memberships` (`role`: `owner`/`editor`/`viewer`) / `folders` /
   `documents` / `document_versions` / `document_locks`.
@@ -181,13 +184,12 @@ hasta conceder acceso a mano, carpeta por carpeta. No hay forma de inferir
 automáticamente «esta carpeta es de fulano»: no quedaba rastro de quién subió qué en el
 esquema anterior.
 
-## Lista de migraciones (orden cronológico, aplicar a mano en el SQL Editor)
-- `20260721000000_esquema_inicial.sql` — todo el esquema base: tablas, RLS, RPCs de
-  organización/miembros/bloqueo blando, bucket de Storage.
-- `20260722000000_gestion_miembros.sql` — invitar/quitar miembros, cambiar rol.
-- `20260723000000_folders_updated_at.sql` — trigger de `updated_at` en `folders`.
-- `20260723000001_restringir_crear_organizacion.sql` — tabla `org_creators`.
-- `20260723000002_realtime_y_bloqueo.sql` — `get_document_lock` (resuelve email del
-  titular) + publicación Realtime sobre `document_versions`/`document_locks`.
-- `20260723000003_bloqueo_estricto.sql` — `force_take_document_lock` («tomar el
-  control»).
+## Esquema en un único fichero (`supabase/schema.sql`)
+Ya no hay una carpeta `supabase/migrations/` con un fichero por cambio: se consolidó en
+un único `supabase/schema.sql` que refleja el estado **actual** (sin parches ni
+historial — eso ya lo cuenta `git log`). Para cambiar el esquema, se edita ese fichero
+directamente y se pega en el SQL Editor lo que corresponda; no se crean más ficheros de
+migración fechados. El propio fichero explica en su cabecera cómo aplicarlo de cero en
+un proyecto Supabase nuevo (pegar entero) y documenta inline el porqué de las variantes
+«`_direct`» de `folder_role`/`document_role` (un bug real de RLS + `RETURNING` sobre la
+propia tabla, ya corregido — ver los comentarios de la sección 3 del fichero).
