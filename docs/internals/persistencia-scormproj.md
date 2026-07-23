@@ -40,14 +40,27 @@ guardado: confundía.)
 > La invariante de que las claves `assets/…` del ZIP coincidan literalmente con las rutas
 > del `course.json` la comparte el GPT generador (ver `ingesta-gpt.md`).
 
-### Proyecto de demostración (`docs/internals/demo-scormeditor.scormproj`)
-Curso demo completo que ejercita **todos** los tipos de pantalla y **todas** las
-interactividades, con glosario, bibliografía, test final, callouts, bloque
-personalizado (paleta corporativa) e imágenes. **Convención**: al añadir un tipo de
-contenido o interacción nuevo, actualizar también este proyecto (abrirlo en el editor,
-añadir la pantalla que lo demuestre y guardarlo encima). Sus imágenes son PNG
-rasterizados de SVG planos; el aviso SKELETON de su informe es intencionado (la
-pantalla esqueleto se explica a sí misma).
+### Curso demo por defecto (`src/schema/sample-course.ts`)
+`sampleCourse` (el curso con el que arranca el editor sin nada que retomar, y que carga
+«Nuevo (demo)») es el proyecto de referencia exhaustivo: ejercita los **10 tipos de
+pantalla** y las **23 interacciones**, autorreferencial a propósito (no trata de ningún
+tema ajeno: cada pantalla demuestra en vivo el tipo de pantalla o de interacción del que
+habla). Test final, glosario y bibliografía también son de ejemplo. Sus imágenes son SVG
+sencillos incrustados como `data:image/svg+xml;base64,…` directamente en `src`/`config`
+(sin `assets/`, porque este curso no tiene ZIP ni `AssetMap` detrás — funciona igual en
+Vista estudiante y en el SCORM exportado, ver «MIME por extensión» más abajo para por qué
+esto no aplica a imágenes en línea del texto, que si necesitan `assets/` o `http(s)`).
+El aviso SKELETON de su informe es intencionado (la pantalla «Pendiente de desarrollo» se
+explica a sí misma).
+
+**Convención**: al añadir un tipo de pantalla o de interacción nuevo, actualizar también
+este curso. Se genera con un script (validado contra `parseCourse`/`validateCourse`
+reales antes de serializar) en vez de escribirse el TypeScript a mano completo — más
+robusto que un `.scormproj` aparte porque cualquier cambio de esquema que lo rompa se ve
+en el propio `tsc -b` del build, no hay que acordarse de regenerarlo por separado. (Existió
+una versión anterior como `.scormproj` en `docs/internals/`: se retiró en favor de esta,
+que al vivir en el propio arranque de la app es la que de verdad se ve —y por tanto se
+nota si queda desactualizada— y además tipa en compilación.)
 
 ### Ciclo de vida de los assets (limpieza / peso)
 El `AssetMap` del store puede acumular **huérfanos**: `addAsset` indexa por ruta, así que

@@ -252,6 +252,7 @@ export function Toolbar() {
         {isCloudConfigured() && (
           <button
             className={`ed-session-chip ${cloudSession ? 'is-connected' : ''}`}
+            data-tour="cloud-chip"
             onClick={() => setSettingsModal('cloud')}
             title={cloudSession ? `Conectado a la nube como ${cloudSession.user.email}. Pulsa para gestionar equipo y proyectos.` : 'Nube: sin conectar. Pulsa para iniciar sesión.'}
           >

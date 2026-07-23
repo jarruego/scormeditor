@@ -85,7 +85,8 @@ Menú **Ayuda** en la `Toolbar` (barra superior, junto a «Archivo ▾») con tr
   en modo `wide`): índice lateral + contenido con scroll propio (`.ed-help`). El contenido
   vive como JSX en `HelpModal.tsx` (audiencia: autores con nociones de e-learning, tono
   paso a paso), con cobertura completa del editor (interacciones, narración, ajustes,
-  exportación). La sección «Interacciones» **no enumera los tipos a mano**: recorre en
+  exportación, nube — ver `nube-sincronizacion.md` para el detalle técnico que resume la
+  sección «Nube y trabajo en equipo»). La sección «Interacciones» **no enumera los tipos a mano**: recorre en
   vivo `INTERACTION_RECIPES`/`INTERACTION_GROUPS` (`interactionRecipes.ts`) y
   `interactionTypeLabel` (`labels.ts`), así que un tipo nuevo aparece solo con darle su
   entrada en el catálogo — no hay que tocar el manual. Las **capturas** se cargan por
@@ -106,9 +107,13 @@ Menú **Ayuda** en la `Toolbar` (barra superior, junto a «Archivo ▾») con tr
   `localStorage['ed:tourDone']`.
 - **Atajos de teclado** → `ShortcutsModal` (vive aquí, no en ⚙ Ajustes; `F1` y `Ctrl+/`
   siguen abriéndolo).
-**Primer arranque**: `WelcomeTip` (en `GuidedTour.tsx`), tarjeta discreta abajo a la
-derecha que ofrece el tour y el manual; solo aparece si no existen `ed:tourDone` ni
-`ed:welcomeDismissed`, y cualquier acción (incluida la ✕) la descarta para siempre.
+**Primer arranque**: dos avisos independientes, ambos de una sola vez (localStorage,
+cualquier acción los descarta para siempre). `WelcomeGate` (`WelcomeGate.tsx`) es el
+overlay a pantalla completa con las cuatro opciones de partida (empezar en blanco, ver la
+demo, abrir archivo, abrir de la nube) — ver `persistencia-scormproj.md`. `WelcomeTip` (en
+`GuidedTour.tsx`) es la tarjeta discreta abajo a la derecha que ofrece el tour y el
+manual; solo aparece si no existen `ed:tourDone` ni `ed:welcomeDismissed`. Ambos pueden
+coexistir en la misma carga (el gate ocupa el centro, el tip la esquina).
 
 ## Etiquetas en español (no exponer identificadores del esquema)
 La UI del editor **nunca muestra los valores internos en crudo** (`content_placeholder`,

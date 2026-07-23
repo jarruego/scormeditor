@@ -88,6 +88,13 @@ const SECTIONS: Section[] = [
     body: (
       <>
         <p>
+          Al abrir SCORMEditor sin nada que retomar (primera vez, o navegador limpio) verás
+          una <strong>pantalla de bienvenida</strong> con cuatro puntos de partida: empezar
+          en blanco, ver la demo, abrir un archivo local o —si tu organización tiene la nube
+          activada— abrir un proyecto de la nube. Elegir cualquiera la descarta para
+          siempre: no vuelve a interrumpir en cargas posteriores.
+        </p>
+        <p>
           Todo el ciclo de vida del documento está en el menú <strong>Archivo</strong>{' '}
           de la barra superior:
         </p>
@@ -126,6 +133,66 @@ const SECTIONS: Section[] = [
         <p>
           <strong>Deshacer/Rehacer</strong> (<Kbd k="Ctrl + Z" /> / <Kbd k="Ctrl + Y" />)
           cubren cualquier cambio de contenido, hasta 50 pasos.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'nube',
+    title: 'Nube y trabajo en equipo',
+    body: (
+      <>
+        <p>
+          La nube es un <strong>añadido opcional</strong> que activa quien despliega
+          SCORMEditor para su organización: un proyecto guardado en la nube es exactamente
+          el mismo <code>.scormproj</code> de siempre, solo que vive en un servidor
+          compartido en vez de en tu equipo. Si tu instalación no la tiene activada, no
+          verás ningún botón de nube y el editor funciona 100% local, igual que siempre —
+          esta sección no te afecta.
+        </p>
+        <h4>Entrar y organizaciones</h4>
+        <p>
+          El chip <strong>«Nube: sin conectar»</strong> de la barra superior abre el inicio
+          de sesión (enlace mágico al correo, sin contraseña; las cuentas las da de alta
+          quien administre la organización). Cada persona pertenece a una organización con
+          un <strong>rol</strong>: <strong>Propietario</strong> (ve y edita todo, gestiona
+          miembros y carpetas), <strong>Editor</strong> o <strong>Visor</strong>.
+        </p>
+        <h4>Carpetas y permisos por profesor</h4>
+        <p>
+          Dentro de una organización, cada <strong>carpeta</strong> puede tener sus propios
+          permisos por persona — pensado para un centro donde cada profesor debe ver y
+          editar solo sus propios cursos, no los de los demás. Quien crea una carpeta recibe
+          acceso de edición automáticamente; el botón <strong>«Gestionar acceso»</strong> de
+          cada carpeta (solo visible para el Propietario) concede o retira edición/lectura a
+          otros miembros. El Propietario siempre ve y edita todas las carpetas, las tenga
+          concedidas o no.
+        </p>
+        <h4>Guardar y versiones</h4>
+        <p>
+          Con un documento de la nube abierto, guardar es el mismo gesto de siempre
+          (<Kbd k="Ctrl + S" /> o el indicador de estado); además se sube sola tras un par de
+          minutos de inactividad si hay cambios sin subir. Cada subida crea una{' '}
+          <strong>versión completa e independiente</strong> en el historial: nunca se
+          sobrescribe ni se pierde una versión anterior. Si alguien sube una versión
+          mientras tú tienes el documento abierto (incluido tú mismo desde otra pestaña), un
+          aviso te ofrece descargar la más reciente desde <strong>☁ Nube</strong>.
+        </p>
+        <h4>Bloqueo de edición y «Tomar el control»</h4>
+        <p>
+          Mientras otra persona tiene el documento abierto, tu árbol y tu editor de
+          pantallas quedan en <strong>solo lectura</strong> (Vista estudiante, Validación e
+          Informe se pueden seguir consultando con normalidad). Si de verdad necesitas
+          editar, el botón <strong>«Tomar el control»</strong> te lo cede al instante, con un
+          aviso previo. No hay cola ni «solicitar turno»: para un equipo pequeño y de
+          confianza basta con avisar antes de actuar, y es seguro porque las versiones nunca
+          se pierden, aunque dos personas suban «a la vez» solo quedan dos versiones en el
+          historial. Si la otra persona cierra la pestaña, el control vuelve solo, sin que
+          nadie tenga que pulsar nada.
+        </p>
+        <p>
+          Los documentos borrados van a una <strong>papelera</strong> aparte, no desaparecen
+          sin más; purgarlos en firme es una acción explícita del Propietario.
         </p>
       </>
     ),
@@ -349,10 +416,11 @@ const SECTIONS: Section[] = [
             nunca puede puntuar ni leer datos del curso.
           </li>
           <li>
-            Los cuatro <strong>juegos didácticos</strong> (sopa de letras, crucigrama,
-            rosco A-Z e imagen oculta) se autoevalúan sin botón «Comprobar»: el propio
-            juego marca el acierto al resolverse, con puntuación proporcional a lo
-            acertado.
+            Cuatro de los <strong>juegos didácticos</strong> (sopa de letras, rosco A-Z,
+            imagen oculta y puzle de imagen) se autoevalúan sin botón «Comprobar»: el
+            propio juego marca el acierto al resolverse, con puntuación proporcional a lo
+            acertado. El crucigrama, en cambio, sí lleva «Comprobar» e intentos, como una
+            pregunta más.
           </li>
         </ul>
       </>

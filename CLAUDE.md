@@ -87,8 +87,9 @@ Lee el que corresponda al tocar esa área:
 > `docs/gpt/*.md` son **externos**: material de conocimiento que se sube al GPT de ChatGPT.
 > `docs/internals/*.md` es doc interna del código. No mezclar.
 
-> `docs/internals/demo-scormeditor.scormproj` es el **proyecto de demostración** (todos
-> los tipos de pantalla e interactividad). Al añadir un tipo nuevo de contenido o
+> `src/schema/sample-course.ts` (`sampleCourse`) es el **curso demo por defecto** y el
+> proyecto de referencia exhaustivo (todos los tipos de pantalla e interactividad,
+> autorreferencial sobre el propio editor). Al añadir un tipo nuevo de contenido o
 > interacción, actualízalo también (detalle en `persistencia-scormproj.md`).
 
 ## Convenciones del repo

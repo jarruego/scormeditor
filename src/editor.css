@@ -74,6 +74,10 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
 /* Menú desplegable de la toolbar */
 .ed-menu { position: relative; }
 .ed-menu-list { position: absolute; right: 0; top: calc(100% + .3rem); z-index: 20; display: flex; flex-direction: column; min-width: 200px; padding: .3rem; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, .15); }
+/* Variante con portal a document.body (MoveMenu, CloudModal.tsx): posición
+   en coordenadas de viewport vía `style` inline, no relativa a un ancestro —
+   por eso anula right/top de la regla base (si no, se ignora el inline top). */
+.ed-menu-list-fixed { position: fixed; right: auto; top: auto; z-index: 60; max-height: 60vh; overflow-y: auto; }
 .ed-menu-list button { text-align: left; border: none; background: none; border-radius: 6px; padding: .45rem .6rem; }
 .ed-menu-list button:hover:not(:disabled) { background: #eef; }
 .ed-menu-primary { color: var(--c-primary); font-weight: 600; }

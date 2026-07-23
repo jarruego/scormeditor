@@ -38,6 +38,11 @@ const STEPS: TourStep[] = [
     body: 'Este indicador dice dónde vive tu proyecto: un archivo .scormproj en tu equipo, un documento en la nube, o —si aún no elegiste ninguno— solo este navegador (sin portabilidad). Pulsarlo (o Ctrl+S) guarda en el destino que corresponda.',
   },
   {
+    target: '[data-tour="cloud-chip"]',
+    title: 'Trabajo en equipo (nube)',
+    body: 'Si tu organización tiene la nube activada, aquí inicias sesión y accedes a los proyectos compartidos: carpetas con permisos por profesor, un bloqueo de edición para no pisaros el trabajo (con «Tomar el control» si hace falta) y sincronización automática al guardar. Sin nube configurada, este botón no aparece y todo sigue siendo 100% local.',
+  },
+  {
     target: '[data-tour="file-menu"]',
     title: 'Menú Archivo',
     body: 'Abrir y guardar el proyecto, empezar uno nuevo (vacío o demo) y, cuando el curso esté listo, «Exportar SCORM ZIP»: el paquete final que se sube a Moodle. También puedes exportar a eXeLearning (.elpx) si prefieres seguir editando allí.',

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { SettingsWindow } from './SettingsModal'
 import { CloudTeamModal } from './CloudTeamModal'
 import { CloudTrashModal } from './CloudTrashModal'
@@ -92,33 +93,62 @@ function MoveMenu({ doc, folders, onMove, disabled, isOwner }: {
   isOwner: boolean
 }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  // Posición en coordenadas de viewport: el desplegable se renderiza con un
+  // portal a document.body (más abajo), no como hijo del botón — si no, el
+  // scroll interno del explorador (`.ed-cloud-scroll`) lo recorta por abajo
+  // en vez de superponerlo, obligando a hacer scroll para verlo.
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
-    function onDown(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    function onDown(e: MouseEvent) {
+      const t = e.target as Node
+      if (btnRef.current?.contains(t) || listRef.current?.contains(t)) return
+      setOpen(false)
+    }
+    // Al desplazarse (el propio explorador, o cualquier contenedor con
+    // scroll) la posición calculada quedaría desfasada — más simple cerrar
+    // que recalcular en cada scroll/resize.
+    function onScrollOrResize() { setOpen(false) }
     document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
+    window.addEventListener('scroll', onScrollOrResize, true)
+    window.addEventListener('resize', onScrollOrResize)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      window.removeEventListener('scroll', onScrollOrResize, true)
+      window.removeEventListener('resize', onScrollOrResize)
+    }
   }, [open])
+
+  function toggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect()
+      setPos({ top: r.bottom + 4, left: Math.max(8, r.right - 200) })
+    }
+    setOpen((o) => !o)
+  }
 
   const targets = folders.filter((f) => f.id !== doc.folder_id)
 
   return (
-    <div className="ed-menu" ref={ref}>
-      <button className="ed-menu-trigger ed-btn-ghost" disabled={disabled} onClick={() => setOpen((o) => !o)} title="Mover a otra carpeta">
+    <>
+      <button ref={btnRef} className="ed-menu-trigger ed-btn-ghost" disabled={disabled} onClick={toggle} title="Mover a otra carpeta">
         <Icon name="folder" size={13} /> Mover a…
       </button>
-      {open && (
-        <div className="ed-menu-list" role="menu">
+      {open && pos && createPortal(
+        <div ref={listRef} className="ed-menu-list ed-menu-list-fixed" role="menu" style={{ top: pos.top, left: pos.left }}>
           {isOwner && doc.folder_id !== null && (
             <button role="menuitem" onClick={() => { setOpen(false); onMove(null) }}>— Sin carpeta —</button>
           )}
           {targets.map((f) => (
             <button key={f.id} role="menuitem" onClick={() => { setOpen(false); onMove(f.id) }}>{f.name}</button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
-    </div>
+    </>
   )
 }
 
@@ -919,8 +949,8 @@ export function CloudModal({ onClose }: { onClose: () => void }) {
           onClose={() => { setTrashModalOpen(false); if (orgId) void refreshDocs(orgId) }} />
       )}
 
-      {folderAccessTarget && (
-        <FolderAccessModal folderId={folderAccessTarget.id} folderName={folderAccessTarget.name}
+      {folderAccessTarget && currentOrg && (
+        <FolderAccessModal folderId={folderAccessTarget.id} folderName={folderAccessTarget.name} orgId={currentOrg.id}
           onClose={() => setFolderAccessTarget(null)} />
       )}
     </>
