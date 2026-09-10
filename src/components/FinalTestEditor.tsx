@@ -7,6 +7,7 @@ import { ListEditor } from './ListEditor'
 import { RichTextArea } from './RichTextArea'
 import { Icon } from './Icon'
 import { TYPE_COLORS } from '../schema/labels'
+import { confirmDialog } from '../store/confirm'
 
 function newId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 7)}`
@@ -67,6 +68,16 @@ export function FinalTestEditor() {
   const patch = (p: Partial<UnitTest>) => setFinalTest({ ...test, ...p })
   const setQuestions = (questions: QuizQuestion[]) => patch({ questions })
   const totalPoints = test.questions.reduce((a, q) => a + (q.points || 0), 0)
+
+  async function onDeleteTest() {
+    const ok = await confirmDialog({
+      title: 'Eliminar test final',
+      message: `Se eliminará el test final «${test!.title || '(sin título)'}» con sus ${test!.questions.length} pregunta${test!.questions.length === 1 ? '' : 's'} y no podrá recuperarse (salvo con Deshacer). ¿Deseas continuar?`,
+      confirmLabel: 'Eliminar',
+      danger: true,
+    })
+    if (ok) setFinalTest(null)
+  }
 
   return (
     <div className="ed-form">
@@ -170,7 +181,7 @@ export function FinalTestEditor() {
       />
 
       <div className="ed-row">
-        <button className="ed-danger" onClick={() => setFinalTest(null)}>Eliminar test final</button>
+        <button className="ed-danger" onClick={() => void onDeleteTest()}>Eliminar test final</button>
       </div>
     </div>
   )

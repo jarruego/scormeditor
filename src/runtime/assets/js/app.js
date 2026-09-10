@@ -222,13 +222,19 @@
     // Materiales transversales del curso (Glosario, Recursos): al final del
     // índice, con icono. Clase propia (.me-menu-material, no .me-menu-link)
     // para que refreshMenuChecks no los confunda con pantallas navegables —
-    // abren un modal (data-modal) en vez de tener data-idx.
-    html += '<div class="me-menu-materials"><ul>' +
-      '<li><button type="button" class="me-menu-material" data-modal="glossary">' +
-      '<span data-icon="book-open" aria-hidden="true"></span>' + esc(glossaryTitle()) + '</button></li>' +
-      '<li><button type="button" class="me-menu-material" data-modal="resources">' +
-      '<span data-icon="paperclip" aria-hidden="true"></span>' + esc(bibliographyTitle()) + '</button></li>' +
-      '</ul></div>';
+    // abren un modal (data-modal) en vez de tener data-idx. Cada botón solo
+    // aparece si su sección tiene contenido (igual que el test final, que
+    // solo entra en el índice si existe).
+    var materialsHtml = '';
+    if ((COURSE.glossary || []).length) {
+      materialsHtml += '<li><button type="button" class="me-menu-material" data-modal="glossary">' +
+        '<span data-icon="book-open" aria-hidden="true"></span>' + esc(glossaryTitle()) + '</button></li>';
+    }
+    if ((COURSE.bibliography || []).length) {
+      materialsHtml += '<li><button type="button" class="me-menu-material" data-modal="resources">' +
+        '<span data-icon="paperclip" aria-hidden="true"></span>' + esc(bibliographyTitle()) + '</button></li>';
+    }
+    if (materialsHtml) html += '<div class="me-menu-materials"><ul>' + materialsHtml + '</ul></div>';
     nav.innerHTML = html;
     global.MEIcons.hydrate(nav);
     nav.addEventListener('click', function (e) {

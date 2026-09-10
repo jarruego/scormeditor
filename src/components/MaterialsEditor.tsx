@@ -57,14 +57,24 @@ export function GlossaryEditor() {
   }
   const sort = () =>
     setGlossary([...glossary].sort((a, b) => a.term.localeCompare(b.term, 'es', { sensitivity: 'base' })))
+  const removeAll = async () => {
+    if (!(await confirmDialog({
+      title: 'Vaciar glosario',
+      message: `Se eliminarán los ${glossary.length} término${glossary.length === 1 ? '' : 's'} del glosario y no podrán recuperarse (salvo con Deshacer). El botón «${glossaryTitle.trim() || 'Glosario'}» dejará de mostrarse al estudiante mientras esté vacío. ¿Deseas continuar?`,
+      confirmLabel: 'Vaciar',
+      danger: true,
+    }))) return
+    setGlossary([])
+  }
 
   return (
     <div className="ed-form">
       <EditableHead value={glossaryTitle} placeholder="Glosario" ariaLabel="Título del glosario"
         chipIcon="book" chipLabel="Glosario" onChange={setGlossaryTitle} />
       <p className="ed-hint">
-        El estudiante lo consulta con el botón correspondiente de la barra superior del curso
-        (rotulado con este título). Los términos se muestran en el orden de esta lista.
+        El estudiante lo consulta con el botón correspondiente del menú lateral del curso
+        (rotulado con este título; sin términos, el botón no se muestra). Los términos se
+        muestran en el orden de esta lista.
       </p>
 
       {glossary.length === 0 && <p className="ed-empty">Glosario vacío. Añade el primer término.</p>}
@@ -89,6 +99,9 @@ export function GlossaryEditor() {
         <button type="button" className="ed-primary" onClick={add}><Icon name="plus" size={13} /> Añadir término</button>
         {glossary.length > 1 && (
           <button type="button" onClick={sort} title="Reordena los términos alfabéticamente"><Icon name="sort" size={14} /> Ordenar alfabéticamente</button>
+        )}
+        {glossary.length > 0 && (
+          <button type="button" className="ed-danger" onClick={() => void removeAll()}>Vaciar glosario</button>
         )}
       </div>
     </div>
@@ -115,6 +128,15 @@ export function BibliographyEditor() {
       }))) return
     setBibliography(bibliography.filter((_, j) => j !== i))
   }
+  const removeAll = async () => {
+    if (!(await confirmDialog({
+      title: 'Vaciar recursos',
+      message: `Se eliminarán las ${bibliography.length} referencia${bibliography.length === 1 ? '' : 's'} y no podrán recuperarse (salvo con Deshacer). El botón «${bibliographyTitle.trim() || 'Recursos y bibliografía'}» dejará de mostrarse al estudiante mientras esté vacío. ¿Deseas continuar?`,
+      confirmLabel: 'Vaciar',
+      danger: true,
+    }))) return
+    setBibliography([])
+  }
 
   return (
     <div className="ed-form">
@@ -122,9 +144,9 @@ export function BibliographyEditor() {
         ariaLabel="Título de recursos y bibliografía" chipIcon="link" chipLabel="Recursos"
         onChange={setBibliographyTitle} />
       <p className="ed-hint">
-        El estudiante los consulta con el botón «Recursos» de la barra superior del curso
-        (si personalizas el título, el botón lo usa como rótulo).
-        Usa un formato de cita homogéneo; el enlace es opcional.
+        El estudiante los consulta con el botón «Recursos» del menú lateral del curso
+        (si personalizas el título, el botón lo usa como rótulo; sin referencias, el
+        botón no se muestra). Usa un formato de cita homogéneo; el enlace es opcional.
       </p>
 
       {bibliography.length === 0 && <p className="ed-empty">Sin referencias. Añade la primera.</p>}
@@ -149,6 +171,9 @@ export function BibliographyEditor() {
 
       <div className="ed-row">
         <button type="button" className="ed-primary" onClick={add}><Icon name="plus" size={13} /> Añadir referencia</button>
+        {bibliography.length > 0 && (
+          <button type="button" className="ed-danger" onClick={() => void removeAll()}>Vaciar recursos</button>
+        )}
       </div>
     </div>
   )
