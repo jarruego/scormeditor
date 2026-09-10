@@ -371,7 +371,7 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-btn:focus-visible, .me-icon-btn:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--me-primary); outline-offset: 2px; }
 
 /* Interacciones */
-.me-interaction { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--me-border); }
+.me-interaction { margin-top: 1.5rem; }
 .me-prompt { font-weight: 600; }
 .me-instructions { color: var(--me-muted); }
 .me-choices { border: none; padding: 0; margin: 0; display: grid; gap: .4rem; }
