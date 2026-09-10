@@ -394,3 +394,9 @@ expandidos):
 - Cabecera con contador vivo «N preguntas · M puntos» junto a la nota mínima.
 - `blankQuestion`/prerrelleno de objetivo (`uncoveredObjectives`) sin cambios respecto a
   lo descrito arriba.
+- **«Eliminar test final»** (borra todo `assessments.final_test`, `setFinalTest(null)`)
+  pide `confirmDialog` antes de vaciarlo, igual que el resto de borrados destructivos del
+  árbol — no se ejecuta directo al pulsar. Simétrico con Glosario/Recursos
+  (`MaterialsEditor`, ver `carcasa-navegacion.md`): ambos tienen un botón «Vaciar…» con
+  confirmación para borrar todo el contenido de golpe, y la carcasa oculta su entrada del
+  menú lateral mientras esté vacío.

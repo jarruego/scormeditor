@@ -29,7 +29,7 @@
   .me-menu-module`).
 - **Materiales en el menú lateral**: `buildMenu()` (app.js) añade, tras los
   módulos/unidades y las pantallas sintéticas, un bloque `.me-menu-materials` (filete
-  superior, además del fondo de bloque) con dos entradas `.me-menu-material` — «📖
+  superior, además del fondo de bloque) con hasta dos entradas `.me-menu-material` — «📖
   Glosario» y «🔗 Recursos» (icono + rótulo, `esc(glossaryTitle())`/
   `esc(bibliographyTitle())`) — que abren el modal correspondiente
   (`data-modal="glossary|resources"`) en vez de navegar. Clase propia (no
@@ -37,7 +37,12 @@
   `data-idx` ni cuentan para el progreso). `glossary_title`/`bibliography_title` de
   `course.json` (defaults «Glosario» / «Recursos y bibliografía») rotulan estas
   entradas directamente al generarlas; se editan en la cabecera de `MaterialsEditor`
-  (ver `editor-pantallas.md`).
+  (ver `editor-pantallas.md`). Cada entrada solo se genera si su sección tiene contenido
+  (`glossary`/`bibliography` no vacíos) — igual que el bloque de Evaluación, que solo
+  aparece si hay test final —; el bloque `.me-menu-materials` entero se omite si ambas
+  están vacías. En el editor, `GlossaryEditor`/`BibliographyEditor` (`MaterialsEditor.tsx`)
+  ofrecen un botón «Vaciar…» (con confirmación) para borrar todas las entradas de golpe,
+  además del borrado uno a uno.
 - **Evaluación (Test final/Resultados)**: `buildMenu()` agrupa las pantallas sintéticas
   finales bajo un bloque `.me-menu-final` con rótulo propio («EVALUACIÓN», mismo estilo
   que `.me-menu-mtitle`) — antes salían sueltas, una por `.me-menu-unit`, sin
