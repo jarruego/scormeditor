@@ -8,7 +8,8 @@ import type { IconName } from '../components/Icon'
  * (contrato de course.json).
  */
 export const SCREEN_TYPE_LABELS: Record<ScreenType, string> = {
-  cover: 'Portada',
+  cover: 'Portada unidad',
+  module_cover: 'Portada módulo',
   objectives: 'Objetivos',
   route: 'Itinerario',
   content: 'Contenido',
@@ -49,6 +50,7 @@ export const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
 /** Icono compacto por tipo de pantalla (árbol del editor); nombres de `Icon`. */
 export const SCREEN_TYPE_ICONS: Record<ScreenType, IconName> = {
   cover: 'home',
+  module_cover: 'flag',
   objectives: 'target',
   route: 'route',
   content: 'file-text',
@@ -86,6 +88,7 @@ export const TYPE_COLORS = {
 
 export const SCREEN_TYPE_COLORS: Record<ScreenType, string> = {
   cover: TYPE_COLORS.estructura,
+  module_cover: TYPE_COLORS.estructura,
   objectives: TYPE_COLORS.estructura,
   route: TYPE_COLORS.estructura,
   summary: TYPE_COLORS.estructura,

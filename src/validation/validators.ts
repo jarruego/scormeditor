@@ -39,12 +39,12 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
     add('SKELETON', 'warning', 'Pantalla marcada como esqueleto / pendiente de desarrollo.')
   }
   if (!s.title.trim()) add('NO_TITLE', 'error', 'Pantalla sin título.')
-  if (s.type !== 'cover' && s.type !== 'summary' && !s.objective.trim())
+  if (s.type !== 'cover' && s.type !== 'module_cover' && s.type !== 'summary' && !s.objective.trim())
     add('NO_OBJECTIVE', 'warning', 'Pantalla sin objetivo de aprendizaje.')
 
   // Congruencia tipo ↔ recurso ↔ interacción: avisos (no bloquean) para
   // combinaciones que casi siempre son un despiste del autor.
-  if (s.type === 'cover' && s.interaction)
+  if ((s.type === 'cover' || s.type === 'module_cover') && s.interaction)
     add('COVER_INTERACTION', 'warning', 'La portada lleva una actividad: se recomienda moverla a una pantalla propia.')
   if (s.type === 'video' &&
       s.visual_resource.kind !== 'video_file' && s.visual_resource.kind !== 'video_youtube' &&

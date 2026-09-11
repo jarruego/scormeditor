@@ -88,6 +88,10 @@ export type ScreenRecipe = {
   uniquePerUnit?: boolean
   /** Tarjeta discreta (grupo «Otros»). */
   subtle?: boolean
+  /** Restringe la tarjeta a un tipo de contenedor concreto: 'unit' (solo dentro
+   *  de una unidad) o 'module' (solo entre las pantallas propias del módulo,
+   *  antes de sus unidades). Sin `scope`, la receta vale para ambos. */
+  scope?: 'unit' | 'module'
 }
 
 export const SCREEN_RECIPES: ScreenRecipe[] = [
@@ -95,11 +99,24 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   {
     key: 'cover',
     icon: 'home',
-    label: 'Portada',
+    label: 'Portada unidad',
     description: 'Presentación de la unidad. Se coloca al principio.',
     group: 'estructura',
     type: 'cover',
+    scope: 'unit',
     defaultTitle: (u) => u.title,
+    place: () => 0,
+    uniquePerUnit: true,
+  },
+  {
+    key: 'module-cover',
+    icon: 'flag',
+    label: 'Portada módulo',
+    description: 'Presentación de todo el módulo: más peso visual que la portada de unidad. Se coloca al principio, antes de sus unidades.',
+    group: 'estructura',
+    type: 'module_cover',
+    scope: 'module',
+    defaultTitle: (m) => m.title,
     place: () => 0,
     uniquePerUnit: true,
   },
@@ -111,7 +128,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     group: 'estructura',
     type: 'objectives',
     defaultTitle: 'Objetivos',
-    place: (ss) => afterLast(ss, ['cover']),
+    place: (ss) => afterLast(ss, ['cover', 'module_cover']),
     uniquePerUnit: true,
   },
   {
@@ -122,7 +139,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     group: 'estructura',
     type: 'route',
     defaultTitle: 'Itinerario',
-    place: (ss) => afterLast(ss, ['cover', 'objectives']),
+    place: (ss) => afterLast(ss, ['cover', 'module_cover', 'objectives']),
     uniquePerUnit: true,
   },
   {

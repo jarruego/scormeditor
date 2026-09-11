@@ -58,7 +58,7 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
               {RECIPE_GROUP_HINTS[g] && <span className="ed-recipe-group-hint"> — {RECIPE_GROUP_HINTS[g]}</span>}
             </h3>
             <div className="ed-recipe-grid">
-              {SCREEN_RECIPES.filter((r) => r.group === g).map((r) => {
+              {SCREEN_RECIPES.filter((r) => r.group === g && (!r.scope || r.scope === (isModule ? 'module' : 'unit'))).map((r) => {
                 const dup = r.uniquePerUnit && container.screens.some((s) => s.type === r.type)
                 return (
                   <button

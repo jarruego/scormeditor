@@ -181,6 +181,14 @@
       return '<header class="me-cover"><h1>' + esc(s.title) + '</h1>' +
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
     },
+    // Portada de módulo: mismo tratamiento hero que la de unidad (me-cover),
+    // pero con más peso visual (banda más saturada, título mayor — ver
+    // .me-module-cover en styles.css): presenta el módulo entero, no solo una
+    // unidad, así que debe notarse como un escalón por encima.
+    module_cover: function (s) {
+      return '<header class="me-cover me-module-cover"><h1>' + esc(s.title) + '</h1>' +
+        mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
+    },
     objectives: function (s) {
       // El `objective` NO se pinta aquí: el `student_text` de esta pantalla ya
       // presenta los objetivos al alumno y mostrarlo duplicaría el contenido.
@@ -241,7 +249,7 @@
     // sepa siempre dónde está aunque el menú lateral esté plegado (o en móvil).
     // No se pinta en la portada (hero) ni si módulo y unidad repiten título.
     var crumb = '';
-    if (ctx && ctx.crumb && screen.type !== 'cover') {
+    if (ctx && ctx.crumb && screen.type !== 'cover' && screen.type !== 'module_cover') {
       var cparts = [];
       if (ctx.crumb.module) cparts.push(esc(ctx.crumb.module));
       if (ctx.crumb.unit && ctx.crumb.unit !== ctx.crumb.module) cparts.push(esc(ctx.crumb.unit));

@@ -29,10 +29,10 @@ informe de revisión.
 |---|:-:|---|---|:-:|
 | `NO_TITLE` | ⛔ | Pantalla con `title` vacío | Ponle un título corto (2-6 palabras) descriptivo del contenido | GPT |
 | `ID_DUPLICATE` | ⛔ | Dos entidades (pantalla, interacción, módulo, unidad, test o pregunta) comparten `id` | Renombra una a un `id` único: el runtime guarda el progreso y la nota por `id`, y un duplicado los corrompe | GPT |
-| `NO_OBJECTIVE` | ⚠ | Pantalla (no `cover`/`summary`) sin `objective` | Copia **carácter a carácter** el objetivo declarado del curso que la pantalla desarrolla (no inventes uno nuevo) | GPT |
+| `NO_OBJECTIVE` | ⚠ | Pantalla (no `cover`/`module_cover`/`summary`) sin `objective` | Copia **carácter a carácter** el objetivo declarado del curso que la pantalla desarrolla (no inventes uno nuevo) | GPT |
 | `SKELETON` | ⚠ | Pantalla `content_placeholder` o `status` esqueleto | Solo si el usuario pide desarrollarla: complétala desde el texto fuente. Si es un esqueleto deliberado, no tocar | Según |
 | `CALLOUT_EMPTY` | ⚠ | Emitiste `::: tipo` sin cuerpo, o con la etiqueta («Importante») como cuerpo | El cuerpo es la **frase destacada del original**; si no hay texto real para la caja, elimina el callout | GPT |
-| `COVER_INTERACTION` | ⚠ | Pusiste una interacción en la portada (`cover`) | Muévela a una pantalla propia después de la portada; la `cover` queda solo con título/subtítulo | GPT |
+| `COVER_INTERACTION` | ⚠ | Pusiste una interacción en la portada (`cover`/`module_cover`) | Muévela a una pantalla propia después de la portada; la portada queda solo con título/subtítulo | GPT |
 | `VIDEO_NO_MEDIA` | ⚠ | Pantalla `type:"video"` sin recurso de vídeo | Añade el `visual_resource` (`video_youtube` con el ID del fuente) o, si no hay vídeo, cambia `type` a `content` | GPT |
 | `QUIZ_NO_SCORED` | ⚠ | Pantalla `unit_quiz` sin interacción evaluable | Añade la interacción `scored:true` o cambia el `type` de la pantalla | GPT |
 | `FORUM_SCORED` | ⚠ | `forum_prompt` con interacción puntuable | Pon `scored:false`: el foro es actividad externa del campus, no puntúa en el SCORM | GPT |

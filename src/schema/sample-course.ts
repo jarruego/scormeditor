@@ -53,7 +53,44 @@ export const sampleCourse: Course = {
     {
       "id": "m1",
       "title": "Cómo se organiza un curso",
-      "screens": [],
+      "screens": [
+        {
+          "id": "s100",
+          "type": "module_cover",
+          "title": "Cómo se organiza un curso",
+          "objective": "",
+          "student_text": "Esta es la **portada de módulo**: presenta todo el módulo antes de entrar en su primera unidad. Tiene más peso visual que la portada de unidad que verás a continuación (banda más saturada, título mayor) y solo puede añadirse entre las pantallas propias del módulo, no dentro de una unidad.",
+          "source_refs": [],
+          "visual_resource": {
+            "kind": "none",
+            "src": "",
+            "alt": "",
+            "tracks": [],
+            "has_voice": false,
+            "layout": "top",
+            "media_width": "50",
+            "media_align": "left",
+            "media_full": false,
+            "media_ratio": "16x9"
+          },
+          "interaction": null,
+          "interaction_layout": "bottom",
+          "required": false,
+          "min_time_seconds": 0,
+          "audio_src": "",
+          "transcript": "",
+          "accessibility": {
+            "alt_text_ok": true,
+            "keyboard_ok": true,
+            "contrast_ok": true
+          },
+          "scorm": {
+            "counts_for_completion": false
+          },
+          "editor_notes": [],
+          "status": "ok"
+        }
+      ],
       "units": [
         {
           "id": "u1",

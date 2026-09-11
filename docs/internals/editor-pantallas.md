@@ -106,6 +106,15 @@ desplegable «Tipo de pantalla» queda como ajuste avanzado). Decisiones:
   cuarto parámetro `atIndex` (si falta: tras `afterId` o al final).
 - `uniquePerUnit` **atenúa** la tarjeta si la unidad ya tiene ese tipo (tooltip «Ya
   existe…») pero **no bloquea** — aviso blando.
+- `scope?: 'unit' | 'module'` **sí filtra** (la tarjeta no aparece, a diferencia de
+  `uniquePerUnit`): `AddScreenModal` la compara con `isModule` (¿el contenedor es un
+  módulo o una unidad?) antes de listar el grupo. Único uso hoy: las dos portadas — receta
+  `cover` (`scope: 'unit'`, tipo `cover`, etiqueta «Portada unidad») solo dentro de una
+  unidad; receta `module-cover` (`scope: 'module'`, tipo `module_cover`, etiqueta «Portada
+  módulo») solo entre las pantallas propias del módulo. Son tipos distintos a propósito:
+  `module_cover` presenta el módulo entero y se renderiza con más peso visual
+  (`.me-module-cover`, ver `arquitectura-runtime.md`) — no es solo un rótulo, es un tipo de
+  pantalla con su propia plantilla en `renderer.js`.
 - Las recetas **no** rellenan `student_text` (acabaría exportado) ni `min_time_seconds`
   (ya hay ajuste masivo en Ajustes).
 - Tras crear, el foco salta al input de Título (`data-field="screen-title"` en
@@ -168,8 +177,8 @@ los avisos de `validators.ts`):
   muestra como chip de solo lectura junto al título del formulario (`.ed-form-type`). El
   selector usa `changeScreenType` del store, que al pasar a `video` sin recurso precarga
   `video_youtube` (congruencia mínima).
-- **Objetivo oculto** en `cover`/`summary` (`hideObjective`): son los tipos exentos en
-  validación.
+- **Objetivo oculto** en `cover`/`module_cover`/`summary` (`hideObjective`): son los tipos
+  exentos en validación.
 - **Interacciones recomendadas** (`recommended`): el selector de tipo de interacción
   destaca «Recomendadas para esta pantalla» (`unit_quiz` → tipos de pregunta; `video` →
   vídeo interactivo). La primera recomendada es además el tipo inicial de «+ Añadir

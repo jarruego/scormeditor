@@ -51,7 +51,7 @@ Sintaxis soportada:
 Ninguna plantilla de `renderer.js` muestra `objective` como banner — tampoco la pantalla
 `objectives`: su `student_text` ya presenta los objetivos al alumno y pintarlo duplicaba
 el contenido. `objective` queda como **metadato de trazabilidad** (el validador sigue
-exigiéndolo salvo en `cover`/`summary`).
+exigiéndolo salvo en `cover`/`module_cover`/`summary`).
 
 ### Bloques destacados y paleta corporativa
 Los tipos viven en `CALLOUTS` (`renderer.js`) y su color en
@@ -134,7 +134,12 @@ que lo etiquete).
   funciona sola porque `renderScreen` recrea el nodo. `prefers-reduced-motion` desactiva
   `transition` **y** `animation`.
 - **Portada hero**: la plantilla `cover` (`.me-cover`) se estiliza como hero — título
-  grande centrado sobre banda degradada del acento; prose centrada a 560 px.
+  grande centrado sobre banda degradada del acento; prose centrada a 560 px. `module_cover`
+  (tipo `Portada módulo`, ver `editor-pantallas.md`) reutiliza `.me-cover` y añade
+  `.me-module-cover` encima: banda más saturada, más alto, título mayor (hasta 3.4rem) y
+  sombra propia — un escalón visual por encima, porque presenta el módulo entero, no una
+  unidad. Ambas ocultan la miga «Módulo › Unidad» (romperían el hero) y no exigen
+  `objective` ni recomiendan interacción (`COVER_INTERACTION` en `validators.ts`).
 - **Accordion/tabs animados**: chevron `▸` rotatorio en `.me-acc-head::before`; cuerpos y
   paneles aparecen con `me-reveal` (corre al pasar de `display:none` a visible).
 - **Feedback de interacciones**: la opción elegida se marca en el propio elemento
@@ -184,9 +189,10 @@ que lo etiquete).
   módulo y la unidad a los que pertenece (uppercase pequeño en `--me-muted`, como los
   rótulos del menú), para que el alumno se ubique aunque el menú lateral esté plegado o
   en móvil. app.js pasa `ctx.crumb` (títulos de `entry.module`/`entry.unit`) y `render()`
-  (renderer.js) lo pinta. No sale en la portada (`cover`, rompería el hero), ni en test
-  final/resultados (pantallas sintéticas sin unidad), y si módulo y unidad repiten título
-  solo se muestra uno. Lleva `padding-right` para no pisar la píldora «Evaluable».
+  (renderer.js) lo pinta. No sale en ninguna portada (`cover`/`module_cover`, rompería el
+  hero), ni en test final/resultados (pantallas sintéticas sin unidad), y si módulo y
+  unidad repiten título solo se muestra uno. Lleva `padding-right` para no pisar la
+  píldora «Evaluable».
 
 > El chrome de navegación (topbar, menú lateral, barra inferior) vive en
 > `carcasa-navegacion.md`, doc hermano de este.

@@ -137,6 +137,7 @@ const PATHS = {
 
   // ---- Catálogo: tipos de pantalla ----------------------------------------------
   home: <path d="M4 11l8-7 8 7M6 9.5V19a1 1 0 0 0 1 1h3.2v-5.5h3.6V20H17a1 1 0 0 0 1-1V9.5" />,
+  flag: <path d="M6 21V4M6 5c1.8-1 3-1 5 0s3.2 1 5 0v7c-1.8 1-3 1-5 0s-3.2-1-5 0" />,
   target: (
     <>
       <circle cx="12" cy="12" r="8.5" />
