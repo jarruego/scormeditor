@@ -297,10 +297,11 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
    nuevo» — si resulta repetitivo, el alumno desactiva el audio con las
    opciones generales de la barra inferior). */
 .me-item-narration { display: none; }
-/* Botón de sonido activo en el reproductor de la barra inferior: color de
-   acción (--me-primary), no de estructura (--me-accent) — con paletas de
-   acento claro, el texto perdía contraste sobre el fondo blanco de la carcasa. */
-#me-btn-audio.is-on { color: var(--me-primary); font-weight: 600; }
+/* Botón de sonido: sin color propio, como el resto de controles de la barra
+   inferior (imprimir, ayuda, transcripción…) — el estado on/off ya lo marca el
+   propio icono (volume-on/volume-off, reflectAudioButton en app.js) y
+   aria-pressed; no hace falta un color de tema encima, que además dependía de
+   que el acento fuera lo bastante oscuro. */
 .me-transcript { margin: 1rem 0; border: 1px solid var(--me-border); border-radius: 6px; padding: .25rem .75rem; }
 .me-transcript summary { cursor: pointer; font-weight: 600; }
 .me-placeholder { border: 2px dashed #d09a00; background: #fff8e6; padding: 1rem; border-radius: 6px; }

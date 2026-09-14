@@ -141,16 +141,18 @@ que lo etiquete).
   dos variables CSS y no un tema empaquetado, cualquier color que el autor elija llega a
   los mismos sitios que el turquesa/azul de serie — no hay que mantener una lista de
   reglas por paleta.
-  - **Símbolos «+» de expandir y botón de volumen → color de acción, no de estructura**:
+  - **Símbolos «+» de expandir → color de acción, no de estructura**:
     `.me-acc-head::before`/`.me-tl-head::before` (accordion/timeline) y `.me-flip-tab`
     (flip_cards/flashcards/image_cards) usaban `--me-accent`; con un acento claro (p. ej.
     el amarillo de «Mecohisa») el símbolo perdía contraste sobre fondo blanco, o el
-    blanco encima del propio `.me-flip-tab` lo perdía sobre el acento. Los tres, más
-    `#me-btn-audio.is-on` (botón de volumen), se pasaron a `--me-primary` — mismo color
-    que ya usaba `.me-hotspot::after` desde siempre. El botón de volumen deja de
-    distinguirse por color del resto de botones de acción (antes era turquesa a
-    propósito), pero es el cambio pedido: ya no depende de que el acento sea lo bastante
-    oscuro.
+    blanco encima del propio `.me-flip-tab` lo perdía sobre el acento. Los tres se
+    pasaron a `--me-primary` — mismo color que ya usaba `.me-hotspot::after` desde
+    siempre.
+  - **Botón de volumen → sin color de tema, como el resto de controles** (imprimir,
+    ayuda, transcripción…): tuvo brevemente color de acento y luego de acción, pero el
+    estado on/off ya lo marca el icono (`volume-on`/`volume-off`) y `aria-pressed`; un
+    color encima solo lo hacía destacar sin necesidad y además dependía de que el color
+    de turno contrastara bien. `#me-btn-audio` no lleva regla de color propia.
   - Al elegir los dos colores de una paleta, el más oscuro/saturado de los dos conviene
     como **acción** (soporta texto blanco encima en botones, `.me-check`, `.me-flip-tab`…
     y ahora también estos símbolos) y el más claro como **estructura** (solo se usa en
