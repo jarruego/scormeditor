@@ -20,6 +20,15 @@
   en Resultados.
 
 ## Menú lateral
+- **Pantallas de introducción del paquete SCORM (`course.intro_screens`) sin entrada de
+  índice**: `flatten()` (app.js) las coloca primero en `SCREENS` (mismo orden que
+  `screenContainers()` en el editor), pero `buildMenu()` no genera `<li>` para ellas —
+  arranca su contador `idx` ya desplazado (`= COURSE.intro_screens.length`) para que
+  `data-idx` del resto de enlaces siga cuadrando con la posición real en `SCREENS`. Se
+  navegan solo con Anterior/Siguiente; `refreshMenuChecks()`/`focusCurrentMenuLink()` ya
+  toleraban pantallas sin `<li>` propio (las sintéticas `__final__`/`__results__` antes
+  de agruparse bajo `.me-menu-final` pasaban por lo mismo), así que no hicieron falta
+  cambios ahí. Ver `editor-pantallas.md` para el lado del editor (árbol, recetas).
 - **Prefijo «Actividad: » en las pantallas evaluables**: `menuScreenLabel(sc)` (app.js,
   usada por `buildMenu()` en los tres bucles que generan `.me-menu-link`: pantallas de
   módulo, de unidad y sintéticas finales) antepone `"Actividad: "` al rótulo del

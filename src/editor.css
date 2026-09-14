@@ -126,6 +126,10 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
    delimitarlo del siguiente sin ruido: borde y fondo apenas perceptibles. */
 .ed-module { border: 1px solid color-mix(in srgb, var(--c-border) 55%, transparent); background: color-mix(in srgb, var(--c-bg) 45%, white); border-radius: 10px; padding: .3rem .55rem .55rem; margin: 0 0 .7rem; }
 .ed-module > .ed-module-title { margin-top: .2rem; }
+/* Introducción del paquete SCORM: pantallas sueltas antes de cualquier módulo — mismo
+   tratamiento de tarjeta que un módulo, sin renombrado (no hay título que
+   editar) ni controles de mover/borrar (contenedor único, siempre el primero). */
+.ed-intro-hint { margin: 0 0 .4rem; }
 /* Unidades plegables */
 details.ed-tree-unit { margin: .25rem 0 .5rem; }
 details.ed-tree-unit > summary.ed-unit-title { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; font-weight: 600; margin: .5rem 0 .25rem; cursor: pointer; user-select: none; list-style: none; }

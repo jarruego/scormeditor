@@ -39,12 +39,12 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
     add('SKELETON', 'warning', 'Pantalla marcada como esqueleto / pendiente de desarrollo.')
   }
   if (!s.title.trim()) add('NO_TITLE', 'error', 'Pantalla sin título.')
-  if (s.type !== 'cover' && s.type !== 'module_cover' && s.type !== 'summary' && !s.objective.trim())
+  if (s.type !== 'scorm_cover' && s.type !== 'cover' && s.type !== 'module_cover' && s.type !== 'summary' && !s.objective.trim())
     add('NO_OBJECTIVE', 'warning', 'Pantalla sin objetivo de aprendizaje.')
 
   // Congruencia tipo ↔ recurso ↔ interacción: avisos (no bloquean) para
   // combinaciones que casi siempre son un despiste del autor.
-  if ((s.type === 'cover' || s.type === 'module_cover') && s.interaction)
+  if ((s.type === 'scorm_cover' || s.type === 'cover' || s.type === 'module_cover') && s.interaction)
     add('COVER_INTERACTION', 'warning', 'La portada lleva una actividad: se recomienda moverla a una pantalla propia.')
   if (s.type === 'video' &&
       s.visual_resource.kind !== 'video_file' && s.visual_resource.kind !== 'video_youtube' &&
@@ -289,12 +289,13 @@ function checkIds(ctx: Ctx) {
       seen.set(id, what)
     }
   }
+  const scan = (s: Screen, unitId?: string) => {
+    check(s.id, `pantalla «${s.title || s.id}»`, { screenId: s.id, unitId })
+    if (s.interaction) check(s.interaction.id, `interacción de «${s.title || s.id}»`, { screenId: s.id, unitId })
+  }
+  c.intro_screens.forEach((s) => scan(s))
   c.modules.forEach((m) => {
     check(m.id, `módulo «${m.title || m.id}»`, {})
-    const scan = (s: Screen, unitId?: string) => {
-      check(s.id, `pantalla «${s.title || s.id}»`, { screenId: s.id, unitId })
-      if (s.interaction) check(s.interaction.id, `interacción de «${s.title || s.id}»`, { screenId: s.id, unitId })
-    }
     m.screens.forEach((s) => scan(s))
     m.units.forEach((u) => {
       check(u.id, `unidad «${u.title || u.id}»`, { unitId: u.id })
@@ -361,7 +362,7 @@ function checkGlobal(ctx: Ctx) {
     const obj = s.objective.trim()
     const key = normalizeObjective(obj)
     if (key && !declaredBy.has(key))
-      declaredBy.set(key, { obj, screen: s, loc: screenLoc(m.title || m.id, u ? u.title || u.id : null, s) })
+      declaredBy.set(key, { obj, screen: s, loc: screenLoc(m ? m.title || m.id : 'Introducción del paquete SCORM', u ? u.title || u.id : null, s) })
     if (s.interaction?.scored && key)
       evaluatedObjectives.add(key)
   }))
@@ -396,6 +397,13 @@ export function validateCourse(course: Course): ValidationResult {
   const issues: Issue[] = []
   const ctx: Ctx = { course, narrated: isNarrated(course), push: (i) => issues.push(i) }
 
+  // Pantallas sueltas de introducción (antes de cualquier módulo): mismas
+  // reglas por pantalla que las propias de un módulo.
+  course.intro_screens.forEach((s) => {
+    checkScreen(ctx, s, screenLoc('Introducción del paquete SCORM', null, s))
+    s.editor_notes.forEach((n) =>
+      ctx.push({ code: 'EDITOR_NOTE', severity: 'info', message: `Nota editorial: ${n}`, location: screenLoc('Introducción del paquete SCORM', null, s), screenId: s.id }))
+  })
   course.modules.forEach((m) => {
     const mTitle = m.title || m.id
     // Pantallas propias del módulo: mismas reglas por pantalla que las de

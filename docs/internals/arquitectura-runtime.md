@@ -51,7 +51,7 @@ Sintaxis soportada:
 Ninguna plantilla de `renderer.js` muestra `objective` como banner — tampoco la pantalla
 `objectives`: su `student_text` ya presenta los objetivos al alumno y pintarlo duplicaba
 el contenido. `objective` queda como **metadato de trazabilidad** (el validador sigue
-exigiéndolo salvo en `cover`/`module_cover`/`summary`).
+exigiéndolo salvo en `scorm_cover`/`cover`/`module_cover`/`summary`).
 
 ### Bloques destacados y paleta corporativa
 Los tipos viven en `CALLOUTS` (`renderer.js`) y su color en
@@ -187,6 +187,17 @@ que lo etiquete).
   desaparecería sobre papel blanco. Ninguna de las dos pinta la miga «Módulo › Unidad»
   (rompería el hero) ni exige `objective` ni recomienda interacción (`COVER_INTERACTION`
   en `validators.ts`).
+- **Portada del paquete SCORM** (tipo `scorm_cover`, receta `scope: 'course'` en
+  `screenRecipes.ts`, ver `editor-pantallas.md`): vive entre las pantallas de
+  introducción (`course.intro_screens`), antes de cualquier módulo. Comparte
+  literalmente la clase `.me-module-cover` con la portada de módulo (mismo fondo sólido
+  a sangre completa, mismo tratamiento de impresión) — es la primera impresión de **todo**
+  el paquete, así que no le corresponde menos peso visual que una portada de módulo. A
+  propósito **sin** `.me-cover-kicker`: un paquete SCORM puede representar un curso
+  entero, un módulo, una unidad o un tema suelto según el contenido (no siempre hay
+  módulos/unidades debajo), así que esta portada no presupone en qué nivel de la
+  jerarquía está el paquete — ver el hilo abierto sobre terminología módulo/unidad en
+  `editor-pantallas.md`.
 - **Accordion/tabs animados**: chevron `▸` rotatorio en `.me-acc-head::before`; cuerpos y
   paneles aparecen con `me-reveal` (corre al pasar de `display:none` a visible).
 - **Feedback de interacciones**: la opción elegida se marca en el propio elemento

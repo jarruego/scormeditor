@@ -14,6 +14,7 @@ export const SCHEMA_VERSION = '1.0.0'
 // ----------------------------------------------------------------------------
 
 export const ScreenType = z.enum([
+  'scorm_cover',
   'cover',
   'module_cover',
   'objectives',
@@ -376,6 +377,13 @@ export const Course = z.object({
   }).default({}),
   scorm: ScormConfig.default({}),
   shell: ShellConfig,
+  /** Pantallas sueltas de introducción, antes de cualquier módulo (portada del
+   *  paquete SCORM, bienvenida, objetivos generales…): no pertenecen a ningún
+   *  módulo ni unidad y no aparecen en el menú lateral del alumno (a diferencia
+   *  de `module.screens`, que sí) — se navegan con Anterior/Siguiente como
+   *  cualquier otra pantalla, sin entrada de índice. Default [] = compatible
+   *  con proyectos previos. */
+  intro_screens: z.array(Screen).default([]),
   narration: z.object({
     mode: z
       .enum(['auto', 'on', 'off'])

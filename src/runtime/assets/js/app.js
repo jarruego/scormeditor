@@ -74,6 +74,11 @@
 
   function flatten() {
     SCREENS = [];
+    // Pantallas sueltas de introducción del paquete SCORM, antes de cualquier
+    // módulo (portada, bienvenida, objetivos generales…): se navegan igual que
+    // cualquier otra (Anterior/Siguiente, progreso, finalización), pero
+    // buildMenu() no les da entrada de índice — ver `isIntro` ahí.
+    (COURSE.intro_screens || []).forEach(function (sc) { SCREENS.push({ unit: null, module: null, screen: sc, isFinalTest: false, isIntro: true }); });
     (COURSE.modules || []).forEach(function (m) {
       // Pantallas propias del módulo (portada/presentación): siempre antes de
       // las de sus unidades. Mismo orden que screenContainers() en el editor.
@@ -184,7 +189,10 @@
   function buildMenu() {
     var nav = document.getElementById('me-menu');
     var html = '';
-    var idx = 0;
+    // Las pantallas de introducción (COURSE.intro_screens) van primero en
+    // SCREENS (flatten()) pero no tienen entrada de índice: idx arranca
+    // después de ellas para que data-idx siga cuadrando con SCREENS.
+    var idx = (COURSE.intro_screens || []).length;
     (COURSE.modules || []).forEach(function (m) {
       html += '<div class="me-menu-module"><p class="me-menu-mtitle">' + esc(m.title) + '</p>';
       // Pantallas propias del módulo: cuelgan del título del módulo, sin rótulo

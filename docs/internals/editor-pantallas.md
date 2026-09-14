@@ -5,22 +5,35 @@
 > enriquecido en `editor-richtext.md`.
 
 ## El árbol (`CourseTree.tsx`)
-Módulos → unidades → pantallas (reordenables con dnd-kit) + secciones «Evaluación» (test
-final) y «Materiales» (glosario/bibliografía). Añadir pantalla por unidad **o por módulo**;
-duplicar/eliminar por pantalla (eliminar pide confirmación con `confirmDialog`, nombrando
-la pantalla).
+Introducción del paquete SCORM → módulos → unidades → pantallas (reordenables con dnd-kit) +
+secciones «Evaluación» (test final) y «Materiales» (glosario/bibliografía). Añadir
+pantalla por unidad, por módulo **o suelta antes de todo**; duplicar/eliminar por
+pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla).
 
+- **Introducción del paquete SCORM** (`course.intro_screens`): bloque fijo `.ed-intro-block` al
+  principio del árbol, antes del primer módulo — pantallas sueltas que no pertenecen a
+  ningún módulo ni unidad (portada del curso, bienvenida, objetivos generales… lo que el
+  profesor quiera poner antes de entrar en el contenido). Sin renombrado ni controles de
+  mover/eliminar el propio bloque (contenedor único, siempre el primero; las pantallas de
+  dentro sí se reordenan/eliminan como cualquier otra). Contenedor con id reservado
+  `INTRO_CONTAINER_ID` (`src/schema/traverse.ts`) para `addScreen`/`moveScreen`/
+  `AddScreenModal` — nunca coincide con un id real de módulo/unidad. **Diferencia clave
+  con `module.screens`: no aparece en el menú lateral del alumno** (`buildMenu()` en
+  app.js las cuenta para el índice de `SCREENS` pero no genera `<li>` para ellas) — se
+  navegan solo con Anterior/Siguiente, como un preámbulo. Para todo lo demás (progreso,
+  finalización, validación) cuentan como cualquier pantalla.
 - **Pantallas propias del módulo** (`module.screens`, portada/presentación del bloque):
   van **siempre antes de las unidades** del módulo — decisión deliberada: intercalarlas
   entre unidades complicaría el orden lineal y el menú para un caso de uso dudoso. En el
   árbol se listan bajo el título del módulo (`.ed-module-screens`, mismo `ScreenItem` con
   puntos de inserción) con su botón «Añadir pantalla al módulo…» (mismo `AddScreenModal`;
   las recetas evalúan `uniquePerUnit` y `defaultTitle` contra el módulo). El recorrido
-  canónico módulo→(pantallas de módulo)→unidades vive en `src/schema/traverse.ts`
-  (`screenContainers`/`allScreens`) — cualquier código nuevo que recorra pantallas debe
-  usarlo, no el doble bucle. En el store, `addScreen`/`moveScreen` aceptan como
-  contenedor el id de una unidad o de un módulo, y `Located.ui === null` señala pantalla
-  de módulo.
+  canónico introducción→módulo→(pantallas de módulo)→unidades vive en
+  `src/schema/traverse.ts` (`screenContainers`/`allScreens`, `module: null` en el
+  contenedor de introducción) — cualquier código nuevo que recorra pantallas debe usarlo,
+  no el doble bucle. En el store, `addScreen`/`moveScreen` aceptan como contenedor el id
+  de una unidad, de un módulo o `INTRO_CONTAINER_ID`; `Located.mi === 'intro'` señala
+  pantalla de introducción (`Located.ui === null` sigue señalando pantalla de módulo).
 
 - **Unidades plegables**: cada unidad es un `<details className="ed-tree-unit">` con
   chevron rotatorio y contador de pantallas (con filtro activo, «visibles/total»). La
@@ -106,15 +119,39 @@ desplegable «Tipo de pantalla» queda como ajuste avanzado). Decisiones:
   cuarto parámetro `atIndex` (si falta: tras `afterId` o al final).
 - `uniquePerUnit` **atenúa** la tarjeta si la unidad ya tiene ese tipo (tooltip «Ya
   existe…») pero **no bloquea** — aviso blando.
-- `scope?: 'unit' | 'module'` **sí filtra** (la tarjeta no aparece, a diferencia de
-  `uniquePerUnit`): `AddScreenModal` la compara con `isModule` (¿el contenedor es un
-  módulo o una unidad?) antes de listar el grupo. Único uso hoy: las dos portadas — receta
-  `cover` (`scope: 'unit'`, tipo `cover`, etiqueta «Portada unidad») solo dentro de una
-  unidad; receta `module-cover` (`scope: 'module'`, tipo `module_cover`, etiqueta «Portada
+- `scope?: 'unit' | 'module' | 'course'` **sí filtra** (la tarjeta no aparece, a
+  diferencia de `uniquePerUnit`): `AddScreenModal` calcula `scope` del contenedor
+  (`'course'` si `containerId === INTRO_CONTAINER_ID`, si no `'module'`/`'unit'` como
+  antes) y lo compara con el de cada receta antes de listar el grupo. Uso hoy: las tres
+  portadas — receta `scorm-cover` (`scope: 'course'`, tipo `scorm_cover`, etiqueta
+  «Portada del SCORM») solo entre las pantallas de introducción; receta `cover`
+  (`scope: 'unit'`, tipo `cover`, etiqueta «Portada unidad») solo dentro de una unidad;
+  receta `module-cover` (`scope: 'module'`, tipo `module_cover`, etiqueta «Portada
   módulo») solo entre las pantallas propias del módulo. Son tipos distintos a propósito:
-  `module_cover` presenta el módulo entero y se renderiza con más peso visual
-  (`.me-module-cover`, ver `arquitectura-runtime.md`) — no es solo un rótulo, es un tipo de
-  pantalla con su propia plantilla en `renderer.js`.
+  `module_cover`/`scorm_cover` presentan el módulo/paquete entero y se renderizan con más
+  peso visual (comparten `.me-module-cover`, ver `arquitectura-runtime.md`) — no es solo
+  un rótulo, cada uno es un tipo de pantalla con su propia plantilla en `renderer.js`.
+  `scorm_cover` es el único de los tres **sin** `.me-cover-kicker`: no presupone si el
+  paquete es un curso, un módulo, una unidad o un tema suelto (ver nota de terminología
+  más abajo). El resto de recetas sin `scope` (Contenido, Objetivos…) también valen para
+  la introducción del curso — solo `cover`/`module_cover` quedan fuera de ahí porque su
+  hero anuncia una unidad/módulo concretos que la introducción no tiene.
+
+### Nota abierta: terminología «módulo»/«unidad» cuando el paquete no es un curso completo
+Un paquete SCORM exportado por el editor puede representar cosas muy distintas según el
+centro/curso: un curso completo con varios módulos, un módulo suelto, una única unidad o
+un tema aislado. Hoy la UI habla siempre de «módulo»/«unidad» sin condicionarlo (botones
+«Añadir módulo», «Añadir unidad», recetas, `validators.ts`…), lo que puede desorientar a
+quien monta un paquete de un solo nivel. Sin decidir todavía cómo resolverlo — opciones
+barajadas: (a) etiquetas neutras tipo «Nivel 1»/«Nivel 2» siempre, que evitan el
+despiste pero pierden la palabra pedagógica útil en el caso común (curso con varios
+módulos); (b) un ajuste en course.json que declare qué representa el paquete y adapte
+las etiquetas; (c) **la opción que parece encajar mejor con el resto del editor**: dos
+campos de texto libre para renombrar «Módulo»/«Unidad» por curso, mismo patrón ya usado
+en `glossary_title`/`bibliography_title` (rótulos personalizables con default fijo) — no
+toca la estructura real (sigue siendo módulo→unidad→pantalla por debajo), solo cómo se
+llama en la UI. `scorm_cover` (arriba) ya evita el problema por su lado: no lleva ningún
+rótulo de nivel.
 - Las recetas **no** rellenan `student_text` (acabaría exportado) ni `min_time_seconds`
   (ya hay ajuste masivo en Ajustes).
 - Tras crear, el foco salta al input de Título (`data-field="screen-title"` en

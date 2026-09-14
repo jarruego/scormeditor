@@ -1,5 +1,6 @@
 import { useCourseStore } from '../store/courseStore'
 import type { ScreenInput } from '../schema/course.schema'
+import { INTRO_CONTAINER_ID } from '../schema/traverse'
 import { RECIPE_GROUPS, RECIPE_GROUP_LABELS, RECIPE_GROUP_HINTS, RECIPE_GROUP_COLORS, SCREEN_RECIPES, type ScreenRecipe } from '../schema/screenRecipes'
 import { SettingsWindow } from './SettingsModal'
 import { Icon } from './Icon'
@@ -10,17 +11,22 @@ import { Icon } from './Icon'
  * Las recetas «únicas por unidad» ya presentes se atenúan pero siguen siendo
  * pulsables (aviso blando, no bloqueo). Si llega `atIndex` (punto de inserción
  * elegido por el autor en el árbol), esa posición manda sobre la colocación
- * automática de la receta. `containerId` puede ser una unidad o un módulo
- * (pantallas propias del módulo, antes de sus unidades).
+ * automática de la receta. `containerId` puede ser la introducción del curso
+ * (`INTRO_CONTAINER_ID`), una unidad o un módulo (pantallas propias del
+ * módulo, antes de sus unidades).
  */
 export function AddScreenModal({ containerId, atIndex, onClose }: { containerId: string; atIndex?: number; onClose: () => void }) {
   const course = useCourseStore((s) => s.course)
   const addScreen = useCourseStore((s) => s.addScreen)
 
+  const isIntro = containerId === INTRO_CONTAINER_ID
   const unit = course.modules.flatMap((m) => m.units).find((u) => u.id === containerId)
-  const container = unit ?? course.modules.find((m) => m.id === containerId)
+  const container = isIntro
+    ? { title: course.course.title, screens: course.intro_screens }
+    : (unit ?? course.modules.find((m) => m.id === containerId))
   if (!container) return null
-  const isModule = !unit
+  const isModule = !isIntro && !unit
+  const scope = isIntro ? 'course' : isModule ? 'module' : 'unit'
 
   function create(r: ScreenRecipe) {
     if (!container) return
@@ -58,13 +64,13 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
               {RECIPE_GROUP_HINTS[g] && <span className="ed-recipe-group-hint"> — {RECIPE_GROUP_HINTS[g]}</span>}
             </h3>
             <div className="ed-recipe-grid">
-              {SCREEN_RECIPES.filter((r) => r.group === g && (!r.scope || r.scope === (isModule ? 'module' : 'unit'))).map((r) => {
+              {SCREEN_RECIPES.filter((r) => r.group === g && (!r.scope || r.scope === scope)).map((r) => {
                 const dup = r.uniquePerUnit && container.screens.some((s) => s.type === r.type)
                 return (
                   <button
                     key={r.key}
                     className={`ed-recipe${dup ? ' is-dup' : ''}${r.subtle ? ' ed-recipe-blank' : ''}`}
-                    title={dup ? `Ya existe una pantalla de este tipo en ${isModule ? 'el módulo' : 'la unidad'}` : undefined}
+                    title={dup ? `Ya existe una pantalla de este tipo en ${isIntro ? 'la introducción' : isModule ? 'el módulo' : 'la unidad'}` : undefined}
                     onClick={() => create(r)}
                   >
                     <span className="ed-recipe-ico" aria-hidden="true"

@@ -177,6 +177,17 @@
   // Plantillas por tipo de pantalla. Todas respetan la posición del recurso
   // (visual_resource.layout) a través de mediaTextLayout.
   var templates = {
+    // Portada del paquete SCORM: pantalla de introducción suelta (antes de
+    // cualquier módulo), mismo tratamiento a sangre completa que module_cover
+    // (comparten .me-module-cover en styles.css) — es la primera impresión de
+    // TODO el paquete, así que merece igual o más peso visual que una portada
+    // de módulo. Sin kicker «Unidad»/«Módulo»: un paquete SCORM puede
+    // representar un curso entero, un módulo, una unidad o un tema suelto
+    // según el contenido, y esta portada no debe presuponerlo.
+    scorm_cover: function (s) {
+      return '<header class="me-cover me-module-cover"><h1>' + esc(s.title) + '</h1>' +
+        mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
+    },
     cover: function (s) {
       return '<header class="me-cover"><p class="me-cover-kicker">Unidad</p><h1>' + esc(s.title) + '</h1>' +
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
@@ -249,7 +260,7 @@
     // sepa siempre dónde está aunque el menú lateral esté plegado (o en móvil).
     // No se pinta en la portada (hero) ni si módulo y unidad repiten título.
     var crumb = '';
-    if (ctx && ctx.crumb && screen.type !== 'cover' && screen.type !== 'module_cover') {
+    if (ctx && ctx.crumb && screen.type !== 'cover' && screen.type !== 'module_cover' && screen.type !== 'scorm_cover') {
       var cparts = [];
       if (ctx.crumb.module) cparts.push(esc(ctx.crumb.module));
       if (ctx.crumb.unit && ctx.crumb.unit !== ctx.crumb.module) cparts.push(esc(ctx.crumb.unit));

@@ -36,7 +36,7 @@ export interface MatrixRow {
 function traceabilityMatrix(course: Course): MatrixRow[] {
   const rows: MatrixRow[] = []
   screenContainers(course).forEach(({ module: m, unit: u, screens }) => {
-    const path = u ? `${m.title || m.id} › ${u.title || u.id}` : m.title || m.id
+    const path = m ? (u ? `${m.title || m.id} › ${u.title || u.id}` : m.title || m.id) : 'Introducción del paquete SCORM'
     screens.forEach((s) => {
       if (!s.objective && !s.interaction) return
       rows.push({

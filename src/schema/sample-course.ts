@@ -50,6 +50,80 @@ export const sampleCourse: Course = {
   "narration": {
     "mode": "auto"
   },
+  "intro_screens": [
+    {
+      "id": "s000",
+      "type": "scorm_cover",
+      "title": "Descubre SCORMEditor",
+      "objective": "",
+      "student_text": "Esta es la **portada del paquete SCORM**: la primera pantalla de todas, con el mismo peso visual que una portada de módulo (banda sólida a toda anchura). Sin rótulo de nivel a propósito — un paquete SCORM puede representar un curso completo, un módulo, una unidad o un tema suelto según el contenido, así que esta portada no lo presupone.",
+      "source_refs": [],
+      "visual_resource": {
+        "kind": "none",
+        "src": "",
+        "alt": "",
+        "tracks": [],
+        "has_voice": false,
+        "layout": "top",
+        "media_width": "50",
+        "media_align": "left",
+        "media_full": false,
+        "media_ratio": "16x9"
+      },
+      "interaction": null,
+      "interaction_layout": "bottom",
+      "required": true,
+      "min_time_seconds": 0,
+      "audio_src": "",
+      "transcript": "",
+      "accessibility": {
+        "alt_text_ok": true,
+        "keyboard_ok": true,
+        "contrast_ok": true
+      },
+      "scorm": {
+        "counts_for_completion": true
+      },
+      "editor_notes": [],
+      "status": "ok"
+    },
+    {
+      "id": "s001",
+      "type": "content",
+      "title": "Antes de empezar",
+      "objective": "Presentar el curso antes de entrar en su contenido.",
+      "student_text": "Esta es una **pantalla de introducción del paquete SCORM**: vive antes de cualquier módulo, sin pertenecer a ninguno. Sirven para una portada, una bienvenida o unos objetivos generales — lo que el profesor quiera poner antes de entrar en el contenido.\n\nA diferencia de las pantallas propias de un módulo (como la siguiente, «Cómo se organiza un curso»), estas **no aparecen en el menú lateral** del alumno: se recorren solo con **Anterior**/**Siguiente**, como un preámbulo.",
+      "source_refs": [],
+      "visual_resource": {
+        "kind": "none",
+        "src": "",
+        "alt": "",
+        "tracks": [],
+        "has_voice": false,
+        "layout": "top",
+        "media_width": "50",
+        "media_align": "left",
+        "media_full": false,
+        "media_ratio": "16x9"
+      },
+      "interaction": null,
+      "interaction_layout": "bottom",
+      "required": true,
+      "min_time_seconds": 0,
+      "audio_src": "",
+      "transcript": "",
+      "accessibility": {
+        "alt_text_ok": true,
+        "keyboard_ok": true,
+        "contrast_ok": true
+      },
+      "scorm": {
+        "counts_for_completion": true
+      },
+      "editor_notes": [],
+      "status": "ok"
+    }
+  ],
   "modules": [
     {
       "id": "m1",

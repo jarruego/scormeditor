@@ -3,7 +3,7 @@ import type { Course, Screen, ScreenInput, ScreenType, InteractionType, UnitTest
 import { Course as CourseSchema, Screen as ScreenSchema, Interaction as InteractionSchema } from '../schema/course.schema'
 import { interactionRecipe, migrateInteractionData } from '../schema/interactionRecipes'
 import { migrate } from '../schema/migrations'
-import { allScreens } from '../schema/traverse'
+import { allScreens, INTRO_CONTAINER_ID } from '../schema/traverse'
 import { sampleCourse } from '../schema/sample-course'
 import { isAssetReferenced, orphanAssetPaths } from '../schema/assetRefs'
 import { normalizeObjective } from '../validation/objectives'
@@ -24,17 +24,22 @@ function blankScreen(preset?: Partial<ScreenInput>): Screen {
   return ScreenSchema.parse({ id: newId('s'), type: 'content', title: 'Nueva pantalla', ...(preset || {}) })
 }
 
-/** Posición de una pantalla: `ui` null = pantalla propia del módulo. */
-interface Located { mi: number; ui: number | null; si: number }
+/** Posición de una pantalla: `mi` 'intro' = pantalla suelta de introducción
+ *  del curso (`course.intro_screens`, sin módulo); `ui` null = pantalla propia
+ *  del módulo. */
+interface Located { mi: number | 'intro'; ui: number | null; si: number }
 
-/** Lista de pantallas del contenedor localizado (módulo o unidad). */
-function screensAt(course: Course, mi: number, ui: number | null): Screen[] {
+/** Lista de pantallas del contenedor localizado (introducción, módulo o unidad). */
+function screensAt(course: Course, mi: number | 'intro', ui: number | null): Screen[] {
+  if (mi === 'intro') return course.intro_screens
   return ui == null ? course.modules[mi].screens : course.modules[mi].units[ui].screens
 }
 
-/** Pantallas del contenedor por id: una unidad o, en su defecto, un módulo
- *  (pantallas propias del módulo). Los ids son únicos en todo el curso. */
+/** Pantallas del contenedor por id: la introducción del curso
+ *  (`INTRO_CONTAINER_ID`), una unidad o, en su defecto, un módulo (pantallas
+ *  propias del módulo). Los ids son únicos en todo el curso. */
 function containerScreens(course: Course, containerId: string): Screen[] | null {
+  if (containerId === INTRO_CONTAINER_ID) return course.intro_screens
   for (const m of course.modules) {
     if (m.id === containerId) return m.screens
     for (const u of m.units) if (u.id === containerId) return u.screens
@@ -437,6 +442,8 @@ export const useCourseStore = create<CourseState>((set, get) => {
 
   locate: (id) => {
     const { course } = get()
+    const isi = course.intro_screens.findIndex((s) => s.id === id)
+    if (isi >= 0) return { mi: 'intro', ui: null, si: isi }
     for (let mi = 0; mi < course.modules.length; mi++) {
       const msi = course.modules[mi].screens.findIndex((s) => s.id === id)
       if (msi >= 0) return { mi, ui: null, si: msi }

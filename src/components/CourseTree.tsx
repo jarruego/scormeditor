@@ -20,6 +20,7 @@ import { useCourseStore } from '../store/courseStore'
 import type { Screen } from '../schema/course.schema'
 import { screenTypeLabel, screenTypeIcon, screenTypeColor, interactionTypeLabel, TYPE_COLORS } from '../schema/labels'
 import { interactionRecipe, interactionColor } from '../schema/interactionRecipes'
+import { INTRO_CONTAINER_ID } from '../schema/traverse'
 import { validateCourse, type Issue } from '../validation/validators'
 import { confirmDialog } from '../store/confirm'
 import { InlineRename } from './InlineRename'
@@ -285,6 +286,37 @@ export function CourseTree() {
         onChange={(e) => setFilter(e.target.value)}
       />
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <div className="ed-module ed-intro-block">
+          <p className="ed-module-title">
+            <span className="ed-intro-title-text">Introducción del paquete SCORM</span>
+          </p>
+          {!q && (
+            <p className="ed-hint ed-intro-hint">
+              Pantallas sueltas antes de cualquier módulo (portada, bienvenida, objetivos
+              generales…). No aparecen en el menú lateral del alumno: se navegan solo con
+              Anterior/Siguiente.
+            </p>
+          )}
+          {(() => {
+            const visible = course.intro_screens.filter(matches)
+            if (q && visible.length === 0) return null
+            return (
+              <SortableContext items={course.intro_screens.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                <ul className="ed-screens ed-module-screens">
+                  {visible.map((s, i) => (
+                    <Fragment key={s.id}>
+                      {!q && <InsertPoint containerId={INTRO_CONTAINER_ID} index={i} />}
+                      <ScreenItem screen={s} containerId={INTRO_CONTAINER_ID} issues={issuesByScreen.get(s.id)} />
+                    </Fragment>
+                  ))}
+                </ul>
+              </SortableContext>
+            )
+          })()}
+          {!q && (
+            <AddScreenButton containerId={INTRO_CONTAINER_ID} label="Añadir pantalla de introducción…" />
+          )}
+        </div>
         {course.modules.map((m, mi) => (
           <div key={m.id} className="ed-module">
             <p className="ed-module-title">

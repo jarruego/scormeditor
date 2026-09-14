@@ -8,6 +8,7 @@ import type { IconName } from '../components/Icon'
  * (contrato de course.json).
  */
 export const SCREEN_TYPE_LABELS: Record<ScreenType, string> = {
+  scorm_cover: 'Portada del SCORM',
   cover: 'Portada unidad',
   module_cover: 'Portada módulo',
   objectives: 'Objetivos',
@@ -49,6 +50,7 @@ export const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
 
 /** Icono compacto por tipo de pantalla (árbol del editor); nombres de `Icon`. */
 export const SCREEN_TYPE_ICONS: Record<ScreenType, IconName> = {
+  scorm_cover: 'star',
   cover: 'home',
   module_cover: 'flag',
   objectives: 'target',
@@ -87,6 +89,7 @@ export const TYPE_COLORS = {
 } as const
 
 export const SCREEN_TYPE_COLORS: Record<ScreenType, string> = {
+  scorm_cover: TYPE_COLORS.estructura,
   cover: TYPE_COLORS.estructura,
   module_cover: TYPE_COLORS.estructura,
   objectives: TYPE_COLORS.estructura,

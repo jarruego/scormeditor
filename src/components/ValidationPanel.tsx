@@ -65,7 +65,7 @@ export function ValidationPanel() {
     const groupOrder: string[] = []
     screenContainers(course).forEach(({ module: m, unit: u, screens }) => {
       if (!u && screens.length === 0) return
-      const path = u ? `${m.title || m.id} › ${u.title || u.id}` : m.title || m.id
+      const path = m ? (u ? `${m.title || m.id} › ${u.title || u.id}` : m.title || m.id) : 'Introducción del paquete SCORM'
       if (u) pathByUnit.set(u.id, path)
       groupOrder.push(path)
       screens.forEach((s) => pathByScreen.set(s.id, path))

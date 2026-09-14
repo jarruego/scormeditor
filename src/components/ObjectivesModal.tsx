@@ -100,7 +100,7 @@ function AddObjective() {
       screenContainers(course)
         .filter((c) => c.unit || c.screens.length > 0)
         .map(({ module: m, unit: u, screens }) => ({
-          label: u ? `${m.title} › ${u.title}` : m.title,
+          label: m ? (u ? `${m.title} › ${u.title}` : m.title) : 'Introducción del paquete SCORM',
           screens: screens.map((s) => ({ id: s.id, title: s.title || s.id, has: !!s.objective.trim() })),
         })),
     [course],

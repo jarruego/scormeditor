@@ -89,13 +89,27 @@ export type ScreenRecipe = {
   /** Tarjeta discreta (grupo «Otros»). */
   subtle?: boolean
   /** Restringe la tarjeta a un tipo de contenedor concreto: 'unit' (solo dentro
-   *  de una unidad) o 'module' (solo entre las pantallas propias del módulo,
-   *  antes de sus unidades). Sin `scope`, la receta vale para ambos. */
-  scope?: 'unit' | 'module'
+   *  de una unidad), 'module' (solo entre las pantallas propias del módulo,
+   *  antes de sus unidades) o 'course' (solo entre las pantallas sueltas de
+   *  introducción del curso, antes de cualquier módulo). Sin `scope`, la
+   *  receta vale para los tres. */
+  scope?: 'unit' | 'module' | 'course'
 }
 
 export const SCREEN_RECIPES: ScreenRecipe[] = [
   // --- Estructura -------------------------------------------------------------
+  {
+    key: 'scorm-cover',
+    icon: 'star',
+    label: 'Portada del SCORM',
+    description: 'Presentación de todo el paquete: lo primero que ve el alumno. Se coloca al principio de la introducción.',
+    group: 'estructura',
+    type: 'scorm_cover',
+    scope: 'course',
+    defaultTitle: (c) => c.title,
+    place: () => 0,
+    uniquePerUnit: true,
+  },
   {
     key: 'cover',
     icon: 'home',
