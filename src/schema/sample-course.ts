@@ -59,7 +59,7 @@ export const sampleCourse: Course = {
           "type": "module_cover",
           "title": "Cómo se organiza un curso",
           "objective": "",
-          "student_text": "Esta es la **portada de módulo**: presenta todo el módulo antes de entrar en su primera unidad. Tiene más peso visual que la portada de unidad que verás a continuación (banda más saturada, título mayor) y solo puede añadirse entre las pantallas propias del módulo, no dentro de una unidad.",
+          "student_text": "Esta es la **portada de módulo**: presenta todo el módulo antes de entrar en su primera unidad. Tiene más peso visual que la portada de unidad que verás a continuación (banda sólida a toda anchura, en vez del degradado contenido en la tarjeta) y solo puede añadirse entre las pantallas propias del módulo, no dentro de una unidad.",
           "source_refs": [],
           "visual_resource": {
             "kind": "none",

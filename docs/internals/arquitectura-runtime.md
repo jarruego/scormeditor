@@ -133,13 +133,24 @@ que lo etiquete).
 - **Transición de pantalla**: `.me-screen` entra con fade+slide (`me-screen-in`, 220 ms);
   funciona sola porque `renderScreen` recrea el nodo. `prefers-reduced-motion` desactiva
   `transition` **y** `animation`.
-- **Portada hero**: la plantilla `cover` (`.me-cover`) se estiliza como hero — título
-  grande centrado sobre banda degradada del acento; prose centrada a 560 px. `module_cover`
-  (tipo `Portada módulo`, ver `editor-pantallas.md`) reutiliza `.me-cover` y añade
-  `.me-module-cover` encima: banda más saturada, más alto, título mayor (hasta 3.4rem) y
-  sombra propia — un escalón visual por encima, porque presenta el módulo entero, no una
-  unidad. Ambas ocultan la miga «Módulo › Unidad» (romperían el hero) y no exigen
-  `objective` ni recomiendan interacción (`COVER_INTERACTION` en `validators.ts`).
+- **Portada de unidad vs. portada de módulo — jerarquía cualitativa, no solo
+  cuantitativa**: ambas llevan un rótulo `.me-cover-kicker` («Unidad»/«Módulo», texto
+  real, no decorativo) sobre el `<h1>`. La plantilla `cover` (`.me-cover`, tipo
+  `Portada unidad`) es un hero **contenido** en la tarjeta `.me-screen`: título grande
+  centrado sobre banda degradada suave del acento, prose centrada a 560 px. `module_cover`
+  (tipo `Portada módulo`, ver `editor-pantallas.md`) añade `.me-module-cover` encima y
+  cambia de registro en vez de solo escalar el mismo tratamiento: **rompe el margen de
+  la tarjeta** con márgenes negativos que igualan el padding de `.me-screen` en cada
+  punto de corte (bordes a ras en los cuatro lados, como el separador de capítulo de un
+  libro de texto) y usa un **fondo sólido oscurecido** (`color-mix(in srgb, --me-accent
+  60%, black)`, no el acento a secas — con texto blanco encima no llega a contraste AA)
+  con texto y enlaces en blanco (`.me-module-cover a`, subrayado: el azul `--me-primary`
+  del resto del runtime queda casi invisible sobre ese fondo). Impresión:
+  `print-color-adjust: exact` en `print.css` conserva el fondo oscuro — sin eso, con
+  «gráficos de fondo» desactivado en el diálogo de impresión, el texto blanco
+  desaparecería sobre papel blanco. Ninguna de las dos pinta la miga «Módulo › Unidad»
+  (rompería el hero) ni exige `objective` ni recomienda interacción (`COVER_INTERACTION`
+  en `validators.ts`).
 - **Accordion/tabs animados**: chevron `▸` rotatorio en `.me-acc-head::before`; cuerpos y
   paneles aparecen con `me-reveal` (corre al pasar de `display:none` a visible).
 - **Feedback de interacciones**: la opción elegida se marca en el propio elemento

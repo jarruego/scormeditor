@@ -178,15 +178,15 @@
   // (visual_resource.layout) a través de mediaTextLayout.
   var templates = {
     cover: function (s) {
-      return '<header class="me-cover"><h1>' + esc(s.title) + '</h1>' +
+      return '<header class="me-cover"><p class="me-cover-kicker">Unidad</p><h1>' + esc(s.title) + '</h1>' +
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
     },
-    // Portada de módulo: mismo tratamiento hero que la de unidad (me-cover),
-    // pero con más peso visual (banda más saturada, título mayor — ver
-    // .me-module-cover en styles.css): presenta el módulo entero, no solo una
-    // unidad, así que debe notarse como un escalón por encima.
+    // Portada de módulo: rompe el margen de la tarjeta `.me-screen` (banda sólida
+    // a sangre completa, ver .me-module-cover en styles.css) en vez del mismo hero
+    // degradado que la portada de unidad — presenta el módulo entero, así que debe
+    // notarse como un salto de jerarquía cualitativo, no solo cuantitativo.
     module_cover: function (s) {
-      return '<header class="me-cover me-module-cover"><h1>' + esc(s.title) + '</h1>' +
+      return '<header class="me-cover me-module-cover"><p class="me-cover-kicker">Módulo</p><h1>' + esc(s.title) + '</h1>' +
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
     },
     objectives: function (s) {
