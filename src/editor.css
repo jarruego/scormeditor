@@ -419,6 +419,21 @@ button.ed-pill.info:hover:not(:disabled) { background: #e8f0fe; }
 .ed-color-row { display: flex; gap: .4rem; align-items: center; }
 .ed-color-row input[type=color] { width: 42px; height: 36px; padding: 2px; border: 1px solid var(--c-border); border-radius: 6px; background: #fff; cursor: pointer; }
 
+/* Paletas típicas (Apariencia): un clic aplica acción+estructura a la vez;
+   los pickers de --c-primary/--c-accent de debajo siguen libres para desviarse. */
+.ed-palette-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+.ed-palette-swatch {
+  display: flex; flex-direction: column; align-items: center; gap: .3rem;
+  padding: .4rem .55rem; min-width: 68px;
+  border: 1px solid var(--c-border); border-radius: 8px; background: #fff;
+  font-size: .72rem; color: var(--c-muted); cursor: pointer;
+}
+.ed-palette-swatch:hover { border-color: var(--c-primary); color: var(--c-text); }
+.ed-palette-swatch.is-active { border: 2px solid var(--c-primary); font-weight: 600; color: var(--c-text); padding: calc(.4rem - 1px) calc(.55rem - 1px); }
+.ed-palette-dots { display: flex; }
+.ed-palette-dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .15); }
+.ed-palette-dot + .ed-palette-dot { margin-left: -6px; }
+
 /* Modal de confirmación (Aceptar / Cancelar) */
 .ed-confirm-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, .45); display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .ed-confirm { background: var(--c-surface); border-radius: 12px; box-shadow: 0 16px 48px rgba(0, 0, 0, .35); width: 100%; max-width: 440px; padding: 1.25rem; animation: ed-confirm-pop .12s ease-out; }

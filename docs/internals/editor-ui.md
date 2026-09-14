@@ -66,11 +66,18 @@ herramientas de la **edición del curso abierto**, no chrome general de la app �
   (ver `editor-pantallas.md`).
 - **Interfaz (Apariencia)** → `AppearanceModal` con `AppearanceSection`: preferencias de
   presentación de la carcasa (`shell`) vía `updateShell` — **Marca y color**
-  (`shell.brand`, `shell.primary_color` con picker `input[type=color]` + campo hex
-  `.ed-color-row`; el runtime los aplica en `applyShell`) y **Animaciones**
-  (`shell.motion`, none/subtle/rich, y `shell.motion_speed`, fast/normal/slow; ver
-  `arquitectura-runtime.md`). Decisión: la apariencia NO va con finalización — es config
-  de interfaz, con ventana propia.
+  (`shell.brand`; `shell.primary_color`/`shell.accent_color`, cada uno con picker
+  `input[type=color]` + campo hex, `.ed-color-row`; el runtime los aplica en
+  `applyBranding()`, ver `arquitectura-runtime.md`) y **Animaciones** (`shell.motion`,
+  none/subtle/rich, y `shell.motion_speed`, fast/normal/slow). Decisión: la apariencia NO
+  va con finalización — es config de interfaz, con ventana propia.
+  - **Paletas típicas**: fila de botones `.ed-palette-swatch` (`PALETTES` en
+    `CourseSettingsEditor.tsx`) sobre los dos pickers — cada uno muestra dos puntos de
+    color superpuestos (acción + estructura) y, con un clic, escribe ambos campos a la
+    vez (`updateShell({ primary_color, accent_color })`). `.is-active` se calcula
+    comparando el hex actual con cada preset (no hay un campo `theme` aparte que
+    recordar): si el autor toca cualquiera de los dos pickers después, ningún swatch
+    queda marcado — son un atajo sobre los mismos dos campos, no un modo distinto.
 - **Narración (Audio IA)** → `NarrationModal` con `NarrationSection`: config TTS
   (localStorage) y generación masiva; ver `tts-narracion.md`. No hay botón de narración
   suelto en la toolbar: todo entra por este menú.

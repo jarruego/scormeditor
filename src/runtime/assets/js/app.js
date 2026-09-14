@@ -138,6 +138,7 @@
   function applyBranding() {
     var shell = COURSE.shell || {};
     if (shell.primary_color) document.documentElement.style.setProperty('--me-primary', shell.primary_color);
+    if (shell.accent_color) document.documentElement.style.setProperty('--me-accent', shell.accent_color);
     // Nivel de animación de la carcasa (shell.motion): none | subtle | rich.
     MOTION = shell.motion === 'none' || shell.motion === 'rich' ? shell.motion : 'subtle';
     document.body.classList.add('me-motion-' + MOTION);

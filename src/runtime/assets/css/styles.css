@@ -5,7 +5,6 @@
      (pantalla actual del menú, pestaña activa, cabecera de la tarjeta…).
      El azul primario queda para las acciones (botones). */
   --me-accent: #6DC3C0;
-  --me-progress: #6DC3C0;
   --me-bg: #f5f6f8;
   --me-surface: #ffffff;
   --me-text: #1b1f24;
@@ -220,15 +219,17 @@ body {
    la portada de unidad — rompe el margen de la tarjeta `.me-screen` (banda sólida
    a sangre completa, como el separador de capítulo de un libro de texto) en vez
    del hero degradado y contenido de `.me-cover`. Fondo sólido oscurecido (no el
-   acento a secas: con texto blanco encima no cumple contraste AA) — contraste
-   verificado ~5:1 con blanco. Los márgenes negativos igualan el padding de
-   `.me-screen` en cada punto de corte (ver el mismo ajuste en el media query
-   responsive) para que encaje a ras en los cuatro lados sin descuadrar el resto
-   de la tarjeta. */
+   acento a secas: con texto blanco encima no cumple contraste AA) — el 50% de
+   negro deja margen de sobra (contraste ≥5:1 con blanco) incluso para acentos
+   claros elegidos libremente por el autor (`shell.accent_color`, ver
+   `editor-ui.md`), no solo el turquesa por defecto. Los márgenes negativos
+   igualan el padding de `.me-screen` en cada punto de corte (ver el mismo
+   ajuste en el media query responsive) para que encaje a ras en los cuatro
+   lados sin descuadrar el resto de la tarjeta. */
 .me-module-cover {
   margin: -1.75rem -2rem 1.75rem; padding: clamp(2.2rem, 7vw, 4.5rem) 2rem;
   border-radius: 12px 12px 0 0;
-  background: color-mix(in srgb, var(--me-accent) 60%, black);
+  background: color-mix(in srgb, var(--me-accent) 50%, black);
   color: #fff; box-shadow: none;
 }
 .me-module-cover h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); }
@@ -390,9 +391,9 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 /* min-width generoso en escritorio (hay espacio de sobra en el hueco central
    autoestirado); el media query de abajo lo recorta en móvil. */
 .me-progress { position: relative; flex: 1 1 auto; height: 26px; min-width: 240px; background: var(--me-border); border-radius: 99px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.me-progress-done { position: absolute; inset: 0 auto 0 0; height: 100%; width: 0; background: color-mix(in srgb, var(--me-progress) 32%, white); transition: width .3s ease; }
-.me-progress-bar { position: absolute; inset: 0 auto 0 0; height: 100%; width: 0; background: var(--me-progress); transition: width .3s ease; }
-.me-progress-bar::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: color-mix(in srgb, var(--me-progress) 65%, black); }
+.me-progress-done { position: absolute; inset: 0 auto 0 0; height: 100%; width: 0; background: color-mix(in srgb, var(--me-accent) 32%, white); transition: width .3s ease; }
+.me-progress-bar { position: absolute; inset: 0 auto 0 0; height: 100%; width: 0; background: var(--me-accent); transition: width .3s ease; }
+.me-progress-bar::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: color-mix(in srgb, var(--me-accent) 65%, black); }
 .me-position { position: relative; z-index: 1; color: var(--me-text); font-size: .85rem; font-weight: 600; text-shadow: 0 1px 1px rgba(255,255,255,.6); }
 /* Anterior/Siguiente: menos anchos (menos padding) y con icono de flecha
    propio (icons.js) en vez del triángulo tipográfico. */

@@ -44,6 +44,7 @@ pantallas de desarrollo compartirán el mismo `objective`.
   "shell": {
     "brand": "",
     "primary_color": "#0b5fff",
+    "accent_color": "#6DC3C0",
     "show_sidebar": true,
     "show_progress": true,
     "language": "es"

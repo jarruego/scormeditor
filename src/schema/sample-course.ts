@@ -40,6 +40,7 @@ export const sampleCourse: Course = {
   "shell": {
     "brand": "",
     "primary_color": "#5265c4",
+    "accent_color": "#6DC3C0",
     "show_sidebar": true,
     "show_progress": true,
     "language": "es",

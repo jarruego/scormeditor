@@ -6,6 +6,19 @@ import { allScreens } from '../schema/traverse'
 import { SegIcons } from './SegIcons'
 import { Icon } from './Icon'
 
+// Paletas típicas seleccionables de un clic: por defecto (la corporativa de
+// SCORMEditor) + 4 combinaciones habituales. `primary` es el color de ACCIÓN
+// (botones, enlaces, focus) y `accent` el de ESTRUCTURA (portadas, menú, barra
+// de progreso) — ver «Lenguaje visual de la carcasa» en arquitectura-runtime.md.
+// No agotan las opciones: los pickers de debajo siguen abiertos a cualquier hex.
+const PALETTES: { name: string; primary: string; accent: string }[] = [
+  { name: 'Corporativo', primary: '#0b5fff', accent: '#6dc3c0' },
+  { name: 'Bosque', primary: '#15803d', accent: '#86c9a0' },
+  { name: 'Granate', primary: '#9d174d', accent: '#e8879f' },
+  { name: 'Violeta', primary: '#6d28d9', accent: '#a78bfa' },
+  { name: 'Grafito', primary: '#334155', accent: '#94a3b8' },
+]
+
 // Niveles de animación y velocidad como segmentados de texto corto (el detalle
 // va en el title y en el hint de abajo).
 const MOTION_SEGS = [
@@ -41,28 +54,63 @@ export function AppearanceSection() {
 
       <fieldset className="ed-group">
         <legend>Marca y color</legend>
+        <label className="ed-field">
+          <span>Marca (texto de la esquina superior izquierda)</span>
+          <input value={shell.brand} placeholder="p. ej. Mecohisa Formación"
+            onChange={(e) => updateShell({ brand: e.target.value })} />
+        </label>
+
+        <div className="ed-field">
+          <span>Paleta</span>
+          <div className="ed-palette-row">
+            {PALETTES.map((p) => {
+              const active = shell.primary_color.toLowerCase() === p.primary
+                && shell.accent_color.toLowerCase() === p.accent
+              return (
+                <button type="button" key={p.name}
+                  className={`ed-palette-swatch${active ? ' is-active' : ''}`}
+                  title={`Paleta «${p.name}»: ${p.primary} (acción) + ${p.accent} (estructura)`}
+                  onClick={() => updateShell({ primary_color: p.primary, accent_color: p.accent })}>
+                  <span className="ed-palette-dots" aria-hidden="true">
+                    <span className="ed-palette-dot" style={{ background: p.primary }} />
+                    <span className="ed-palette-dot" style={{ background: p.accent }} />
+                  </span>
+                  {p.name}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <div className="ed-row">
-          <label className="ed-field">
-            <span>Marca (texto de la esquina superior izquierda)</span>
-            <input value={shell.brand} placeholder="p. ej. Mecohisa Formación"
-              onChange={(e) => updateShell({ brand: e.target.value })} />
-          </label>
           <label className="ed-field ed-field-narrow">
-            <span>Color corporativo</span>
+            <span>Color de acción</span>
             <div className="ed-color-row">
               <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(shell.primary_color) ? shell.primary_color : '#0b5fff'}
-                aria-label="Elegir color corporativo"
+                aria-label="Elegir color de acción"
                 onChange={(e) => updateShell({ primary_color: e.target.value })} />
               <input value={shell.primary_color} placeholder="#0b5fff" style={{ maxWidth: 110 }}
-                aria-label="Color corporativo en hexadecimal"
+                aria-label="Color de acción en hexadecimal"
                 onChange={(e) => updateShell({ primary_color: e.target.value })} />
+            </div>
+          </label>
+          <label className="ed-field ed-field-narrow">
+            <span>Color de estructura</span>
+            <div className="ed-color-row">
+              <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(shell.accent_color) ? shell.accent_color : '#6dc3c0'}
+                aria-label="Elegir color de estructura"
+                onChange={(e) => updateShell({ accent_color: e.target.value })} />
+              <input value={shell.accent_color} placeholder="#6DC3C0" style={{ maxWidth: 110 }}
+                aria-label="Color de estructura en hexadecimal"
+                onChange={(e) => updateShell({ accent_color: e.target.value })} />
             </div>
           </label>
         </div>
         <p className="ed-hint">
-          El color se aplica a botones, enlaces y elementos de acción de la carcasa. La marca
-          aparece en la barra superior del curso; si la dejas vacía, la cabecera muestra
-          únicamente el título del curso.
+          Elige una paleta típica o combina tus propios colores: el de <strong>acción</strong> tiñe
+          botones, enlaces y foco; el de <strong>estructura</strong>, las portadas, el menú lateral y
+          la barra de progreso. La marca aparece en la barra superior del curso; si la dejas vacía,
+          la cabecera muestra únicamente el título del curso.
         </p>
       </fieldset>
 

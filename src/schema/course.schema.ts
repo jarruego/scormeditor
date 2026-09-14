@@ -343,6 +343,7 @@ export const ShellConfig = z.object({
     .describe('Marca de la cabecera; vacía, la cabecera muestra solo el título del curso'),
   logo: z.string().optional(),
   primary_color: z.string().default('#0b5fff'),
+  accent_color: z.string().default('#6DC3C0'),
   show_sidebar: z.boolean().default(true),
   show_progress: z.boolean().default(true),
   language: LanguageCode,

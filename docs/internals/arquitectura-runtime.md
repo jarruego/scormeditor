@@ -123,10 +123,26 @@ que lo etiquete).
   `assetUrl()`/`asset` resuelve. En export, los ficheros van al ZIP y al manifiesto.
 
 ## Lenguaje visual de la carcasa
-- **Acento corporativo** `--me-accent` (turquesa `#6DC3C0`) para **estructura**: filo
+- **Acento** `--me-accent` (turquesa `#6DC3C0` de serie) para **estructura**: filo
   superior de la tarjeta `.me-screen`, pantalla actual del menú (fondo + barra izquierda),
-  pestaña activa, accordion abierto, flip-card pulsada. El azul
-  `--me-primary` queda para **acciones** (botones, focus, hover de opciones).
+  pestaña activa, accordion abierto, flip-card pulsada, portadas (más abajo) y barra de
+  progreso (`.me-progress-bar`/`-done`; no hay ya una variable `--me-progress` aparte —
+  se consolidó en `--me-accent`, siempre eran el mismo valor). El azul `--me-primary`
+  (de serie) queda para **acciones** (botones, enlaces, focus, hover de opciones).
+- **Paleta configurable por curso** (`shell.primary_color`/`shell.accent_color`,
+  `course.schema.ts`): ambos son hex libres, sin restricción a una lista cerrada —
+  `applyBranding()` (app.js) los vuelca como *inline style* sobre `documentElement`
+  (`--me-primary`/`--me-accent`), así que pisan el valor de `:root` en styles.css sin
+  tocar el fichero. Editor: sección **Marca y color** de ⚙ Ajustes → Interfaz
+  (Apariencia) (`AppearanceSection`, `editor-ui.md`) — un selector de **paletas típicas**
+  (`PALETTES` en `CourseSettingsEditor.tsx`: la corporativa de serie + 4 combinaciones)
+  aplica ambos colores de un clic, y dos pickers libres debajo permiten desviarse de
+  cualquier preset. Como son dos variables CSS y no un tema empaquetado, cualquier color
+  que el autor elija llega a los mismos sitios que el turquesa/azul de serie — no hay que
+  mantener una lista de reglas por paleta. Único cuidado: `.me-module-cover` deriva su
+  fondo oscuro directamente de `--me-accent` (ver la portada de módulo, más abajo), así
+  que un acento muy claro reduce ese margen de contraste (mitigado con un mix generoso
+  hacia negro, no garantizado al 100% para cualquier hex).
 - **Elevación** con sombras (`--me-shadow-1`/`-2`) en vez de solo bordes: tarjeta de
   pantalla, cards (hover se eleva), botones (hover sombra, active se hunde 1px).
 - **Tipografía**: H1 1.9rem/800/track -.015em; H2 1.35; body line-height 1.6.
@@ -143,7 +159,7 @@ que lo etiquete).
   la tarjeta** con márgenes negativos que igualan el padding de `.me-screen` en cada
   punto de corte (bordes a ras en los cuatro lados, como el separador de capítulo de un
   libro de texto) y usa un **fondo sólido oscurecido** (`color-mix(in srgb, --me-accent
-  60%, black)`, no el acento a secas — con texto blanco encima no llega a contraste AA)
+  50%, black)`, no el acento a secas — con texto blanco encima no llega a contraste AA)
   con texto y enlaces en blanco (`.me-module-cover a`, subrayado: el azul `--me-primary`
   del resto del runtime queda casi invisible sobre ese fondo). Impresión:
   `print-color-adjust: exact` en `print.css` conserva el fondo oscuro — sin eso, con
