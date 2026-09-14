@@ -180,11 +180,28 @@ que lo etiquete).
   red de seguridad. `max-width: 960px` para aprovechar pantallas grandes y el modo
   pantalla completa (formato clásico 960×540 de las herramientas de autor). En impresión
   se anulan flex y altura mínima (print.css).
-- **Etiqueta «Evaluable»**: píldora `.me-scored-badge` en la esquina superior derecha de
-  la tarjeta `.me-screen` cuando `interaction.scored` es true (la inserta `render()` en
-  renderer.js). Solo se muestra si las actividades cuentan para la nota: app.js pasa
-  `ctx.showScoredBadge` (`score_source !== 'final_test'`). Azul `--me-primary` diluido,
-  no turquesa, para que no se funda con el filo superior de acento de la tarjeta.
+- **Pantalla evaluable — tarjeta amarilla, icono, prefijo y etiqueta, todo en el
+  título**: cuando `interaction.scored` es true y las actividades cuentan para la nota
+  (`ctx.showScoredBadge` desde app.js, `score_source !== 'final_test'`), `render()`
+  (renderer.js, flag `isScored`) añade la clase `.me-screen-scored` al `<article>` y
+  reescribe el `<h1>` ya renderizado (DOM, no toca `course.json`: el GPT/autor siguen
+  escribiendo el título del tema tal cual, sin anunciar el tipo — ver
+  `guia-diseno-interacciones.md`) con tres piezas:
+  - `.me-h1-text`: icono lápiz (`MEIcons.svg('edit-3')`, icons.js — mismo icono que
+    «Actividad ✏️» en la paleta corporativa) + `"Actividad: "` + el título original.
+  - `.me-scored-badge`: la píldora «Evaluable» (antes flotaba absoluta sobre toda la
+    tarjeta `.me-screen`; ahora vive **dentro** del `<h1>`, empujada al lado opuesto por
+    `display:flex` en `.me-screen-scored > h1`). Azul `--me-primary` diluido para que no
+    se funda con el amarillo.
+  - El propio `<h1>` y el `.me-prose` (descripción/`student_text`) se pintan como una
+    sola pieza visual —mismo amarillo corporativo de acción/actividad que los callouts
+    `::: warn`/`reflect`/`case` (`--me-warn`, `#F4C910`), bordes que se tocan sin hueco
+    entre ambos—; el recurso visual (imagen/vídeo), si lo hay, queda **fuera** de la
+    tarjeta.
+
+  Es una señal a nivel de **pantalla**, no de interacción: `header()` en
+  `interactions.js` (enunciado/`instructions` de la interacción en sí) no cambia, ver
+  `interacciones.md`.
 - **Miga «Módulo › Unidad»**: rótulo `.me-crumb` sobre el título de cada pantalla con el
   módulo y la unidad a los que pertenece (uppercase pequeño en `--me-muted`, como los
   rótulos del menú), para que el alumno se ubique aunque el menú lateral esté plegado o

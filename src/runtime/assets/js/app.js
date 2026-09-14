@@ -171,6 +171,15 @@
     return (COURSE.bibliography_title || '').trim() || 'Recursos y bibliografía';
   }
 
+  // Etiqueta de una pantalla en el menú lateral: mismo criterio y prefijo
+  // «Actividad: » que el título de la propia diapositiva (renderer.js, .me-screen-scored)
+  // cuando su interacción puntúa y las actividades cuentan para la nota.
+  function menuScreenLabel(sc) {
+    var showScored = (COURSE.scorm.rules || {}).score_source !== 'final_test';
+    var scored = showScored && sc.interaction && sc.interaction.scored;
+    return (scored ? 'Actividad: ' : '') + (sc.title || sc.type);
+  }
+
   function buildMenu() {
     var nav = document.getElementById('me-menu');
     var html = '';
@@ -183,7 +192,7 @@
       if (mCount) {
         html += '<div class="me-menu-unit me-menu-modscreens" data-start="' + idx + '" data-count="' + mCount + '"><ul>';
         (m.screens || []).forEach(function (sc) {
-          html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(sc.title || sc.type) +
+          html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(menuScreenLabel(sc)) +
             '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
           idx++;
         });
@@ -198,7 +207,7 @@
           '<span class="me-menu-count"></span></p>' +
           '<div class="me-menu-uprog" aria-hidden="true"><div class="me-menu-uprog-fill"></div></div><ul>';
         (u.screens || []).forEach(function (sc) {
-          html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(sc.title || sc.type) +
+          html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(menuScreenLabel(sc)) +
             '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
           idx++;
         });
@@ -215,7 +224,7 @@
       html += '<div class="me-menu-final"><p class="me-menu-mtitle">Evaluación</p><ul>';
       for (var k = idx; k < SCREENS.length; k++) {
         html += '<li><button class="me-menu-link" data-idx="' + k + '">' +
-          esc(SCREENS[k].screen.title) + '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
+          esc(menuScreenLabel(SCREENS[k].screen)) + '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
       }
       html += '</ul></div>';
     }

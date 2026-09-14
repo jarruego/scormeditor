@@ -99,7 +99,9 @@ ese contrato; no conoce el tipo concreto.
   `top`. Editable en `ScreenEditor`.
 - No hay coletilla `TYPE_LABELS` («Actividad/Interactivo») encabezando cada interacción
   (decisión del autor): la instrucción de cada ejercicio ya la da su
-  `prompt`/`instructions`.
+  `prompt`/`instructions`. La diferenciación visual de una pantalla evaluable (tarjeta
+  amarilla en título+descripción, etiqueta «Evaluable») vive un nivel por encima, en el
+  renderer de pantalla — ver `arquitectura-runtime.md`.
 
 ## Notas por tipo
 

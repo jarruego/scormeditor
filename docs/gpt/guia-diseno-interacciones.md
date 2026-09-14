@@ -192,10 +192,10 @@ poder diseñar apoyos realmente pers…"`, `title = "- Religión"`).
   ajuste"`); el orden ya lo da la secuencia de pantallas.
 - **Nunca titules una interacción `"Checkpoint"`, `"Checkpoint de…"`, `"Actividad"` ni
   similar.** El `title` de una pantalla con interacción es **el del tema que se trabaja**
-  (`"Áreas clave"`, `"Formatos de recogida"`), igual que una de contenido. La app añade
-  **automáticamente** una etiqueta con el tipo de ejercicio (Actividad/Interactivo:
-  «Elige la opción correcta», «Ordena los pasos»…), así que **no** hace falta anunciarlo
-  en el título.
+  (`"Áreas clave"`, `"Formatos de recogida"`), igual que una de contenido. La app antepone
+  **automáticamente** `"Actividad: "` al título en la Vista estudiante cuando la
+  interacción puntúa (además de colorear la pantalla), así que **no** hace falta
+  anunciarlo en el `title` que generas.
 
 ### Imágenes: máximo UNA por pantalla, siempre como `visual_resource`
 - **NUNCA incrustes imágenes con `![alt](ruta)` dentro de `student_text`**: esa

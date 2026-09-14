@@ -20,6 +20,15 @@
   en Resultados.
 
 ## Menú lateral
+- **Prefijo «Actividad: » en las pantallas evaluables**: `menuScreenLabel(sc)` (app.js,
+  usada por `buildMenu()` en los tres bucles que generan `.me-menu-link`: pantallas de
+  módulo, de unidad y sintéticas finales) antepone `"Actividad: "` al rótulo del
+  índice con el mismo criterio que la tarjeta amarilla del título de la propia
+  diapositiva (`interaction.scored` + `score_source !== 'final_test'`, ver
+  `arquitectura-runtime.md`) — misma señal, dos sitios, un solo criterio para no
+  desincronizarlos. Sin icono aquí (el índice ya es texto plano); el «Test final»
+  agrupado bajo `.me-menu-final` no lo lleva (no es una `interaction` suya, es todo el
+  test).
 - **Bloques diferenciados**: cada tema/unidad (`.me-menu-unit`) lleva un fondo sutil
   (`color-mix` sobre `--me-bg`) y esquinas redondeadas — minimalista, sin bordes duros
   ni sombras. Materiales (`.me-menu-materials`) y Evaluación (`.me-menu-final`, ver

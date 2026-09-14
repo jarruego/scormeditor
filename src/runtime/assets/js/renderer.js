@@ -240,11 +240,11 @@
   function render(container, screen, ctx) {
     var tpl = templates[screen.type] || templates.content;
     var html = tpl(screen);
-    // Etiqueta «Evaluable» en la esquina superior derecha de la tarjeta cuando
-    // la pantalla tiene una interacción que puntúa (interaction.scored) y las
+    // Pantalla evaluable: la interacción puntúa (interaction.scored) y las
     // actividades cuentan para la nota (ctx.showScoredBadge, según score_source).
-    var badge = ctx && ctx.showScoredBadge && screen.interaction && screen.interaction.scored
-      ? '<span class="me-scored-badge">Evaluable</span>' : '';
+    // Señal: título+descripción en tarjeta amarilla (clase .me-screen-scored, ver
+    // styles.css) con la etiqueta «Evaluable» dentro del título — ver más abajo.
+    var isScored = !!(ctx && ctx.showScoredBadge && screen.interaction && screen.interaction.scored);
     // Miga de ubicación «Módulo › Unidad» sobre el título, para que el alumno
     // sepa siempre dónde está aunque el menú lateral esté plegado (o en móvil).
     // No se pinta en la portada (hero) ni si módulo y unidad repiten título.
@@ -258,9 +258,26 @@
           cparts.join('<span class="me-crumb-sep" aria-hidden="true">›</span>') + '</p>';
       }
     }
-    container.innerHTML = '<article class="me-screen me-screen-' + esc(screen.type) + '">' +
-      badge + crumb + narrationBlock(screen) + html +
+    container.innerHTML = '<article class="me-screen me-screen-' + esc(screen.type) +
+      (isScored ? ' me-screen-scored' : '') + '">' +
+      crumb + narrationBlock(screen) + html +
       (screen.interaction ? '<section class="me-interaction" aria-label="Actividad"></section>' : '') + '</article>';
+
+    // Icono + «Actividad: » delante del título de la pantalla evaluable, y la
+    // etiqueta «Evaluable» dentro de la misma tarjeta amarilla (antes flotaba
+    // sobre toda la pantalla): el GPT sigue generando el título del tema tal
+    // cual (ver guia-diseno-interacciones.md), la app compone esto en la Vista
+    // estudiante (y por tanto en el export, misma fuente — ver CLAUDE.md), sin
+    // tocar `screen.title` en course.json.
+    if (isScored) {
+      var titleH1 = container.querySelector('.me-screen > h1');
+      if (titleH1) {
+        var icon = global.MEIcons ? global.MEIcons.svg('edit-3') : '';
+        titleH1.innerHTML =
+          '<span class="me-h1-text"><span class="me-scored-prefix">' + icon + 'Actividad: </span>' +
+          titleH1.innerHTML + '</span><span class="me-scored-badge">Evaluable</span>';
+      }
+    }
 
     var controller = null;
     if (screen.interaction) {

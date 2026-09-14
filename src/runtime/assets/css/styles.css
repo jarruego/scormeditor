@@ -143,7 +143,7 @@ body {
 /* Tarjeta de pantalla: elevación con sombra suave + filo superior de acento.
    Entra con un fade+slide sutil en cada navegación (el nodo se recrea). */
 .me-screen {
-  position: relative; /* ancla de la etiqueta «Evaluable» (.me-scored-badge) */
+  position: relative;
   /* La tarjeta ocupa TODO el alto disponible del área de contenido (crece por
      flex, nunca encoge: con contenido largo simplemente hay scroll). El
      min-height es la red de seguridad si el navegador deja el área muy baja. */
@@ -159,14 +159,14 @@ body {
   box-shadow: var(--me-shadow-1);
   animation: me-screen-in calc(var(--me-anim-dur, .22s) * var(--me-speed, 1)) ease-out;
 }
-/* Etiqueta «Evaluable»: píldora discreta en la esquina superior derecha de la
-   tarjeta cuando la pantalla puntúa (interaction.scored). Azul de acción, no
-   turquesa, para que no se funda con el filo superior de la tarjeta. */
+/* Etiqueta «Evaluable»: píldora dentro de la tarjeta amarilla del título (no ya
+   flotando sobre toda la pantalla), alineada al lado opuesto del título. Azul
+   de acción para que no se funda con el amarillo de la tarjeta. */
 .me-scored-badge {
-  position: absolute; top: .65rem; right: .75rem;
+  flex: 0 0 auto; align-self: flex-start;
   font-size: .72rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase;
   padding: .18rem .6rem; border-radius: 99px;
-  background: color-mix(in srgb, var(--me-primary) 10%, white);
+  background: color-mix(in srgb, var(--me-primary) 12%, white);
   color: var(--me-primary);
 }
 @keyframes me-screen-in {
@@ -174,15 +174,39 @@ body {
   to { opacity: 1; transform: none; }
 }
 /* Miga de ubicación «Módulo › Unidad» sobre el título de la pantalla. Discreta
-   (uppercase pequeño en gris atenuado, como los rótulos del menú lateral); el
-   padding-right reserva sitio para la píldora «Evaluable», que es absoluta. */
+   (uppercase pequeño en gris atenuado, como los rótulos del menú lateral). */
 .me-crumb {
-  margin: -.4rem 0 .9rem; padding-right: 7rem;
+  margin: -.4rem 0 .9rem;
   font-size: .72rem; font-weight: 600; letter-spacing: .06em;
   text-transform: uppercase; color: var(--me-muted);
 }
 .me-crumb-sep { margin: 0 .45em; opacity: .55; }
 .me-screen h1 { margin: 0 0 .9rem; font-size: 1.9rem; font-weight: 800; letter-spacing: -.015em; line-height: 1.2; }
+/* Pantalla evaluable (.me-screen-scored, ver renderer.js): título y descripción en
+   una tarjeta amarilla — mismo amarillo corporativo de acción/actividad que los
+   callouts ::: warn/reflect/case. Solo título+texto: el recurso visual (imagen/
+   vídeo), si lo hay, queda fuera de la tarjeta. */
+.me-screen-scored > h1 {
+  display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap;
+  gap: .6rem;
+  background: color-mix(in srgb, var(--me-warn, #F4C910) 20%, white);
+  border: 1px solid color-mix(in srgb, var(--me-warn, #F4C910) 45%, white);
+  border-bottom: none; border-radius: var(--me-radius) var(--me-radius) 0 0;
+  margin: 0; padding: .9rem 1.1rem .5rem;
+}
+.me-h1-text { flex: 1 1 auto; min-width: 0; }
+.me-scored-prefix .me-ico {
+  display: inline-block; width: .68em; height: .68em; margin-right: .2em;
+  vertical-align: -.05em;
+}
+.me-screen-scored .me-prose {
+  background: color-mix(in srgb, var(--me-warn, #F4C910) 20%, white);
+  border: 1px solid color-mix(in srgb, var(--me-warn, #F4C910) 45%, white);
+  border-top: none; border-radius: 0 0 var(--me-radius) var(--me-radius);
+  margin: 0 0 1.5rem; padding: .5rem 1.1rem .9rem;
+}
+.me-screen-scored .me-prose > :first-child { margin-top: 0; }
+.me-screen-scored .me-prose > :last-child { margin-bottom: 0; }
 /* Portada (cover): tratamiento hero — título grande centrado sobre una banda
    degradada del acento corporativo. Primera impresión del curso/unidad. */
 .me-cover { text-align: center; padding: clamp(1.5rem, 5vw, 3rem) 1.5rem; border-radius: 10px;
