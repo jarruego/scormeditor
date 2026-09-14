@@ -226,6 +226,19 @@ export const Screen = z.object({
   status: z
     .enum(['ok', 'esqueleto_pendiente_desarrollo', 'borrador'])
     .default('ok'),
+  /** Marca de revisión pendiente: distinta de `status` (que es sobre el estado del
+   *  CONTENIDO) — esta es un aviso editorial de que alguien debe repasar la pantalla,
+   *  independiente de si el contenido ya está terminado. Una pantalla marcada:
+   *  - se destaca en Vista estudiante con borde rojo + nota (excepción deliberada a la
+   *    invariante «Vista estudiante = export», ver CLAUDE.md);
+   *  - **no se incluye en el paquete SCORM exportado** (`stripFlaggedForReview` en
+   *    `schema/review.ts`) — por eso solo se ve en el visor, nunca en el ZIP real. */
+  review: z
+    .object({
+      flagged: z.boolean().default(false),
+      note: z.string().default(''),
+    })
+    .default({}),
 })
 export type Screen = z.infer<typeof Screen>
 /** Forma de entrada del esquema: los campos con default son opcionales (presets/recetas). */

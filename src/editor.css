@@ -129,7 +129,12 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
 /* Introducción del paquete SCORM: pantallas sueltas antes de cualquier módulo — mismo
    tratamiento de tarjeta que un módulo, sin renombrado (no hay título que
    editar) ni controles de mover/borrar (contenedor único, siempre el primero). */
-.ed-intro-hint { margin: 0 0 .4rem; }
+/* Módulos plegables: mismo lenguaje visual que las unidades (chevron, oculta el
+   marcador nativo de <summary>) — colapsados por defecto (useTreeFold). */
+details.ed-tree-module > summary.ed-module-title { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; cursor: pointer; user-select: none; list-style: none; }
+details.ed-tree-module > summary.ed-module-title::-webkit-details-marker { display: none; }
+details.ed-tree-module > summary .ed-module-name::before { content: ''; display: inline-block; width: 7px; height: 7px; margin: 0 .45rem .1rem 0; border-right: 1.8px solid var(--c-muted); border-bottom: 1.8px solid var(--c-muted); transform: rotate(-45deg); transition: transform .15s ease; }
+details.ed-tree-module[open] > summary .ed-module-name::before { transform: rotate(45deg); }
 /* Unidades plegables */
 details.ed-tree-unit { margin: .25rem 0 .5rem; }
 details.ed-tree-unit > summary.ed-unit-title { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; font-weight: 600; margin: .5rem 0 .25rem; cursor: pointer; user-select: none; list-style: none; }
@@ -199,6 +204,7 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(4
 .ed-screen-type { font-size: .7rem; color: var(--c-muted); }
 .ed-screen-title { font-size: .9rem; }
 .ed-flag { color: #d09a00; }
+.ed-flag-review { color: #b3261e; }
 .ed-screen-actions { display: inline-flex; gap: .05rem; }
 .ed-add { width: 100%; margin: .35rem 0 .75rem; border-style: dashed; color: var(--c-muted); }
 /* Estructura desde el árbol (plan UX fase 7): mover/eliminar módulo y unidad */
@@ -267,6 +273,14 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(4
 .ed-grow { flex: 1; min-width: 140px; }
 .ed-check { display: flex; gap: .4rem; align-items: center; }
 .ed-check input { width: auto; }
+
+/* Revisión pendiente (ScreenEditor, al final del formulario): igual que la
+   pantalla marcada en Vista estudiante, en rojo — ver arquitectura-runtime.md. */
+.ed-review-toggle { display: inline-flex; gap: .4rem; align-items: center; cursor: pointer; color: var(--c-muted); }
+.ed-review-toggle input { width: auto; }
+.ed-review-toggle.is-on { color: #b3261e; font-weight: 600; }
+.ed-review-box { margin-top: .5rem; display: grid; gap: .4rem; }
+.ed-review-note { width: 100%; resize: vertical; }
 .ed-group { border: 1px solid var(--c-border); border-radius: 8px; padding: .75rem; display: grid; gap: .6rem; }
 .ed-group legend { font-weight: 600; padding: 0 .35rem; }
 /* Secciones plegables del editor de pantalla (colapsadas por defecto).

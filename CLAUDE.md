@@ -16,6 +16,12 @@ El editor carga la carcasa con `import.meta.glob('../runtime/**', { query:'?raw'
 como el **export ZIP** consumen esos mismos strings. → **Lo que se ve en Vista estudiante
 es exactamente lo que se exporta.** Para cambiar el comportamiento del SCORM se editan los
 `.js`/`.css` de `src/runtime/`, no hay que duplicar nada.
+**Única excepción, deliberada**: las pantallas marcadas «pendiente de revisión»
+(`screen.review.flagged`) se ven en Vista estudiante (borde rojo + nota) pero
+`stripFlaggedForReview` (`src/schema/review.ts`) las quita del `course.json` antes de
+generar cualquier paquete exportado (SCORM y `.elpx`) — es la propia carcasa (mismos
+`.js`/`.css`, sin ramas por entorno) la que recibe menos datos en el export, no un
+comportamiento distinto del runtime (ver `arquitectura-runtime.md`).
 
 ### Invariante de seguridad (anti-XSS en la carcasa)
 El runtime **escapa siempre** el texto del usuario y luego aplica un subconjunto

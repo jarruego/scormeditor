@@ -14,6 +14,19 @@
   lista de ese mismo glob).
 - La app se llamó MecoSCORM; no deben quedar referencias a «mecoscorm» en el código.
 
+### Excepción deliberada: pantallas «pendiente de revisión»
+`screen.review.flagged` (+ `review.note`) es la única excepción hoy a «Vista estudiante
+= export» (ver CLAUDE.md). No es una rama de comportamiento del runtime — es el mismo
+`.js`/`.css` en los dos sitios — sino que el export recibe **menos datos**:
+`stripFlaggedForReview` (`src/schema/review.ts`) quita esas pantallas de `course.json`
+antes de `buildScormZip`/`buildElpx` (y antes de `collectAssetPaths`, así sus assets
+exclusivos tampoco se empaquetan). Como el `course.json` real nunca las contiene, la
+carcasa exportada no necesita saber nada de `review`: el aviso visual
+(`.me-screen-review` borde rojo grueso + `.me-review-banner` con la nota, `render()` en
+`renderer.js`) solo se ejerce en la práctica dentro de Vista estudiante, sin `if` de
+entorno en el runtime. Detalle de la UI de marcado en `editor-pantallas.md` («Revisión
+pendiente»).
+
 ## Manifiesto y metadatos SCORM
 - **La lista de `<file>` del manifiesto se deriva de `getRuntimeFiles()`** (el mismo glob
   que alimenta el ZIP) + `data/course.json` + `imslrm.xml` + los assets referenciados:

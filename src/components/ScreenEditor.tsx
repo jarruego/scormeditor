@@ -646,6 +646,28 @@ export function ScreenEditor() {
         </div>
       )}
 
+      <fieldset className="ed-group ed-review-group">
+        <legend>Revisión</legend>
+        <label className={`ed-review-toggle${screen.review.flagged ? ' is-on' : ''}`}
+          title="No se incluye en el paquete SCORM exportado mientras esté marcada">
+          <input type="checkbox" checked={screen.review.flagged}
+            onChange={(e) => patch({ review: { ...screen.review, flagged: e.target.checked } })} />
+          <Icon name="alert-triangle" size={13} /> Pendiente de revisión
+        </label>
+        {screen.review.flagged && (
+          <div className="ed-review-box">
+            <textarea className="ed-review-note" rows={2} placeholder="Nota para quien revise (opcional)…"
+              aria-label="Nota de revisión"
+              value={screen.review.note}
+              onChange={(e) => patch({ review: { ...screen.review, note: e.target.value } })} />
+            <p className="ed-hint">
+              Se ve en Vista estudiante con borde rojo, pero <strong>no se incluye en el paquete SCORM
+              exportado</strong> mientras esté marcada.
+            </p>
+          </div>
+        )}
+      </fieldset>
+
       {typePicker && (
         <InteractionTypeModal
           current={typePicker === 'change' ? it?.type : undefined}

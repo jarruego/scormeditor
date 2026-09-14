@@ -95,7 +95,12 @@ function IssueBadge({ info }: { info?: ScreenIssues }) {
   )
 }
 
-function ScreenItem({ screen, containerId, issues }: { screen: Screen; containerId: string; issues?: ScreenIssues }) {
+/** `index`/`count`: posición real (sin filtrar) en su contenedor, para los
+ *  botones Subir/Bajar — `undefined` con el filtro activo (los índices de la
+ *  lista filtrada no se corresponden con el contenedor), que los oculta. */
+function ScreenItem({ screen, containerId, issues, index, count }: {
+  screen: Screen; containerId: string; issues?: ScreenIssues; index?: number; count?: number
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: screen.id,
     data: { containerId },
@@ -104,8 +109,10 @@ function ScreenItem({ screen, containerId, issues }: { screen: Screen; container
   const select = useCourseStore((s) => s.selectScreen)
   const duplicate = useCourseStore((s) => s.duplicateScreen)
   const remove = useCourseStore((s) => s.deleteScreen)
+  const moveScreen = useCourseStore((s) => s.moveScreen)
   const moduleLabel = useCourseStore((s) => s.course.module_label)
   const unitLabel = useCourseStore((s) => s.course.unit_label)
+  const canMove = index != null && count != null
 
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
   const flagged = screen.type === 'content_placeholder' || screen.status === 'esqueleto_pendiente_desarrollo'
@@ -139,9 +146,28 @@ function ScreenItem({ screen, containerId, issues }: { screen: Screen; container
         </span>
         <span className="ed-screen-title">{screen.title || '(sin título)'}</span>
         {flagged && <span className="ed-flag" title="Pendiente de desarrollo"><Icon name="alert-triangle" size={13} /></span>}
+        {screen.review.flagged && (
+          <span className="ed-flag ed-flag-review" title="Pendiente de revisión: no se exporta en el paquete SCORM">
+            <Icon name="alert-octagon" size={13} />
+          </span>
+        )}
       </button>
       <IssueBadge info={issues} />
       <span className="ed-screen-actions">
+        {canMove && (
+          <>
+            <button className="ed-icobtn" title="Subir" aria-label="Subir"
+              disabled={index === 0}
+              onClick={() => moveScreen(screen.id, containerId, index! - 1)}>
+              <Icon name="arrow-up" size={14} />
+            </button>
+            <button className="ed-icobtn" title="Bajar" aria-label="Bajar"
+              disabled={index === count! - 1}
+              onClick={() => moveScreen(screen.id, containerId, index! + 1)}>
+              <Icon name="arrow-down" size={14} />
+            </button>
+          </>
+        )}
         <button className="ed-icobtn" onClick={() => duplicate(screen.id)} title="Duplicar" aria-label="Duplicar">
           <Icon name="copy" size={14} />
         </button>
@@ -264,6 +290,15 @@ export function CourseTree() {
     }
     removeModule(m.id)
   }
+  async function onPromoteUnit(u: { id: string; title: string }) {
+    const ok = await confirmDialog({
+      title: `Subir de nivel`,
+      message: `«${u.title || '(sin título)'}» pasará de ${unitLabel} a ${moduleLabel}, con sus pantallas como hijas directas del nuevo ${moduleLabel} (sin ${unitLabel} intermedia). Puedes deshacerlo con Ctrl+Z. ¿Continuar?`,
+      confirmLabel: 'Convertir',
+      danger: true,
+    })
+    if (ok) promoteUnit(u.id)
+  }
 
   // Issues de validación por pantalla (badges ⛔/⚠ en el árbol).
   const issuesByScreen = useMemo(() => {
@@ -313,13 +348,6 @@ export function CourseTree() {
           <p className="ed-module-title">
             <span className="ed-intro-title-text">Introducción del paquete SCORM</span>
           </p>
-          {!q && (
-            <p className="ed-hint ed-intro-hint">
-              Pantallas sueltas antes de cualquier módulo (portada, bienvenida, objetivos
-              generales…). No aparecen en el menú lateral del alumno: se navegan solo con
-              Anterior/Siguiente.
-            </p>
-          )}
           {(() => {
             const visible = course.intro_screens.filter(matches)
             if (q && visible.length === 0) return null
@@ -329,7 +357,8 @@ export function CourseTree() {
                   {visible.map((s, i) => (
                     <Fragment key={s.id}>
                       {!q && <InsertPoint containerId={INTRO_CONTAINER_ID} index={i} />}
-                      <ScreenItem screen={s} containerId={INTRO_CONTAINER_ID} issues={issuesByScreen.get(s.id)} />
+                      <ScreenItem screen={s} containerId={INTRO_CONTAINER_ID} issues={issuesByScreen.get(s.id)}
+                        index={q ? undefined : i} count={q ? undefined : course.intro_screens.length} />
                     </Fragment>
                   ))}
                 </ul>
@@ -341,10 +370,14 @@ export function CourseTree() {
           )}
         </div>
         {course.modules.map((m, mi) => (
-          <div key={m.id} className="ed-module">
-            <p className="ed-module-title">
-              <InlineRename value={m.title} title={`Renombrar ${moduleLabel}`}
-                onChange={(title) => updateModule(m.id, { title })} />
+          <details key={`${m.id}-${q ? 'f' : 'n'}`} className="ed-module ed-tree-module"
+            open={q ? true : collapsed[m.id] === false}
+            onToggle={(e) => { if (!q) setCollapsed(m.id, !e.currentTarget.open) }}>
+            <summary className="ed-module-title">
+              <span className="ed-module-name">
+                <InlineRename value={m.title} title={`Renombrar ${moduleLabel}`}
+                  onChange={(title) => updateModule(m.id, { title })} />
+              </span>
               {!q && (
                 <span className="ed-struct-tools">
                   <button type="button" className="ed-struct-btn" title={`Subir ${moduleLabel}`} aria-label={`Subir ${moduleLabel}`}
@@ -361,7 +394,7 @@ export function CourseTree() {
                   </button>
                 </span>
               )}
-            </p>
+            </summary>
             {/* Pantallas propias del módulo: siempre ANTES de sus unidades
                 (portada/presentación de módulo). Mismo tratamiento que las de
                 unidad: sortable, puntos de inserción y badge de validación. */}
@@ -374,7 +407,8 @@ export function CourseTree() {
                     {visible.map((s, i) => (
                       <Fragment key={s.id}>
                         {!q && <InsertPoint containerId={m.id} index={i} />}
-                        <ScreenItem screen={s} containerId={m.id} issues={issuesByScreen.get(s.id)} />
+                        <ScreenItem screen={s} containerId={m.id} issues={issuesByScreen.get(s.id)}
+                          index={q ? undefined : i} count={q ? undefined : m.screens.length} />
                       </Fragment>
                     ))}
                   </ul>
@@ -393,7 +427,7 @@ export function CourseTree() {
                 // filtro manda el estado plegado guardado, que sobrevive al
                 // cambio de pestaña (useTreeFold).
                 <details key={`${u.id}-${q ? 'f' : 'n'}`} className="ed-tree-unit"
-                  open={q ? true : !collapsed[u.id]}
+                  open={q ? true : collapsed[u.id] === false}
                   onToggle={(e) => { if (!q) setCollapsed(u.id, !e.currentTarget.open) }}>
                   <summary className="ed-unit-title">
                     <span className="ed-unit-name">
@@ -406,7 +440,7 @@ export function CourseTree() {
                         <button type="button" className="ed-struct-btn"
                           title={`Subir de nivel: convertir en ${moduleLabel} propio`}
                           aria-label={`Subir de nivel: convertir esta ${unitLabel} en un ${moduleLabel} propio`}
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); promoteUnit(u.id) }}>
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onPromoteUnit(u) }}>
                           <Icon name="arrow-left" size={12} /></button>
                         {/* Desde el extremo del módulo, subir/bajar cruza al módulo adyacente */}
                         <button type="button" className="ed-struct-btn"
@@ -434,7 +468,8 @@ export function CourseTree() {
                         <Fragment key={s.id}>
                           {/* Con filtro activo los índices no se corresponden con la unidad → sin puntos de inserción */}
                           {!q && <InsertPoint containerId={u.id} index={i} />}
-                          <ScreenItem screen={s} containerId={u.id} issues={issuesByScreen.get(s.id)} />
+                          <ScreenItem screen={s} containerId={u.id} issues={issuesByScreen.get(s.id)}
+                            index={q ? undefined : i} count={q ? undefined : u.screens.length} />
                         </Fragment>
                       ))}
                     </ul>
@@ -446,7 +481,7 @@ export function CourseTree() {
             {!q && (
               <button className="ed-add" onClick={() => addUnit(m.id)}><Icon name="plus" size={13} /> Añadir {unitLabel}</button>
             )}
-          </div>
+          </details>
         ))}
       </DndContext>
 

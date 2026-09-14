@@ -17,11 +17,10 @@ pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla
   mover/eliminar el propio bloque (contenedor único, siempre el primero; las pantallas de
   dentro sí se reordenan/eliminan como cualquier otra). Contenedor con id reservado
   `INTRO_CONTAINER_ID` (`src/schema/traverse.ts`) para `addScreen`/`moveScreen`/
-  `AddScreenModal` — nunca coincide con un id real de módulo/unidad. **Diferencia clave
-  con `module.screens`: no aparece en el menú lateral del alumno** (`buildMenu()` en
-  app.js las cuenta para el índice de `SCREENS` pero no genera `<li>` para ellas) — se
-  navegan solo con Anterior/Siguiente, como un preámbulo. Para todo lo demás (progreso,
-  finalización, validación) cuentan como cualquier pantalla.
+  `AddScreenModal` — nunca coincide con un id real de módulo/unidad. Aparecen también
+  en el menú lateral del alumno, sueltas y primero (`buildMenu()` en app.js, bloque
+  `.me-menu-intro` sin rótulo de módulo — ver `carcasa-navegacion.md`); para todo lo
+  demás (progreso, finalización, validación) cuentan como cualquier pantalla.
 - **Pantallas propias del módulo** (`module.screens`, portada/presentación del bloque):
   van **siempre antes de las unidades** del módulo — decisión deliberada: intercalarlas
   entre unidades complicaría el orden lineal y el menú para un caso de uso dudoso. En el
@@ -35,20 +34,33 @@ pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla
   de una unidad, de un módulo o `INTRO_CONTAINER_ID`; `Located.mi === 'intro'` señala
   pantalla de introducción (`Located.ui === null` sigue señalando pantalla de módulo).
 
-- **Unidades plegables**: cada unidad es un `<details className="ed-tree-unit">` con
-  chevron rotatorio y contador de pantallas (con filtro activo, «visibles/total»). La
-  `key` incluye el estado del filtro para remontarse abierta al (des)activarlo. El estado
-  plegado/desplegado se guarda por unidad en `useTreeFold` (store zustand de UI local a
-  `CourseTree.tsx`): así sobrevive al cambio de pestaña (App desmonta el aside fuera de
-  la pestaña Editor). No entra en el historial de deshacer ni en el proyecto; con filtro
-  activo la unidad se fuerza abierta sin tocar lo guardado.
-- **Filtro** (`.ed-tree-filter`): por título o etiqueta de tipo; oculta unidades sin
-  coincidencias y las secciones Evaluación/añadir mientras está activo. El dnd sigue
+- **Módulos y unidades plegables, colapsados por defecto**: ambos son `<details>`
+  (`ed-tree-module`/`ed-tree-unit`) con chevron rotatorio (`::before` en
+  `.ed-module-name`/`.ed-unit-name`) y, la unidad, contador de pantallas (con filtro
+  activo, «visibles/total»). La `key` incluye el estado del filtro para remontarse
+  abierto al (des)activarlo. El estado plegado/desplegado se guarda por id en
+  `useTreeFold` (store zustand de UI local a `CourseTree.tsx`, mapa `collapsed`): así
+  sobrevive al cambio de pestaña (App desmonta el aside fuera de la pestaña Editor). Sin
+  entrada en `collapsed` (nunca tocado) el `<details>` nace **cerrado** — el mapa
+  guarda «se ha abierto explícitamente» (`collapsed[id] === false`), no «está
+  plegado»: invertirlo (`open={collapsed[id] === false}` en vez de `open={!collapsed[id]}`)
+  fue lo que cambió el default de abierto a cerrado sin tocar `onToggle`. No entra en el
+  historial de deshacer ni en el proyecto; con filtro activo se fuerza abierto sin tocar
+  lo guardado.
+- **Filtro** (`.ed-tree-filter`): por título o etiqueta de tipo; oculta módulos/unidades
+  sin coincidencias y las secciones Evaluación/añadir mientras está activo. El dnd sigue
   funcionando (mueve por id, no por índice visible).
+- **Pantallas también con Subir/Bajar** (`ScreenItem`, además del arrastre dnd-kit):
+  botones que llaman a `moveScreen(id, containerId, index±1)` — mismo contenedor, sin
+  cruzar a uno adyacente (a diferencia de `moveUnit`/`moveModule`). Reciben `index`/
+  `count` **reales** (sin filtrar) del contenedor; con el filtro activo llegan
+  `undefined` y los botones no se muestran (los índices de la lista filtrada no se
+  corresponden con el contenedor).
 - **Iconos por tipo** en cada pantalla (`screenTypeIcon` en `labels.ts`) + marca de
   interacción: muestra el **icono del tipo de interacción real** (con su color y
   `title`), no un puzzle genérico; si `interaction.scored`, marca «⭐ evaluable»
-  (`.ed-eval`, en ámbar).
+  (`.ed-eval`, en ámbar); si `screen.review.flagged`, marca aparte en rojo
+  (`.ed-flag-review`, ver «Revisión pendiente» más abajo).
 - **Validación en contexto**: el árbol calcula `validateCourse` (memoizado por curso) y
   muestra badge ⛔/⚠ por pantalla (`IssueBadge`); el `ScreenEditor` muestra la lista de
   issues de la pantalla abierta (`.ed-inline-issues`) encima del formulario. Los `info`
@@ -192,6 +204,11 @@ propias del módulo (`module.screens`), como hijas suyas, sin nivel intermedio. 
 - **Sin operación inversa** (demote módulo→unidad): un módulo puede tener pantallas
   propias y varias unidades a la vez, así que no hay una unidad única e inequívoca a la
   que "bajarlo" — no se ha pedido y no está claro qué haría con lo demás.
+- **Confirmación previa** (`onPromoteUnit`, `confirmDialog`): describe el cambio
+  (unidad→módulo, pantallas como hijas directas) antes de aplicarlo. El mensaje dice
+  «puedes deshacerlo con Ctrl+Z» (no «es irreversible»): como cualquier cambio del
+  store pasa por `snapshot()`, sí es deshacible — la confirmación es por ser un cambio
+  estructural notable, no porque no tenga vuelta atrás.
 
 ## `ScreenEditor`: layout y jerarquía
 El formulario (`.ed-form`) tiene **ancho máximo legible de 960 px, centrado** (al 100 %
@@ -215,6 +232,31 @@ imagen/vídeo-archivo/audio se resuelven a object URL desde `assets` (hook
 `useObjectUrl`, que libera con `revokeObjectURL`); YouTube se incrusta por ID
 (`/embed/`) con la proporción elegida. Si la ruta aún no tiene binario subido, muestra
 un aviso en vez de romper.
+
+## Revisión pendiente (`screen.review`)
+Fieldset «Revisión» **al final del formulario**, tras Avanzado — deliberado: es un
+aviso editorial ocasional, no algo que se toque a diario como el título o el texto; no
+debe competir por atención con lo primario. Checkbox `Pendiente de revisión`
+(`.ed-review-toggle`) + `<textarea>` de nota opcional, solo visible cuando está marcada.
+Sin marcar por defecto (`review: { flagged: false, note: '' }`, default del esquema).
+
+- **Distinto de `status`**: `status` (`ok`/`esqueleto_pendiente_desarrollo`/`borrador`)
+  describe el **contenido**; `review.flagged` es un aviso de que alguien debe **repasarlo**,
+  independiente de si el contenido está terminado — se pueden combinar.
+- **Badge en el árbol**: `.ed-flag-review` (rojo, icono `alert-octagon`) junto al de
+  «pendiente de desarrollo» (`.ed-flag`, ámbar) en `ScreenItem` — distinguibles por color
+  e icono, no se confunden aunque coincidan en la misma pantalla.
+- **Excepción deliberada a «Vista estudiante = export»** (ver `CLAUDE.md`): la pantalla
+  se ve en Vista estudiante con borde rojo grueso (`.me-screen-review`) y un banner
+  arriba con la nota (`.me-review-banner`, `render()` en `renderer.js`) — pero
+  `stripFlaggedForReview` (`src/schema/review.ts`) la quita de `course.json` **antes**
+  de generar cualquier paquete exportado (`buildScormZip` y `buildElpx`, antes incluso de
+  `collectAssetPaths`, así sus assets exclusivos tampoco viajan). Es la misma carcasa
+  (mismo `.js`/`.css`) la que recibe menos datos al exportar, no una rama de
+  comportamiento por entorno.
+- **Aviso de validación**: `REVIEW_PENDING` (warning, `checkGlobal` en `validators.ts`,
+  `countFlaggedForReview`) recuerda cuántas pantallas no se exportarán — para que no
+  sorprenda al exportar de verdad.
 
 ## Editor sensible al tipo (`screenTypeUI.ts`)
 El `ScreenEditor` adapta el formulario al tipo de pantalla según

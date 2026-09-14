@@ -15,6 +15,7 @@
  */
 import JSZip from 'jszip'
 import type { Course, Screen, Interaction } from '../../schema/course.schema'
+import { stripFlaggedForReview } from '../../schema/review'
 import type { AssetMap } from '../../export/exportScorm'
 import type { ConvertCtx, ExportSummary } from './types'
 import { odeId, pageId, nowStamp } from './ids'
@@ -64,7 +65,10 @@ export type ElpxExportResult = { blob: Blob; summary: ExportSummary; filename: s
 /**
  * Construye el `.elpx` en memoria y devuelve el Blob + un resumen de conversión.
  */
-export async function buildElpx(course: Course, assets: AssetMap = {}): Promise<ElpxExportResult> {
+export async function buildElpx(courseWithDrafts: Course, assets: AssetMap = {}): Promise<ElpxExportResult> {
+  // Igual que el export SCORM: las pantallas «pendiente de revisión» no salen
+  // en ningún paquete exportado (ver schema/review.ts).
+  const course = stripFlaggedForReview(courseWithDrafts)
   const stamp = nowStamp()
   const usedNames = new Set<string>()
   const toCopy = new Map<string, string>() // nombre en resources → clave en assets

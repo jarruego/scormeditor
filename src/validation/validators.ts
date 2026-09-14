@@ -2,6 +2,7 @@ import type { Course, QuizQuestion, Screen, Unit, UnitTest } from '../schema/cou
 import { allScreens, screenContainers } from '../schema/traverse'
 import { normalizeObjective } from './objectives'
 import { buildTranscript, itemsOf } from '../tts/buildTranscript'
+import { countFlaggedForReview } from '../schema/review'
 
 export type Severity = 'error' | 'warning' | 'info'
 
@@ -315,6 +316,13 @@ function checkIds(ctx: Ctx) {
 // --- Reglas SCORM / globales -------------------------------------------------
 function checkGlobal(ctx: Ctx) {
   const c = ctx.course
+  const flagged = countFlaggedForReview(c)
+  if (flagged > 0)
+    ctx.push({
+      code: 'REVIEW_PENDING', severity: 'warning',
+      message: `${flagged} pantalla${flagged === 1 ? '' : 's'} marcada${flagged === 1 ? '' : 's'} «pendiente de revisión»: no se incluirá${flagged === 1 ? '' : 'n'} en el paquete SCORM exportado.`,
+      location: 'Curso',
+    })
   if (c.glossary.length === 0)
     ctx.push({ code: 'GLOSSARY_EMPTY', severity: 'warning', message: 'Glosario vacío.', location: 'Curso' })
   if (c.bibliography.length === 0)

@@ -189,10 +189,20 @@
   function buildMenu() {
     var nav = document.getElementById('me-menu');
     var html = '';
-    // Las pantallas de introducción (COURSE.intro_screens) van primero en
-    // SCREENS (flatten()) pero no tienen entrada de índice: idx arranca
-    // después de ellas para que data-idx siga cuadrando con SCREENS.
-    var idx = (COURSE.intro_screens || []).length;
+    var idx = 0;
+    // Pantallas de introducción del paquete SCORM (COURSE.intro_screens): van
+    // primero en SCREENS (flatten()) y también primero en el menú, sueltas
+    // (sin agrupar bajo un título de módulo, porque no pertenecen a ninguno).
+    var introScreens = COURSE.intro_screens || [];
+    if (introScreens.length) {
+      html += '<div class="me-menu-module me-menu-intro"><ul>';
+      introScreens.forEach(function (sc) {
+        html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(menuScreenLabel(sc)) +
+          '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
+        idx++;
+      });
+      html += '</ul></div>';
+    }
     (COURSE.modules || []).forEach(function (m) {
       html += '<div class="me-menu-module"><p class="me-menu-mtitle">' + esc(m.title) + '</p>';
       // Pantallas propias del módulo: cuelgan del título del módulo, sin rótulo

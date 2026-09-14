@@ -259,6 +259,17 @@
     // Señal: título+descripción en tarjeta amarilla (clase .me-screen-scored, ver
     // styles.css) con la etiqueta «Evaluable» dentro del título — ver más abajo.
     var isScored = !!(ctx && ctx.showScoredBadge && screen.interaction && screen.interaction.scored);
+    // Pantalla marcada «pendiente de revisión» (screen.review.flagged): banner
+    // superior + borde rojo grueso. Excepción deliberada a la invariante
+    // «Vista estudiante = export» (ver CLAUDE.md) — estas pantallas nunca
+    // llegan al paquete SCORM real (stripFlaggedForReview en schema/review.ts),
+    // así que esto solo se ve aquí, en el visor del propio editor.
+    var reviewFlagged = !!(screen.review && screen.review.flagged);
+    var reviewBanner = reviewFlagged
+      ? '<div class="me-review-banner" role="note"><strong>⚠ Pendiente de revisión</strong>' +
+        (screen.review.note ? '<p>' + esc(screen.review.note) + '</p>' : '') +
+        '<p class="me-review-hint">No se incluirá en el paquete SCORM exportado.</p></div>'
+      : '';
     // Miga de ubicación «Módulo › Unidad» sobre el título, para que el alumno
     // sepa siempre dónde está aunque el menú lateral esté plegado (o en móvil).
     // No se pinta en la portada (hero) ni si módulo y unidad repiten título.
@@ -273,8 +284,8 @@
       }
     }
     container.innerHTML = '<article class="me-screen me-screen-' + esc(screen.type) +
-      (isScored ? ' me-screen-scored' : '') + '">' +
-      crumb + narrationBlock(screen) + html +
+      (isScored ? ' me-screen-scored' : '') + (reviewFlagged ? ' me-screen-review' : '') + '">' +
+      reviewBanner + crumb + narrationBlock(screen) + html +
       (screen.interaction ? '<section class="me-interaction" aria-label="Actividad"></section>' : '') + '</article>';
 
     // Icono + «Actividad: » delante del título de la pantalla evaluable, y la

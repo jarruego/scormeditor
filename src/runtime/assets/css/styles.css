@@ -158,6 +158,21 @@ body {
   box-shadow: var(--me-shadow-1);
   animation: me-screen-in calc(var(--me-anim-dur, .22s) * var(--me-speed, 1)) ease-out;
 }
+/* Pantalla marcada «pendiente de revisión» (screen.review.flagged, ver
+   renderer.js): borde rojo grueso en los cuatro lados — pisa el filo superior
+   de acento normal, que aquí no aplica — y banner de aviso arriba del todo.
+   Solo se ve en Vista estudiante: nunca llega al paquete SCORM exportado
+   (excepción deliberada a la invariante «Vista estudiante = export», ver
+   CLAUDE.md). */
+.me-screen-review { border: 4px solid var(--me-error); }
+.me-review-banner {
+  margin: -1.75rem -2rem 1.5rem; padding: .75rem 2rem;
+  background: color-mix(in srgb, var(--me-error) 12%, white);
+  border-bottom: 1px solid color-mix(in srgb, var(--me-error) 35%, white);
+  color: var(--me-error);
+}
+.me-review-banner p { margin: .3rem 0 0; color: var(--me-text); }
+.me-review-banner .me-review-hint { color: var(--me-muted); font-size: .85rem; }
 /* Etiqueta «Evaluable»: píldora dentro de la tarjeta amarilla del título (no ya
    flotando sobre toda la pantalla), alineada al lado opuesto del título. Azul
    de acción para que no se funda con el amarillo de la tarjeta. */

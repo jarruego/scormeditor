@@ -85,7 +85,11 @@ export const sampleCourse: Course = {
         "counts_for_completion": true
       },
       "editor_notes": [],
-      "status": "ok"
+      "status": "ok",
+      "review": {
+        "flagged": false,
+        "note": ""
+      }
     },
     {
       "id": "s001",
@@ -121,7 +125,11 @@ export const sampleCourse: Course = {
         "counts_for_completion": true
       },
       "editor_notes": [],
-      "status": "ok"
+      "status": "ok",
+      "review": {
+        "flagged": false,
+        "note": ""
+      }
     }
   ],
   "module_label": "Módulo",
@@ -165,7 +173,11 @@ export const sampleCourse: Course = {
             "counts_for_completion": false
           },
           "editor_notes": [],
-          "status": "ok"
+          "status": "ok",
+          "review": {
+            "flagged": false,
+            "note": ""
+          }
         }
       ],
       "units": [
@@ -208,7 +220,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": false
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s102",
@@ -244,7 +260,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s103",
@@ -280,7 +300,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s104",
@@ -316,7 +340,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s105",
@@ -409,7 +437,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s106",
@@ -474,7 +506,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s107",
@@ -510,7 +546,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s108",
@@ -546,7 +586,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s109",
@@ -610,7 +654,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s110",
@@ -646,7 +694,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             }
           ],
           "status": "ok"
@@ -729,7 +781,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s202",
@@ -797,7 +853,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s203",
@@ -861,7 +921,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s204",
@@ -937,7 +1001,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s205",
@@ -1011,7 +1079,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s206",
@@ -1071,7 +1143,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s207",
@@ -1159,7 +1235,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             }
           ],
           "status": "ok"
@@ -1243,7 +1323,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s302",
@@ -1311,7 +1395,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s303",
@@ -1370,7 +1458,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             }
           ],
           "status": "ok"
@@ -1461,7 +1553,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s402",
@@ -1545,7 +1641,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s403",
@@ -1630,7 +1730,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             }
           ],
           "status": "ok"
@@ -1705,7 +1809,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s502",
@@ -1773,7 +1881,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s503",
@@ -1849,7 +1961,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s504",
@@ -1937,7 +2053,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s505",
@@ -1995,7 +2115,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s506",
@@ -2059,7 +2183,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             },
             {
               "id": "s507",
@@ -2116,7 +2244,11 @@ export const sampleCourse: Course = {
                 "counts_for_completion": true
               },
               "editor_notes": [],
-              "status": "ok"
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             }
           ],
           "status": "ok"
