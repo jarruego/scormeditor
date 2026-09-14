@@ -49,10 +49,19 @@ pantallas de desarrollo compartirán el mismo `objective`.
     "show_progress": true,
     "language": "es"
   },
+  "intro_screens": [
+    {
+      "id": "s00",
+      "type": "cover",
+      "title": "Tema 1. Atención centrada en la persona",
+      "required": true,
+      "status": "ok"
+    }
+  ],
   "modules": [
     {
       "id": "m1",
-      "title": "Unidad 1 - Fundamentos de la atención centrada en la persona",
+      "title": "Fundamentos de la atención centrada en la persona",
       "units": [
         {
           "id": "u1",
@@ -310,6 +319,11 @@ pantallas de desarrollo compartirán el mismo `objective`.
 ```
 
 ## Notas de uso
+- **`intro_screens` (s00) es la portada de TODO el paquete**, separada del
+  módulo — por eso `modules[0].title` («Fundamentos de la atención centrada en
+  la persona») **no repite** el título del curso/tema («Tema 1. Atención
+  centrada en la persona»): esa presentación ya la hace la portada de
+  `intro_screens`. Dale al módulo su propio nombre descriptivo.
 - Una unidad real suele tener **más pantallas de desarrollo** e interacciones
   variadas: alterna las informativas (`accordion`/`tabs`/`flip_cards`/`timeline`) y
   **todo el repertorio evaluable** (`single_choice`, `true_false`, `fill_blanks`,

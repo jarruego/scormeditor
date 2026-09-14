@@ -22,6 +22,7 @@ contrato. Todo `id` debe ser único y estable.
   "course": { ... },
   "scorm": { ... },
   "shell": { ... },
+  "intro_screens": [ ... ],
   "modules": [ ... ],
   "assessments": { "unit_tests": [], "final_test": null },
   "glossary": [ ... ],
@@ -34,8 +35,15 @@ Reglas que NO se pueden romper:
 
 - `schema_version` debe ser **`"1.1.0"`**.
 - El contenido va en **`modules[].units[].screens[]`** (jerarquía de 3 niveles).
-  **No se admite un array `screens` en la raíz.** (Excepción acotada: un módulo
-  puede llevar `screens` propias de portada/presentación, ver §3.)
+  **No se admite un array `screens` en la raíz** — `intro_screens` es la única
+  excepción, y solo para la portada del paquete (ver más abajo y §3).
+- `intro_screens` (opcional, def. `[]`): pantallas sueltas **antes de cualquier
+  módulo**, sin pertenecer a ninguno — úsalo para la **portada de TODO el
+  paquete** (normalmente 1 pantalla `type: "cover"`, mismo formato de §4;
+  puesta aquí se presenta con el mismo peso visual que una portada de módulo,
+  pero sin rótulo de nivel). Esta portada es el sitio para presentar el
+  paquete completo — **no** repitas esa presentación como título de un módulo
+  (ver regla siguiente).
 - `quality_checklist` es un **objeto** `{"texto del criterio": true|false}`,
   **no** un array.
 - **IDs deterministas, nunca «inventados»**: numeración secuencial por orden de
@@ -126,7 +134,7 @@ Reglas que NO se pueden romper:
 "modules": [
   {
     "id": "m1",
-    "title": "Unidad 1 - ¿Qué es un Plan de Apoyos Integrado?",
+    "title": "Fundamentos del Plan de Apoyos Integrado",
     "screens": [ /* OPCIONAL: pantallas propias del módulo, ver abajo */ ],
     "units": [
       {
@@ -152,6 +160,28 @@ Reglas que NO se pueden romper:
   tipo que la portada de unidad: puesta aquí, en `modules[].screens`, se
   presenta sola con más peso visual); el contenido didáctico va en las
   unidades. Si no hace falta, **omite la clave**.
+- **El `title` de un módulo nunca repite el título del curso/SCORM**
+  (`course.title`/`scorm.title`): esa presentación ya va en la portada de
+  `intro_screens` (ver §1). Dale al módulo un nombre propio, específico de lo
+  que trata — no un duplicado del título general del paquete ni un genérico
+  «Módulo 1» si el documento fuente sugiere algo mejor.
+- **No inventes un nivel de envoltorio que el documento fuente no tiene.** El
+  paquete SCORM no siempre es «un curso con varios módulos» — puede
+  representar directamente un módulo, o incluso una sola unidad/tema con
+  varios sub-temas. Mapea la granularidad REAL del documento al nivel del
+  esquema que le corresponde, sin desperdiciar un nivel en un envoltorio
+  hueco:
+  - Si el documento es **un módulo con N unidades/temas**: un único objeto en
+    `modules[]` (con su propio título, no el del curso — regla anterior) y
+    esas N unidades reales, cada una su propio objeto, en `units[]`. No las
+    repartas en N módulos de una unidad cada uno, ni las metas como pantallas
+    dentro de una única unidad-envoltorio.
+  - Si el documento es **una sola unidad/tema con varios sub-temas**: cada
+    sub-tema es su propia `unit` real en `modules[0].units[]` — en este
+    contrato «tema» y `unit` son la misma cosa (de ahí `title: "Tema 1. …"`
+    en el ejemplo de arriba). No crees una unidad-envoltorio que agrupe los
+    sub-temas como pantallas o secciones internas: eso desperdicia el nivel
+    `units[]` que el esquema ya te da para ellos.
 
 ---
 

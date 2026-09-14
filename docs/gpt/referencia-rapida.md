@@ -105,7 +105,13 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   el runtime); **enlace a YouTube → vídeo embebido** (`visual_resource`
   `video_youtube`, ID en `src`), nunca como enlace de texto.
 - **Estructura**: `cover` solo portada, con el **número del tema visible** («Tema 1»,
-  «Tema 2»… en `subtitle` o antepuesto al título) y sin párrafos de contenido;
+  «Tema 2»… en `subtitle` o antepuesto al título) y sin párrafos de contenido; **el
+  título del módulo nunca repite el título del curso/SCORM** (esa presentación va en
+  la portada de `intro_screens`, ver contrato §1/§3) — dale al módulo un nombre propio;
+  **mapea la granularidad real del documento sin envoltorios de más**: un módulo con
+  N temas → N `unit` reales en `units[]` (no N módulos de un tema cada uno); una sola
+  unidad con sub-temas → cada sub-tema su propia `unit` (no una unidad-envoltorio con
+  los sub-temas metidos dentro como pantallas);
   **pantallas divididas por unidad de sentido** (una idea y una sola acción mental por
   pantalla; pantalla nueva al cambiar la intención — definición→aplicación,
   explicación→actividad, procedimiento→beneficios; los ~800 caracteres son alarma
