@@ -177,30 +177,29 @@
   // Plantillas por tipo de pantalla. Todas respetan la posición del recurso
   // (visual_resource.layout) a través de mediaTextLayout.
   var templates = {
-    // Portada del paquete SCORM: pantalla de introducción suelta (antes de
-    // cualquier módulo), mismo tratamiento a sangre completa que module_cover
-    // (comparten .me-module-cover en styles.css) — es la primera impresión de
-    // TODO el paquete, así que merece igual o más peso visual que una portada
-    // de módulo. Sin kicker «Unidad»/«Módulo»: un paquete SCORM puede
-    // representar un curso entero, un módulo, una unidad o un tema suelto
-    // según el contenido, y esta portada no debe presuponerlo.
-    scorm_cover: function (s) {
-      return '<header class="me-cover me-module-cover"><h1>' + esc(s.title) + '</h1>' +
-        mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
-    },
-    // Kicker con el rótulo personalizable del curso (ctx.unitLabel/moduleLabel,
-    // por defecto «Unidad»/«Módulo» — ver applyBranding-adjacent ctx en app.js):
-    // un paquete SCORM no siempre es un curso con módulos de verdad.
+    // Portada («type: cover», único): el diseño lo decide el NIVEL del
+    // contenedor donde vive la pantalla en cada momento (ctx.coverLevel,
+    // calculado en app.js a partir de entry.module/entry.unit), no un campo
+    // fijo del esquema — mover la pantalla de nivel (p. ej. «Subir de nivel»
+    // en el árbol, o arrastrarla a mano) le cambia el diseño solo con eso, sin
+    // retipar nada. 'module'/'course' comparten el hero a sangre completa
+    // (.me-module-cover: banda sólida, rompe el margen de la tarjeta, como el
+    // separador de capítulo de un libro de texto — un salto de jerarquía
+    // cualitativo, no solo cuantitativo, frente al hero degradado y contenido
+    // de 'unit'). Kicker con el rótulo personalizable del curso
+    // (ctx.moduleLabel/unitLabel, por defecto «Módulo»/«Unidad»); 'course'
+    // (portada del paquete SCORM, entre `course.intro_screens`) va **sin**
+    // kicker — un paquete SCORM puede representar un curso entero, un módulo,
+    // una unidad o un tema suelto según el contenido, y esa portada no debe
+    // presuponerlo.
     cover: function (s, ctx) {
-      return '<header class="me-cover"><p class="me-cover-kicker">' + esc((ctx && ctx.unitLabel) || 'Unidad') + '</p><h1>' + esc(s.title) + '</h1>' +
-        mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
-    },
-    // Portada de módulo: rompe el margen de la tarjeta `.me-screen` (banda sólida
-    // a sangre completa, ver .me-module-cover en styles.css) en vez del mismo hero
-    // degradado que la portada de unidad — presenta el módulo entero, así que debe
-    // notarse como un salto de jerarquía cualitativo, no solo cuantitativo.
-    module_cover: function (s, ctx) {
-      return '<header class="me-cover me-module-cover"><p class="me-cover-kicker">' + esc((ctx && ctx.moduleLabel) || 'Módulo') + '</p><h1>' + esc(s.title) + '</h1>' +
+      var level = (ctx && ctx.coverLevel) || 'unit';
+      var solid = level === 'course' || level === 'module';
+      var kicker = level === 'module' ? ((ctx && ctx.moduleLabel) || 'Módulo')
+        : level === 'unit' ? ((ctx && ctx.unitLabel) || 'Unidad') : '';
+      return '<header class="me-cover' + (solid ? ' me-module-cover' : '') + '">' +
+        (kicker ? '<p class="me-cover-kicker">' + esc(kicker) + '</p>' : '') +
+        '<h1>' + esc(s.title) + '</h1>' +
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
     },
     objectives: function (s) {
@@ -274,7 +273,7 @@
     // sepa siempre dónde está aunque el menú lateral esté plegado (o en móvil).
     // No se pinta en la portada (hero) ni si módulo y unidad repiten título.
     var crumb = '';
-    if (ctx && ctx.crumb && screen.type !== 'cover' && screen.type !== 'module_cover' && screen.type !== 'scorm_cover') {
+    if (ctx && ctx.crumb && screen.type !== 'cover') {
       var cparts = [];
       if (ctx.crumb.module) cparts.push(esc(ctx.crumb.module));
       if (ctx.crumb.unit && ctx.crumb.unit !== ctx.crumb.module) cparts.push(esc(ctx.crumb.unit));

@@ -8,9 +8,9 @@ import type { IconName } from '../components/Icon'
  * (contrato de course.json).
  */
 export const SCREEN_TYPE_LABELS: Record<ScreenType, string> = {
-  scorm_cover: 'Portada del SCORM',
-  cover: 'Portada unidad',
-  module_cover: 'Portada módulo',
+  /** Genérico: úsese `screenTypeLabel(t, { level, module, unit })` cuando se
+   *  conozca el contenedor (introducción/módulo/unidad) para el rótulo real. */
+  cover: 'Portada',
   objectives: 'Objetivos',
   route: 'Itinerario',
   content: 'Contenido',
@@ -50,9 +50,7 @@ export const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
 
 /** Icono compacto por tipo de pantalla (árbol del editor); nombres de `Icon`. */
 export const SCREEN_TYPE_ICONS: Record<ScreenType, IconName> = {
-  scorm_cover: 'star',
   cover: 'home',
-  module_cover: 'flag',
   objectives: 'target',
   route: 'route',
   content: 'file-text',
@@ -64,14 +62,24 @@ export const SCREEN_TYPE_ICONS: Record<ScreenType, IconName> = {
   content_placeholder: 'placeholder',
 }
 
-/** Etiqueta de un tipo de pantalla. `labels` sustituye «módulo»/«unidad» en
- *  «Portada módulo»/«Portada unidad» por el rótulo personalizado del curso
- *  (`course.module_label`/`unit_label`, por defecto los mismos) — el resto de
- *  tipos no depende de esto. Sin `labels` (validators.ts, contextos sin acceso
- *  al curso) se queda en los nombres de serie. */
-export function screenTypeLabel(t: string, labels?: { module?: string; unit?: string }): string {
-  if (t === 'module_cover' && labels?.module) return `Portada ${labels.module}`
-  if (t === 'cover' && labels?.unit) return `Portada ${labels.unit}`
+/** Nivel de una portada (`type: 'cover'`) según el contenedor donde vive la
+ *  pantalla — no hay campo propio en el esquema, se deriva en cada llamante
+ *  (`m.screens`→'module', `u.screens`→'unit', `course.intro_screens`→'course').
+ *  El mismo tipo cambia de rótulo y de diseño (`arquitectura-runtime.md`) solo
+ *  por dónde está, así que basta con moverlo para que ambos se actualicen. */
+export type CoverLevel = 'course' | 'module' | 'unit'
+
+/** Etiqueta de un tipo de pantalla. Para `type: 'cover'`, `opts.level` decide
+ *  «Portada del SCORM»/«Portada {módulo}»/«Portada {unidad}» (con el rótulo
+ *  personalizado del curso, `course.module_label`/`unit_label` — por defecto
+ *  los mismos); sin `level` (validators.ts, el desplegable «Tipo de pantalla»
+ *  sin contexto de dónde acabaría) se queda en el nombre genérico «Portada». */
+export function screenTypeLabel(t: string, opts?: { level?: CoverLevel; module?: string; unit?: string }): string {
+  if (t === 'cover' && opts?.level) {
+    if (opts.level === 'course') return 'Portada del SCORM'
+    if (opts.level === 'module') return `Portada ${opts.module || 'Módulo'}`
+    return `Portada ${opts.unit || 'Unidad'}`
+  }
   return SCREEN_TYPE_LABELS[t as ScreenType] ?? t
 }
 
@@ -96,9 +104,7 @@ export const TYPE_COLORS = {
 } as const
 
 export const SCREEN_TYPE_COLORS: Record<ScreenType, string> = {
-  scorm_cover: TYPE_COLORS.estructura,
   cover: TYPE_COLORS.estructura,
-  module_cover: TYPE_COLORS.estructura,
   objectives: TYPE_COLORS.estructura,
   route: TYPE_COLORS.estructura,
   summary: TYPE_COLORS.estructura,

@@ -11,9 +11,34 @@ import { SCHEMA_VERSION } from './course.schema'
  */
 type Migration = { from: string; to: string; up: (raw: any) => any }
 
+/** `module_cover`/`scorm_cover` se unifican en `cover`: el diseño (kicker,
+ *  banda sólida o degradada) ya no lo fija el `type` sino el contenedor donde
+ *  vive la pantalla en cada momento (introducción/módulo/unidad) — ver
+ *  «Portada unificada» en arquitectura-runtime.md. Muta en sitio: `raw` de
+ *  esta iteración ya es una copia de `migrate()`, no el original del llamante. */
+function fixCoverType(s: any): any {
+  if (s && (s.type === 'module_cover' || s.type === 'scorm_cover')) s.type = 'cover'
+  return s
+}
+
 const migrations: Migration[] = [
-  // Ejemplo de futura migración:
-  // { from: '1.0.0', to: '1.1.0', up: (raw) => ({ ...raw, schema_version: '1.1.0' }) },
+  {
+    from: '1.0.0', to: '1.1.0',
+    up: (raw) => {
+      if (Array.isArray(raw.intro_screens)) raw.intro_screens.forEach(fixCoverType)
+      if (Array.isArray(raw.modules)) {
+        raw.modules.forEach((m: any) => {
+          if (Array.isArray(m?.screens)) m.screens.forEach(fixCoverType)
+          if (Array.isArray(m?.units)) {
+            m.units.forEach((u: any) => {
+              if (Array.isArray(u?.screens)) u.screens.forEach(fixCoverType)
+            })
+          }
+        })
+      }
+      return raw
+    },
+  },
 ]
 
 export function migrate(raw: any): any {

@@ -463,11 +463,10 @@ export const useCourseStore = create<CourseState>((set, get) => {
     // equivalente en módulo) y cualquier test de unidad que la referenciara por
     // `unit_id` queda huérfano — mismo riesgo, sin aviso, que ya asume
     // `removeUnit` hoy al borrar una unidad con test asociado.
-    // Portada unidad → portada módulo: una pantalla `cover` a nivel de módulo
-    // no tiene sentido (su plantilla anuncia «Unidad»); se retipa para que
-    // encaje en su nuevo nivel.
-    const screens = unit.screens.map((s) => (s.type === 'cover' ? { ...s, type: 'module_cover' as const } : s))
-    const newModule: Module = { id: newId('m'), title: unit.title, screens, units: [] }
+    // Ninguna portada necesita retipado: `cover` es un único tipo cuyo diseño
+    // (kicker, banda sólida o degradada) lo decide el contenedor donde vive la
+    // pantalla en cada momento, no un campo fijo — ver arquitectura-runtime.md.
+    const newModule: Module = { id: newId('m'), title: unit.title, screens: unit.screens, units: [] }
     course.modules.splice(mi + 1, 0, newModule)
     set({ course })
   },

@@ -18,7 +18,7 @@ contrato. Todo `id` debe ser único y estable.
 
 ```json
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "course": { ... },
   "scorm": { ... },
   "shell": { ... },
@@ -32,7 +32,7 @@ contrato. Todo `id` debe ser único y estable.
 
 Reglas que NO se pueden romper:
 
-- `schema_version` debe ser **`"1.0.0"`**.
+- `schema_version` debe ser **`"1.1.0"`**.
 - El contenido va en **`modules[].units[].screens[]`** (jerarquía de 3 niveles).
   **No se admite un array `screens` en la raíz.** (Excepción acotada: un módulo
   puede llevar `screens` propias de portada/presentación, ver §3.)
@@ -148,8 +148,10 @@ Reglas que NO se pueden romper:
   (portada/presentación del bloque), con el mismo formato de §4. Se muestran
   **siempre antes** de las pantallas de sus unidades y cuelgan del título del
   módulo en el índice, sin rótulo de unidad. Úsalo solo para portada o
-  presentación del módulo (normalmente 1 pantalla `module_cover`, ver §4); el
-  contenido didáctico va en las unidades. Si no hace falta, **omite la clave**.
+  presentación del módulo (normalmente 1 pantalla `cover`, ver §4 — el mismo
+  tipo que la portada de unidad: puesta aquí, en `modules[].screens`, se
+  presenta sola con más peso visual); el contenido didáctico va en las
+  unidades. Si no hace falta, **omite la clave**.
 
 ---
 
@@ -177,20 +179,19 @@ Reglas que NO se pueden romper:
 }
 ```
 
-- `type` (enum cerrado): `cover`, `module_cover`, `objectives`, `route`, `content`,
+- `type` (enum cerrado): `cover`, `objectives`, `route`, `content`,
   `summary`, `video`, `reflection`, `forum_prompt`, `unit_quiz`, `content_placeholder`.
-- **`cover` = solo portada de unidad**: `title` + `subtitle` (y una imagen si procede),
-  **sin contenido didáctico**. Los párrafos de introducción («En la unidad anterior
-  vimos…») van en la **primera pantalla `content`** del tema, nunca en la `cover`. En la
-  `cover` **sí debe figurar el número del tema** («Tema 1», «Tema 2»…): ponlo en el
-  `subtitle` o antepuesto al título («Tema 1. Herramientas…»), para que el alumno sepa
-  dónde está.
-- **`module_cover` = portada de módulo** (solo dentro de `modules[].screens`, nunca
-  dentro de una unidad): presenta el **módulo entero**, no un tema concreto — se
-  renderiza con más peso visual que `cover` (banda más saturada, título mayor). Mismas
-  reglas que `cover` (título + presentación breve, sin contenido didáctico); úsala solo
-  cuando el módulo tenga varios temas y merezca una presentación propia, no como
-  sustituto de la `cover` de cada unidad.
+- **`cover` = portada** — de unidad o de módulo, **el mismo tipo en los dos casos**: la
+  app decide sola el peso visual (banda más saturada, título mayor) según **dónde la
+  coloques**, no según ningún otro campo. Dentro de `units[].screens` es la portada de
+  esa unidad; dentro de `modules[].screens` presenta el **módulo entero** (úsala ahí
+  solo cuando el módulo tenga varios temas y merezca una presentación propia, no como
+  sustituto de la `cover` de cada unidad). En los dos casos: `title` + `subtitle` (y una
+  imagen si procede), **sin contenido didáctico**. Los párrafos de introducción («En la
+  unidad anterior vimos…») van en la **primera pantalla `content`** del tema, nunca en
+  la `cover`. En la `cover` de unidad **sí debe figurar el número del tema** («Tema 1»,
+  «Tema 2»…): ponlo en el `subtitle` o antepuesto al título («Tema 1. Herramientas…»),
+  para que el alumno sepa dónde está.
 - **Los ejercicios prácticos van en su propia pantalla.** `case_practice`, `reflection`
   y los callouts con tarea (`::: case`, `::: reflect` que proponen un ejercicio) **no se
   pegan al final de una pantalla de contenido** (mal: «Errores y práctica» = lista de
@@ -774,8 +775,8 @@ preguntas.
 ## 9. Reglas que el JSON debe cumplir para pasar el validador
 
 1. Toda pantalla con `title` no vacío.
-2. Pantallas `content`/`objectives`/`route` con `objective` (las `cover`, `module_cover`
-   y `summary` están exentas). Los objetivos son un **conjunto reducido reutilizado** entre
+2. Pantallas `content`/`objectives`/`route` con `objective` (las `cover` y `summary`
+   están exentas). Los objetivos son un **conjunto reducido reutilizado** entre
    pantallas (texto idéntico), no uno distinto por pantalla; en `objectives`/`route`
    usa el objetivo principal del tema (no meta-objetivos tipo «Presentar el
    recorrido»).
@@ -805,7 +806,7 @@ preguntas.
 ## 10. Checklist final para la herramienta antes de devolver el JSON
 
 - [ ] Es un único objeto JSON válido (sin texto extra, sin fences).
-- [ ] `schema_version` = `"1.0.0"`.
+- [ ] `schema_version` = `"1.1.0"`.
 - [ ] Contenido en `modules[].units[].screens[]` (no array plano).
 - [ ] `type` de pantalla e interacción, y `status` de pantalla/unidad (enums
       DISTINTOS: `borrador` no existe en unidad), dentro de los enums permitidos.
@@ -888,7 +889,7 @@ def validate_course(course: dict) -> list:
     warn = lambda m: out.append("AVISO: " + m)
 
     # Enums cerrados del esquema (§3 y §6): un valor fuera de lista rompe la carga.
-    SCREEN_TYPES = {"cover", "module_cover", "objectives", "route", "content", "summary",
+    SCREEN_TYPES = {"cover", "objectives", "route", "content", "summary",
                     "video", "reflection", "forum_prompt", "unit_quiz", "content_placeholder"}
     INTERACTION_TYPES = {"accordion", "tabs", "flip_cards", "match_pairs", "sort_steps",
                          "single_choice", "true_false", "classification",
@@ -934,7 +935,7 @@ def validate_course(course: dict) -> list:
         if "status" in s and s.get("status") not in SCREEN_STATUS:
             err(f"{w}: status «{s.get('status')}» no existe — pantalla admite "
                 f"{sorted(SCREEN_STATUS)}")
-        if s.get("type") not in ("cover", "module_cover", "summary") and not str(s.get("objective", "")).strip():
+        if s.get("type") not in ("cover", "summary") and not str(s.get("objective", "")).strip():
             warn(f"{w}: sin objective")
         key = norm(s.get("objective"))
         if key and key not in declared: declared[key] = s.get("objective")
@@ -1153,7 +1154,7 @@ def extract_text_markdown(pdf_path, pages=None):
 Uso típico:
 
 ```python
-# 1) course = { "schema_version": "1.0.0", "course": {...}, ... }  (§1–§10)
+# 1) course = { "schema_version": "1.1.0", "course": {...}, ... }  (§1–§10)
 # 2) Elegir, de las imágenes extraídas, las que se usan y asignarles ruta+alt:
 asset_files = {
     "assets/img/s06.png": img_bytes_de_la_figura_pagina_8,

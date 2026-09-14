@@ -182,38 +182,41 @@ que lo etiquete).
 - **Transición de pantalla**: `.me-screen` entra con fade+slide (`me-screen-in`, 220 ms);
   funciona sola porque `renderScreen` recrea el nodo. `prefers-reduced-motion` desactiva
   `transition` **y** `animation`.
-- **Portada de unidad vs. portada de módulo — jerarquía cualitativa, no solo
-  cuantitativa**: ambas llevan un rótulo `.me-cover-kicker` sobre el `<h1>` con el rótulo
-  personalizable del curso (`ctx.unitLabel`/`moduleLabel`, por defecto «Unidad»/«Módulo»
-  — `course.unit_label`/`module_label`, ver «Terminología» en `editor-pantallas.md`);
-  `render()` pasa `ctx` como segundo argumento a la plantilla (`tpl(screen, ctx)`) solo
-  para esto, el resto de plantillas lo ignoran. La plantilla `cover` (`.me-cover`, tipo
-  `Portada unidad`) es un hero **contenido** en la tarjeta `.me-screen`: título grande
-  centrado sobre banda degradada suave del acento, prose centrada a 560 px. `module_cover`
-  (tipo `Portada módulo`, ver `editor-pantallas.md`) añade `.me-module-cover` encima y
-  cambia de registro en vez de solo escalar el mismo tratamiento: **rompe el margen de
-  la tarjeta** con márgenes negativos que igualan el padding de `.me-screen` en cada
-  punto de corte (bordes a ras en los cuatro lados, como el separador de capítulo de un
-  libro de texto) y usa un **fondo sólido oscurecido** (`color-mix(in srgb, --me-accent
-  50%, black)`, no el acento a secas — con texto blanco encima no llega a contraste AA)
-  con texto y enlaces en blanco (`.me-module-cover a`, subrayado: el azul `--me-primary`
-  del resto del runtime queda casi invisible sobre ese fondo). Impresión:
-  `print-color-adjust: exact` en `print.css` conserva el fondo oscuro — sin eso, con
-  «gráficos de fondo» desactivado en el diálogo de impresión, el texto blanco
-  desaparecería sobre papel blanco. Ninguna de las dos pinta la miga «Módulo › Unidad»
-  (rompería el hero) ni exige `objective` ni recomienda interacción (`COVER_INTERACTION`
-  en `validators.ts`).
-- **Portada del paquete SCORM** (tipo `scorm_cover`, receta `scope: 'course'` en
-  `screenRecipes.ts`, ver `editor-pantallas.md`): vive entre las pantallas de
-  introducción (`course.intro_screens`), antes de cualquier módulo. Comparte
-  literalmente la clase `.me-module-cover` con la portada de módulo (mismo fondo sólido
-  a sangre completa, mismo tratamiento de impresión) — es la primera impresión de **todo**
-  el paquete, así que no le corresponde menos peso visual que una portada de módulo. A
-  propósito **sin** `.me-cover-kicker`: un paquete SCORM puede representar un curso
-  entero, un módulo, una unidad o un tema suelto según el contenido (no siempre hay
-  módulos/unidades debajo), así que esta portada no presupone en qué nivel de la
-  jerarquía está el paquete — ni siquiera con el rótulo personalizable, que es por
-  módulo/unidad, no por paquete (ver «Terminología» en `editor-pantallas.md`).
+- **Portada unificada (`type: 'cover'`) — el diseño lo decide el NIVEL, no el
+  tipo**: un solo tipo de pantalla para las tres portadas (paquete SCORM, módulo,
+  unidad); ninguna es un campo fijo del esquema. `render()` (`app.js`) calcula
+  `ctx.coverLevel` (`'course'`/`'module'`/`'unit'`) mirando `entry.module`/`entry.unit`
+  de **esta** pantalla en `SCREENS` y lo pasa a la plantilla como segundo argumento
+  (`tpl(screen, ctx)`, solo la plantilla `cover` lo usa) — mover la pantalla de sitio
+  (botón «Subir de nivel», arrastre en el árbol, editar `course.json` a mano) le cambia
+  el diseño sin retipar nada, porque el nivel se recalcula en cada render. Dos
+  registros, no tres:
+  - **`'unit'`** — hero **contenido** en la tarjeta `.me-screen`: título grande
+    centrado sobre banda degradada suave del acento, prose centrada a 560 px. Kicker
+    `.me-cover-kicker` con el rótulo personalizable de unidad (`ctx.unitLabel`, por
+    defecto «Unidad» — `course.unit_label`, ver «Terminología» en `editor-pantallas.md`).
+  - **`'module'`/`'course'`** — mismo tratamiento a sangre completa (`.me-module-cover`):
+    **rompe el margen de la tarjeta** con márgenes negativos que igualan el padding de
+    `.me-screen` en cada punto de corte (bordes a ras en los cuatro lados, como el
+    separador de capítulo de un libro de texto) y usa un **fondo sólido oscurecido**
+    (`color-mix(in srgb, --me-accent 50%, black)`, no el acento a secas — con texto
+    blanco encima no llega a contraste AA) con texto y enlaces en blanco
+    (`.me-module-cover a`, subrayado: el azul `--me-primary` del resto del runtime
+    queda casi invisible sobre ese fondo). `'module'` lleva kicker con
+    `ctx.moduleLabel` (por defecto «Módulo»); `'course'` (portada del paquete SCORM,
+    entre `course.intro_screens`) va **sin** kicker — un paquete SCORM puede
+    representar un curso entero, un módulo, una unidad o un tema suelto según el
+    contenido, y esa portada no debe presuponerlo (ni siquiera con el rótulo
+    personalizable, que es por módulo/unidad, no por paquete).
+
+  Impresión: `print-color-adjust: exact` en `print.css` conserva el fondo oscuro de
+  `'module'`/`'course'` — sin eso, con «gráficos de fondo» desactivado en el diálogo de
+  impresión, el texto blanco desaparecería sobre papel blanco. Ninguno de los tres
+  niveles pinta la miga «Módulo › Unidad» (rompería el hero) ni exige `objective` ni
+  recomienda interacción (`COVER_INTERACTION` en `validators.ts`) — comprobado por
+  `type === 'cover'` a secas, ya no hace falta enumerar tres tipos.
+  `SCHEMA_VERSION` `1.1.0` migra `module_cover`/`scorm_cover` a `cover`
+  (`src/schema/migrations.ts`) para proyectos guardados antes de la unificación.
 - **Accordion/tabs animados**: chevron `▸` rotatorio en `.me-acc-head::before`; cuerpos y
   paneles aparecen con `me-reveal` (corre al pasar de `display:none` a visible).
 - **Feedback de interacciones**: la opción elegida se marca en el propio elemento

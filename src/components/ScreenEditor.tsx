@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { validateCourse } from '../validation/validators'
 import { ScreenType, InteractionType, Interaction, type Screen } from '../schema/course.schema'
-import { screenTypeLabel, screenTypeIcon, screenTypeColor, interactionTypeLabel } from '../schema/labels'
+import { screenTypeLabel, screenTypeIcon, screenTypeColor, interactionTypeLabel, type CoverLevel } from '../schema/labels'
 import { SCREEN_TYPE_UI } from '../schema/screenTypeUI'
 import { interactionRecipe, interactionColor, migrateInteractionData, interactionHasContent } from '../schema/interactionRecipes'
 import { InteractionTypeModal } from './InteractionTypeModal'
@@ -129,6 +129,7 @@ function MediaPreview({ vr, assets }: { vr: any; assets: AssetMap }) {
 export function ScreenEditor() {
   const id = useCourseStore((s) => s.selectedScreenId)
   const screen = useCourseStore((s) => (id ? s.getScreen(id) : null))
+  const locate = useCourseStore((s) => s.locate)
   const update = useCourseStore((s) => s.updateScreen)
   const changeType = useCourseStore((s) => s.changeScreenType)
   const assets = useCourseStore((s) => s.assets)
@@ -156,6 +157,11 @@ export function ScreenEditor() {
   )
 
   if (!id || !screen) return <div className="ed-empty">Selecciona una pantalla en el árbol para editarla.</div>
+
+  // Nivel del contenedor de ESTA pantalla, solo para el rótulo de una portada
+  // (`type: 'cover'`) — ver CoverLevel en schema/labels.ts.
+  const loc = locate(id)
+  const coverLevel: CoverLevel = !loc ? 'unit' : loc.mi === 'intro' ? 'course' : loc.ui == null ? 'module' : 'unit'
 
   async function onGenerateAudio() {
     if (!id) return
@@ -496,7 +502,7 @@ export function ScreenEditor() {
           onClick={() => { titleRef.current?.focus(); titleRef.current?.select() }}>
           <Icon name="pencil" size={14} />
         </button>
-        <span className="ed-form-type"><Icon name={screenTypeIcon(screen.type)} size={12} color={screenTypeColor(screen.type)} /> {screenTypeLabel(screen.type, { module: course.module_label, unit: course.unit_label })}</span>
+        <span className="ed-form-type"><Icon name={screenTypeIcon(screen.type)} size={12} color={screenTypeColor(screen.type)} /> {screenTypeLabel(screen.type, { level: coverLevel, module: course.module_label, unit: course.unit_label })}</span>
       </h2>
 
       {screenIssues.length > 0 && (

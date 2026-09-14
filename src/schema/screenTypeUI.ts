@@ -20,9 +20,7 @@ export type ScreenTypeUI = {
 }
 
 export const SCREEN_TYPE_UI: Partial<Record<ScreenType, ScreenTypeUI>> = {
-  scorm_cover: { hideObjective: true },
   cover: { hideObjective: true },
-  module_cover: { hideObjective: true },
   summary: { hideObjective: true },
   video: { mediaFirst: true, recommended: ['video'] },
   unit_quiz: {

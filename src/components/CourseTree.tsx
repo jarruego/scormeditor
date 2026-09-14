@@ -18,7 +18,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useCourseStore } from '../store/courseStore'
 import type { Screen } from '../schema/course.schema'
-import { screenTypeLabel, screenTypeIcon, screenTypeColor, interactionTypeLabel, TYPE_COLORS } from '../schema/labels'
+import { screenTypeLabel, screenTypeIcon, screenTypeColor, interactionTypeLabel, TYPE_COLORS, type CoverLevel } from '../schema/labels'
 import { interactionRecipe, interactionColor } from '../schema/interactionRecipes'
 import { INTRO_CONTAINER_ID } from '../schema/traverse'
 import { validateCourse, type Issue } from '../validation/validators'
@@ -97,9 +97,12 @@ function IssueBadge({ info }: { info?: ScreenIssues }) {
 
 /** `index`/`count`: posición real (sin filtrar) en su contenedor, para los
  *  botones Subir/Bajar — `undefined` con el filtro activo (los índices de la
- *  lista filtrada no se corresponden con el contenedor), que los oculta. */
-function ScreenItem({ screen, containerId, issues, index, count }: {
-  screen: Screen; containerId: string; issues?: ScreenIssues; index?: number; count?: number
+ *  lista filtrada no se corresponden con el contenedor), que los oculta.
+ *  `level`: nivel del contenedor (introducción/módulo/unidad), para el rótulo
+ *  real de una portada (`type: 'cover'`) — lo sabe quien llama, no hace falta
+ *  derivarlo de `containerId` aquí. */
+function ScreenItem({ screen, containerId, issues, index, count, level }: {
+  screen: Screen; containerId: string; issues?: ScreenIssues; index?: number; count?: number; level: CoverLevel
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: screen.id,
@@ -129,7 +132,7 @@ function ScreenItem({ screen, containerId, issues, index, count }: {
       </button>
       <button className="ed-screen-label" onClick={() => select(screen.id)}>
         <span className="ed-screen-type">
-          <Icon name={screenTypeIcon(screen.type)} size={12} color={screenTypeColor(screen.type)} /> {screenTypeLabel(screen.type, { module: moduleLabel, unit: unitLabel })}
+          <Icon name={screenTypeIcon(screen.type)} size={12} color={screenTypeColor(screen.type)} /> {screenTypeLabel(screen.type, { level, module: moduleLabel, unit: unitLabel })}
           {/* Marca de la interacción: su icono real (con el color de su grupo), no un genérico */}
           {screen.interaction && (
             <span title={`${interactionTypeLabel(screen.interaction.type)}${screen.interaction.scored ? '' : ' (no puntúa)'}`}>
@@ -357,7 +360,7 @@ export function CourseTree() {
                   {visible.map((s, i) => (
                     <Fragment key={s.id}>
                       {!q && <InsertPoint containerId={INTRO_CONTAINER_ID} index={i} />}
-                      <ScreenItem screen={s} containerId={INTRO_CONTAINER_ID} issues={issuesByScreen.get(s.id)}
+                      <ScreenItem screen={s} containerId={INTRO_CONTAINER_ID} issues={issuesByScreen.get(s.id)} level="course"
                         index={q ? undefined : i} count={q ? undefined : course.intro_screens.length} />
                     </Fragment>
                   ))}
@@ -407,7 +410,7 @@ export function CourseTree() {
                     {visible.map((s, i) => (
                       <Fragment key={s.id}>
                         {!q && <InsertPoint containerId={m.id} index={i} />}
-                        <ScreenItem screen={s} containerId={m.id} issues={issuesByScreen.get(s.id)}
+                        <ScreenItem screen={s} containerId={m.id} issues={issuesByScreen.get(s.id)} level="module"
                           index={q ? undefined : i} count={q ? undefined : m.screens.length} />
                       </Fragment>
                     ))}
@@ -468,7 +471,7 @@ export function CourseTree() {
                         <Fragment key={s.id}>
                           {/* Con filtro activo los índices no se corresponden con la unidad → sin puntos de inserción */}
                           {!q && <InsertPoint containerId={u.id} index={i} />}
-                          <ScreenItem screen={s} containerId={u.id} issues={issuesByScreen.get(s.id)}
+                          <ScreenItem screen={s} containerId={u.id} issues={issuesByScreen.get(s.id)} level="unit"
                             index={q ? undefined : i} count={q ? undefined : u.screens.length} />
                         </Fragment>
                       ))}

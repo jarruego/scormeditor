@@ -7,16 +7,14 @@ import { z } from 'zod'
  * y añade una entrada en src/schema/migrations.ts. El import siempre pasa por
  * migrate() antes de validar contra el schema actual.
  */
-export const SCHEMA_VERSION = '1.0.0'
+export const SCHEMA_VERSION = '1.1.0'
 
 // ----------------------------------------------------------------------------
 // Tipos enumerados
 // ----------------------------------------------------------------------------
 
 export const ScreenType = z.enum([
-  'scorm_cover',
   'cover',
-  'module_cover',
   'objectives',
   'route',
   'content',

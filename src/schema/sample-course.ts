@@ -10,7 +10,7 @@ import type { Course } from './course.schema'
  * a mano, mantener esa cobertura completa.
  */
 export const sampleCourse: Course = {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "course": {
     "id": "demo-scormeditor",
     "title": "Descubre SCORMEditor",
@@ -53,7 +53,7 @@ export const sampleCourse: Course = {
   "intro_screens": [
     {
       "id": "s000",
-      "type": "scorm_cover",
+      "type": "cover",
       "title": "Descubre SCORMEditor",
       "objective": "",
       "student_text": "Esta es la **portada del paquete SCORM**: la primera pantalla de todas, con el mismo peso visual que una portada de módulo (banda sólida a toda anchura). Sin rótulo de nivel a propósito — un paquete SCORM puede representar un curso completo, un módulo, una unidad o un tema suelto según el contenido, así que esta portada no lo presupone.",
@@ -141,7 +141,7 @@ export const sampleCourse: Course = {
       "screens": [
         {
           "id": "s100",
-          "type": "module_cover",
+          "type": "cover",
           "title": "Cómo se organiza un curso",
           "objective": "",
           "student_text": "Esta es la **portada de módulo**: presenta todo el módulo antes de entrar en su primera unidad. Tiene más peso visual que la portada de unidad que verás a continuación (banda sólida a toda anchura, en vez del degradado contenido en la tarjeta) y solo puede añadirse entre las pantallas propias del módulo, no dentro de una unidad.",

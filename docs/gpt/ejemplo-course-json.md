@@ -14,7 +14,7 @@ pantallas de desarrollo compartirán el mismo `objective`.
 
 ```json
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "course": {
     "id": "ejemplo-u01-t01",
     "title": "Tema 1. Atención centrada en la persona",

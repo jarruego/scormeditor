@@ -135,19 +135,20 @@ desplegable «Tipo de pantalla» queda como ajuste avanzado). Decisiones:
   diferencia de `uniquePerUnit`): `AddScreenModal` calcula `scope` del contenedor
   (`'course'` si `containerId === INTRO_CONTAINER_ID`, si no `'module'`/`'unit'` como
   antes) y lo compara con el de cada receta antes de listar el grupo. Uso hoy: las tres
-  portadas — receta `scorm-cover` (`scope: 'course'`, tipo `scorm_cover`, etiqueta
-  «Portada del SCORM») solo entre las pantallas de introducción; receta `cover`
-  (`scope: 'unit'`, tipo `cover`, etiqueta «Portada unidad») solo dentro de una unidad;
-  receta `module-cover` (`scope: 'module'`, tipo `module_cover`, etiqueta «Portada
-  módulo») solo entre las pantallas propias del módulo. Son tipos distintos a propósito:
-  `module_cover`/`scorm_cover` presentan el módulo/paquete entero y se renderizan con más
-  peso visual (comparten `.me-module-cover`, ver `arquitectura-runtime.md`) — no es solo
-  un rótulo, cada uno es un tipo de pantalla con su propia plantilla en `renderer.js`.
-  `scorm_cover` es el único de los tres **sin** `.me-cover-kicker`: no presupone si el
-  paquete es un curso, un módulo, una unidad o un tema suelto (ver nota de terminología
-  más abajo). El resto de recetas sin `scope` (Contenido, Objetivos…) también valen para
-  la introducción del curso — solo `cover`/`module_cover` quedan fuera de ahí porque su
-  hero anuncia una unidad/módulo concretos que la introducción no tiene.
+  portadas — recetas `scorm-cover` (`scope: 'course'`), `cover` (`scope: 'unit'`) y
+  `module-cover` (`scope: 'module'`) — **comparten el mismo tipo** `cover` (una sola
+  plantilla en `renderer.js`, ver «Portada unificada» en `arquitectura-runtime.md`): son
+  tres recetas por comodidad de autoría (cada una con su tarjeta, icono y
+  `defaultTitle` propios en el sitio donde tiene sentido crearla), no tres tipos de
+  pantalla. El **rótulo mostrado** (`screenTypeLabel(r.type, { level: r.scope, … })` en
+  `recipeLabel()`, `AddScreenModal.tsx`) sale del `scope` de la receta, no del `type`
+  —por eso hace falta ese parámetro y no basta con `screenTypeLabel(r.type)`—.
+  `scope: 'course'` es el único de los tres **sin** `.me-cover-kicker` en el resultado:
+  no presupone si el paquete es un curso, un módulo, una unidad o un tema suelto (ver
+  «Terminología» más abajo). El resto de recetas sin `scope` (Contenido, Objetivos…)
+  también valen para la introducción del curso — solo las portadas de módulo/unidad
+  quedan fuera de ahí porque su hero anuncia un nivel concreto que la introducción no
+  tiene (la de `scope: 'course'` sí vale ahí, es la suya).
 
 - Las recetas **no** rellenan `student_text` (acabaría exportado) ni `min_time_seconds`
   (ya hay ajuste masivo en Ajustes).
@@ -174,12 +175,12 @@ UI). Editable en ⚙ Ajustes → Interfaz (Apariencia), fieldset «Terminología
 - **Alcance de la sustitución** (deliberadamente no exhaustivo): botones del árbol
   (Añadir/Renombrar/Subir/Bajar/Eliminar + diálogos de confirmación, `CourseTree.tsx`),
   las dos portadas en `screenTypeLabel()` («Portada módulo»/«Portada unidad», con
-  `labels?: {module, unit}` opcional — ver `labels.ts`) y su tarjeta en «+ Añadir
-  pantalla» (`recipeLabel()` en `AddScreenModal.tsx`, **no** vía `screenTypeLabel(r.type)`
-  a secas: varias recetas comparten `type` con `label` propio distinto, p. ej. varias de
-  tipo `content`), el kicker de la portada de módulo/unidad en la Vista estudiante
-  (`ctx.moduleLabel`/`unitLabel` en app.js → `renderer.js`, plantillas `cover`/
-  `module_cover` con segundo parámetro `ctx`) y las ubicaciones «módulo «X»»/«unidad «X»»
+  `opts?: {level, module, unit}` opcional — ver `labels.ts`) y su tarjeta en «+ Añadir
+  pantalla» (`recipeLabel()` en `AddScreenModal.tsx`, con `level: r.scope` — **no** vía
+  `screenTypeLabel(r.type)` a secas: varias recetas comparten `type` con `label` propio
+  distinto, p. ej. varias de tipo `content`), el kicker de la portada en la Vista
+  estudiante (`ctx.moduleLabel`/`unitLabel`/`coverLevel` en app.js → `renderer.js`,
+  plantilla `cover` con segundo parámetro `ctx`) y las ubicaciones «módulo «X»»/«unidad «X»»
   de `ID_DUPLICATE` en `validators.ts`. **No** cubierto a propósito: textos largos de
   ayuda (`HelpModal.tsx`, tour guiado) y las descripciones de las recetas que no son
   portada — quedarían con concordancia de género rota para un rótulo arbitrario («la
@@ -193,10 +194,11 @@ unidad (`promoteUnit(unitId)` en el store). La unidad **se convierte** en un mó
 propio, colocado justo después del módulo que la contenía — no queda envuelta como una
 unidad dentro de ese módulo nuevo: sus pantallas pasan a ser directamente las pantallas
 propias del módulo (`module.screens`), como hijas suyas, sin nivel intermedio. Detalles:
-- **Retipa `cover` → `module_cover`** entre las pantallas promovidas: una portada de
-  unidad a nivel de módulo no tiene sentido (su plantilla anuncia el rótulo de unidad) —
-  ver `arquitectura-runtime.md`. Ninguna otra conversión de tipo hace falta: el resto de
-  tipos no tienen restricción de `scope`.
+- **No hace falta retipar ninguna portada**: `cover` es un único tipo cuyo diseño lo
+  decide el contenedor donde vive la pantalla en cada momento, no un campo fijo — una
+  portada que viajaba en `unit.screens` sigue siendo `type: 'cover'` en
+  `module.screens` y el siguiente render ya la pinta como portada de módulo sola, sin
+  ningún paso explícito aquí (ver «Portada unificada» en `arquitectura-runtime.md`).
 - **Pérdida asumida, sin aviso**: `summary`/`status` de la unidad no tienen equivalente en
   `Module` (se descartan); un test de unidad (`assessments.unit_tests[].unit_id`) que
   referenciara esa unidad queda huérfano — mismo riesgo, sin aviso, que ya asume
@@ -284,8 +286,8 @@ los avisos de `validators.ts`):
   muestra como chip de solo lectura junto al título del formulario (`.ed-form-type`). El
   selector usa `changeScreenType` del store, que al pasar a `video` sin recurso precarga
   `video_youtube` (congruencia mínima).
-- **Objetivo oculto** en `cover`/`module_cover`/`summary` (`hideObjective`): son los tipos
-  exentos en validación.
+- **Objetivo oculto** en `cover`/`summary` (`hideObjective`): son los tipos exentos en
+  validación.
 - **Interacciones recomendadas** (`recommended`): el selector de tipo de interacción
   destaca «Recomendadas para esta pantalla» (`unit_quiz` → tipos de pregunta; `video` →
   vídeo interactivo). La primera recomendada es además el tipo inicial de «+ Añadir

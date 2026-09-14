@@ -2,7 +2,7 @@ import { useCourseStore } from '../store/courseStore'
 import type { ScreenInput } from '../schema/course.schema'
 import { INTRO_CONTAINER_ID } from '../schema/traverse'
 import { RECIPE_GROUPS, RECIPE_GROUP_LABELS, RECIPE_GROUP_HINTS, RECIPE_GROUP_COLORS, SCREEN_RECIPES, type ScreenRecipe } from '../schema/screenRecipes'
-import { screenTypeLabel } from '../schema/labels'
+import { screenTypeLabel, type CoverLevel } from '../schema/labels'
 import { SettingsWindow } from './SettingsModal'
 import { Icon } from './Icon'
 
@@ -27,15 +27,18 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
     : (unit ?? course.modules.find((m) => m.id === containerId))
   if (!container) return null
   const isModule = !isIntro && !unit
-  const scope = isIntro ? 'course' : isModule ? 'module' : 'unit'
+  const scope: CoverLevel = isIntro ? 'course' : isModule ? 'module' : 'unit'
 
-  // Solo las dos portadas dependen del rótulo personalizado (module_label/
-  // unit_label); el resto conserva su `label` didáctico propio de la receta
-  // (varias recetas comparten `type`, p. ej. varias de tipo `content`, así que
-  // no se puede derivar de `screenTypeLabel(r.type)` sin perder esa variedad).
+  // Las tres recetas de portada comparten `type: 'cover'` (el diseño lo decide
+  // el contenedor, no el tipo — ver arquitectura-runtime.md) pero cada una
+  // vive en un `scope` distinto, así que ESE es el nivel real de su rótulo. El
+  // resto de recetas conserva su `label` didáctico propio (varias comparten
+  // `type`, p. ej. varias de tipo `content`, así que no se puede derivar de
+  // `screenTypeLabel(r.type)` sin perder esa variedad).
   function recipeLabel(r: ScreenRecipe): string {
-    if (r.type === 'module_cover') return screenTypeLabel(r.type, { module: course.module_label })
-    if (r.type === 'cover') return screenTypeLabel(r.type, { unit: course.unit_label })
+    if (r.type === 'cover' && r.scope) {
+      return screenTypeLabel(r.type, { level: r.scope, module: course.module_label, unit: course.unit_label })
+    }
     return r.label
   }
 
