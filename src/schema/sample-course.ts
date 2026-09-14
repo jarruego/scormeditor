@@ -124,6 +124,8 @@ export const sampleCourse: Course = {
       "status": "ok"
     }
   ],
+  "module_label": "Módulo",
+  "unit_label": "Unidad",
   "modules": [
     {
       "id": "m1",

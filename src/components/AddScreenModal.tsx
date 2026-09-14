@@ -2,6 +2,7 @@ import { useCourseStore } from '../store/courseStore'
 import type { ScreenInput } from '../schema/course.schema'
 import { INTRO_CONTAINER_ID } from '../schema/traverse'
 import { RECIPE_GROUPS, RECIPE_GROUP_LABELS, RECIPE_GROUP_HINTS, RECIPE_GROUP_COLORS, SCREEN_RECIPES, type ScreenRecipe } from '../schema/screenRecipes'
+import { screenTypeLabel } from '../schema/labels'
 import { SettingsWindow } from './SettingsModal'
 import { Icon } from './Icon'
 
@@ -27,6 +28,16 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
   if (!container) return null
   const isModule = !isIntro && !unit
   const scope = isIntro ? 'course' : isModule ? 'module' : 'unit'
+
+  // Solo las dos portadas dependen del rótulo personalizado (module_label/
+  // unit_label); el resto conserva su `label` didáctico propio de la receta
+  // (varias recetas comparten `type`, p. ej. varias de tipo `content`, así que
+  // no se puede derivar de `screenTypeLabel(r.type)` sin perder esa variedad).
+  function recipeLabel(r: ScreenRecipe): string {
+    if (r.type === 'module_cover') return screenTypeLabel(r.type, { module: course.module_label })
+    if (r.type === 'cover') return screenTypeLabel(r.type, { unit: course.unit_label })
+    return r.label
+  }
 
   function create(r: ScreenRecipe) {
     if (!container) return
@@ -70,14 +81,14 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
                   <button
                     key={r.key}
                     className={`ed-recipe${dup ? ' is-dup' : ''}${r.subtle ? ' ed-recipe-blank' : ''}`}
-                    title={dup ? `Ya existe una pantalla de este tipo en ${isIntro ? 'la introducción' : isModule ? 'el módulo' : 'la unidad'}` : undefined}
+                    title={dup ? 'Ya existe una pantalla de este tipo aquí' : undefined}
                     onClick={() => create(r)}
                   >
                     <span className="ed-recipe-ico" aria-hidden="true"
                       style={{ '--ico-c': RECIPE_GROUP_COLORS[r.group] } as React.CSSProperties}>
                       <Icon name={r.icon} size={18} /></span>
                     <span className="ed-recipe-text">
-                      <span className="ed-recipe-name">{r.label}</span>
+                      <span className="ed-recipe-name">{recipeLabel(r)}</span>
                       <span className="ed-recipe-desc">{r.description}</span>
                     </span>
                   </button>

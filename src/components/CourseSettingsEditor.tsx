@@ -46,12 +46,37 @@ const SPEED_SEGS = [
 export function AppearanceSection() {
   const shell = useCourseStore((s) => s.course.shell)
   const updateShell = useCourseStore((s) => s.updateShell)
+  const moduleLabel = useCourseStore((s) => s.course.module_label)
+  const unitLabel = useCourseStore((s) => s.course.unit_label)
+  const setModuleLabel = useCourseStore((s) => s.setModuleLabel)
+  const setUnitLabel = useCourseStore((s) => s.setUnitLabel)
 
   return (
     <>
       <p className="ed-hint ed-hint-lead">
         Preferencias de presentación de la carcasa del curso (Vista estudiante y SCORM exportado).
       </p>
+
+      <fieldset className="ed-group">
+        <legend>Terminología</legend>
+        <div className="ed-row">
+          <label className="ed-field ed-field-narrow">
+            <span>Nivel superior</span>
+            <input value={moduleLabel} placeholder="Módulo" onChange={(e) => setModuleLabel(e.target.value)} />
+          </label>
+          <label className="ed-field ed-field-narrow">
+            <span>Nivel inferior</span>
+            <input value={unitLabel} placeholder="Unidad" onChange={(e) => setUnitLabel(e.target.value)} />
+          </label>
+        </div>
+        <p className="ed-hint">
+          Un paquete SCORM no siempre es un curso completo con módulos de verdad: puede
+          representar un módulo suelto, una unidad o un tema. Si «Módulo»/«Unidad» no encaja,
+          cámbialos aquí (p. ej. «Tema»/«Apartado») — se aplican en el árbol del editor y en el
+          rótulo de la portada de módulo/unidad de la Vista estudiante. La estructura por debajo
+          no cambia, solo cómo se llama.
+        </p>
+      </fieldset>
 
       <fieldset className="ed-group">
         <legend>Marca y color</legend>

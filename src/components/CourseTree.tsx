@@ -69,6 +69,14 @@ function useScrollWhenSelected(selected: boolean) {
   return ref
 }
 
+/** Plural simple en español para rótulos personalizables cortos (Módulo→Módulos,
+ *  Unidad→Unidades, Tema→Temas, Bloque→Bloques…): vocal final → +s, consonante → +es.
+ *  No cubre toda la morfología del español (p. ej. tildes que se desplazan), pero
+ *  basta para los sustantivos cortos y habituales que tiene sentido usar aquí. */
+function pluralize(label: string): string {
+  return /[aeiouáéíóú]$/i.test(label) ? `${label}s` : `${label}es`
+}
+
 /** Peor severidad de los issues de una pantalla (para el badge del árbol). */
 type ScreenIssues = { errors: number; warnings: number }
 
@@ -96,6 +104,8 @@ function ScreenItem({ screen, containerId, issues }: { screen: Screen; container
   const select = useCourseStore((s) => s.selectScreen)
   const duplicate = useCourseStore((s) => s.duplicateScreen)
   const remove = useCourseStore((s) => s.deleteScreen)
+  const moduleLabel = useCourseStore((s) => s.course.module_label)
+  const unitLabel = useCourseStore((s) => s.course.unit_label)
 
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
   const flagged = screen.type === 'content_placeholder' || screen.status === 'esqueleto_pendiente_desarrollo'
@@ -112,7 +122,7 @@ function ScreenItem({ screen, containerId, issues }: { screen: Screen; container
       </button>
       <button className="ed-screen-label" onClick={() => select(screen.id)}>
         <span className="ed-screen-type">
-          <Icon name={screenTypeIcon(screen.type)} size={12} color={screenTypeColor(screen.type)} /> {screenTypeLabel(screen.type)}
+          <Icon name={screenTypeIcon(screen.type)} size={12} color={screenTypeColor(screen.type)} /> {screenTypeLabel(screen.type, { module: moduleLabel, unit: unitLabel })}
           {/* Marca de la interacción: su icono real (con el color de su grupo), no un genérico */}
           {screen.interaction && (
             <span title={`${interactionTypeLabel(screen.interaction.type)}${screen.interaction.scored ? '' : ' (no puntúa)'}`}>
@@ -210,18 +220,30 @@ export function CourseTree() {
   const removeUnit = useCourseStore((s) => s.removeUnit)
   const moveModule = useCourseStore((s) => s.moveModule)
   const moveUnit = useCourseStore((s) => s.moveUnit)
+  const promoteUnit = useCourseStore((s) => s.promoteUnit)
   const [filter, setFilter] = useState('')
   const collapsed = useTreeFold((s) => s.collapsed)
   const setCollapsed = useTreeFold((s) => s.setCollapsed)
 
+  // Rótulos personalizables (por defecto «Módulo»/«Unidad», ver Ajustes → Curso):
+  // un paquete SCORM no siempre es un curso con módulos de verdad. En minúscula
+  // para encajar en frases («Añadir unidad», «Subir módulo»…); el plural es una
+  // aproximación (pluralize) que basta para estos sustantivos cortos.
+  const moduleLabel = (course.module_label || 'Módulo').toLowerCase()
+  const unitLabel = (course.unit_label || 'Unidad').toLowerCase()
+  const moduleLabelPlural = pluralize(moduleLabel)
+  const unitLabelPlural = pluralize(unitLabel)
+
   // Borrado de módulo/unidad: confirma solo si contiene pantallas (deshacer
   // siempre disponible). Los botones viven en <summary>/<p>: hay que cortar el
-  // clic para no plegar el details ni disparar el rename.
+  // clic para no plegar el details ni disparar el rename. El mensaje evita
+  // concordancia de género con el rótulo personalizado (título entre comillas +
+  // el rótulo entre paréntesis, sin artículo).
   async function onRemoveUnit(u: { id: string; title: string; screens: Screen[] }) {
     if (u.screens.length > 0) {
       const ok = await confirmDialog({
-        title: 'Eliminar unidad',
-        message: `Se eliminará la unidad «${u.title || '(sin título)'}» con sus ${u.screens.length} pantalla${u.screens.length === 1 ? '' : 's'}. ¿Deseas continuar?`,
+        title: `Eliminar ${unitLabel}`,
+        message: `Se eliminará «${u.title || '(sin título)'}» (${unitLabel}) con sus ${u.screens.length} pantalla${u.screens.length === 1 ? '' : 's'}. ¿Deseas continuar?`,
         confirmLabel: 'Eliminar',
         danger: true,
       })
@@ -233,8 +255,8 @@ export function CourseTree() {
     const n = m.screens.length + m.units.reduce((a, u) => a + u.screens.length, 0)
     if (n > 0 || m.units.length > 1) {
       const ok = await confirmDialog({
-        title: 'Eliminar módulo',
-        message: `Se eliminará el módulo «${m.title || '(sin título)'}» con sus ${m.units.length} unidad${m.units.length === 1 ? '' : 'es'} y ${n} pantalla${n === 1 ? '' : 's'}. ¿Deseas continuar?`,
+        title: `Eliminar ${moduleLabel}`,
+        message: `Se eliminará «${m.title || '(sin título)'}» (${moduleLabel}) con ${m.units.length} ${m.units.length === 1 ? unitLabel : unitLabelPlural} y ${n} pantalla${n === 1 ? '' : 's'}. ¿Deseas continuar?`,
         confirmLabel: 'Eliminar',
         danger: true,
       })
@@ -272,7 +294,8 @@ export function CourseTree() {
 
   const q = filter.trim().toLowerCase()
   const matches = (s: Screen) =>
-    !q || (s.title || '').toLowerCase().includes(q) || screenTypeLabel(s.type).toLowerCase().includes(q)
+    !q || (s.title || '').toLowerCase().includes(q) ||
+    screenTypeLabel(s.type, { module: course.module_label, unit: course.unit_label }).toLowerCase().includes(q)
 
   return (
     <div className="ed-tree-inner">
@@ -320,19 +343,19 @@ export function CourseTree() {
         {course.modules.map((m, mi) => (
           <div key={m.id} className="ed-module">
             <p className="ed-module-title">
-              <InlineRename value={m.title} title="Renombrar módulo"
+              <InlineRename value={m.title} title={`Renombrar ${moduleLabel}`}
                 onChange={(title) => updateModule(m.id, { title })} />
               {!q && (
                 <span className="ed-struct-tools">
-                  <button type="button" className="ed-struct-btn" title="Subir módulo" aria-label="Subir módulo"
+                  <button type="button" className="ed-struct-btn" title={`Subir ${moduleLabel}`} aria-label={`Subir ${moduleLabel}`}
                     disabled={mi === 0}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveModule(m.id, -1) }}>
                     <Icon name="arrow-up" size={12} /></button>
-                  <button type="button" className="ed-struct-btn" title="Bajar módulo" aria-label="Bajar módulo"
+                  <button type="button" className="ed-struct-btn" title={`Bajar ${moduleLabel}`} aria-label={`Bajar ${moduleLabel}`}
                     disabled={mi === course.modules.length - 1}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveModule(m.id, 1) }}>
                     <Icon name="arrow-down" size={12} /></button>
-                  <button type="button" className="ed-struct-btn" title="Eliminar módulo" aria-label="Eliminar módulo"
+                  <button type="button" className="ed-struct-btn" title={`Eliminar ${moduleLabel}`} aria-label={`Eliminar ${moduleLabel}`}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onRemoveModule(m) }}>
                     <Icon name="trash" size={12} />
                   </button>
@@ -359,7 +382,7 @@ export function CourseTree() {
               )
             })()}
             {!q && (
-              <AddScreenButton containerId={m.id} label="Añadir pantalla al módulo…" />
+              <AddScreenButton containerId={m.id} label={`Añadir pantalla al ${moduleLabel}…`} />
             )}
             {m.units.map((u, ui) => {
               const visible = u.screens.filter(matches)
@@ -374,26 +397,31 @@ export function CourseTree() {
                   onToggle={(e) => { if (!q) setCollapsed(u.id, !e.currentTarget.open) }}>
                   <summary className="ed-unit-title">
                     <span className="ed-unit-name">
-                      <InlineRename value={u.title} title="Renombrar unidad"
+                      <InlineRename value={u.title} title={`Renombrar ${unitLabel}`}
                         onChange={(title) => updateUnit(u.id, { title })} />
                     </span>
                     <span className="ed-unit-count">{q ? `${visible.length}/${u.screens.length}` : u.screens.length}</span>
                     {!q && (
                       <span className="ed-struct-tools">
+                        <button type="button" className="ed-struct-btn"
+                          title={`Subir de nivel: convertir en ${moduleLabel} propio`}
+                          aria-label={`Subir de nivel: convertir esta ${unitLabel} en un ${moduleLabel} propio`}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); promoteUnit(u.id) }}>
+                          <Icon name="arrow-left" size={12} /></button>
                         {/* Desde el extremo del módulo, subir/bajar cruza al módulo adyacente */}
                         <button type="button" className="ed-struct-btn"
-                          title={ui === 0 ? 'Subir unidad (pasa al final del módulo anterior)' : 'Subir unidad'}
-                          aria-label="Subir unidad"
+                          title={ui === 0 ? `Subir ${unitLabel} (pasa al final del ${moduleLabel} anterior)` : `Subir ${unitLabel}`}
+                          aria-label={`Subir ${unitLabel}`}
                           disabled={mi === 0 && ui === 0}
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveUnit(u.id, -1) }}>
                           <Icon name="arrow-up" size={12} /></button>
                         <button type="button" className="ed-struct-btn"
-                          title={ui === m.units.length - 1 ? 'Bajar unidad (pasa al principio del módulo siguiente)' : 'Bajar unidad'}
-                          aria-label="Bajar unidad"
+                          title={ui === m.units.length - 1 ? `Bajar ${unitLabel} (pasa al principio del ${moduleLabel} siguiente)` : `Bajar ${unitLabel}`}
+                          aria-label={`Bajar ${unitLabel}`}
                           disabled={mi === course.modules.length - 1 && ui === m.units.length - 1}
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); moveUnit(u.id, 1) }}>
                           <Icon name="arrow-down" size={12} /></button>
-                        <button type="button" className="ed-struct-btn" title="Eliminar unidad" aria-label="Eliminar unidad"
+                        <button type="button" className="ed-struct-btn" title={`Eliminar ${unitLabel}`} aria-label={`Eliminar ${unitLabel}`}
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onRemoveUnit(u) }}>
                           <Icon name="trash" size={12} />
                         </button>
@@ -416,7 +444,7 @@ export function CourseTree() {
               )
             })}
             {!q && (
-              <button className="ed-add" onClick={() => addUnit(m.id)}><Icon name="plus" size={13} /> Añadir unidad</button>
+              <button className="ed-add" onClick={() => addUnit(m.id)}><Icon name="plus" size={13} /> Añadir {unitLabel}</button>
             )}
           </div>
         ))}
@@ -425,11 +453,11 @@ export function CourseTree() {
       {!q && (
         course.modules.length === 0 ? (
           <div className="ed-tree-empty">
-            <p className="ed-hint">El curso no tiene módulos. Crea el primero para empezar a añadir pantallas.</p>
-            <button className="ed-primary" onClick={addModule}><Icon name="plus" size={13} /> Crear el primer módulo</button>
+            <p className="ed-hint">El curso no tiene {moduleLabelPlural}. Crea el primero para empezar a añadir pantallas.</p>
+            <button className="ed-primary" onClick={addModule}><Icon name="plus" size={13} /> Crear el primer {moduleLabel}</button>
           </div>
         ) : (
-          <button className="ed-add ed-add-module" onClick={addModule}><Icon name="plus" size={13} /> Añadir módulo</button>
+          <button className="ed-add ed-add-module" onClick={addModule}><Icon name="plus" size={13} /> Añadir {moduleLabel}</button>
         )
       )}
 

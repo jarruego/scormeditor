@@ -293,12 +293,14 @@ function checkIds(ctx: Ctx) {
     check(s.id, `pantalla «${s.title || s.id}»`, { screenId: s.id, unitId })
     if (s.interaction) check(s.interaction.id, `interacción de «${s.title || s.id}»`, { screenId: s.id, unitId })
   }
+  const moduleWord = (c.module_label || 'módulo').toLowerCase()
+  const unitWord = (c.unit_label || 'unidad').toLowerCase()
   c.intro_screens.forEach((s) => scan(s))
   c.modules.forEach((m) => {
-    check(m.id, `módulo «${m.title || m.id}»`, {})
+    check(m.id, `${moduleWord} «${m.title || m.id}»`, {})
     m.screens.forEach((s) => scan(s))
     m.units.forEach((u) => {
-      check(u.id, `unidad «${u.title || u.id}»`, { unitId: u.id })
+      check(u.id, `${unitWord} «${u.title || u.id}»`, { unitId: u.id })
       u.screens.forEach((s) => scan(s, u.id))
     })
   })

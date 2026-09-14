@@ -496,7 +496,7 @@ export function ScreenEditor() {
           onClick={() => { titleRef.current?.focus(); titleRef.current?.select() }}>
           <Icon name="pencil" size={14} />
         </button>
-        <span className="ed-form-type"><Icon name={screenTypeIcon(screen.type)} size={12} color={screenTypeColor(screen.type)} /> {screenTypeLabel(screen.type)}</span>
+        <span className="ed-form-type"><Icon name={screenTypeIcon(screen.type)} size={12} color={screenTypeColor(screen.type)} /> {screenTypeLabel(screen.type, { module: course.module_label, unit: course.unit_label })}</span>
       </h2>
 
       {screenIssues.length > 0 && (
@@ -624,7 +624,7 @@ export function ScreenEditor() {
           <label className="ed-field">
             <span>Tipo de pantalla</span>
             <select value={screen.type} onChange={(e) => changeType(id, e.target.value as ScreenType)}>
-              {ScreenType.options.map((t) => <option key={t} value={t}>{screenTypeLabel(t)}</option>)}
+              {ScreenType.options.map((t) => <option key={t} value={t}>{screenTypeLabel(t, { module: course.module_label, unit: course.unit_label })}</option>)}
             </select>
           </label>
           <label className="ed-field ed-field-narrow">

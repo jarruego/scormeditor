@@ -170,8 +170,11 @@ que lo etiquete).
   funciona sola porque `renderScreen` recrea el nodo. `prefers-reduced-motion` desactiva
   `transition` **y** `animation`.
 - **Portada de unidad vs. portada de módulo — jerarquía cualitativa, no solo
-  cuantitativa**: ambas llevan un rótulo `.me-cover-kicker` («Unidad»/«Módulo», texto
-  real, no decorativo) sobre el `<h1>`. La plantilla `cover` (`.me-cover`, tipo
+  cuantitativa**: ambas llevan un rótulo `.me-cover-kicker` sobre el `<h1>` con el rótulo
+  personalizable del curso (`ctx.unitLabel`/`moduleLabel`, por defecto «Unidad»/«Módulo»
+  — `course.unit_label`/`module_label`, ver «Terminología» en `editor-pantallas.md`);
+  `render()` pasa `ctx` como segundo argumento a la plantilla (`tpl(screen, ctx)`) solo
+  para esto, el resto de plantillas lo ignoran. La plantilla `cover` (`.me-cover`, tipo
   `Portada unidad`) es un hero **contenido** en la tarjeta `.me-screen`: título grande
   centrado sobre banda degradada suave del acento, prose centrada a 560 px. `module_cover`
   (tipo `Portada módulo`, ver `editor-pantallas.md`) añade `.me-module-cover` encima y
@@ -196,8 +199,8 @@ que lo etiquete).
   propósito **sin** `.me-cover-kicker`: un paquete SCORM puede representar un curso
   entero, un módulo, una unidad o un tema suelto según el contenido (no siempre hay
   módulos/unidades debajo), así que esta portada no presupone en qué nivel de la
-  jerarquía está el paquete — ver el hilo abierto sobre terminología módulo/unidad en
-  `editor-pantallas.md`.
+  jerarquía está el paquete — ni siquiera con el rótulo personalizable, que es por
+  módulo/unidad, no por paquete (ver «Terminología» en `editor-pantallas.md`).
 - **Accordion/tabs animados**: chevron `▸` rotatorio en `.me-acc-head::before`; cuerpos y
   paneles aparecen con `me-reveal` (corre al pasar de `display:none` a visible).
 - **Feedback de interacciones**: la opción elegida se marca en el propio elemento

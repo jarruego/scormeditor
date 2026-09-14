@@ -64,7 +64,14 @@ export const SCREEN_TYPE_ICONS: Record<ScreenType, IconName> = {
   content_placeholder: 'placeholder',
 }
 
-export function screenTypeLabel(t: string): string {
+/** Etiqueta de un tipo de pantalla. `labels` sustituye «módulo»/«unidad» en
+ *  «Portada módulo»/«Portada unidad» por el rótulo personalizado del curso
+ *  (`course.module_label`/`unit_label`, por defecto los mismos) — el resto de
+ *  tipos no depende de esto. Sin `labels` (validators.ts, contextos sin acceso
+ *  al curso) se queda en los nombres de serie. */
+export function screenTypeLabel(t: string, labels?: { module?: string; unit?: string }): string {
+  if (t === 'module_cover' && labels?.module) return `Portada ${labels.module}`
+  if (t === 'cover' && labels?.unit) return `Portada ${labels.unit}`
   return SCREEN_TYPE_LABELS[t as ScreenType] ?? t
 }
 

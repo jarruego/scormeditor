@@ -137,21 +137,6 @@ desplegable «Tipo de pantalla» queda como ajuste avanzado). Decisiones:
   la introducción del curso — solo `cover`/`module_cover` quedan fuera de ahí porque su
   hero anuncia una unidad/módulo concretos que la introducción no tiene.
 
-### Nota abierta: terminología «módulo»/«unidad» cuando el paquete no es un curso completo
-Un paquete SCORM exportado por el editor puede representar cosas muy distintas según el
-centro/curso: un curso completo con varios módulos, un módulo suelto, una única unidad o
-un tema aislado. Hoy la UI habla siempre de «módulo»/«unidad» sin condicionarlo (botones
-«Añadir módulo», «Añadir unidad», recetas, `validators.ts`…), lo que puede desorientar a
-quien monta un paquete de un solo nivel. Sin decidir todavía cómo resolverlo — opciones
-barajadas: (a) etiquetas neutras tipo «Nivel 1»/«Nivel 2» siempre, que evitan el
-despiste pero pierden la palabra pedagógica útil en el caso común (curso con varios
-módulos); (b) un ajuste en course.json que declare qué representa el paquete y adapte
-las etiquetas; (c) **la opción que parece encajar mejor con el resto del editor**: dos
-campos de texto libre para renombrar «Módulo»/«Unidad» por curso, mismo patrón ya usado
-en `glossary_title`/`bibliography_title` (rótulos personalizables con default fijo) — no
-toca la estructura real (sigue siendo módulo→unidad→pantalla por debajo), solo cómo se
-llama en la UI. `scorm_cover` (arriba) ya evita el problema por su lado: no lleva ningún
-rótulo de nivel.
 - Las recetas **no** rellenan `student_text` (acabaría exportado) ni `min_time_seconds`
   (ya hay ajuste masivo en Ajustes).
 - Tras crear, el foco salta al input de Título (`data-field="screen-title"` en
@@ -164,6 +149,49 @@ rótulo de nivel.
   «+»; abre el mismo modal con `atIndex`, que **manda sobre** la colocación automática de
   la receta (`place`). Con el filtro activo no se muestran (los índices de la lista
   filtrada no se corresponden con la unidad).
+
+### Terminología «módulo»/«unidad» personalizable
+Un paquete SCORM exportado por el editor puede representar cosas muy distintas según el
+centro/curso: un curso completo con varios módulos, un módulo suelto, una única unidad o
+un tema aislado — «Módulo»/«Unidad» no siempre encaja. `course.module_label`/
+`course.unit_label` (`course.schema.ts`, default «Módulo»/«Unidad», mismo patrón que
+`glossary_title`/`bibliography_title`) renombran esas palabras **sin tocar la estructura
+real** (sigue siendo módulo→unidad→pantalla por debajo, solo cambia cómo se llama en la
+UI). Editable en ⚙ Ajustes → Interfaz (Apariencia), fieldset «Terminología»
+(`setModuleLabel`/`setUnitLabel` en el store).
+- **Alcance de la sustitución** (deliberadamente no exhaustivo): botones del árbol
+  (Añadir/Renombrar/Subir/Bajar/Eliminar + diálogos de confirmación, `CourseTree.tsx`),
+  las dos portadas en `screenTypeLabel()` («Portada módulo»/«Portada unidad», con
+  `labels?: {module, unit}` opcional — ver `labels.ts`) y su tarjeta en «+ Añadir
+  pantalla» (`recipeLabel()` en `AddScreenModal.tsx`, **no** vía `screenTypeLabel(r.type)`
+  a secas: varias recetas comparten `type` con `label` propio distinto, p. ej. varias de
+  tipo `content`), el kicker de la portada de módulo/unidad en la Vista estudiante
+  (`ctx.moduleLabel`/`unitLabel` en app.js → `renderer.js`, plantillas `cover`/
+  `module_cover` con segundo parámetro `ctx`) y las ubicaciones «módulo «X»»/«unidad «X»»
+  de `ID_DUPLICATE` en `validators.ts`. **No** cubierto a propósito: textos largos de
+  ayuda (`HelpModal.tsx`, tour guiado) y las descripciones de las recetas que no son
+  portada — quedarían con concordancia de género rota para un rótulo arbitrario («la
+  unidad» → «la Tema»); solo la etiqueta corta se sustituye. `pluralize()` en
+  `CourseTree.tsx` es una aproximación (vocal final → +s, consonante → +es) para plurales
+  en confirmaciones («2 bloques»), no cubre toda la morfología del español.
+
+### Subir de nivel: unidad → módulo
+Botón `.ed-struct-btn` con icono `arrow-left`, primero en `.ed-struct-tools` de cada
+unidad (`promoteUnit(unitId)` en el store). La unidad **se convierte** en un módulo
+propio, colocado justo después del módulo que la contenía — no queda envuelta como una
+unidad dentro de ese módulo nuevo: sus pantallas pasan a ser directamente las pantallas
+propias del módulo (`module.screens`), como hijas suyas, sin nivel intermedio. Detalles:
+- **Retipa `cover` → `module_cover`** entre las pantallas promovidas: una portada de
+  unidad a nivel de módulo no tiene sentido (su plantilla anuncia el rótulo de unidad) —
+  ver `arquitectura-runtime.md`. Ninguna otra conversión de tipo hace falta: el resto de
+  tipos no tienen restricción de `scope`.
+- **Pérdida asumida, sin aviso**: `summary`/`status` de la unidad no tienen equivalente en
+  `Module` (se descartan); un test de unidad (`assessments.unit_tests[].unit_id`) que
+  referenciara esa unidad queda huérfano — mismo riesgo, sin aviso, que ya asume
+  `removeUnit` hoy al borrar una unidad con test asociado (no es una regresión nueva).
+- **Sin operación inversa** (demote módulo→unidad): un módulo puede tener pantallas
+  propias y varias unidades a la vez, así que no hay una unidad única e inequívoca a la
+  que "bajarlo" — no se ha pedido y no está claro qué haría con lo demás.
 
 ## `ScreenEditor`: layout y jerarquía
 El formulario (`.ed-form`) tiene **ancho máximo legible de 960 px, centrado** (al 100 %

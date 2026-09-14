@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Course, Screen, ScreenInput, ScreenType, InteractionType, UnitTest, ScormConfig, ShellConfig, GlossaryTerm, BibliographyEntry } from '../schema/course.schema'
+import type { Course, Screen, ScreenInput, ScreenType, InteractionType, UnitTest, ScormConfig, ShellConfig, GlossaryTerm, BibliographyEntry, Module } from '../schema/course.schema'
 import { Course as CourseSchema, Screen as ScreenSchema, Interaction as InteractionSchema } from '../schema/course.schema'
 import { interactionRecipe, migrateInteractionData } from '../schema/interactionRecipes'
 import { migrate } from '../schema/migrations'
@@ -141,6 +141,13 @@ interface CourseState {
   /** Reordena la unidad (dir: -1 sube, +1 baja). Desde el extremo de su módulo
    *  cruza al adyacente: al final del anterior o al principio del siguiente. */
   moveUnit: (id: string, dir: -1 | 1) => void
+  /** Sube de nivel: la unidad se convierte en un módulo propio, colocado justo
+   *  después del módulo que la contenía; sus pantallas pasan a ser pantallas
+   *  propias del nuevo módulo (no queda una unidad intermedia). Retipa
+   *  `cover`→`module_cover` entre ellas. Pierde `summary`/`status` de la unidad
+   *  (sin equivalente en módulo) y puede dejar huérfano un test de unidad que
+   *  la referenciara por `unit_id` (mismo riesgo ya asumido por `removeUnit`). */
+  promoteUnit: (unitId: string) => void
 
   selectScreen: (id: string | null) => void
   locate: (id: string) => Located | null
@@ -190,6 +197,10 @@ interface CourseState {
   /** Reemplaza la bibliografía completa (panel Recursos y bibliografía). */
   setBibliography: (entries: BibliographyEntry[]) => void
   setBibliographyTitle: (title: string) => void
+  /** Rótulo por el que se llama a los módulos/unidades en la UI del editor y en
+   *  la portada de módulo (por defecto «Módulo»/«Unidad»); no cambia la estructura. */
+  setModuleLabel: (label: string) => void
+  setUnitLabel: (label: string) => void
 
   addAsset: (path: string, blob: Blob) => void
   /** Borra un binario del mapa de assets (irreversible: no entra en el historial). */
@@ -357,9 +368,9 @@ export const useCourseStore = create<CourseState>((set, get) => {
     const course = clone(get().course)
     course.modules.push({
       id: newId('m'),
-      title: `Módulo ${course.modules.length + 1}`,
+      title: `${course.module_label || 'Módulo'} ${course.modules.length + 1}`,
       screens: [],
-      units: [{ id: newId('u'), title: 'Unidad 1', summary: '', screens: [], status: 'ok' }],
+      units: [{ id: newId('u'), title: `${course.unit_label || 'Unidad'} 1`, summary: '', screens: [], status: 'ok' }],
     })
     set({ course })
   },
@@ -369,7 +380,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot()
     const course = clone(get().course)
     const m = course.modules.find((x) => x.id === moduleId)!
-    m.units.push({ id: newId('u'), title: `Unidad ${m.units.length + 1}`, summary: '', screens: [], status: 'ok' })
+    m.units.push({ id: newId('u'), title: `${course.unit_label || 'Unidad'} ${m.units.length + 1}`, summary: '', screens: [], status: 'ok' })
     set({ course })
   },
 
@@ -435,6 +446,29 @@ export const useCourseStore = create<CourseState>((set, get) => {
     const [unit] = course.modules[mi].units.splice(i, 1)
     if (dir === -1) course.modules[tm].units.push(unit)
     else course.modules[tm].units.unshift(unit)
+    set({ course })
+  },
+
+  promoteUnit: (unitId) => {
+    const modules = get().course.modules
+    const mi = modules.findIndex((m) => m.units.some((u) => u.id === unitId))
+    if (mi < 0) return
+    snapshot()
+    const course = clone(get().course)
+    const i = course.modules[mi].units.findIndex((u) => u.id === unitId)
+    const [unit] = course.modules[mi].units.splice(i, 1)
+    // La unidad SE CONVIERTE en módulo (no queda envuelta como su única unidad
+    // dentro): sus pantallas pasan a ser las pantallas propias del nuevo
+    // módulo, directamente. Se pierden `summary`/`status` (campos de unidad sin
+    // equivalente en módulo) y cualquier test de unidad que la referenciara por
+    // `unit_id` queda huérfano — mismo riesgo, sin aviso, que ya asume
+    // `removeUnit` hoy al borrar una unidad con test asociado.
+    // Portada unidad → portada módulo: una pantalla `cover` a nivel de módulo
+    // no tiene sentido (su plantilla anuncia «Unidad»); se retipa para que
+    // encaje en su nuevo nivel.
+    const screens = unit.screens.map((s) => (s.type === 'cover' ? { ...s, type: 'module_cover' as const } : s))
+    const newModule: Module = { id: newId('m'), title: unit.title, screens, units: [] }
+    course.modules.splice(mi + 1, 0, newModule)
     set({ course })
   },
 
@@ -625,6 +659,20 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot('bibliography-title')
     const course = clone(get().course)
     course.bibliography_title = title
+    set({ course })
+  },
+
+  setModuleLabel: (label) => {
+    snapshot('module-label')
+    const course = clone(get().course)
+    course.module_label = label
+    set({ course })
+  },
+
+  setUnitLabel: (label) => {
+    snapshot('unit-label')
+    const course = clone(get().course)
+    course.unit_label = label
     set({ course })
   },
 

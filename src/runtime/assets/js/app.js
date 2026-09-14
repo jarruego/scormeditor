@@ -511,6 +511,11 @@
         // La etiqueta «Evaluable» solo tiene sentido si las actividades cuentan
         // para la nota; con score_source 'final_test' puntúa solo el test final.
         showScoredBadge: (COURSE.scorm.rules || {}).score_source !== 'final_test',
+        // Rótulo personalizado de módulo/unidad (course.module_label/unit_label,
+        // por defecto «Módulo»/«Unidad»): kicker de la portada de módulo/unidad
+        // en renderer.js. Un paquete SCORM no siempre es un curso con módulos.
+        moduleLabel: COURSE.module_label || 'Módulo',
+        unitLabel: COURSE.unit_label || 'Unidad',
         // Ubicación de la pantalla en el curso (miga «Módulo › Unidad» de la tarjeta).
         crumb: {
           module: entry.module ? (entry.module.title || '') : '',

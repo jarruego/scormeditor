@@ -188,16 +188,19 @@
       return '<header class="me-cover me-module-cover"><h1>' + esc(s.title) + '</h1>' +
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
     },
-    cover: function (s) {
-      return '<header class="me-cover"><p class="me-cover-kicker">Unidad</p><h1>' + esc(s.title) + '</h1>' +
+    // Kicker con el rótulo personalizable del curso (ctx.unitLabel/moduleLabel,
+    // por defecto «Unidad»/«Módulo» — ver applyBranding-adjacent ctx en app.js):
+    // un paquete SCORM no siempre es un curso con módulos de verdad.
+    cover: function (s, ctx) {
+      return '<header class="me-cover"><p class="me-cover-kicker">' + esc((ctx && ctx.unitLabel) || 'Unidad') + '</p><h1>' + esc(s.title) + '</h1>' +
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
     },
     // Portada de módulo: rompe el margen de la tarjeta `.me-screen` (banda sólida
     // a sangre completa, ver .me-module-cover en styles.css) en vez del mismo hero
     // degradado que la portada de unidad — presenta el módulo entero, así que debe
     // notarse como un salto de jerarquía cualitativo, no solo cuantitativo.
-    module_cover: function (s) {
-      return '<header class="me-cover me-module-cover"><p class="me-cover-kicker">Módulo</p><h1>' + esc(s.title) + '</h1>' +
+    module_cover: function (s, ctx) {
+      return '<header class="me-cover me-module-cover"><p class="me-cover-kicker">' + esc((ctx && ctx.moduleLabel) || 'Módulo') + '</p><h1>' + esc(s.title) + '</h1>' +
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
     },
     objectives: function (s) {
@@ -250,7 +253,7 @@
 
   function render(container, screen, ctx) {
     var tpl = templates[screen.type] || templates.content;
-    var html = tpl(screen);
+    var html = tpl(screen, ctx);
     // Pantalla evaluable: la interacción puntúa (interaction.scored) y las
     // actividades cuentan para la nota (ctx.showScoredBadge, según score_source).
     // Señal: título+descripción en tarjeta amarilla (clase .me-screen-scored, ver
