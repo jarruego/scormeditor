@@ -13,6 +13,7 @@ import { Icon } from './Icon'
 // No agotan las opciones: los pickers de debajo siguen abiertos a cualquier hex.
 const PALETTES: { name: string; primary: string; accent: string }[] = [
   { name: 'Corporativo', primary: '#0b5fff', accent: '#6dc3c0' },
+  { name: 'Mecohisa', primary: '#8492b6', accent: '#f5ca00' },
   { name: 'Bosque', primary: '#15803d', accent: '#86c9a0' },
   { name: 'Granate', primary: '#9d174d', accent: '#e8879f' },
   { name: 'Violeta', primary: '#6d28d9', accent: '#a78bfa' },

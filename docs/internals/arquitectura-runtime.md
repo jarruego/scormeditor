@@ -135,14 +135,32 @@ que lo etiquete).
   (`--me-primary`/`--me-accent`), así que pisan el valor de `:root` en styles.css sin
   tocar el fichero. Editor: sección **Marca y color** de ⚙ Ajustes → Interfaz
   (Apariencia) (`AppearanceSection`, `editor-ui.md`) — un selector de **paletas típicas**
-  (`PALETTES` en `CourseSettingsEditor.tsx`: la corporativa de serie + 4 combinaciones)
-  aplica ambos colores de un clic, y dos pickers libres debajo permiten desviarse de
-  cualquier preset. Como son dos variables CSS y no un tema empaquetado, cualquier color
-  que el autor elija llega a los mismos sitios que el turquesa/azul de serie — no hay que
-  mantener una lista de reglas por paleta. Único cuidado: `.me-module-cover` deriva su
-  fondo oscuro directamente de `--me-accent` (ver la portada de módulo, más abajo), así
-  que un acento muy claro reduce ese margen de contraste (mitigado con un mix generoso
-  hacia negro, no garantizado al 100% para cualquier hex).
+  (`PALETTES` en `CourseSettingsEditor.tsx`: la corporativa de serie, «Mecohisa» —
+  `#8492b6`/`#f5ca00`, la de la empresa — y 4 combinaciones más) aplica ambos colores de
+  un clic, y dos pickers libres debajo permiten desviarse de cualquier preset. Como son
+  dos variables CSS y no un tema empaquetado, cualquier color que el autor elija llega a
+  los mismos sitios que el turquesa/azul de serie — no hay que mantener una lista de
+  reglas por paleta.
+  - **Símbolos «+» de expandir y botón de volumen → color de acción, no de estructura**:
+    `.me-acc-head::before`/`.me-tl-head::before` (accordion/timeline) y `.me-flip-tab`
+    (flip_cards/flashcards/image_cards) usaban `--me-accent`; con un acento claro (p. ej.
+    el amarillo de «Mecohisa») el símbolo perdía contraste sobre fondo blanco, o el
+    blanco encima del propio `.me-flip-tab` lo perdía sobre el acento. Los tres, más
+    `#me-btn-audio.is-on` (botón de volumen), se pasaron a `--me-primary` — mismo color
+    que ya usaba `.me-hotspot::after` desde siempre. El botón de volumen deja de
+    distinguirse por color del resto de botones de acción (antes era turquesa a
+    propósito), pero es el cambio pedido: ya no depende de que el acento sea lo bastante
+    oscuro.
+  - Al elegir los dos colores de una paleta, el más oscuro/saturado de los dos conviene
+    como **acción** (soporta texto blanco encima en botones, `.me-check`, `.me-flip-tab`…
+    y ahora también estos símbolos) y el más claro como **estructura** (solo se usa en
+    fondos tenues o se oscurece automáticamente, como en la portada de módulo) — con
+    «Mecohisa» el azul grisáceo `#8492b6` es la acción y el amarillo `#f5ca00` la
+    estructura, no al revés, precisamente por esto.
+  - Único cuidado restante: `.me-module-cover` deriva su fondo oscuro directamente de
+    `--me-accent` (ver la portada de módulo, más abajo), así que un acento muy claro
+    reduce ese margen de contraste (mitigado con un mix generoso hacia negro, no
+    garantizado al 100% para cualquier hex).
 - **Elevación** con sombras (`--me-shadow-1`/`-2`) en vez de solo bordes: tarjeta de
   pantalla, cards (hover se eleva), botones (hover sombra, active se hunde 1px).
 - **Tipografía**: H1 1.9rem/800/track -.015em; H2 1.35; body line-height 1.6.
