@@ -60,6 +60,14 @@ Sintaxis soportada:
   ampliable con el lightbox. Ancho opcional en % con `![alt|50](ruta)` (clamp 10–100,
   `style="width:NN%"`). Solo bloque (no inline) y solo rutas `assets/` o http(s).
   Botón 🖼 en la barra del editor y barra contextual «Imagen» (ver `editor-richtext.md`).
+  **Misma sintaxis para vídeo de YouTube**: si la URL es un enlace de YouTube
+  reconocible (`youtubeId()` en `renderer.js`; `extractYoutubeId()` en
+  `src/media/youtube.ts` para el editor — misma lógica duplicada, el runtime no puede
+  importar el módulo del editor), se incrusta `<div class="me-video"><iframe
+  src="https://www.youtube-nocookie.com/embed/ID">` en vez de la imagen — despacho por
+  URL, sin sintaxis ni nodo aparte. El ancho (`|NN`) se aplica al contenedor `.me-video`
+  (aspect-ratio 16:9 fijo, mismo CSS que `visual_resource.kind: 'video_youtube'`). Botón
+  ▶ Vídeo en la barra del editor (pega el enlace completo; ver `editor-richtext.md`).
 
 Ninguna plantilla de `renderer.js` muestra `objective` como banner — tampoco la pantalla
 `objectives`: su `student_text` ya presenta los objetivos al alumno y pintarlo duplicaba

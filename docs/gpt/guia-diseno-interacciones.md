@@ -202,6 +202,10 @@ poder diseñar apoyos realmente pers…"`, `title = "- Religión"`).
   sintaxis existe para el editor humano, no para la generación. Error real a evitar:
   una pantalla con una imagen en `visual_resource` y **dos más** incrustadas en el
   texto.
+- Mismo criterio para vídeo: **NUNCA** `![alt](https://youtube.com/...)` en
+  `student_text` (misma sintaxis que la imagen si la URL es de YouTube, también
+  exclusiva del editor humano). Todo vídeo va como `visual_resource.kind:
+  'video_youtube'` o como interacción `video`.
 - **Serie de puntos ilustrados** (cada formato/ejemplo/paso del apartado con su
   figura): **una pantalla por punto**, cada una con su texto y su imagen como
   `visual_resource`, y **titulada con su punto concreto** («Relato narrativo»,

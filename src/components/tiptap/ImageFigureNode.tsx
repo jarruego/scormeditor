@@ -2,6 +2,12 @@
  * ImageFigureNode — nodo TipTap para "![alt|ancho](ruta)" (línea propia, nunca
  * inline: una imagen ocupa su propio renglón, igual que en la carcasa).
  * attrs: src (ruta assets/… o http(s)://…), alt, width (10-100 | null).
+ *
+ * Mismo nodo/sintaxis para vídeos de YouTube: si `src` es un enlace de
+ * YouTube reconocible (`extractYoutubeId`), se renderiza como iframe
+ * incrustado en vez de `<img>` — sin tipo de nodo ni sintaxis aparte, el
+ * dialecto/serializador (`mdDialect.ts`) no necesita saber que existe. Mismo
+ * despacho por URL en el runtime (`renderer.js`, `youtubeId`).
  * ===========================================================================*/
 import { mergeAttributes, Node } from '@tiptap/core'
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react'
@@ -10,6 +16,7 @@ import { useState } from 'react'
 import { Icon } from '../Icon'
 import { useCourseStore } from '../../store/courseStore'
 import { optimizeImage } from '../../media/optimizeImage'
+import { extractYoutubeId } from '../../media/youtube'
 
 const imgUrlCache = new Map<string, { raw: unknown; url: string }>()
 
@@ -29,6 +36,7 @@ function useImageUrl(src: string): string | null {
 
 function ImageFigureView({ node, updateAttributes, deleteNode, selected }: NodeViewProps) {
   const { src, alt, width } = node.attrs as { src: string; alt: string; width: number | null }
+  const ytId = extractYoutubeId(src)
   const url = useImageUrl(src)
   const addAsset = useCourseStore((s) => s.addAsset)
   const removeAsset = useCourseStore((s) => s.removeAsset)
@@ -53,17 +61,23 @@ function ImageFigureView({ node, updateAttributes, deleteNode, selected }: NodeV
   }
 
   return (
-    <NodeViewWrapper className={`ed-imgnode ${selected ? 'is-selected' : ''} ${width ? 'has-width' : ''}`} contentEditable={false}>
-      {url ? (
+    <NodeViewWrapper className={`ed-imgnode ${selected ? 'is-selected' : ''} ${width ? 'has-width' : ''} ${ytId ? 'is-video' : ''}`} contentEditable={false}>
+      {ytId ? (
+        <div className="ed-imgnode-video" style={width ? { width: `${width}%` } : undefined}>
+          <iframe src={`https://www.youtube-nocookie.com/embed/${ytId}`} title={alt || 'Vídeo'} allowFullScreen />
+        </div>
+      ) : url ? (
         <img src={url} alt={alt} title={alt} style={width ? { width: `${width}%` } : undefined} />
       ) : (
         <div className="ed-imgnode-missing">🖼 imagen no encontrada en assets</div>
       )}
       <div className="ed-rta-blockbar ed-rta-imgbar" onMouseDown={(e) => e.stopPropagation()}>
-        <span className="ed-rta-blocklbl"><Icon name="image" size={13} /> Imagen:</span>
-        <input className="ed-rta-imgalt" value={alt} placeholder="Texto alternativo (accesibilidad)"
+        <span className="ed-rta-blocklbl">
+          <Icon name={ytId ? 'film' : 'image'} size={13} /> {ytId ? 'Vídeo:' : 'Imagen:'}
+        </span>
+        <input className="ed-rta-imgalt" value={alt} placeholder={ytId ? 'Título del vídeo (accesibilidad)' : 'Texto alternativo (accesibilidad)'}
           onChange={(e) => updateAttributes({ alt: e.target.value.replace(/[\]|]/g, '') })} />
-        <select value={width ?? ''} title="Ancho de la imagen en la diapositiva"
+        <select value={width ?? ''} title={`Ancho del ${ytId ? 'vídeo' : 'la imagen'} en la diapositiva`}
           onChange={(e) => updateAttributes({ width: e.target.value ? Number(e.target.value) : null })}>
           <option value="">Tamaño real</option>
           <option value="25">25 % del ancho</option>
@@ -72,13 +86,20 @@ function ImageFigureView({ node, updateAttributes, deleteNode, selected }: NodeV
           <option value="66">66 % del ancho</option>
           <option value="100">100 % del ancho</option>
         </select>
-        <label className="ed-rta-imgbtn" title="Sustituir por otra imagen" aria-busy={busy}>
-          {busy ? 'Subiendo…' : <><Icon name="refresh" size={13} /> Sustituir…</>}
-          <input type="file" accept="image/*" hidden disabled={busy}
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) replace(f); e.target.value = '' }} />
-        </label>
+        {ytId ? (
+          <input className="ed-rta-yturl" value={src} placeholder="Enlace de YouTube"
+            onChange={(e) => updateAttributes({ src: e.target.value })} />
+        ) : (
+          <label className="ed-rta-imgbtn" title="Sustituir por otra imagen" aria-busy={busy}>
+            {busy ? 'Subiendo…' : <><Icon name="refresh" size={13} /> Sustituir…</>}
+            <input type="file" accept="image/*" hidden disabled={busy}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) replace(f); e.target.value = '' }} />
+          </label>
+        )}
         <button type="button" className="ed-danger" onClick={remove}
-          title="Quitar la imagen (el archivo se conserva si otra pantalla lo usa)"><Icon name="trash" size={13} /> Quitar</button>
+          title={ytId ? 'Quitar el vídeo' : 'Quitar la imagen (el archivo se conserva si otra pantalla lo usa)'}>
+          <Icon name="trash" size={13} /> Quitar
+        </button>
       </div>
     </NodeViewWrapper>
   )

@@ -268,6 +268,11 @@ editor SCORMEditor lo renderiza. Sintaxis admitida:
   Toda imagen que generes va como `visual_resource` (§5), **máximo una por
   pantalla**; si un apartado trae varias figuras, una pantalla por punto (§5). Si el
   contenido pide una imagen que no tienes, deja una `editor_note` describiéndola.
+- Vídeo de YouTube incrustado en texto (`![alt](https://youtube.com/watch?v=...)`,
+  misma sintaxis que la imagen si la URL es de YouTube): **el GPT NUNCA la usa**, mismo
+  motivo que la imagen — es una comodidad del editor humano para pegar un enlace que
+  ya tiene a mano. Todo vídeo que el GPT proponga va como `visual_resource.kind:
+  'video_youtube'` (§5) o como interacción `video`, nunca en `student_text`.
 - **Bloques destacados (callouts)**: una línea `::: tipo`, el contenido en las
   líneas siguientes, y una línea `:::` para cerrar. **Nunca un callout vacío**
   (`::: tipo` seguido de `:::` sin cuerpo): si no hay texto para la caja, no la

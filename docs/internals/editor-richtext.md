@@ -58,7 +58,11 @@ nodos propios en `src/components/tiptap/`:
   del asset a una object URL cacheada (`imgUrlCache`, con limpieza en `import.meta.hot` en
   dev) y trae su propia barra integrada: alt, `<select>` de ancho (Tamaño real / 25–100 %),
   «Sustituir…» (sube otra imagen y borra el binario anterior si nadie más lo usa vía
-  `removeAsset`) y «Quitar».
+  `removeAsset`) y «Quitar». **Mismo nodo para vídeo de YouTube**: si `src` es un enlace de
+  YouTube (`extractYoutubeId()`, `src/media/youtube.ts`), el `NodeView` incrusta un iframe
+  en vez de `<img>` — sin `type` de nodo aparte, `mdDialect.ts` no distingue los dos casos.
+  La barra cambia «Sustituir…» por un `<input>` con el enlace (editable, para corregirlo
+  sin borrar y reinsertar).
 
 `SelectAllFix` (extensión pequeña definida en `RichTextArea.tsx`) sustituye el `Mod-a` por
 defecto de ProseMirror: la `AllSelection` que crea Ctrl/Cmd+A no queda bien sincronizada al
@@ -105,12 +109,19 @@ por cada **preset guardado** (`customBlocks.ts`, localStorage) con su icono y un
 borrarlo (`deletePreset`) — los presets son atajos de autor, no se serializan en el
 documento.
 
-## Imágenes en el texto
+## Imágenes y vídeo de YouTube en el texto
 Botón **🖼 Imagen** en la barra: `<label>` con `<input type="file">` oculto vestido de
 botón (`.ed-rta-imgbtn`); sube con `optimizeImage`, guarda el asset
 (`assets/img/txt-<ts>.<ext>`) e inserta un nodo `imageFigure` en la posición del cursor.
 Comparte camino con el botón «Sustituir…» del propio nodo. El render final y sus
 invariantes de seguridad: `interacciones.md` / `arquitectura-runtime.md`.
+
+Botón **▶ Vídeo**: abre una barra inline (mismo patrón que «Enlace») pidiendo el enlace
+completo de YouTube (`watch?v=`, `youtu.be/`, `embed/`, `shorts/` — el autor pega tal cual,
+no hace falta teclear el id desnudo). `extractYoutubeId()` valida al insertar («No parece
+un enlace de YouTube» si no cuadra) e inserta el **mismo** nodo `imageFigure` con `src` =
+la URL completa; el `NodeView` decide cómo pintarlo (ver arriba). Sin diálogo de archivo:
+a diferencia de la imagen, aquí no hay nada que subir ni que viaje en el ZIP.
 
 ## Integración en formularios (avisos importantes)
 - `RichTextArea` **no debe envolverse en un `<label>`**: un `<label>` asocia su primer

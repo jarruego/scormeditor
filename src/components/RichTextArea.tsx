@@ -12,6 +12,7 @@ import { CustomBlockPanel, type CustomBlockDraft } from './tiptap/CustomBlockPan
 import { loadPresets, savePresets, PALETTE, type CustomBlockPreset } from '../store/customBlocks'
 import { useCourseStore } from '../store/courseStore'
 import { optimizeImage } from '../media/optimizeImage'
+import { extractYoutubeId } from '../media/youtube'
 import { Icon } from './Icon'
 
 // Tipos de callout predefinidos, para los botones rápidos de la barra.
@@ -68,6 +69,7 @@ const EXTENSIONS = [
 ]
 
 type LinkEdit = { range: { from: number; to: number } | null; text: string; url: string }
+type VideoEdit = { url: string; error: boolean }
 
 /**
  * Área de texto con formato ligero: editor WYSIWYG (TipTap/ProseMirror) sobre
@@ -122,6 +124,7 @@ function RichTextAreaBody({ editor, rows }: { editor: Editor; rows: number }) {
   const [draft, setDraft] = useState<CustomBlockDraft>({ title: '', icon: '', color: PALETTE[0].value })
   const [linkEdit, setLinkEdit] = useState<LinkEdit | null>(null)
   const [imgBusy, setImgBusy] = useState(false)
+  const [videoEdit, setVideoEdit] = useState<VideoEdit | null>(null)
 
   const addAsset = useCourseStore((s) => s.addAsset)
 
@@ -193,6 +196,17 @@ function RichTextAreaBody({ editor, rows }: { editor: Editor; rows: number }) {
     }
   }
 
+  // --- Vídeo de YouTube: pega el enlace completo, se guarda como "imageFigure"
+  // (mismo nodo/sintaxis que una imagen; el `src` de YouTube es lo que decide
+  // cómo se renderiza, ver ImageFigureNode.tsx) --------------------------------
+  function insertVideo() {
+    if (!videoEdit) return
+    const id = extractYoutubeId(videoEdit.url)
+    if (!id) { setVideoEdit({ ...videoEdit, error: true }); return }
+    editor.chain().focus().insertContent({ type: 'imageFigure', attrs: { src: videoEdit.url.trim(), alt: '', width: null } }).run()
+    setVideoEdit(null)
+  }
+
   // --- Enlaces: insertar / editar el que hay bajo el cursor -------------------
   function openLinkEditor() {
     const linkType = editor.schema.marks.link
@@ -239,6 +253,10 @@ function RichTextAreaBody({ editor, rows }: { editor: Editor; rows: number }) {
       setLinkEdit(null)
       return true
     }
+    if (videoEdit) {
+      setVideoEdit(null)
+      return true
+    }
     return false
   }
 
@@ -262,6 +280,10 @@ function RichTextAreaBody({ editor, rows }: { editor: Editor; rows: number }) {
           <Icon name="image" size={13} /> {imgBusy ? 'Subiendo…' : 'Imagen'}
           <input type="file" accept="image/*" hidden disabled={imgBusy} onChange={onPickImage} />
         </label>
+        <button type="button" onClick={() => setVideoEdit({ url: '', error: false })}
+          title="Insertar un vídeo de YouTube (pega el enlace)">
+          <Icon name="film" size={13} /> Vídeo
+        </button>
         <span className="ed-rta-sep" aria-hidden="true" />
         {CALLOUT_TYPES.map((c) => (
           <button key={c.value} type="button" onClick={() => insertCallout(c.value)} title={`Bloque: ${c.label.replace(/^\S+\s/, '')}`}>{c.label}</button>
@@ -283,6 +305,19 @@ function RichTextAreaBody({ editor, rows }: { editor: Editor; rows: number }) {
       {showCustom && (
         <CustomBlockPanel mode="insert" draft={draft} setDraft={setDraft}
           onCancel={() => setShowCustom(false)} onApply={applyCustomDraft} />
+      )}
+
+      {videoEdit && (
+        <div className="ed-rta-blockbar ed-rta-videoedit">
+          <span className="ed-rta-blocklbl"><Icon name="film" size={13} /> Vídeo:</span>
+          <input className="ed-rta-yturl" value={videoEdit.url} placeholder="https://www.youtube.com/watch?v=… o youtu.be/…"
+            autoFocus
+            onChange={(e) => setVideoEdit({ url: e.target.value, error: false })}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); insertVideo() } }} />
+          {videoEdit.error && <span className="ed-rta-videoerr">No parece un enlace de YouTube</span>}
+          <button type="button" onClick={() => setVideoEdit(null)}>Cancelar</button>
+          <button type="button" className="ed-primary" onClick={insertVideo}>Insertar</button>
+        </div>
       )}
 
       {linkEdit && (

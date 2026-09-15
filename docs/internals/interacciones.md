@@ -292,7 +292,7 @@ para restaurar desde `suspend_data`). Inspirados en el catálogo de eXeLearning.
 > interacción**: es el informe de la pantalla de resultados (`renderResults` en
 > `app.js`), ver `evaluacion-finalizacion.md`.
 
-## Imagen en el markdown ligero
+## Imagen (y vídeo de YouTube) en el markdown ligero
 `![alt](assets/img/… | https://…)` en **línea propia** → `<figure class="me-md-img">` con
 `.me-zoomable` (lightbox gratis). Ancho opcional en % del ancho de la diapositiva:
 `![alt|50](ruta)` (clamp 10–100). Funciona en `student_text` **y** en cualquier cuerpo
@@ -303,7 +303,19 @@ que pase por `block()` (accordion, tabs, timeline). Solo bloque, no inline; solo
 - `collectAssetPaths` (assetRefs.ts) extrae también rutas `assets/…` **incrustadas** en
   strings (no solo strings que empiezan por `assets/`; si no, la imagen no viajaría al
   ZIP).
-- El TTS (`inlinePlain`) descarta la sintaxis de imagen (no se narra).
+- El TTS (`inlinePlain`) descarta la sintaxis de imagen (no se narra) — el bang-corchete
+  `![...](...)` es genérico, así que la misma línea descarta igual un vídeo incrustado.
+
+**Vídeo de YouTube, misma sintaxis exacta**: si la URL de `![alt|ancho](URL)` es un enlace
+de YouTube reconocible (`youtubeId()` en `renderer.js`), la línea incrusta
+`<div class="me-video"><iframe src="https://www.youtube-nocookie.com/embed/ID">` en vez de
+una imagen — despacho por URL, no hay marca ni nodo distinto en el markdown ni en
+`mdDialect.ts`. El ancho se aplica al contenedor `.me-video` (aspect-ratio 16:9 fijo,
+mismo CSS que `visual_resource.kind: 'video_youtube'`, sin selector de proporción aquí).
+Botón **▶ Vídeo** en la barra (pega el enlace completo — `watch?v=`, `youtu.be/`,
+`embed/`, `shorts/` —, `extractYoutubeId()` en `src/media/youtube.ts` extrae el id y
+valida antes de insertar). No genera asset ni entra en `collectAssetPaths` (no hay
+archivo que empaquetar, igual que el `visual_resource` de YouTube).
 
 ## Roadmap (acordado, no implementado)
 - **Animación secuencial** del contenido: revelar bloques en cascada. Encaja porque cada
