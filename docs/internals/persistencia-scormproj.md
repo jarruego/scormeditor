@@ -112,6 +112,19 @@ para que, tras recargar, el indicador diga la verdad. `initAutoSave()` (una vez 
 `App.tsx`) restaura esa copia, re-vincula el `projectHandle` y se suscribe a cambios de
 `course`/`assets` → marca `projectDirty` y agenda recuperación.
 
+**Sin coordinación entre pestañas**: la clave `project` de IndexedDB es única por origen,
+así que abrir el mismo proyecto en dos pestañas del mismo navegador hace que cada una
+autoguarde su propia copia en memoria sobre la misma clave — la última en escribir gana,
+aunque sea la más vieja (p. ej. subiste una imagen en una pestaña, la otra sigue sin
+saberlo y su próximo autoguardado la borra sin avisar). `src/store/tabSync.ts`
+(`initTabSync`, llamado desde `App.tsx`) solo **avisa** de esto: cada pestaña emite un
+«ping» propio por `BroadcastChannel('scormeditor-tabs')` cada 4s; si se oye el ping de
+otro id, se muestra una banda ámbar (`.ed-tabs-banner`) pidiendo cerrar la pestaña
+sobrante. No bloquea nada (a diferencia del `.ed-lock-banner` de la nube, ver
+`nube-sincronizacion.md`) — es responsabilidad del usuario cerrar la sobrante. El aviso
+expira solo (heartbeat con `STALE_MS`) si la otra pestaña se cierra, sin depender de un
+evento de cierre fiable.
+
 ## Pantalla de bienvenida (`WelcomeGate`) — solo si no hay nada que retomar
 Por defecto el store arranca con `sampleCourse` (la demo) sin vincular a nada. Si
 `initAutoSave()` no encuentra copia en IndexedDB, ese estado por defecto se queda tal

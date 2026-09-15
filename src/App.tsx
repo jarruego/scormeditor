@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { initAutoSave } from './store/autosave'
+import { initTabSync } from './store/tabSync'
 import { saveCurrentProject } from './cloud/sync'
 import { initCloudSession } from './cloud/session'
 import { startCloudWatch } from './cloud/watch'
@@ -78,6 +79,19 @@ export function App() {
     void initCloudSession()
     startCloudWatch()
   }, [])
+
+  // Aviso de «mismo proyecto abierto en otra pestaña»: el autoguardado local
+  // (IndexedDB, autosave.ts) no coordina entre pestañas — la última en
+  // autoguardar puede pisar los cambios de la otra aunque sea la más vieja en
+  // memoria. Se reactiva (se limpia `tabWarningDismissed`) si la otra pestaña
+  // se cierra y luego se abre otra de nuevo, en vez de quedar silenciado para
+  // siempre tras el primer cierre.
+  const [otherTabOpen, setOtherTabOpen] = useState(false)
+  const [tabWarningDismissed, setTabWarningDismissed] = useState(false)
+  useEffect(() => initTabSync((open) => {
+    setOtherTabOpen(open)
+    if (!open) setTabWarningDismissed(false)
+  }), [])
 
   // Árbol lateral redimensionable (plan UX fase 9): ancho persistido; arrastrar
   // el separador redimensiona (soltar por debajo de ~80px lo pliega) y el doble
@@ -179,6 +193,19 @@ export function App() {
         ))}
         <EditTools />
       </div>
+
+      {/* A diferencia del bloqueo de nube, esto no es exclusivo de la pestaña
+          Editor: el riesgo de que el autoguardado local se pisen existe
+          igual en Vista estudiante/Validación/Informe. */}
+      {otherTabOpen && !tabWarningDismissed && (
+        <div className="ed-tabs-banner">
+          <Icon name="alert-triangle" size={14} />
+          <span>Este proyecto está abierto en otra pestaña o ventana de este navegador — el autoguardado de la más reciente puede pisar los cambios de la otra. Cierra la pestaña sobrante.</span>
+          <button className="ed-btn-ghost" onClick={() => setTabWarningDismissed(true)} aria-label="Cerrar aviso">
+            <Icon name="x" size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Solo en la pestaña Editor: Vista estudiante/Validación/Informe siguen
           consultables con normalidad aunque otro tenga el control — leer no

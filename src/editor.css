@@ -113,6 +113,11 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
 .ed-lock-banner { display: flex; align-items: center; gap: .6rem; padding: .5rem 1rem; background: #fdecea; color: #7a1a14; border-bottom: 1px solid #f3b9b2; font-size: .85rem; }
 .ed-lock-banner span { flex: 1; }
 .ed-lock-overlay { position: absolute; inset: 0; z-index: 5; cursor: not-allowed; }
+/* Aviso de «otra pestaña abierta» (tabSync.ts): solo informa, no bloquea nada
+   (a diferencia de .ed-lock-banner), así que usa el mismo ámbar que .ed-status.warn. */
+.ed-tabs-banner { display: flex; align-items: center; gap: .6rem; padding: .5rem 1rem; background: #fff4e0; color: #7a4a00; border-bottom: 1px solid #f0d9a8; font-size: .85rem; }
+.ed-tabs-banner span { flex: 1; }
+.ed-tabs-banner button { color: inherit; }
 /* Separador arrastrable del árbol (doble clic pliega/despliega) */
 .ed-splitter { cursor: col-resize; background: var(--c-border); touch-action: none; }
 .ed-splitter:hover { background: var(--c-primary); }

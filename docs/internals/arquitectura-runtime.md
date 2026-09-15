@@ -134,6 +134,17 @@ que lo etiquete).
   mismo CSS cubre el YouTube de la interacción `video` (comparte `.me-video`).
 - **Assets en preview**: blobs vía `window.__ASSETS__` (mapa id→blobURL);
   `assetUrl()`/`asset` resuelve. En export, los ficheros van al ZIP y al manifiesto.
+  **La caché de blob URLs (`assetUrlCache` en `StudentPreview.tsx`) vive a nivel de
+  MÓDULO, no dentro del componente** — bug real ya sufrido: las imágenes se veían bien en
+  el Editor (mismo `assets` del store) pero nunca en Vista estudiante, con
+  `net::ERR_FILE_NOT_FOUND` sobre la propia blob URL en la consola del iframe. Causa:
+  `React.StrictMode` (activo en desarrollo) monta cada componente, ejecuta la limpieza de
+  sus efectos una vez de más y vuelve a montarlo (para detectar fugas); si las blob URLs
+  se crean y revocan dentro de un efecto propio del componente, esa limpieza extra revoca
+  las URLs recién insertadas en el `<iframe>` sin volver a crearlas. La caché de módulo
+  (`resolveAssetUrls`, idempotente: misma entrada → mismo resultado, solo revoca cuando un
+  asset cambia o desaparece del proyecto) sobrevive intacta a ese doble montaje porque no
+  depende del ciclo de vida del componente.
 
 ## Lenguaje visual de la carcasa
 - **Acento** `--me-accent` (turquesa `#6DC3C0` de serie) para **estructura**: filo
