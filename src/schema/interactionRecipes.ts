@@ -100,6 +100,18 @@ export type InteractionRecipe = {
   family?: InteractionFamily
   /** Estado inicial útil (opciones/config) al crear o llegar sin contenido. */
   seed?: () => Partial<Pick<Interaction, 'options' | 'config'>>
+  /**
+   * Enunciado/instrucciones típicos del tipo: rellenan `prompt`/`instructions`
+   * al crear la interacción (homogeneidad + menos tecleo) y están siempre
+   * disponibles como «Usar texto habitual» junto a esos campos en
+   * `ScreenEditor.tsx`. En los tipos de pregunta (`single_choice`, `fill_blanks`…)
+   * el enunciado es un placeholder genérico que el autor normalmente
+   * reemplaza por la pregunta real; en los exploratorios/manipulativos suele
+   * poder quedarse tal cual. Ausente en tipos sin frase genérica razonable
+   * (`html_embed`: contenido a medida del autor).
+   */
+  defaultPrompt?: string
+  defaultInstructions?: string
 }
 
 const oid = () => `o-${Math.random().toString(36).slice(2, 7)}`
@@ -114,6 +126,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: false,
     supportsAttempts: false,
     family: 'titled-content',
+    defaultPrompt: 'Explora cada apartado.',
+    defaultInstructions: 'Pulsa el título de cada apartado para desplegar su contenido.',
   },
   {
     type: 'tabs',
@@ -123,6 +137,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: false,
     supportsAttempts: false,
     family: 'titled-content',
+    defaultPrompt: 'Recorre las pestañas para ver todo el contenido.',
+    defaultInstructions: 'Pulsa cada pestaña para mostrar su contenido.',
   },
   {
     type: 'flip_cards',
@@ -132,6 +148,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: false,
     supportsAttempts: false,
     family: 'titled-content',
+    defaultPrompt: 'Descubre el contenido de cada tarjeta.',
+    defaultInstructions: 'Pulsa cada tarjeta para girarla y ver el reverso.',
   },
   {
     type: 'timeline',
@@ -141,6 +159,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: false,
     supportsAttempts: false,
     family: 'titled-content',
+    defaultPrompt: 'Recorre los hitos en orden.',
+    defaultInstructions: 'Pulsa cada hito para desplegar su detalle.',
   },
   {
     type: 'image_cards',
@@ -150,6 +170,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: false,
     supportsAttempts: false,
     family: 'titled-content',
+    defaultPrompt: 'Explora las tarjetas.',
+    defaultInstructions: 'Pulsa una tarjeta para ver su imagen y su texto.',
   },
   {
     type: 'before_after',
@@ -158,6 +180,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'presentar',
     gradable: false,
     supportsAttempts: false,
+    defaultPrompt: 'Compara el antes y el después.',
+    defaultInstructions: 'Arrastra el divisor para comparar las dos imágenes.',
   },
   {
     type: 'hotspots',
@@ -166,6 +190,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'presentar',
     gradable: true,
     supportsAttempts: false,
+    defaultPrompt: 'Explora la imagen.',
+    defaultInstructions: 'Pulsa cada zona marcada para ver su información.',
   },
 
   // ---- Preguntar -----------------------------------------------------------
@@ -183,6 +209,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
         { id: oid(), text: '' },
       ],
     }),
+    defaultPrompt: 'Selecciona la respuesta correcta.',
+    defaultInstructions: 'Elige una opción y pulsa Comprobar.',
   },
   {
     type: 'true_false',
@@ -198,6 +226,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
         { id: oid(), text: 'Falso' },
       ],
     }),
+    defaultPrompt: 'Indica si la afirmación es verdadera o falsa.',
+    defaultInstructions: 'Elige una opción y pulsa Comprobar.',
   },
   {
     type: 'scenario_decision',
@@ -207,6 +237,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: true,
     supportsAttempts: false,
     family: 'options',
+    defaultPrompt: 'Decide qué harías en esta situación.',
+    defaultInstructions: 'Elige una opción; cada una tiene su propio comentario.',
   },
   {
     type: 'fill_blanks',
@@ -215,6 +247,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'preguntar',
     gradable: true,
     supportsAttempts: true,
+    defaultPrompt: 'Completa el texto con la palabra correcta.',
+    defaultInstructions: 'Elige una opción para cada hueco y pulsa Comprobar.',
   },
   {
     type: 'case_practice',
@@ -223,6 +257,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'preguntar',
     gradable: false,
     supportsAttempts: false,
+    defaultPrompt: 'Reflexiona sobre el caso planteado.',
+    defaultInstructions: 'Piensa tu respuesta y despliega la rúbrica para autoevaluarte.',
   },
 
   // ---- Manipular -----------------------------------------------------------
@@ -233,6 +269,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'manipular',
     gradable: true,
     supportsAttempts: true,
+    defaultPrompt: 'Ordena los pasos correctamente.',
+    defaultInstructions: 'Arrastra los elementos hasta dejarlos en el orden correcto y pulsa Comprobar.',
   },
   {
     type: 'match_pairs',
@@ -242,6 +280,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: true,
     supportsAttempts: true,
     family: 'assign',
+    defaultPrompt: 'Empareja cada elemento con el que le corresponde.',
+    defaultInstructions: 'Arrastra cada elemento hasta su pareja y pulsa Comprobar.',
   },
   {
     type: 'classification',
@@ -251,6 +291,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: true,
     supportsAttempts: true,
     family: 'assign',
+    defaultPrompt: 'Clasifica cada elemento en su categoría.',
+    defaultInstructions: 'Arrastra cada elemento a la categoría que le corresponde y pulsa Comprobar.',
   },
 
   // ---- Juegos didácticos ---------------------------------------------------
@@ -261,6 +303,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'juegos',
     gradable: true,
     supportsAttempts: false,
+    defaultPrompt: 'Encuentra las palabras ocultas.',
+    defaultInstructions: 'Marca la primera y la última letra de cada palabra.',
   },
   {
     type: 'crossword',
@@ -269,6 +313,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'juegos',
     gradable: true,
     supportsAttempts: true,
+    defaultPrompt: 'Completa el crucigrama a partir de las pistas.',
+    defaultInstructions: 'Escribe una letra en cada casilla y pulsa Comprobar.',
   },
   {
     type: 'az_quiz',
@@ -277,6 +323,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'juegos',
     gradable: true,
     supportsAttempts: false,
+    defaultPrompt: 'Responde una definición por cada letra.',
+    defaultInstructions: 'Escribe tu respuesta y pulsa Enter; si no la sabes, pasa a la siguiente.',
   },
   {
     type: 'hidden_image',
@@ -286,6 +334,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: true,
     supportsAttempts: false,
     family: 'questions',
+    defaultPrompt: 'Descubre la imagen oculta.',
+    defaultInstructions: 'Responde cada pregunta para destapar una parte de la imagen.',
   },
   {
     type: 'puzzle',
@@ -295,6 +345,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: true,
     supportsAttempts: false,
     seed: () => ({ config: { cols: 3, rows: 3 } }),
+    defaultPrompt: 'Recompón la imagen.',
+    defaultInstructions: 'Toca dos piezas para intercambiarlas hasta reconstruir la imagen.',
   },
   {
     type: 'flashcards',
@@ -304,6 +356,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: false,
     supportsAttempts: false,
     family: 'titled-content',
+    defaultPrompt: 'Repasa las tarjetas.',
+    defaultInstructions: 'Intenta responder cada tarjeta y pulsa «Mostrar respuesta» para comprobarlo.',
   },
 
   // ---- Vídeo ---------------------------------------------------------------
@@ -315,6 +369,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: true,
     supportsAttempts: false,
     family: 'questions',
+    defaultPrompt: 'Mira el vídeo con atención.',
+    defaultInstructions: 'Si aparecen preguntas durante la reproducción, respóndelas para continuar.',
   },
 
   // ---- Avanzado ------------------------------------------------------------
@@ -325,6 +381,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'avanzado',
     gradable: false,
     supportsAttempts: false,
+    // Sin frase por defecto: el contenido es a medida del autor, no hay
+    // enunciado/instrucciones genéricos que tengan sentido siempre.
   },
 ]
 

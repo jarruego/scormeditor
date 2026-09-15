@@ -252,6 +252,10 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(4
 .ed-inline-issues li.is-warn { background: #fff4e0; color: #7a4a00; border-left: 3px solid #d09a00; }
 .ed-field { display: grid; gap: .25rem; }
 .ed-field > span { font-size: .85rem; color: var(--c-muted); }
+/* Etiqueta + botón «Usar texto habitual» (Enunciado/Instrucciones de interacción) */
+.ed-field-label-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.ed-field-default-btn { display: inline-flex; align-items: center; gap: .2rem; border: none; background: none; padding: 0; color: var(--c-primary); font-size: .8rem; cursor: pointer; }
+.ed-field-default-btn:hover { text-decoration: underline; }
 .ed-row { display: flex; gap: .75rem; align-items: end; flex-wrap: wrap; }
 .ed-row .ed-field { flex: 1; min-width: 140px; }
 .ed-field-narrow { max-width: 130px; }

@@ -302,7 +302,8 @@ de `screenRecipes.ts`: icono, descripción «qué hace el alumno», grupo didác
 (`presentar`/`preguntar`/`manipular`/`juegos`/`media`/`avanzado`), `gradable` (tiene
 corrección real → puede puntuar), `supportsAttempts` (el factory del runtime pasa por
 `attemptsOf`), `family` (shapes compatibles para migrar contenido al cambiar de tipo) y
-`seed()` (estado inicial útil). Las **etiquetas** siguen viviendo solo en `labels.ts`
+`seed()` (estado inicial útil) y `defaultPrompt`/`defaultInstructions` (frase típica del
+tipo para Enunciado/Instrucciones). Las **etiquetas** siguen viviendo solo en `labels.ts`
 (no se duplican). Es capa de UI: no toca el contrato. Consumo en `ScreenEditor`:
 - **«Intentos»** se muestra según `supportsAttempts` (no hay lista hardcodeada).
 - **«Evaluable»/«Puntos»** solo se muestran si el tipo es `gradable` — o si viene
@@ -323,7 +324,13 @@ El bloque cuenta una historia en 4 partes (no una pila plana de campos al mismo 
    opciones, y **eliminar** como icono discreto a la derecha (`.ed-it-del`) que confirma
    con `confirmDialog` solo si `interactionHasContent`.
 2. **Actividad** (siempre visible): Enunciado, Instrucciones y el
-   `InteractionConfigEditor` del tipo.
+   `InteractionConfigEditor` del tipo. Enunciado/Instrucciones nacen con la frase típica
+   del tipo (`defaultPrompt`/`defaultInstructions` del catálogo, homogeneidad y menos
+   tecleo); el autor los sobrescribe libremente. Un enlace **«Usar texto habitual»** junto
+   a cada campo (visible solo si el tipo tiene frase por defecto; no la tiene
+   `html_embed`, contenido a medida) permite recuperarlo en cualquier momento sin perder
+   el resto de la interacción. Al **cambiar de tipo** (`onChangeInteractionType`) se
+   aplica lo mismo pero solo al campo que esté vacío — nunca se pisa texto ya escrito.
 3. **Fold «Evaluación»** (solo si el tipo es `gradable` — o `scored` importado):
    Evaluable, Puntos e Intentos. `defaultOpen={it.scored}` y **resumen vivo** en el
    `<summary>`: «Evaluación — evaluable · 2 puntos · 1 intento» / «Evaluación — no puntúa»

@@ -282,14 +282,20 @@ export function ScreenEditor() {
     // filosofía que las recetas: práctica no puntúa de serie, evaluación sí —
     // y solo si el tipo elegido puede puntuar de verdad).
     const t = type ?? uiCfg.recommended?.[0] ?? 'single_choice'
-    const scored = screen?.type === 'unit_quiz' && interactionRecipe(t).gradable
+    const rec = interactionRecipe(t)
+    const scored = screen?.type === 'unit_quiz' && rec.gradable
     return Interaction.parse({
       id: `i-${Math.random().toString(36).slice(2, 7)}`,
       type: t,
       scored,
       points: scored ? 1 : 0,
+      // Enunciado/instrucciones típicos del tipo (homogeneidad, menos tecleo);
+      // el autor los sobrescribe si hace falta. También disponibles después
+      // como «Usar texto habitual» junto a los propios campos.
+      prompt: rec.defaultPrompt ?? '',
+      instructions: rec.defaultInstructions ?? '',
       // Estado inicial útil del tipo (opciones precargadas, config mínima).
-      ...interactionRecipe(t).seed?.(),
+      ...rec.seed?.(),
     })
   }
 
@@ -309,7 +315,24 @@ export function ScreenEditor() {
     }
     // Aviso de audio desactualizado si el tipo viejo o nuevo se narra.
     if (INFORMATIVE.has(it.type) || INFORMATIVE.has(t)) warnAudioStale()
+    const hadPrompt = it.prompt.trim() !== ''
+    const hadInstructions = it.instructions.trim() !== ''
     changeItType(id, t)
+    // Enunciado/instrucciones vacíos: rellenar con los típicos del tipo nuevo
+    // (nunca se pisa texto que el autor ya haya escrito).
+    if (!hadPrompt || !hadInstructions) {
+      const rec = interactionRecipe(t)
+      const fresh = useCourseStore.getState().getScreen(id)?.interaction
+      if (fresh) {
+        patch({
+          interaction: {
+            ...fresh,
+            prompt: hadPrompt ? fresh.prompt : (rec.defaultPrompt ?? fresh.prompt),
+            instructions: hadInstructions ? fresh.instructions : (rec.defaultInstructions ?? fresh.instructions),
+          },
+        })
+      }
+    }
   }
 
   // Elimina la interacción; confirma solo si tiene contenido escrito.
@@ -558,10 +581,31 @@ export function ScreenEditor() {
               </button>
             </div>
 
-            {/* 2. Actividad: el corazón del formulario, siempre visible. */}
-            <label className="ed-field"><span>Enunciado</span>
+            {/* 2. Actividad: el corazón del formulario, siempre visible.
+                «Usar texto habitual» rellena con la frase típica del tipo
+                (mismo texto que ya trae la interacción recién creada) — para
+                cuando el autor lo ha borrado o cambió de tipo sin dejarlo vacío. */}
+            <label className="ed-field"><span className="ed-field-label-row">
+              Enunciado
+              {itRecipe!.defaultPrompt && (
+                <button type="button" className="ed-field-default-btn"
+                  title="Usar el enunciado habitual para este tipo de interacción"
+                  onClick={() => setInteraction({ ...it, prompt: itRecipe!.defaultPrompt! })}>
+                  <Icon name="refresh" size={12} /> Usar texto habitual
+                </button>
+              )}
+            </span>
               <input value={it.prompt} onChange={(e) => setInteraction({ ...it, prompt: e.target.value })} /></label>
-            <label className="ed-field"><span>Instrucciones</span>
+            <label className="ed-field"><span className="ed-field-label-row">
+              Instrucciones
+              {itRecipe!.defaultInstructions && (
+                <button type="button" className="ed-field-default-btn"
+                  title="Usar las instrucciones habituales para este tipo de interacción"
+                  onClick={() => setInteraction({ ...it, instructions: itRecipe!.defaultInstructions! })}>
+                  <Icon name="refresh" size={12} /> Usar texto habitual
+                </button>
+              )}
+            </span>
               <input value={it.instructions} onChange={(e) => setInteraction({ ...it, instructions: e.target.value })} /></label>
 
             <InteractionConfigEditor it={it} screenId={id} onChange={setInteraction} />
