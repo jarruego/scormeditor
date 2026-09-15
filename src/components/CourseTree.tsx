@@ -36,9 +36,17 @@ import { Icon } from './Icon'
 const useTreeFold = create<{
   collapsed: Record<string, boolean>
   setCollapsed: (id: string, v: boolean) => void
+  /** Acordeón: abre `id` y cierra el resto de `allIds` (solo un módulo activo). */
+  openOnly: (id: string, allIds: string[]) => void
 }>((set) => ({
   collapsed: {},
   setCollapsed: (id, v) => set((s) => ({ collapsed: { ...s.collapsed, [id]: v } })),
+  openOnly: (id, allIds) =>
+    set((s) => {
+      const next = { ...s.collapsed }
+      for (const other of allIds) next[other] = other !== id
+      return { collapsed: next }
+    }),
 }))
 
 /** Scroll del árbol hasta el nodo, solo si no está ya del todo a la vista.
@@ -54,12 +62,25 @@ function scrollTreeTo(el: HTMLElement | null) {
 
 /** Ref a un `<li>` del árbol que se lleva a la vista cuando pasa a estar
  *  seleccionado (también al montar: al volver de otra pestaña el árbol se monta
- *  de nuevo con la selección ya puesta). Diferido dos frames: en el montaje el
- *  layout aún no es definitivo y el scroll inmediato se queda corto. */
-function useScrollWhenSelected(selected: boolean) {
+ *  de nuevo con la selección ya puesta, p. ej. al navegar en Vista estudiante y
+ *  volver a Editor). Diferido dos frames: en el montaje el layout aún no es
+ *  definitivo y el scroll inmediato se queda corto.
+ *
+ *  `moduleId`/`unitId`: contenedores plegables de la pantalla (`undefined` si
+ *  no aplica, p. ej. una pantalla de introducción). Si están cerrados, el
+ *  `<li>` existe en el DOM pero oculto por el `<details>` — `scrollIntoView`
+ *  no puede llevarlo a la vista mientras siga oculto — así que se abren
+ *  ANTES de programar el scroll (mismo acordeón que al abrir a mano: abrir el
+ *  módulo de la pantalla cierra los demás). */
+function useScrollWhenSelected(selected: boolean, moduleId?: string, unitId?: string) {
   const ref = useRef<HTMLLIElement | null>(null)
   useEffect(() => {
     if (!selected) return
+    if (moduleId) {
+      const allModuleIds = useCourseStore.getState().course.modules.map((m) => m.id)
+      useTreeFold.getState().openOnly(moduleId, allModuleIds)
+    }
+    if (unitId) useTreeFold.getState().setCollapsed(unitId, false)
     let raf2 = 0
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => scrollTreeTo(ref.current))
@@ -100,9 +121,12 @@ function IssueBadge({ info }: { info?: ScreenIssues }) {
  *  lista filtrada no se corresponden con el contenedor), que los oculta.
  *  `level`: nivel del contenedor (introducción/módulo/unidad), para el rótulo
  *  real de una portada (`type: 'cover'`) — lo sabe quien llama, no hace falta
- *  derivarlo de `containerId` aquí. */
-function ScreenItem({ screen, containerId, issues, index, count, level }: {
+ *  derivarlo de `containerId` aquí. `moduleId`/`unitId`: contenedores plegables
+ *  a abrir si la pantalla se selecciona estando cerrados (ver
+ *  `useScrollWhenSelected`); ausentes en pantallas de introducción. */
+function ScreenItem({ screen, containerId, issues, index, count, level, moduleId, unitId }: {
   screen: Screen; containerId: string; issues?: ScreenIssues; index?: number; count?: number; level: CoverLevel
+  moduleId?: string; unitId?: string
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: screen.id,
@@ -122,7 +146,7 @@ function ScreenItem({ screen, containerId, issues, index, count, level }: {
 
   // Al seleccionarse (pantalla recién creada, enlace desde Validación, o al
   // volver de la Vista estudiante), el árbol lleva la pantalla a la vista.
-  const liRef = useScrollWhenSelected(selected)
+  const liRef = useScrollWhenSelected(selected, moduleId, unitId)
   const setRefs = (el: HTMLLIElement | null) => { liRef.current = el; setNodeRef(el) }
 
   return (
@@ -253,6 +277,7 @@ export function CourseTree() {
   const [filter, setFilter] = useState('')
   const collapsed = useTreeFold((s) => s.collapsed)
   const setCollapsed = useTreeFold((s) => s.setCollapsed)
+  const openOnly = useTreeFold((s) => s.openOnly)
 
   // Rótulos personalizables (por defecto «Módulo»/«Unidad», ver Ajustes → Curso):
   // un paquete SCORM no siempre es un curso con módulos de verdad. En minúscula
@@ -375,7 +400,12 @@ export function CourseTree() {
         {course.modules.map((m, mi) => (
           <details key={`${m.id}-${q ? 'f' : 'n'}`} className="ed-module ed-tree-module"
             open={q ? true : collapsed[m.id] === false}
-            onToggle={(e) => { if (!q) setCollapsed(m.id, !e.currentTarget.open) }}>
+            onToggle={(e) => {
+              if (q) return
+              // Acordeón: un solo módulo abierto a la vez — abrirlo cierra los demás.
+              if (e.currentTarget.open) openOnly(m.id, course.modules.map((mm) => mm.id))
+              else setCollapsed(m.id, true)
+            }}>
             <summary className="ed-module-title">
               <span className="ed-module-name">
                 <InlineRename value={m.title} title={`Renombrar ${moduleLabel}`}
@@ -411,6 +441,7 @@ export function CourseTree() {
                       <Fragment key={s.id}>
                         {!q && <InsertPoint containerId={m.id} index={i} />}
                         <ScreenItem screen={s} containerId={m.id} issues={issuesByScreen.get(s.id)} level="module"
+                          moduleId={m.id}
                           index={q ? undefined : i} count={q ? undefined : m.screens.length} />
                       </Fragment>
                     ))}
@@ -472,6 +503,7 @@ export function CourseTree() {
                           {/* Con filtro activo los índices no se corresponden con la unidad → sin puntos de inserción */}
                           {!q && <InsertPoint containerId={u.id} index={i} />}
                           <ScreenItem screen={s} containerId={u.id} issues={issuesByScreen.get(s.id)} level="unit"
+                            moduleId={m.id} unitId={u.id}
                             index={q ? undefined : i} count={q ? undefined : u.screens.length} />
                         </Fragment>
                       ))}

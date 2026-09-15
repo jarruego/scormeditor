@@ -47,6 +47,11 @@ pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla
   fue lo que cambió el default de abierto a cerrado sin tocar `onToggle`. No entra en el
   historial de deshacer ni en el proyecto; con filtro activo se fuerza abierto sin tocar
   lo guardado.
+- **Acordeón solo entre módulos** (no entre unidades de un mismo módulo, que se pliegan
+  independientemente): abrir un módulo cierra los demás, vía `useTreeFold.openOnly(id,
+  allModuleIds)` en el `onToggle` del `<details>` de módulo. Con más de un módulo abierto
+  a la vez el árbol se hacía largo de recorrer; con uno solo se ve siempre el contexto
+  completo de dónde se está.
 - **Filtro** (`.ed-tree-filter`): por título o etiqueta de tipo; oculta módulos/unidades
   sin coincidencias y las secciones Evaluación/añadir mientras está activo. El dnd sigue
   funcionando (mueve por id, no por índice visible).
@@ -65,8 +70,15 @@ pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla
   muestra badge ⛔/⚠ por pantalla (`IssueBadge`); el `ScreenEditor` muestra la lista de
   issues de la pantalla abierta (`.ed-inline-issues`) encima del formulario. Los `info`
   no se muestran en contexto (solo en la pestaña Validación).
-- **Auto-scroll**: al seleccionarse una pantalla (recién creada o vía enlaces de
-  Validación/Informe), su `<li>` hace `scrollIntoView({ block: 'nearest' })`.
+- **Auto-scroll y auto-apertura del contenedor**: al seleccionarse una pantalla (recién
+  creada, vía enlaces de Validación/Informe, o al volver de Vista estudiante tras navegar
+  ahí — `me-screen-change` por postMessage → `selectScreen`), su `<li>` se centra en el
+  árbol (`scrollTreeTo`, `scrollIntoView({ block: 'center' })` solo si no está ya del todo
+  a la vista; diferido dos `requestAnimationFrame` porque en el montaje el layout aún no
+  es definitivo). Si el módulo/unidad contenedor está plegado, el `<li>` existe en el DOM
+  pero oculto — `scrollIntoView` no puede llevarlo a la vista mientras siga oculto —, así
+  que `useScrollWhenSelected` (`CourseTree.tsx`) abre primero el módulo (mismo acordeón
+  que al abrir a mano: cierra los demás) y la unidad, y solo entonces programa el scroll.
 
 ### Estructura desde el árbol y «Nuevo (vacío)»
 Sin esto, borrar la estructura demo era un callejón sin salida (no había forma de crear
