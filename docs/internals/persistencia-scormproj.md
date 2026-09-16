@@ -112,6 +112,16 @@ para que, tras recargar, el indicador diga la verdad. `initAutoSave()` (una vez 
 `App.tsx`) restaura esa copia, re-vincula el `projectHandle` y se suscribe a cambios de
 `course`/`assets` → marca `projectDirty` y agenda recuperación.
 
+**También recuerda dónde estaba el autor** (`selectedScreenId`/`activeTab`, mismo objeto
+de IndexedDB): sin esto, F5 siempre volvía a la primera pantalla del curso en la pestaña
+Editor, sin importar en qué diapositiva o pestaña (Vista estudiante incluida) estuviera el
+autor. Un cambio de navegación (sin tocar `course`/`assets`) agenda igual la recuperación
+(`scheduleSave`) pero **no** marca `projectDirty` — moverse por el árbol no es editar, y
+el indicador «Guardado»/«Sin guardar» no debe mentir por eso. Al restaurar, el id se valida
+contra el curso ya migrado (`allScreens`, más los sintéticos `__final__`/`__glossary__`/
+`__bibliography__`): uno de una pantalla borrada mientras tanto se ignora y queda el
+default de `hydrate()` (primera pantalla), en vez de dejar el editor sin selección.
+
 **Sin coordinación entre pestañas**: la clave `project` de IndexedDB es única por origen,
 así que abrir el mismo proyecto en dos pestañas del mismo navegador hace que cada una
 autoguarde su propia copia en memoria sobre la misma clave — la última en escribir gana,

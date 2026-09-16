@@ -1,10 +1,15 @@
 import JSZip from 'jszip'
-import { useCourseStore } from './courseStore'
+import { useCourseStore, type Tab } from './courseStore'
 import { safeParseCourse } from '../schema/course.schema'
 import { migrate } from '../schema/migrations'
 import { kvGet, kvSet } from './persistence'
 import type { AssetMap } from '../export/exportScorm'
 import { collectAssetPaths } from '../schema/assetRefs'
+import { allScreens } from '../schema/traverse'
+
+// Ids de pantalla sintéticos (no viven en el árbol de screens del curso, ver
+// `traverse.ts`): válidos como `selectedScreenId` igual que uno real.
+const SYNTHETIC_SCREEN_IDS = new Set(['__final__', '__glossary__', '__bibliography__'])
 
 /**
  * Persistencia en dos niveles:
@@ -63,8 +68,11 @@ function scheduleSave() {
  *  Exportada para que la nube fuerce la persistencia inmediata tras
  *  abrir/subir un documento, igual que ya hace `openProject`. */
 export async function persistToIndexedDb() {
-  const { course, assets, projectDirty, cloudDocumentId, cloudOrgId, cloudTitle, cloudVersionId } = useCourseStore.getState()
-  await kvSet('project', { course, assets, dirty: projectDirty, cloudDocumentId, cloudOrgId, cloudTitle, cloudVersionId })
+  const { course, assets, projectDirty, cloudDocumentId, cloudOrgId, cloudTitle, cloudVersionId, selectedScreenId, activeTab } =
+    useCourseStore.getState()
+  await kvSet('project', {
+    course, assets, dirty: projectDirty, cloudDocumentId, cloudOrgId, cloudTitle, cloudVersionId, selectedScreenId, activeTab,
+  })
 }
 
 async function doSave() {
@@ -274,6 +282,7 @@ export async function initAutoSave() {
     const saved = await kvGet<{
       course: unknown; assets: AssetMap; dirty?: boolean
       cloudDocumentId?: string | null; cloudOrgId?: string | null; cloudTitle?: string | null; cloudVersionId?: string | null
+      selectedScreenId?: string | null; activeTab?: Tab
     }>('project')
     if (saved?.course) {
       const parsed = safeParseCourse(migrate(saved.course))
@@ -288,6 +297,16 @@ export async function initAutoSave() {
           useCourseStore.getState().setCloudLink(saved.cloudDocumentId, saved.cloudOrgId ?? null, saved.cloudTitle ?? null)
           useCourseStore.getState().setCloudVersion(saved.cloudVersionId ?? null)
         }
+        // Y la pantalla/pestaña donde estaba el autor al recargar (F5): `hydrate`
+        // por sí solo siempre selecciona la primera pantalla del curso. Se valida
+        // contra el curso YA restaurado — un id de una pantalla borrada mientras
+        // tanto (por otra pestaña/dispositivo) se ignora y se deja el default de
+        // `hydrate`, en vez de dejar el editor sin pantalla seleccionada.
+        const sel = saved.selectedScreenId
+        if (sel && (SYNTHETIC_SCREEN_IDS.has(sel) || allScreens(parsed.data).some((s) => s.id === sel))) {
+          useCourseStore.getState().selectScreen(sel)
+        }
+        if (saved.activeTab) useCourseStore.getState().setActiveTab(saved.activeTab)
       }
     }
     if (fsSupported) {
@@ -303,6 +322,11 @@ export async function initAutoSave() {
   useCourseStore.subscribe((state, prev) => {
     if (state.course !== prev.course || state.assets !== prev.assets) {
       useCourseStore.getState().setProjectDirty(true)
+      scheduleSave()
+    } else if (state.selectedScreenId !== prev.selectedScreenId || state.activeTab !== prev.activeTab) {
+      // Solo posición de navegación (qué pantalla/pestaña, no contenido): se
+      // recuerda para el próximo F5, pero no marca el proyecto «sin guardar»
+      // ni cuenta como cambio real — moverse por el árbol no es editar.
       scheduleSave()
     }
   })
