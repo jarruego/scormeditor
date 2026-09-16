@@ -135,25 +135,56 @@ sobrante. No bloquea nada (a diferencia del `.ed-lock-banner` de la nube, ver
 expira solo (heartbeat con `STALE_MS`) si la otra pestaña se cierra, sin depender de un
 evento de cierre fiable.
 
-## Pantalla de bienvenida (`WelcomeGate`) — solo si no hay nada que retomar
+## Pantalla de bienvenida (`WelcomeGate`) — sin nada que retomar, o proyecto cerrado
 Por defecto el store arranca con `sampleCourse` (la demo) sin vincular a nada. Si
 `initAutoSave()` no encuentra copia en IndexedDB, ese estado por defecto se queda tal
 cual — y sin `WelcomeGate` el usuario vería la demo cargada en silencio sin haberlo
 decidido. `WelcomeGate` (`src/components/WelcomeGate.tsx`) es un overlay a pantalla
-completa montado en `App.tsx` que se muestra solo cuando **las tres cosas** son ciertas:
-`autosaveReady` (a `true` en el `finally` de `initAutoSave()`, para no parpadear mientras
-IndexedDB responde) y `!linkedFileName && !projectDirty && !cloudDocumentId` (nada
-vinculado, nada sin guardar, ningún documento-nube). En cuanto hay algo que retomar —
-autoguardado, archivo local o documento-nube — no se interpone: la app entra directa,
-como siempre.
+completa montado en `App.tsx` que se muestra cuando `autosaveReady` (a `true` en el
+`finally` de `initAutoSave()`, para no parpadear mientras IndexedDB responde) y, además,
+**cualquiera** de estos dos casos:
+1. **Nada que retomar** (`!linkedFileName && !projectDirty && !cloudDocumentId`) y el
+   usuario no la ha descartado ya. Elegir cualquier opción la descarta **para siempre**
+   vía `localStorage` (`ed:startGateDismissed`, mismo patrón que `WelcomeTip` en
+   `GuidedTour.tsx`): es una pantalla de primer arranque, no un aviso recurrente en cada
+   recarga sin cambios.
+2. **`projectClosed`** (store, ver abajo): reaparece **siempre**, sin depender del
+   descarte de `localStorage` — cerrar es una acción explícita del usuario, no algo que
+   deba dejar de avisar tras la primera vez. Se limpia sola en cuanto se abre o crea
+   cualquier proyecto, porque `resetEmpty`/`resetSample`/`importJson` ponen
+   `projectClosed: false`.
 
-Ofrece: Empezar en blanco (`resetEmpty`), Ver la demo (cierra el overlay sin tocar el
-curso, ya es el que se ve), Abrir un archivo (`openProject`/`openProjectFromFile`,
-mismo flujo que «Archivo → Abrir») y, si `isCloudConfigured()`, Abrir de la nube
-(`setSettingsModal('cloud')`, reutiliza `CloudModal` tal cual). Elegir cualquier opción
-la descarta **para siempre** vía `localStorage` (`ed:startGateDismissed`, mismo patrón
-que `WelcomeTip` en `GuidedTour.tsx`): es una pantalla de primer arranque, no un aviso
-recurrente en cada recarga sin cambios.
+Ofrece: Empezar en blanco (`resetEmpty`), Ver la demo (con `projectClosed` no hay ninguna
+demo cargada de fondo — `closeProject()` deja un curso vacío neutro, así que este botón
+llama a `resetSample()` de verdad en vez de solo cerrar el overlay; en el caso 1 la demo
+ya es el curso activo, así que solo descarta), Abrir un archivo
+(`openProject`/`openProjectFromFile`, mismo flujo que «Archivo → Abrir») y, si
+`isCloudConfigured()`, Abrir de la nube (`setSettingsModal('cloud')`, reutiliza
+`CloudModal` tal cual).
+
+## Cerrar proyecto
+Menú **«Archivo ▾» → Cerrar proyecto** (`Toolbar.tsx`, `onCloseProject`) deja el editor
+sin ningún proyecto abierto: desvincula archivo local y documento-nube y muestra
+`WelcomeGate` (caso `projectClosed` de arriba). Si hay cambios sin guardar
+(`projectDirty`), antes pregunta con un confirm de **tres botones**
+(`confirmDialogTri`, `src/store/confirm.ts` — extiende el `confirmDialog` de dos botones
+sin romper sus ~10 usos existentes, que siguen viendo `Promise<boolean>`): «Guardar y
+cerrar» / «Descartar y cerrar» / «Cancelar» (la etiqueta de guardar cambia a «Subir y
+cerrar» en modo nube). Si el usuario guarda pero el guardado no llega a completarse
+(p. ej. cancela el selector de archivo o deniega el permiso nativo), `onCloseProject`
+comprueba `projectDirty` tras el intento y **no cierra** — evita perder cambios por un
+guardado fallido silencioso.
+
+El cierre en sí es `closeProject()` (`courseStore.ts`): dado que no hay un estado
+«vacío de verdad» distinto del curso demo, deja un curso neutro con una portada
+(misma forma que `resetEmpty`) y marca `projectDirty: false` / `projectClosed: true`.
+`closeCurrentProject()` (`autosave.ts`) añade alrededor: suelta el vínculo a archivo
+local (`clearLocalLink`) y a nube (`setCloudLink(null, null, null)`), llama a
+`closeProject()` y persiste el resultado en IndexedDB de inmediato — así una recarga
+(F5) tras cerrar vuelve a mostrar la pantalla «sin proyecto», en vez de reabrir en
+silencio el proyecto anterior o dejar un curso vacío marcado como sucio.
+`projectClosed` viaja en el mismo objeto de IndexedDB que el resto del autoguardado
+(`persistToIndexedDb`/`initAutoSave`), junto a `selectedScreenId`/`activeTab`.
 
 ## Permisos del File System Access — transparentes (sin botón «Reconectar»)
 Los permisos del handle no sobreviven a un reload. **No** hay botón de reconectar: al
@@ -163,7 +194,8 @@ usuario lo deniega/cancela, el documento sigue «Sin guardar». Sin File System 
 
 ## Estado en el store y UI
 `courseStore`: `activeTab`, `linkedFileName`, `projectDirty` + `setProjectDirty`,
-`setLinked(name)`. La toolbar (`Toolbar.tsx`) muestra **un único indicador**
+`setLinked(name)`, `projectClosed` + `setProjectClosed`/`closeProject` (ver «Cerrar
+proyecto» arriba). La toolbar (`Toolbar.tsx`) muestra **un único indicador**
 `.ed-docstate` (`✓ Guardado · archivo` / `● Sin guardar`) que es un botón = guardar; un
-menú **«Archivo ▾»** (`.ed-menu`) agrupa Abrir / Guardar / Guardar como… / Nuevo (vacío) /
-Nuevo (demo) / Borrar recursos huérfanos / Exportar SCORM ZIP.
+menú **«Archivo ▾»** (`.ed-menu`) agrupa Abrir / Guardar / Guardar como… / Cerrar
+proyecto / Nuevo (vacío) / Nuevo (demo) / Borrar recursos huérfanos / Exportar SCORM ZIP.

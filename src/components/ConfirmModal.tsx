@@ -15,8 +15,8 @@ export function ConfirmModal() {
     if (!current) return
     okRef.current?.focus()
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { e.preventDefault(); resolve(false) }
-      else if (e.key === 'Enter') { e.preventDefault(); resolve(true) }
+      if (e.key === 'Escape') { e.preventDefault(); resolve('cancel') }
+      else if (e.key === 'Enter') { e.preventDefault(); resolve('confirm') }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -26,7 +26,7 @@ export function ConfirmModal() {
 
   return (
     <div className="ed-confirm-backdrop"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) resolve(false) }}>
+      onMouseDown={(e) => { if (e.target === e.currentTarget) resolve('cancel') }}>
       <div className="ed-confirm" role="alertdialog" aria-modal="true"
         aria-labelledby="ed-confirm-title" aria-describedby="ed-confirm-msg">
         <div className="ed-confirm-head">
@@ -38,12 +38,17 @@ export function ConfirmModal() {
         <p className="ed-confirm-msg" id="ed-confirm-msg">{current.message}</p>
         <div className="ed-confirm-actions">
           {!current.hideCancel && (
-            <button type="button" className="ed-confirm-cancel" onClick={() => resolve(false)}>
+            <button type="button" className="ed-confirm-cancel" onClick={() => resolve('cancel')}>
               {current.cancelLabel || 'Cancelar'}
             </button>
           )}
+          {current.thirdLabel && (
+            <button type="button" className="ed-danger" onClick={() => resolve('third')}>
+              {current.thirdLabel}
+            </button>
+          )}
           <button type="button" ref={okRef} className={current.danger ? 'ed-danger' : 'ed-primary'}
-            onClick={() => resolve(true)}>
+            onClick={() => resolve('confirm')}>
             {current.confirmLabel || 'Aceptar'}
           </button>
         </div>

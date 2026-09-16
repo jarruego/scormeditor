@@ -75,6 +75,20 @@ interface CourseState {
   projectDirty: boolean // cambios sin guardar en el archivo de proyecto
   setProjectDirty: (dirty: boolean) => void
   setLinked: (name: string | null) => void
+  /** true tras «Cerrar proyecto» (menú Archivo): sin archivo/nube vinculados,
+   *  sin cambios pendientes, y con esta marca explícita para que `WelcomeGate`
+   *  se muestre de nuevo aunque el usuario ya la hubiera descartado antes (esa
+   *  marca vive en localStorage, ajena a este flag — ver `WelcomeGate.tsx`).
+   *  Se persiste en IndexedDB para sobrevivir a un F5: sin esto, recargar
+   *  reabriría en silencio el curso vacío que deja `closeProject()`. Cualquier
+   *  acción que abra o cree un proyecto (`hydrate`/`resetEmpty`/`resetSample`/
+   *  `importJson`) la vuelve a poner a `false`. */
+  projectClosed: boolean
+  setProjectClosed: (v: boolean) => void
+  /** Deja el editor sin proyecto abierto (pantalla de bienvenida). No toca el
+   *  archivo/nube vinculados — eso lo hace `closeCurrentProject()` en
+   *  `autosave.ts` (el store no puede importarlo, ver nota de `hydrate`). */
+  closeProject: () => void
   /** true en cuanto `initAutoSave()` terminó de intentar restaurar desde
    *  IndexedDB (haya encontrado algo o no). Antes de esto no se puede saber
    *  si «no hay nada vinculado» es el estado real o solo que aún no se ha
@@ -280,6 +294,8 @@ export const useCourseStore = create<CourseState>((set, get) => {
   projectDirty: false,
   setProjectDirty: (dirty) => set({ projectDirty: dirty }),
   setLinked: (name) => set({ linkedFileName: name }),
+  projectClosed: false,
+  setProjectClosed: (v) => set({ projectClosed: v }),
   autosaveReady: false,
   setAutosaveReady: () => set({ autosaveReady: true }),
   cloudDocumentId: null,
@@ -307,6 +323,9 @@ export const useCourseStore = create<CourseState>((set, get) => {
   hydrate: (course, assets) => {
     resetCoalesce()
     set({ course, assets, importError: null, past: [], future: [], selectedScreenId: allScreens(course)[0]?.id ?? null })
+    // projectClosed NO se toca aquí a propósito (mismo criterio que
+    // linkedFileName/projectDirty): initAutoSave() lo restaura aparte desde lo
+    // guardado en IndexedDB, justo después de llamar a hydrate().
   },
   replaceAssets: (assets) => set({ assets }),
 
@@ -324,7 +343,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
         return false
       }
       resetCoalesce()
-      set({ course: parsed.data, importError: null, past: [], future: [], selectedScreenId: allScreens(parsed.data)[0]?.id ?? null })
+      set({ course: parsed.data, importError: null, past: [], future: [], selectedScreenId: allScreens(parsed.data)[0]?.id ?? null, projectClosed: false })
       return true
     } catch (e) {
       set({ importError: `JSON inválido: ${(e as Error).message}` })
@@ -342,7 +361,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     // crear un ciclo.
     set({
       course: sampleCourse, importError: null, past: [], future: [], selectedScreenId: allScreens(sampleCourse)[0]?.id ?? null,
-      linkedFileName: null, cloudDocumentId: null, cloudOrgId: null, cloudTitle: null, projectDirty: true,
+      linkedFileName: null, cloudDocumentId: null, cloudOrgId: null, cloudTitle: null, projectDirty: true, projectClosed: false,
     })
   },
 
@@ -359,7 +378,25 @@ export const useCourseStore = create<CourseState>((set, get) => {
     // Mismo motivo que en resetSample: desvincula archivo local y nube previos.
     set({
       course, assets: {}, importError: null, past: [], future: [], selectedScreenId: cover.id,
-      linkedFileName: null, cloudDocumentId: null, cloudOrgId: null, cloudTitle: null, projectDirty: true,
+      linkedFileName: null, cloudDocumentId: null, cloudOrgId: null, cloudTitle: null, projectDirty: true, projectClosed: false,
+    })
+  },
+
+  closeProject: () => {
+    resetCoalesce()
+    // Mismo curso mínimo válido que resetEmpty (un módulo/unidad con portada,
+    // vía parse con los defaults del esquema) — solo queda de fondo, oculto
+    // tras la pantalla de bienvenida, así que su contenido es irrelevante en
+    // sí mismo, pero debe ser un Course válido igualmente.
+    const cover = { id: newId('s'), type: 'cover' as const, title: 'Portada' }
+    const course = CourseSchema.parse({
+      course: { title: 'Curso nuevo' },
+      modules: [{ id: newId('m'), title: 'Módulo 1', units: [{ id: newId('u'), title: 'Unidad 1', screens: [cover] }] }],
+    })
+    set({
+      course, assets: {}, importError: null, past: [], future: [], selectedScreenId: cover.id,
+      linkedFileName: null, cloudDocumentId: null, cloudOrgId: null, cloudTitle: null,
+      projectDirty: false, projectClosed: true,
     })
   },
 

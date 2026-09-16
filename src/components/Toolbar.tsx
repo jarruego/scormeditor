@@ -7,6 +7,7 @@ import {
   openProjectFromFile,
   saveProjectAs,
   clearLocalLink,
+  closeCurrentProject,
 } from '../store/autosave'
 import { saveCurrentProject } from '../cloud/sync'
 import { CourseSettingsModal, AppearanceModal, NarrationModal } from './SettingsModal'
@@ -16,7 +17,7 @@ import { HelpModal } from './HelpModal'
 import { CloudModal } from './CloudModal'
 import { startTour } from './GuidedTour'
 import { InlineRename } from './InlineRename'
-import { confirmDialog } from '../store/confirm'
+import { confirmDialog, confirmDialogTri } from '../store/confirm'
 import { orphanAssetPaths } from '../schema/assetRefs'
 import { isCloudConfigured } from '../cloud/client'
 import { useCloudSessionStore } from '../cloud/session'
@@ -190,6 +191,30 @@ export function Toolbar() {
   async function onOpen() {
     if (await confirmDiscard()) void openProject()
   }
+  // Cerrar proyecto: si hay cambios sin guardar/subir, ofrece las 3 vías
+  // (guardar/subir y cerrar, descartar y cerrar, cancelar) en vez del simple
+  // "reemplazar" de confirmDiscard — cerrar no sustituye por otro curso, se
+  // queda sin ninguno. Si el guardado se cancela (selector de archivo nativo)
+  // o falla, `projectDirty` sigue en `true` y no se llega a cerrar.
+  async function onCloseProject() {
+    if (projectDirty) {
+      const res = await confirmDialogTri({
+        title: 'Cerrar proyecto',
+        message: isCloudMode
+          ? 'Tienes cambios sin subir a la nube. ¿Quieres subirlos antes de cerrar?'
+          : 'Tienes cambios sin guardar en el archivo. ¿Quieres guardarlos antes de cerrar?',
+        confirmLabel: isCloudMode ? 'Subir y cerrar' : 'Guardar y cerrar',
+        thirdLabel: 'Descartar y cerrar',
+        cancelLabel: 'Cancelar',
+      })
+      if (res === 'cancel') return
+      if (res === 'confirm') {
+        await onSaveClick()
+        if (useCourseStore.getState().projectDirty) return
+      }
+    }
+    await closeCurrentProject()
+  }
   async function onPruneOrphans() {
     if (orphanCount === 0) return
     const ok = await confirmDialog({
@@ -334,6 +359,10 @@ export function Toolbar() {
                 </button>
               )}
               <hr className="ed-menu-sep" />
+              <button role="menuitem" onClick={() => runMenu(() => void onCloseProject())}
+                title="Deja el editor sin ningún proyecto abierto">
+                Cerrar proyecto
+              </button>
               <button role="menuitem" onClick={() => runMenu(onNewEmpty)}
                 title="Curso mínimo desde cero: un módulo con la portada, sin recursos">
                 Nuevo (vacío)

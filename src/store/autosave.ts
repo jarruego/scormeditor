@@ -68,10 +68,10 @@ function scheduleSave() {
  *  Exportada para que la nube fuerce la persistencia inmediata tras
  *  abrir/subir un documento, igual que ya hace `openProject`. */
 export async function persistToIndexedDb() {
-  const { course, assets, projectDirty, cloudDocumentId, cloudOrgId, cloudTitle, cloudVersionId, selectedScreenId, activeTab } =
+  const { course, assets, projectDirty, cloudDocumentId, cloudOrgId, cloudTitle, cloudVersionId, selectedScreenId, activeTab, projectClosed } =
     useCourseStore.getState()
   await kvSet('project', {
-    course, assets, dirty: projectDirty, cloudDocumentId, cloudOrgId, cloudTitle, cloudVersionId, selectedScreenId, activeTab,
+    course, assets, dirty: projectDirty, cloudDocumentId, cloudOrgId, cloudTitle, cloudVersionId, selectedScreenId, activeTab, projectClosed,
   })
 }
 
@@ -180,6 +180,19 @@ export async function clearLocalLink() {
   useCourseStore.getState().setLinked(null)
 }
 
+/** «Cerrar proyecto» (menú Archivo): desvincula archivo/nube, deja el store
+ *  en el estado neutro de `closeProject()` (sin cambios pendientes, marcado
+ *  `projectClosed`) y lo persiste de inmediato — así un F5 justo después
+ *  vuelve a la pantalla de bienvenida, no reabre en silencio el curso vacío.
+ *  El llamante decide antes si hace falta guardar (ver `confirmDialogTri` en
+ *  `Toolbar.tsx`); esta función nunca pregunta ni guarda por su cuenta. */
+export async function closeCurrentProject(): Promise<void> {
+  await clearLocalLink()
+  useCourseStore.getState().setCloudLink(null, null, null)
+  useCourseStore.getState().closeProject()
+  await persistToIndexedDb()
+}
+
 /** Abre un `.scormproj` con el diálogo de archivo (Chrome/Edge) y lo vincula. */
 export async function openProject(): Promise<boolean> {
   if (!fsSupported) return false
@@ -282,7 +295,7 @@ export async function initAutoSave() {
     const saved = await kvGet<{
       course: unknown; assets: AssetMap; dirty?: boolean
       cloudDocumentId?: string | null; cloudOrgId?: string | null; cloudTitle?: string | null; cloudVersionId?: string | null
-      selectedScreenId?: string | null; activeTab?: Tab
+      selectedScreenId?: string | null; activeTab?: Tab; projectClosed?: boolean
     }>('project')
     if (saved?.course) {
       const parsed = safeParseCourse(migrate(saved.course))
@@ -307,6 +320,10 @@ export async function initAutoSave() {
           useCourseStore.getState().selectScreen(sel)
         }
         if (saved.activeTab) useCourseStore.getState().setActiveTab(saved.activeTab)
+        // «Cerrar proyecto» (menú Archivo) deja esta marca para que un F5
+        // posterior vuelva a la pantalla de bienvenida en vez de reabrir en
+        // silencio el curso vacío que deja closeProject().
+        useCourseStore.getState().setProjectClosed(!!saved.projectClosed)
       }
     }
     if (fsSupported) {
