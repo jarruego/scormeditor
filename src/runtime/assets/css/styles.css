@@ -280,7 +280,7 @@ body {
 .me-layout-left.me-mw-33 > .me-media, .me-layout-right.me-mw-33 > .me-media { flex: 0 0 33%; max-width: 33%; }
 .me-layout-left.me-mw-50 > .me-media, .me-layout-right.me-mw-50 > .me-media { flex: 0 0 48%; max-width: 48%; }
 .me-layout-left.me-mw-66 > .me-media, .me-layout-right.me-mw-66 > .me-media { flex: 0 0 64%; max-width: 64%; }
-.me-media > .me-figure, .me-media > .me-video, .me-media > video { margin-top: 0; }
+.me-media > .me-figure { margin-top: 0; }
 @media (max-width: 640px) {
   .me-layout-left, .me-layout-right { flex-direction: column; }
   .me-layout-left > .me-media, .me-layout-right > .me-media { max-width: 100% !important; flex-basis: auto !important; }
@@ -289,8 +289,12 @@ body {
 /* Imagen/recurso arriba o abajo: centrado y/o ancho completo (opcionales) */
 .me-media-center { text-align: center; }
 .me-media-center > .me-figure { text-align: center; }
-.me-media-full > .me-figure img, .me-media-full > .me-video, .me-media-full > video { width: 100%; }
+.me-media-full > .me-figure img, .me-media-full > .me-figure .me-video, .me-media-full > .me-figure video { width: 100%; }
 .me-figure figcaption { color: var(--me-muted); font-size: .85rem; }
+/* Vídeo (YouTube o archivo) envuelto en <figure> igual que la imagen, para
+   poder mostrar el pie: sin esto el margen propio de .me-video (1rem 0) se
+   sumaría al de .me-figure y separaría de más el vídeo de su figcaption. */
+.me-figure .me-video { margin: 0; }
 .me-video { position: relative; aspect-ratio: 16 / 9; margin: 1rem 0; width: 100%; }
 /* El iframe debe llenar el marco: sin alto explícito se queda en los 150px por defecto. */
 .me-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 6px; }

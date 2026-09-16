@@ -9,6 +9,7 @@
 
   var esc = global.Interactions.esc;
   var asset = global.Interactions.asset;
+  var rich = global.Interactions.rich;
 
   // Markdown ligero y SEGURO -> HTML. Soporta:
   //   ## / ### encabezados, **negrita**, *cursiva*, [texto](url),
@@ -151,22 +152,30 @@
 
   function mediaBlock(vr) {
     if (!vr || vr.kind === 'none' || !vr.src) return '';
+    // Pie/leyenda: mismo `rich()` que el resto de textos cortos (negrita,
+    // cursiva, enlaces) — antes solo se escapaba (`esc`), sin dar formato,
+    // inconsistente con el resto de la carcasa (p. ej. las etiquetas del
+    // comparador antes/después sí usan `rich()`).
     if (vr.kind === 'image') {
       return '<figure class="me-figure"><img src="' + esc(asset(vr.src)) + '" alt="' + esc(vr.alt || '') +
         '" class="me-zoomable" tabindex="0" role="button" aria-label="Ampliar imagen">' +
-        (vr.caption ? '<figcaption>' + esc(vr.caption) + '</figcaption>' : '') + '</figure>';
+        (vr.caption ? '<figcaption>' + rich(vr.caption) + '</figcaption>' : '') + '</figure>';
     }
     if (vr.kind === 'video_youtube') {
       // Solo valores conocidos: la clase acaba en el DOM.
       var ratio = ['4x3', '1x1', '9x16'].indexOf(vr.media_ratio) >= 0 ? vr.media_ratio : '16x9';
-      return '<div class="me-video me-ratio-' + ratio + '"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(vr.src) +
-        '" title="' + esc(vr.caption || 'Vídeo') + '" allowfullscreen loading="lazy"></iframe></div>';
+      // El pie, si lo hay, viaja también en el `title` del iframe (accesible
+      // sin depender del figcaption) además de mostrarse debajo, como la imagen.
+      return '<figure class="me-figure"><div class="me-video me-ratio-' + ratio + '"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(vr.src) +
+        '" title="' + esc(vr.caption || 'Vídeo') + '" allowfullscreen loading="lazy"></iframe></div>' +
+        (vr.caption ? '<figcaption>' + rich(vr.caption) + '</figcaption>' : '') + '</figure>';
     }
     if (vr.kind === 'video_file') {
       var t = (vr.tracks || []).map(function (tr) {
         return '<track kind="' + esc(tr.kind || 'subtitles') + '" src="' + esc(asset(tr.src)) + '" srclang="' + esc(tr.lang) + '" label="' + esc(tr.label) + '" default>';
       }).join('');
-      return '<video class="me-video" controls preload="metadata"' + (vr.poster ? ' poster="' + esc(asset(vr.poster)) + '"' : '') + '><source src="' + esc(asset(vr.src)) + '">' + t + '</video>';
+      return '<figure class="me-figure"><video class="me-video" controls preload="metadata"' + (vr.poster ? ' poster="' + esc(asset(vr.poster)) + '"' : '') + '><source src="' + esc(asset(vr.src)) + '">' + t + '</video>' +
+        (vr.caption ? '<figcaption>' + rich(vr.caption) + '</figcaption>' : '') + '</figure>';
     }
     if (vr.kind === 'audio') {
       return '<audio class="me-audio" controls preload="metadata"><source src="' + esc(asset(vr.src)) + '"></audio>';

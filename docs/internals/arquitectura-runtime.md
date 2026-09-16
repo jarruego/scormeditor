@@ -140,6 +140,18 @@ que lo etiquete).
   vía clase `me-ratio-*`; el vertical 9:16 se acota a 380px de ancho y `.me-media-center`
   lo centra con `margin-inline:auto` (text-align no centra bloques con max-width). El
   mismo CSS cubre el YouTube de la interacción `video` (comparte `.me-video`).
+- **Pie/leyenda (`caption`), unificado en los tres tipos con archivo** (`image`,
+  `video_youtube`, `video_file`): `mediaBlock()` envuelve los tres en `<figure
+  class="me-figure">` con un `<figcaption>` visible al final si hay `caption` —
+  antes solo la imagen lo mostraba (`video_youtube` lo desaprovechaba como `title`
+  invisible del iframe, `video_file` lo ignoraba del todo pese a que el editor ya
+  ofrecía el campo para los tres). El `title` del iframe de YouTube se conserva
+  además del `figcaption` (accesible sin depender de verlo escrito). El texto pasa
+  por `rich()` (negrita/cursiva/enlaces), no por `esc()` a secas — antes el pie de
+  imagen no daba formato, inconsistente con las etiquetas del comparador
+  antes/después, que sí usan `rich()`. CSS: `.me-figure .me-video { margin: 0; }`
+  evita que el margen propio de `.me-video` (1rem) se sume al de `.me-figure` y
+  separe de más el vídeo de su pie.
 - **Assets en preview**: blobs vía `window.__ASSETS__` (mapa id→blobURL);
   `assetUrl()`/`asset` resuelve. En export, los ficheros van al ZIP y al manifiesto.
   **La caché de blob URLs (`assetUrlCache` en `StudentPreview.tsx`) vive a nivel de
