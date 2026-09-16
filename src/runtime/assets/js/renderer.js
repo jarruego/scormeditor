@@ -79,6 +79,12 @@
     }
     for (i = 0; i < lines.length; i++) {
       var ln = lines[i];
+      // Alineación de encabezado/párrafo: prefijo "{center}"/"{right}" (izquierda
+      // = sin marca, default implícito). Solo se aplica a esos dos casos más
+      // abajo; listas y callouts la ignoran (fuera de alcance a propósito).
+      var align = '';
+      var am = /^\{(center|right)\}\s?/.exec(ln);
+      if (am) { align = am[1]; ln = ln.slice(am[0].length); }
       // Apertura de bloque destacado: "::: tipo" o "::: custom | #color | icono | título".
       var open = /^\s*:::\s*([A-Za-z]+)\s*(.*)$/.exec(ln);
       if (open) {
@@ -92,11 +98,20 @@
         continue;
       }
       var h = /^(#{2,3})\s+(.*)$/.exec(ln); // ## y ### (h1 es el título)
-      if (h) { closeLists(); var lv = h[1].length; html += '<h' + lv + '>' + inline(h[2]) + '</h' + lv + '>'; continue; }
+      if (h) {
+        closeLists();
+        var lv = h[1].length;
+        html += '<h' + lv + (align ? ' style="text-align:' + align + '"' : '') + '>' + inline(h[2]) + '</h' + lv + '>';
+        continue;
+      }
       // Línea que es SOLO negrita (con dos puntos opcionales) => encabezado.
       // Cubre títulos que el origen trae como "**Título**" en vez de "## Título".
       var bh = /^\s*\*\*(.+?)\*\*\s*:?\s*$/.exec(ln);
-      if (bh) { closeLists(); html += '<h3>' + inline(bh[1]) + '</h3>'; continue; }
+      if (bh) {
+        closeLists();
+        html += '<h3' + (align ? ' style="text-align:' + align + '"' : '') + '>' + inline(bh[1]) + '</h3>';
+        continue;
+      }
       var oli = /^\s*(\d+)[.)]\s+(.*)/.exec(ln);
       if (oli) {
         if (inUl) { html += '</ul>'; inUl = false; }
@@ -140,7 +155,7 @@
         continue;
       }
       closeLists();
-      if (ln.trim() !== '') html += '<p>' + inline(ln) + '</p>';
+      if (ln.trim() !== '') html += '<p' + (align ? ' style="text-align:' + align + '"' : '') + '>' + inline(ln) + '</p>';
     }
     closeLists();
     return html;

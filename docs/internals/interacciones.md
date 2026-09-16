@@ -317,6 +317,15 @@ Botón **▶ Vídeo** en la barra (pega el enlace completo — `watch?v=`, `yout
 valida antes de insertar). No genera asset ni entra en `collectAssetPaths` (no hay
 archivo que empaquetar, igual que el `visual_resource` de YouTube).
 
+## Alineación de párrafo/encabezado
+Prefijo de línea `{center}`/`{right}` (izquierda = sin marca, default implícito; nunca
+`{left}`) → `style="text-align:…"` en el `<h2>`/`<h3>`/`<p>` de `renderer.js`. Se despoja
+al principio de cada línea, ANTES de probar el resto de la sintaxis — así funciona igual
+dentro de `student_text` y de cualquier cuerpo que pase por `block()` (accordion, tabs,
+timeline). Fuera de alcance a propósito: listas y callouts (alinear texto suelto es «lo
+típico», no ítems de lista ni cajas destacadas). Editor: tres botones en la barra de
+`RichTextArea` vía `TextAlignExtension.ts` (ver `editor-richtext.md`).
+
 ## Roadmap (acordado, no implementado)
 - **Animación secuencial** del contenido: revelar bloques en cascada. Encaja porque cada
   bloque (`<p>`, `<li>`, callout) ya sale como elemento independiente; se marcarían con

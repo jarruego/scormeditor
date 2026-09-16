@@ -76,6 +76,11 @@ const CANONICAL: string[] = [
   '## Encabezado con **negrita** y [enlace](https://a.b)',
   '- item con **negrita** y [enlace](mailto:x@y.z)',
   '1. numerado con *cursiva*',
+  '{center}Texto centrado',
+  '{right}Texto a la derecha',
+  '{center}## Título centrado',
+  '{right}### Subtítulo a la derecha',
+  '{center}Uno\nSin marca\n{right}Otro',
 ]
 // La cabecera del custom vacío lleva espacios finales que el corpus de arriba
 // no puede expresar sin que el editor los recorte: se comprueba aparte.

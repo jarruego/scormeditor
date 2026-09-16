@@ -273,6 +273,10 @@ editor SCORMEditor lo renderiza. Sintaxis admitida:
   motivo que la imagen — es una comodidad del editor humano para pegar un enlace que
   ya tiene a mano. Todo vídeo que el GPT proponga va como `visual_resource.kind:
   'video_youtube'` (§5) o como interacción `video`, nunca en `student_text`.
+- Alineación de un párrafo o encabezado (`{center}`/`{right}` al principio de la línea):
+  **el GPT NUNCA la usa** — es una preferencia de maquetación del editor humano, no algo
+  que el contenido generado deba decidir. Escribe siempre el texto sin prefijo (izquierda,
+  el default).
 - **Bloques destacados (callouts)**: una línea `::: tipo`, el contenido en las
   líneas siguientes, y una línea `:::` para cerrar. **Nunca un callout vacío**
   (`::: tipo` seguido de `:::` sin cuerpo): si no hay texto para la caja, no la

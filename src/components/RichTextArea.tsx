@@ -8,6 +8,7 @@ import { TextSelection } from '@tiptap/pm/state'
 import { mdToJson, jsonToMd } from '../text/mdDialect'
 import { CalloutNode } from './tiptap/CalloutNode'
 import { ImageFigureNode } from './tiptap/ImageFigureNode'
+import { TextAlignExtension } from './tiptap/TextAlignExtension'
 import { CustomBlockPanel, type CustomBlockDraft } from './tiptap/CustomBlockPanel'
 import { loadPresets, savePresets, PALETTE, type CustomBlockPreset } from '../store/customBlocks'
 import { useCourseStore } from '../store/courseStore'
@@ -66,6 +67,7 @@ const EXTENSIONS = [
   Placeholder.configure({ placeholder: 'Escribe el texto…' }),
   CalloutNode,
   ImageFigureNode,
+  TextAlignExtension,
 ]
 
 type LinkEdit = { range: { from: number; to: number } | null; text: string; url: string }
@@ -78,7 +80,8 @@ type VideoEdit = { url: string; error: boolean }
  * (mdToJson/jsonToMd): al montar se parsea el valor a un documento
  * ProseMirror; cada cambio se vuelve a serializar a markdown antes de
  * propagarlo con `onChange`. Soporta: encabezados (##, ###), **negrita**,
- * *cursiva*, [texto](url), listas y bloques destacados (callouts estándar y
+ * *cursiva*, [texto](url), listas, alineación (izquierda/centro/derecha, de
+ * párrafo y encabezado) y bloques destacados (callouts estándar y
  * personalizados) e imágenes en línea propia — cada uno editado con sus
  * propios controles integrados (nodos React), sin barras flotantes frágiles.
  */
@@ -140,6 +143,8 @@ function RichTextAreaBody({ editor, rows }: { editor: Editor; rows: number }) {
       bulletList: editor.isActive('bulletList'),
       orderedList: editor.isActive('orderedList'),
       link: editor.isActive('link'),
+      alignCenter: editor.isActive({ textAlign: 'center' }),
+      alignRight: editor.isActive({ textAlign: 'right' }),
     }),
   })
 
@@ -269,6 +274,19 @@ function RichTextAreaBody({ editor, rows }: { editor: Editor; rows: number }) {
         <span className="ed-rta-sep" aria-hidden="true" />
         <button type="button" className={active.h2 ? 'is-on' : ''} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="Encabezado">H2</button>
         <button type="button" className={active.h3 ? 'is-on' : ''} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="Subencabezado">H3</button>
+        <span className="ed-rta-sep" aria-hidden="true" />
+        <button type="button" className={!active.alignCenter && !active.alignRight ? 'is-on' : ''}
+          onClick={() => editor.chain().focus().setTextAlign('left').run()} title="Alinear a la izquierda">
+          <Icon name="align-left" size={13} />
+        </button>
+        <button type="button" className={active.alignCenter ? 'is-on' : ''}
+          onClick={() => editor.chain().focus().setTextAlign('center').run()} title="Centrar">
+          <Icon name="align-center" size={13} />
+        </button>
+        <button type="button" className={active.alignRight ? 'is-on' : ''}
+          onClick={() => editor.chain().focus().setTextAlign('right').run()} title="Alinear a la derecha">
+          <Icon name="align-right" size={13} />
+        </button>
         <span className="ed-rta-sep" aria-hidden="true" />
         <button type="button" className={active.bulletList ? 'is-on' : ''} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Lista con viñetas">• Lista</button>
         <button type="button" className={active.orderedList ? 'is-on' : ''} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Lista numerada">1. Lista</button>

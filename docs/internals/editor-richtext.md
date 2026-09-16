@@ -63,6 +63,15 @@ nodos propios en `src/components/tiptap/`:
   en vez de `<img>` — sin `type` de nodo aparte, `mdDialect.ts` no distingue los dos casos.
   La barra cambia «Sustituir…» por un `<input>` con el enlace (editable, para corregirlo
   sin borrar y reinsertar).
+- **`TextAlignExtension`** (`TextAlignExtension.ts`): no es un nodo, es una `Extension`
+  con `addGlobalAttributes` sobre `heading`/`paragraph` (atributo `textAlign`,
+  `null`/`'center'`/`'right'`) — reimplementación propia y mínima de
+  `@tiptap/extension-text-align` (sin añadirla como dependencia). Comando
+  `setTextAlign`: aplica `commands.updateAttributes(tipo, …)` a los dos tipos con
+  `.map().every()`, **nunca `.every()` directo sobre el `.map`** — encadenar `.every()`
+  a secas corta en el primer `false` (p. ej. «heading» cuando la selección es un
+  párrafo) y nunca llega a aplicar el tipo que sí corresponde (bug real ya sufrido: el
+  botón se marcaba activo pero no cambiaba nada visible).
 
 `SelectAllFix` (extensión pequeña definida en `RichTextArea.tsx`) sustituye el `Mod-a` por
 defecto de ProseMirror: la `AllSelection` que crea Ctrl/Cmd+A no queda bien sincronizada al
@@ -93,7 +102,9 @@ cada pulsación. El botón de enlace es contextual: si el cursor está dentro de
 (`getMarkRange`) pasa a «Editar enlace» y precarga texto/URL; si no, «Insertar enlace»
 abre el mismo panel vacío. El editor de enlace y el panel de bloque personalizado son
 paneles inline bajo la barra (no flotantes); **Esc** los cierra (`handleEscClose` en el
-`onKeyDown` del contenedor).
+`onKeyDown` del contenedor). Los tres botones de alineación (`align-left`/`-center`/
+`-right`) van justo tras H2/H3; «izquierda» aparece activo por defecto (`!alignCenter &&
+!alignRight`, ver `TextAlignExtension`) ya que es el estado sin marca, no uno propio.
 
 ### Botones de bloque destacado y presets (`RichTextArea.tsx`)
 Tras el separador de la barra hay un botón por cada callout **estándar** — `CALLOUT_TYPES`

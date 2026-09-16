@@ -54,6 +54,15 @@ Sintaxis soportada:
 - `- ` listas con viñetas (también acepta `*`, `•`, `·`, `–`, `—` al inicio de línea,
   porque los PDF/DOC suelen usarlos); `1. ` / `1) ` listas numeradas (honra el número
   escrito con `<ol start>`/`<li value>` cuando no van consecutivos).
+- **Alineación** de un encabezado o párrafo: prefijo de línea `{center}`/`{right}`
+  (izquierda es el default implícito, nunca `{left}`) → `style="text-align:…"` en el
+  `<h2>`/`<h3>`/`<p>` resultante. Se despoja ANTES de probar el resto de sintaxis de la
+  línea (así `{center}## Título` centra el propio encabezado); listas y callouts la
+  ignoran (fuera de alcance a propósito — alinear texto suelto es «lo típico», no
+  ítems de lista). Editor: tres botones (`align-left`/`-center`/`-right`) en la barra de
+  `RichTextArea`, vía una extensión TipTap propia (`TextAlignExtension.ts`, sin depender
+  de `@tiptap/extension-text-align` — atributo global `textAlign` en `heading`/`paragraph`,
+  igual patrón que la extensión oficial pero sin la dependencia nueva).
 - Bloques destacados (callouts): `::: tipo` … `:::`
 - Bloque personalizado: `::: custom | #color | icono | título` … `:::`
 - Imagen en línea propia: `![alt](assets/img/… | https://…)` → `<figure class="me-md-img">`
