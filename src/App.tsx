@@ -10,7 +10,7 @@ import { useCourseStore } from './store/courseStore'
 import { validateCourse } from './validation/validators'
 import { allScreens } from './schema/traverse'
 import type { Tab } from './store/courseStore'
-import { Toolbar, EditTools } from './components/Toolbar'
+import { Toolbar, EditTools, SettingsModals } from './components/Toolbar'
 import { CourseTree } from './components/CourseTree'
 import { ScreenEditor } from './components/ScreenEditor'
 import { FinalTestEditor } from './components/FinalTestEditor'
@@ -27,6 +27,10 @@ export function App() {
   const tab = useCourseStore((s) => s.activeTab)
   const setTab = useCourseStore((s) => s.setActiveTab)
   const course = useCourseStore((s) => s.course)
+  // Con el proyecto cerrado no hay nada que mostrar detrás de WelcomeGate:
+  // toolbar/pestañas/árbol/editor se ocultan del todo (pantalla en blanco),
+  // en vez de quedar de fondo como si hubiera un proyecto abierto.
+  const projectClosed = useCourseStore((s) => s.projectClosed)
   // Recuento para el badge de la pestaña Validación (solo si hay errores/avisos).
   const val = useMemo(() => validateCourse(course), [course])
   // Entradas sintéticas del árbol (no son pantallas): test final y materiales.
@@ -165,6 +169,8 @@ export function App() {
 
   return (
     <div className="ed-app">
+      {!projectClosed && (
+        <>
       <Toolbar />
       <div className="ed-tabs" role="tablist" data-tour="tabs">
         {([
@@ -251,10 +257,13 @@ export function App() {
           {tab === 'report' && <ReportPanel />}
         </section>
       </div>
+        </>
+      )}
       <ConfirmModal />
       <GuidedTour />
       <WelcomeTip />
       <WelcomeGate />
+      <SettingsModals />
     </div>
   )
 }

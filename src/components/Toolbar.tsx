@@ -78,7 +78,6 @@ export function Toolbar() {
   const cloudSession = useCloudSessionStore((s) => s.session)
   // Qué ventana de ajustes está abierta. Vive en el store para que Validación
   // pueda abrirla desde sus enlaces («abrir ajustes»).
-  const settingsModal = useCourseStore((s) => s.settingsModal)
   const setSettingsModal = useCourseStore((s) => s.setSettingsModal)
   const [menuOpen, setMenuOpen] = useState(false)
   const [helpMenuOpen, setHelpMenuOpen] = useState(false)
@@ -318,35 +317,49 @@ export function Toolbar() {
                   <button role="menuitem" onClick={() => runMenu(fsOk ? onOpen : () => fileRef.current?.click())} title="Reemplaza el curso abierto por uno local; deja de estar vinculado a la nube">
                     <Icon name="folder" size={13} /> Abrir proyecto local…
                   </button>
+                  <button role="menuitem" onClick={() => runMenu(onNewEmpty)}
+                    title="Curso mínimo desde cero: un módulo con la portada, sin recursos">
+                    <Icon name="plus" size={13} /> Nuevo (vacío)
+                  </button>
+                  <button role="menuitem" onClick={() => runMenu(onNewDemo)}>
+                    <Icon name="book" size={13} /> Nuevo (demo)
+                  </button>
                   {fsOk && (
                     <button role="menuitem" onClick={() => runMenu(() => void saveProjectAs())} title="Crea una copia en un archivo local y desvincula este curso de la nube">
-                      <Icon name="folder" size={13} /> Guardar copia local…
+                      <Icon name="copy" size={13} /> Guardar copia local…
                     </button>
                   )}
                 </>
               ) : (
                 <>
-                  <button role="menuitem" onClick={() => runMenu(fsOk ? onOpen : () => fileRef.current?.click())} title="Abrir un proyecto .scormproj">
-                    <Icon name="folder" size={13} /> Abrir proyecto…
-                  </button>
-                  <button role="menuitem" onClick={() => runMenu(() => void onSaveClick())} title="Guardar el proyecto (Ctrl+S)">
-                    <Icon name="folder" size={13} /> Guardar{linkedFileName ? '' : ' proyecto…'}
-                  </button>
-                  {fsOk && (
-                    <button role="menuitem" onClick={() => runMenu(() => void saveProjectAs())} title="Guardar una copia en un archivo nuevo">
-                      <Icon name="folder" size={13} /> Guardar como…
-                    </button>
-                  )}
                   {isCloudConfigured() && (
                     <>
-                      <hr className="ed-menu-sep" />
                       <button role="menuitem" className="ed-menu-cloud-item" onClick={() => runMenu(() => setSettingsModal('cloud'))} title="Elegir un proyecto guardado en la nube del equipo">
                         <Icon name="cloud" size={13} /> Abrir desde la nube…
                       </button>
                       <button role="menuitem" className="ed-menu-cloud-item" onClick={() => runMenu(() => setSettingsModal('cloud'))} title="Subir este curso a la nube para compartirlo con el equipo">
                         <Icon name="cloud" size={13} /> Subir a la nube…
                       </button>
+                      <hr className="ed-menu-sep" />
                     </>
+                  )}
+                  <button role="menuitem" onClick={() => runMenu(fsOk ? onOpen : () => fileRef.current?.click())} title="Abrir un proyecto .scormproj">
+                    <Icon name="folder" size={13} /> Abrir proyecto…
+                  </button>
+                  <button role="menuitem" onClick={() => runMenu(onNewEmpty)}
+                    title="Curso mínimo desde cero: un módulo con la portada, sin recursos">
+                    <Icon name="plus" size={13} /> Nuevo (vacío)
+                  </button>
+                  <button role="menuitem" onClick={() => runMenu(onNewDemo)}>
+                    <Icon name="book" size={13} /> Nuevo (demo)
+                  </button>
+                  <button role="menuitem" onClick={() => runMenu(() => void onSaveClick())} title="Guardar el proyecto (Ctrl+S)">
+                    <Icon name="save" size={13} /> Guardar{linkedFileName ? '' : ' proyecto…'}
+                  </button>
+                  {fsOk && (
+                    <button role="menuitem" onClick={() => runMenu(() => void saveProjectAs())} title="Guardar una copia en un archivo nuevo">
+                      <Icon name="copy" size={13} /> Guardar como…
+                    </button>
                   )}
                 </>
               )}
@@ -355,25 +368,20 @@ export function Toolbar() {
                 <button role="menuitem"
                   onClick={() => runMenu(() => void onPruneOrphans())}
                   title="Elimina del proyecto los archivos que ya no usa ninguna diapositiva, para reducir su tamaño (el SCORM exportado ya los ignora)">
-                  Borrar recursos huérfanos ({orphanCount})
+                  <Icon name="trash" size={13} /> Borrar recursos huérfanos ({orphanCount})
                 </button>
               )}
-              <hr className="ed-menu-sep" />
-              <button role="menuitem" onClick={() => runMenu(() => void onCloseProject())}
-                title="Deja el editor sin ningún proyecto abierto">
-                Cerrar proyecto
-              </button>
-              <button role="menuitem" onClick={() => runMenu(onNewEmpty)}
-                title="Curso mínimo desde cero: un módulo con la portada, sin recursos">
-                Nuevo (vacío)
-              </button>
-              <button role="menuitem" onClick={() => runMenu(onNewDemo)}>Nuevo (demo)</button>
               <button role="menuitem" className="ed-menu-primary" disabled={busy} onClick={() => runMenu(onExportScorm)}>
-                {busy ? 'Generando…' : 'Exportar SCORM ZIP'}
+                <Icon name="download" size={13} /> {busy ? 'Generando…' : 'Exportar SCORM ZIP'}
               </button>
               <button role="menuitem" disabled={busy} onClick={() => runMenu(() => void onExportElpx())}
                 title="Exportar el curso a un paquete .elpx para seguir editándolo en eXeLearning 4.0.1 o posterior">
-                {busy ? 'Generando…' : 'Exportar a eXeLearning (.elpx)'}
+                <Icon name="code" size={13} /> {busy ? 'Generando…' : 'Exportar a eXeLearning (.elpx)'}
+              </button>
+              <hr className="ed-menu-sep" />
+              <button role="menuitem" className="ed-menu-danger" onClick={() => runMenu(() => void onCloseProject())}
+                title="Deja el editor sin ningún proyecto abierto">
+                <Icon name="x" size={13} /> Cerrar proyecto
               </button>
             </div>
           )}
@@ -411,7 +419,18 @@ export function Toolbar() {
 
       {importError && <div className="ed-import-error"><Icon name="alert-octagon" size={14} /> {importError}</div>}
     </header>
+    </>
+  )
+}
 
+// Las ventanas de ajustes viven aparte de <Toolbar> (que se oculta con el
+// proyecto cerrado, ver App.tsx) porque `WelcomeGate` necesita poder abrir
+// «Abrir de la nube» (CloudModal) sin que haga falta el resto de la toolbar.
+export function SettingsModals() {
+  const settingsModal = useCourseStore((s) => s.settingsModal)
+  const setSettingsModal = useCourseStore((s) => s.setSettingsModal)
+  return (
+    <>
       {settingsModal === 'shortcuts' && <ShortcutsModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'course' && <CourseSettingsModal onClose={() => setSettingsModal(null)} />}
       {settingsModal === 'objectives' && <ObjectivesModal onClose={() => setSettingsModal(null)} />}

@@ -197,5 +197,8 @@ usuario lo deniega/cancela, el documento sigue «Sin guardar». Sin File System 
 `setLinked(name)`, `projectClosed` + `setProjectClosed`/`closeProject` (ver «Cerrar
 proyecto» arriba). La toolbar (`Toolbar.tsx`) muestra **un único indicador**
 `.ed-docstate` (`✓ Guardado · archivo` / `● Sin guardar`) que es un botón = guardar; un
-menú **«Archivo ▾»** (`.ed-menu`) agrupa Abrir / Guardar / Guardar como… / Cerrar
-proyecto / Nuevo (vacío) / Nuevo (demo) / Borrar recursos huérfanos / Exportar SCORM ZIP.
+menú **«Archivo ▾»** (`.ed-menu`) agrupa, en este orden: nube (Abrir desde la nube… /
+Subir a la nube…, si `isCloudConfigured()`) / Abrir proyecto… / Nuevo (vacío) / Nuevo
+(demo) / Guardar / Guardar como… / Borrar recursos huérfanos / Exportar SCORM ZIP /
+Exportar a eXeLearning; «Cerrar proyecto» va siempre al final, con separador y en rojo
+(`.ed-menu-danger`) — es la única acción destructiva del menú.

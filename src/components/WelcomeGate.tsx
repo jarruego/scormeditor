@@ -33,13 +33,16 @@ export function WelcomeGate() {
   const projectClosed = useCourseStore((s) => s.projectClosed)
   const resetEmpty = useCourseStore((s) => s.resetEmpty)
   const resetSample = useCourseStore((s) => s.resetSample)
+  const settingsModal = useCourseStore((s) => s.settingsModal)
   const setSettingsModal = useCourseStore((s) => s.setSettingsModal)
   const cloudSession = useCloudSessionStore((s) => s.session)
   const fileRef = useRef<HTMLInputElement>(null)
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISSED_KEY) === '1')
 
   const nothingToResume = !linkedFileName && !projectDirty && !cloudDocumentId
-  const show = autosaveReady && ((nothingToResume && !dismissed) || projectClosed)
+  // Si «Abrir de la nube» ya ha abierto CloudModal encima, esta pantalla se
+  // aparta: dos overlays a la vez (esta + el modal) se veían apilados.
+  const show = autosaveReady && !settingsModal && ((nothingToResume && !dismissed) || projectClosed)
 
   function dismiss() {
     localStorage.setItem(DISMISSED_KEY, '1')
