@@ -111,7 +111,11 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   **mapea la granularidad real del documento sin envoltorios de más**: un módulo con
   N temas → N `unit` reales en `units[]` (no N módulos de un tema cada uno); una sola
   unidad con sub-temas → cada sub-tema su propia `unit` (no una unidad-envoltorio con
-  los sub-temas metidos dentro como pantallas);
+  los sub-temas metidos dentro como pantallas); **dos niveles numerados a la vez**
+  (`1.`/`2.`… temas, `1.1`/`1.2`… subtemas) → N módulos reales, cada uno con sus propias
+  M `unit` (nunca aplanado a un módulo con todas seguidas); un tercer nivel (`1.1.1`…)
+  no crea contenedor, se funde en pantallas de la unidad de nivel 2 que le toque
+  (contrato §3 — el árbol solo distingue dos niveles a propósito);
   **pantallas divididas por unidad de sentido** (una idea y una sola acción mental por
   pantalla; pantalla nueva al cambiar la intención — definición→aplicación,
   explicación→actividad, procedimiento→beneficios; los ~800 caracteres son alarma

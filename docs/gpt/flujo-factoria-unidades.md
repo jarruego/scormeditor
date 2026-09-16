@@ -32,10 +32,14 @@ preguntar entre temas; ver «Órdenes de trabajo típicas» al final.
 1. **Extrae el índice real** de la unidad desde el documento (no de memoria).
 2. Identifica todos los **temas, epígrafes, subepígrafes, actividades, imágenes,
    tablas, casos, glosario y bibliografía**.
-3. Estima el **nº de palabras fuente por tema**.
-4. Devuelve un **plan de producción**: lista de temas, palabras fuente estimadas por
-   tema, nº de pantallas previsto, imágenes detectadas por tema.
-5. En una **petición directa** («genera el `.scormproj` de…»), el inventario es un
+3. **Comprueba si el documento numera DOS niveles a la vez** (`1.`/`2.`/`3.`… temas y
+   `1.1`/`1.2`/`2.1`… subtemas dentro de cada uno, contrato §3): si es así, el plan se
+   organiza por **tema → sus subtemas** (cada subtema producido como su propio parcial
+   más abajo, ver «Si hay dos niveles reales»), no como una lista plana de temas.
+4. Estima el **nº de palabras fuente por tema** (o por subtema, si hay dos niveles).
+5. Devuelve un **plan de producción**: lista de temas (con sus subtemas si aplica),
+   palabras fuente estimadas, nº de pantallas previsto, imágenes detectadas.
+6. En una **petición directa** («genera el `.scormproj` de…»), el inventario es un
    paso interno: muestra el plan brevemente y **continúa con el primer tema sin
    esperar orden**. Solo te detienes aquí si la orden era un **análisis previo** (ver
    «Órdenes de trabajo típicas»): entonces amplía el plan con la **propuesta de
@@ -121,6 +125,21 @@ Estructura del parcial (`*.partial.json`):
 - Las rutas de `assets[]` deben coincidir con las referenciadas en las pantallas del
   tema (misma regla que §11). En un `.scormpart`, los binarios van en `assets/`.
 
+### Si el documento tiene dos niveles reales (temas + subtemas)
+Cuando el Fase 0 detectó numeración de dos niveles (contrato §3): **el parcial pasa a
+ser por subtema**, no por tema — cada subtema es la `unit` real; el tema (nivel 1) es
+el `module` que agrupa varios parciales. Dos cambios sobre lo anterior:
+- **Nombre del fichero con los dos índices**: `u01_t01_st01.partial.json` (tema 1,
+  subtema 1), `u01_t01_st02.partial.json`, `u01_t02_st01.partial.json`… — el `st0N`
+  extra es lo único que cambia frente al nombrado de un solo nivel.
+- **Campo `modulo_title` añadido** al JSON del parcial (mismo nivel que `tema_id`): el
+  título del tema (módulo) al que pertenece ese subtema, idéntico car-a-car en todos
+  los subtemas de un mismo tema (así la fusión los agrupa). Ejemplo: `"tema_id":
+  "u01_t01_st01", "modulo_title": "Tema 1. Definición y propósito"`.
+
+Todo lo demás (control de cobertura, Fase 2, formato de `unit`) es igual que con un
+solo nivel — la única diferencia es a qué contenedor va cada parcial en la fusión.
+
 ---
 
 ## Fase 2 — Validación por tema
@@ -141,7 +160,10 @@ detente y avísalo como **incidencia bloqueante**.
 ## Fase 3 — Fusión final
 Cuando **todos** los temas estén aprobados:
 1. **Lee todos los parciales** generados (`.json` / `.scormpart`).
-2. **Fusiona** las `unit` de cada parcial dentro de `modules[].units[]` (en orden).
+2. **Fusiona** las `unit` de cada parcial dentro de `modules[].units[]` (en orden). Con
+   un solo nivel, todas van al único módulo. Con dos niveles reales (`modulo_title` en
+   el parcial, ver «Si hay dos niveles reales»), agrupa antes por `modulo_title`: un
+   `module` por grupo, con sus `unit` en el orden de los subtemas.
 3. **Unifica** glosario, bibliografía, evaluación, assets y `quality_checklist`.
 4. **Deduplica** términos de glosario (por `term`) y referencias (por `ref`/`url`).
 5. Monta la **evaluación**: por defecto (`score_source=final_test`) vuelca todos los
@@ -192,9 +214,14 @@ def load_partial(path):
     return json.loads(open(path, encoding='utf-8').read()), {}
 
 def merge_unit(base_course, partials, score_source='final_test'):
-    """base_course: dict con course/scorm/shell ya definidos y modules=[{id,title,units:[]}].
+    """base_course: dict con course/scorm/shell ya definidos.
+    Un solo nivel: incluye modules=[{id,title,units:[]}] (un módulo fijo, como siempre).
+    Dos niveles reales (parciales con 'modulo_title'): NO hace falta 'modules' aquí, se
+    reconstruye agrupando por modulo_title (un module real por tema, ver «Si hay dos
+    niveles reales»).
     partials: lista de rutas a parciales aprobados, en orden."""
     units, glo, bib, qbank, asset_files = [], [], [], [], {}
+    mod_order, mod_units = [], {}  # agrupación por modulo_title, solo si hay dos niveles
     for p in partials:
         data, assets = load_partial(p)
         units.append(data['unit'])
@@ -202,10 +229,21 @@ def merge_unit(base_course, partials, score_source='final_test'):
         bib += data.get('bibliography', [])
         qbank += data.get('question_bank', [])
         asset_files.update(assets)
+        mod_title = data.get('modulo_title')
+        if mod_title:
+            if mod_title not in mod_units:
+                mod_order.append(mod_title)
+                mod_units[mod_title] = []
+            mod_units[mod_title].append(data['unit'])
     # dedup
     seen=set(); glo=[g for g in glo if (g['term'] not in seen and not seen.add(g['term']))]
     seenb=set(); bib=[b for b in bib if ((b.get('ref'),b.get('url')) not in seenb and not seenb.add((b.get('ref'),b.get('url'))))]
-    base_course['modules'][0]['units'] = units
+    if mod_order:
+        base_course['modules'] = [
+            {'id': f'm{i+1}', 'title': t, 'units': mod_units[t]} for i, t in enumerate(mod_order)
+        ]
+    else:
+        base_course['modules'][0]['units'] = units
     base_course['glossary'] = glo
     base_course['bibliography'] = bib
     if score_source == 'unit_tests':
@@ -220,7 +258,8 @@ def merge_unit(base_course, partials, score_source='final_test'):
                            'pass_score':70,'questions': qbank}}
     return base_course, asset_files
 
-# uso: course, asset_files = merge_unit(base, sorted(glob.glob('u01_t*.*')))
+# uso, un solo nivel: course, asset_files = merge_unit(base, sorted(glob.glob('u01_t*.*')))
+# uso, dos niveles:   course, asset_files = merge_unit(base, sorted(glob.glob('u01_t*_st*.*')))
 #      build_scormproj(course, asset_files)   # del contrato §11
 ```
 

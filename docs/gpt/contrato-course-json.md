@@ -78,6 +78,13 @@ Reglas que NO se pueden romper:
 }
 ```
 
+- `module_label`/`unit_label` (opcionales, def. `"Módulo"`/`"Unidad"`): cómo se llaman
+  los dos niveles de `modules[]`/`units[]` en el árbol y el menú del alumno — no cambian
+  la estructura, solo el rótulo. Ponlos si el documento fuente usa su propio vocabulario
+  para esos dos niveles («Tema»/«Subtema», «Unidad»/«Tema»…), sobre todo con la
+  numeración de dos niveles del §3; si no hay pista clara, omítelos (quedan los
+  genéricos).
+
 ```json
 "scorm": {
   "version": "1.2",
@@ -182,6 +189,27 @@ Reglas que NO se pueden romper:
     en el ejemplo de arriba). No crees una unidad-envoltorio que agrupe los
     sub-temas como pantallas o secciones internas: eso desperdicia el nivel
     `units[]` que el esquema ya te da para ellos.
+  - **Si el documento numera DOS niveles a la vez** (p. ej. `1.`/`2.`/`3.`…
+    para temas y `1.1`/`1.2`/`2.1`… para subtemas dentro de cada uno): esos
+    dos niveles **sí** son dos módulos/unidades reales — cada punto de nivel 1
+    es un objeto propio en `modules[]` (su propio `title`, p. ej. `"Tema 1. …"`)
+    y cada punto de nivel 2 de ESE tema es una `unit` real en su `units[]`
+    (p. ej. `"1.2 Comunicación con la familia"` → `title: "Comunicación con
+    la familia"`, conservando el orden). N módulos, cada uno con sus propias
+    M unidades — no lo aplanes a un único módulo con todas las unidades
+    seguidas, perderías la agrupación real del documento.
+    - **Un tercer nivel (`1.1.1`, `2.3.1`…) NUNCA crea un tercer contenedor**
+      (el esquema no lo tiene, y es deliberado: el árbol del editor y el menú
+      del alumno solo distinguen dos niveles, para no complicar la navegación
+      ni la miga de pan). Ese tercer nivel se funde **dentro** de las
+      pantallas de la unidad de nivel 2 que le corresponde — como encabezados
+      `### ` hermanos si es solo un matiz del mismo punto, o como pantallas
+      sucesivas si tiene desarrollo propio (misma unidad, más pantallas).
+    - Si el documento usa vocabulario propio para los dos niveles («Tema»/
+      «Subtema», «Unidad»/«Tema», «Bloque»/«Apartado»…), refléjalo en
+      `course.module_label`/`course.unit_label` (por defecto `"Módulo"`/
+      `"Unidad"`) en vez de dejar los genéricos — así el árbol y el menú del
+      alumno hablan con las mismas palabras que la fuente.
 
 ---
 
