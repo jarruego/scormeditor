@@ -123,25 +123,29 @@
         continue;
       }
       // Imagen en línea propia: ![alt](assets/… | http(s)://…), con ancho
-      // opcional en % (`![alt|50](ruta)`). Bloque, no inline: una imagen ocupa
-      // su propio renglón. Solo rutas de assets o URL absolutas http(s)
-      // (anti-inyección); amplía con el lightbox (.me-zoomable). Si la URL es
-      // de YouTube, la MISMA sintaxis incrusta un vídeo en vez de una imagen
-      // (despacho por URL, sin sintaxis ni nodo aparte — ver
-      // ImageFigureNode.tsx e interacciones.md).
-      var im = /^\s*!\[([^\]|]*)(?:\|(\d{1,3}))?\]\((assets\/[^\s)]+|https?:\/\/[^\s)]+)\)\s*$/.exec(ln);
+      // opcional en % (`![alt|50](ruta)`) y pie opcional entre comillas
+      // (`![alt|50](ruta "Pie de foto")`, misma convención que el `title` de
+      // markdown estándar). Bloque, no inline: una imagen ocupa su propio
+      // renglón. Solo rutas de assets o URL absolutas http(s) (anti-inyección);
+      // amplía con el lightbox (.me-zoomable). Si la URL es de YouTube, la
+      // MISMA sintaxis incrusta un vídeo en vez de una imagen (despacho por
+      // URL, sin sintaxis ni nodo aparte — ver ImageFigureNode.tsx e
+      // interacciones.md). El pie pasa por rich() (negrita/cursiva/enlaces),
+      // igual que el de un recurso visual.
+      var im = /^\s*!\[([^\]|]*)(?:\|(\d{1,3}))?\]\((assets\/[^\s)]+|https?:\/\/[^\s)]+)(?:\s+"([^"]*)")?\)\s*$/.exec(ln);
       if (im) {
         closeLists();
         var iw = im[2] ? Math.min(100, Math.max(10, parseInt(im[2], 10))) : 0;
+        var caption = im[4] ? '<figcaption>' + rich(im[4]) + '</figcaption>' : '';
         var ytId = youtubeId(im[3]);
         if (ytId) {
-          html += '<div class="me-video"' + (iw ? ' style="width:' + iw + '%"' : '') +
+          html += '<figure class="me-md-img"><div class="me-video"' + (iw ? ' style="width:' + iw + '%"' : '') +
             '><iframe src="https://www.youtube-nocookie.com/embed/' + esc(ytId) +
-            '" title="' + esc(im[1] || 'Vídeo') + '" allowfullscreen loading="lazy"></iframe></div>';
+            '" title="' + esc(im[1] || 'Vídeo') + '" allowfullscreen loading="lazy"></iframe></div>' + caption + '</figure>';
         } else {
           html += '<figure class="me-md-img"><img class="me-zoomable" src="' + esc(asset(im[3])) +
             '" alt="' + esc(im[1]) + '" loading="lazy" tabindex="0" role="button" aria-label="Ampliar imagen"' +
-            (iw ? ' style="width:' + iw + '%"' : '') + '></figure>';
+            (iw ? ' style="width:' + iw + '%"' : '') + '>' + caption + '</figure>';
         }
         continue;
       }

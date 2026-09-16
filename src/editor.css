@@ -406,6 +406,7 @@ details.ed-fold[open] > summary { border-bottom: 1px solid var(--c-border); }
 .ed-rta-blocklbl { font-size: .8rem; color: var(--c-muted); }
 .ed-rta-blockbar select { width: auto; }
 .ed-rta-imgbar .ed-rta-imgalt { flex: 1; min-width: 160px; width: auto; }
+.ed-rta-imgbar .ed-rta-imgcaption { flex: 2; min-width: 200px; width: auto; }
 /* Editor de enlace: misma tira que la barra de imagen (etiqueta + inputs inline). */
 .ed-rta-linkedit .ed-rta-linktext { flex: 1; min-width: 110px; width: auto; }
 .ed-rta-linkedit .ed-rta-linkurl { flex: 2; min-width: 160px; width: auto; }

@@ -863,9 +863,14 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
   .me-icmodal-media { order: -1; }
 }
 
-/* Imagen dentro del markdown ligero (![alt](ruta) en línea propia) */
+/* Imagen (o vídeo de YouTube) dentro del markdown ligero (![alt](ruta) en
+   línea propia, ver interacciones.md). Pie opcional: figcaption igual que el
+   de un recurso visual (.me-figure); .me-video anidado resetea su propio
+   margen para no sumarse al de .me-md-img y separar de más del pie. */
 .me-md-img { margin: .9rem 0; }
 .me-md-img img { max-width: 100%; border-radius: 8px; box-shadow: var(--me-shadow-1); display: block; }
+.me-md-img .me-video { margin: 0; }
+.me-md-img figcaption { color: var(--me-muted); font-size: .85rem; }
 
 /* Lightbox de imágenes */
 .me-zoomable { cursor: zoom-in; }

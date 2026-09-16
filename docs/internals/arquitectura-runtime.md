@@ -77,6 +77,10 @@ Sintaxis soportada:
   URL, sin sintaxis ni nodo aparte. El ancho (`|NN`) se aplica al contenedor `.me-video`
   (aspect-ratio 16:9 fijo, mismo CSS que `visual_resource.kind: 'video_youtube'`). Botón
   ▶ Vídeo en la barra del editor (pega el enlace completo; ver `editor-richtext.md`).
+  **Pie opcional** entre comillas al final, `![alt|ancho](ruta "Pie")` (convención del
+  `title` de markdown estándar) → `<figcaption>` dentro del mismo `<figure class="me-md-img">`,
+  para imagen y para vídeo por igual. El pie pasa por `rich()` (negrita/cursiva/enlaces
+  funcionan), no por `esc()` — mismo criterio que el pie de un recurso visual.
 
 Ninguna plantilla de `renderer.js` muestra `objective` como banner — tampoco la pantalla
 `objectives`: su `student_text` ya presenta los objetivos al alumno y pintarlo duplicaba

@@ -53,16 +53,19 @@ nodos propios en `src/components/tiptap/`:
   el documento, conservando el texto). Un `addKeyboardShortcuts` propio maneja Enter sobre
   un párrafo vacío al final del bloque para «salir» de él (ProseMirror no hace
   `liftEmptyBlock` automático en nodos `isolating`).
-- **`ImageFigureNode`** (`ImageFigureNode.tsx`): `![alt|ancho](ruta)` como nodo **atómico**
-  de bloque propio (nunca inline, igual que en la carcasa). Su `NodeView` resuelve la ruta
-  del asset a una object URL cacheada (`imgUrlCache`, con limpieza en `import.meta.hot` en
-  dev) y trae su propia barra integrada: alt, `<select>` de ancho (Tamaño real / 25–100 %),
-  «Sustituir…» (sube otra imagen y borra el binario anterior si nadie más lo usa vía
-  `removeAsset`) y «Quitar». **Mismo nodo para vídeo de YouTube**: si `src` es un enlace de
-  YouTube (`extractYoutubeId()`, `src/media/youtube.ts`), el `NodeView` incrusta un iframe
-  en vez de `<img>` — sin `type` de nodo aparte, `mdDialect.ts` no distingue los dos casos.
-  La barra cambia «Sustituir…» por un `<input>` con el enlace (editable, para corregirlo
-  sin borrar y reinsertar).
+- **`ImageFigureNode`** (`ImageFigureNode.tsx`): `![alt|ancho](ruta "pie")` como nodo
+  **atómico** de bloque propio (nunca inline, igual que en la carcasa). Su `NodeView`
+  resuelve la ruta del asset a una object URL cacheada (`imgUrlCache`, con limpieza en
+  `import.meta.hot` en dev) y trae su propia barra integrada: alt, `<select>` de ancho
+  (Tamaño real / 25–100 %), «Sustituir…» (sube otra imagen y borra el binario anterior
+  si nadie más lo usa vía `removeAsset`), **pie de foto** (`<input>` de texto plano —
+  el runtime lo interpreta con `rich()` al renderizar, así que negrita/cursiva/enlaces
+  funcionan en el resultado aunque aquí no haya barra de formato propia) y «Quitar».
+  **Mismo nodo para vídeo de YouTube**: si `src` es un enlace de YouTube
+  (`extractYoutubeId()`, `src/media/youtube.ts`), el `NodeView` incrusta un iframe
+  en vez de `<img>` — sin `type` de nodo aparte, `mdDialect.ts` no distingue los dos casos
+  (el pie funciona igual para ambos). La barra cambia «Sustituir…» por un `<input>` con
+  el enlace (editable, para corregirlo sin borrar y reinsertar).
 - **`TextAlignExtension`** (`TextAlignExtension.ts`): no es un nodo, es una `Extension`
   con `addGlobalAttributes` sobre `heading`/`paragraph` (atributo `textAlign`,
   `null`/`'center'`/`'right'`) — reimplementación propia y mínima de

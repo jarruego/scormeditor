@@ -317,6 +317,15 @@ Botón **▶ Vídeo** en la barra (pega el enlace completo — `watch?v=`, `yout
 valida antes de insertar). No genera asset ni entra en `collectAssetPaths` (no hay
 archivo que empaquetar, igual que el `visual_resource` de YouTube).
 
+**Pie de foto/vídeo**: cuarto grupo opcional entre comillas al final de la ruta,
+`![alt|ancho](ruta "Pie")` — convención del `title` de markdown estándar, común a imagen
+y vídeo (mismo `<figure class="me-md-img">` para los dos). El pie es texto plano en el
+atributo (`<input>` simple en `ImageFigureNode.tsx`, sin barra de formato propia) pero el
+runtime lo interpreta con `rich()` al construir el `<figcaption>`: negrita, cursiva y
+enlaces escritos a mano (`**fuerte**`, `[texto](url)`) funcionan en el resultado, igual
+que en el pie de un recurso visual (`visual_resource.caption`). Se serializa saneando
+comillas literales (`"` → `'`) para no romper la sintaxis.
+
 ## Alineación de párrafo/encabezado
 Prefijo de línea `{center}`/`{right}` (izquierda = sin marca, default implícito; nunca
 `{left}`) → `style="text-align:…"` en el `<h2>`/`<h3>`/`<p>` de `renderer.js`. Se despoja

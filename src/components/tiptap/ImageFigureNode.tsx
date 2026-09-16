@@ -1,7 +1,9 @@
 /* =============================================================================
- * ImageFigureNode — nodo TipTap para "![alt|ancho](ruta)" (línea propia, nunca
- * inline: una imagen ocupa su propio renglón, igual que en la carcasa).
- * attrs: src (ruta assets/… o http(s)://…), alt, width (10-100 | null).
+ * ImageFigureNode — nodo TipTap para "![alt|ancho](ruta "pie")" (línea propia,
+ * nunca inline: una imagen ocupa su propio renglón, igual que en la carcasa).
+ * attrs: src (ruta assets/… o http(s)://…), alt, width (10-100 | null),
+ * caption (pie, texto plano — el runtime lo interpreta con `rich()`, así que
+ * negrita/cursiva/enlaces funcionan ahí aunque aquí sea un `<input>` simple).
  *
  * Mismo nodo/sintaxis para vídeos de YouTube: si `src` es un enlace de
  * YouTube reconocible (`extractYoutubeId`), se renderiza como iframe
@@ -35,7 +37,7 @@ function useImageUrl(src: string): string | null {
 }
 
 function ImageFigureView({ node, updateAttributes, deleteNode, selected }: NodeViewProps) {
-  const { src, alt, width } = node.attrs as { src: string; alt: string; width: number | null }
+  const { src, alt, width, caption } = node.attrs as { src: string; alt: string; width: number | null; caption: string }
   const ytId = extractYoutubeId(src)
   const url = useImageUrl(src)
   const addAsset = useCourseStore((s) => s.addAsset)
@@ -96,6 +98,9 @@ function ImageFigureView({ node, updateAttributes, deleteNode, selected }: NodeV
               onChange={(e) => { const f = e.target.files?.[0]; if (f) replace(f); e.target.value = '' }} />
           </label>
         )}
+        <input className="ed-rta-imgcaption" value={caption}
+          placeholder={`Pie de ${ytId ? 'vídeo' : 'foto'} (admite **negrita**, *cursiva* y [enlaces](url))`}
+          onChange={(e) => updateAttributes({ caption: e.target.value })} />
         <button type="button" className="ed-danger" onClick={remove}
           title={ytId ? 'Quitar el vídeo' : 'Quitar la imagen (el archivo se conserva si otra pantalla lo usa)'}>
           <Icon name="trash" size={13} /> Quitar
@@ -116,6 +121,7 @@ export const ImageFigureNode = Node.create({
       src: { default: '' },
       alt: { default: '' },
       width: { default: null },
+      caption: { default: '' },
     }
   },
 
