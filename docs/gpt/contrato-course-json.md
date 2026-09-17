@@ -155,7 +155,8 @@ Reglas que NO se pueden romper:
         "title": "Tema 1. Definición y propósito",
         "summary": "Texto de resumen de la unidad (o incluir una pantalla type=summary).",
         "status": "ok",
-        "screens": [ /* ver §4 */ ]
+        "screens": [ /* ver §4 */ ],
+        "closing_screens": [ /* OPCIONAL: pantallas sueltas «entre unidades», ver abajo */ ]
       }
     ],
     "closing_screens": [ /* OPCIONAL: pantallas de cierre del módulo, ver abajo */ ]
@@ -177,10 +178,16 @@ Reglas que NO se pueden romper:
 - `modules[].closing_screens` (opcional, def. `[]`): pantallas de **cierre del
   módulo**, mismo formato de §4, simétricas a `modules[].screens` pero al
   revés — se muestran **siempre después** de TODAS las unidades del módulo
-  (resumen del bloque, despedida antes de pasar al siguiente módulo…), nunca
-  intercaladas entre unidades. Úsalo solo si el documento fuente pide
-  explícitamente un cierre por bloque; si no, **omite la clave** (no lo
-  rellenes por rellenar).
+  (resumen del bloque, despedida antes de pasar al siguiente módulo…).
+- `units[].closing_screens` (opcional, def. `[]`): pantallas sueltas **DESPUÉS
+  de esa unidad, antes de la siguiente** — el sitio para diapositivas sueltas
+  «entre unidades» que no son contenido de ninguna de las dos (un breve punto
+  y aparte, una transición, una actividad de repaso conjunta…). Nunca crees
+  una unidad-envoltorio ni una unidad vacía solo para alojar esto: usa
+  `closing_screens` de la unidad ANTERIOR al punto donde quieras la pantalla
+  suelta. Úsalo (tanto a nivel de módulo como de unidad) solo si el documento
+  fuente pide explícitamente un cierre o una transición; si no, **omite la
+  clave** (no la rellenes por rellenar).
 - **El `title` de un módulo nunca repite el título del curso/SCORM**
   (`course.title`/`scorm.title`): esa presentación ya va en la portada de
   `intro_screens` (ver §1). Dale al módulo un nombre propio, específico de lo

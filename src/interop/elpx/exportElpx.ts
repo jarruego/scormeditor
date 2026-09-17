@@ -174,6 +174,8 @@ export async function buildElpx(courseWithDrafts: Course, assets: AssetMap = {})
 
       let scrOrder = 0
       for (const screen of unit.screens) addScreenPage(screen, unitPageId, scrOrder++)
+      // Cierre de la unidad («entre unidades»): mismo nivel, después de sus propias pantallas.
+      for (const screen of unit.closing_screens) addScreenPage(screen, unitPageId, scrOrder++)
     }
 
     // Cierre del módulo: después de sus unidades, mismo nivel que `mod.screens`.

@@ -17,7 +17,7 @@ export function stripFlaggedForReview(course: Course): Course {
   clone.closing_screens = keep(clone.closing_screens)
   clone.modules.forEach((m) => {
     m.screens = keep(m.screens)
-    m.units.forEach((u) => { u.screens = keep(u.screens) })
+    m.units.forEach((u) => { u.screens = keep(u.screens); u.closing_screens = keep(u.closing_screens) })
     m.closing_screens = keep(m.closing_screens)
   })
   return clone
@@ -31,7 +31,7 @@ export function countFlaggedForReview(course: Course): number {
   count(course.closing_screens)
   course.modules.forEach((m) => {
     count(m.screens)
-    m.units.forEach((u) => count(u.screens))
+    m.units.forEach((u) => { count(u.screens); count(u.closing_screens) })
     count(m.closing_screens)
   })
   return n

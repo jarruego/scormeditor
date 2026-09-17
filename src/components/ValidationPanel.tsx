@@ -64,9 +64,14 @@ export function ValidationPanel() {
     const pathByUnit = new Map<string, string>()
     const groupOrder: string[] = []
     screenContainers(course).forEach((c) => {
+      // El cierre de una unidad («entre unidades») es un contenedor MÁS de
+      // esa unidad, no la propia unidad: si está vacío (el caso normal, no
+      // todas las unidades usan cierre) no debe generar un grupo fantasma ni
+      // pisar el `pathByUnit` de la unidad real con la etiqueta «(cierre)».
       if (!c.unit && c.screens.length === 0) return
+      if (c.unit && c.closing && c.screens.length === 0) return
       const path = containerLabel(c)
-      if (c.unit) pathByUnit.set(c.unit.id, path)
+      if (c.unit && !c.closing) pathByUnit.set(c.unit.id, path)
       groupOrder.push(path)
       c.screens.forEach((s) => pathByScreen.set(s.id, path))
     })

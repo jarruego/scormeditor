@@ -5,12 +5,17 @@
 > enriquecido en `editor-richtext.md`.
 
 ## El árbol (`CourseTree.tsx`)
-Introducción del paquete SCORM → módulos (pantallas propias → unidades → cierre del
-módulo) → cierre del paquete SCORM → secciones «Evaluación» (test final) y «Materiales»
-(glosario/bibliografía). Añadir pantalla por unidad, por módulo, en el cierre de un
-módulo, suelta antes de todo (introducción) o suelta después de todo (cierre del
-SCORM); duplicar/eliminar por pantalla (eliminar pide confirmación con `confirmDialog`,
-nombrando la pantalla).
+Introducción del paquete SCORM → módulos (pantallas propias → unidades, cada una con su
+propio cierre → cierre del módulo) → cierre del paquete SCORM → secciones «Evaluación»
+(test final) y «Materiales» (glosario/bibliografía). Añadir pantalla por unidad, en el
+cierre de una unidad (entre unidades), por módulo, en el cierre de un módulo, suelta
+antes de todo (introducción) o suelta después de todo (cierre del SCORM); duplicar/
+eliminar por pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la
+pantalla).
+
+Tres niveles con el mismo patrón «propias + cierre» (curso, módulo, unidad) — cada uno
+son pantallas sueltas que no pertenecen al contenido real de ningún contenedor, solo
+sirven para presentar o cerrar el suyo:
 
 - **Introducción y cierre del paquete SCORM** (`course.intro_screens`/
   `closing_screens`): dos bloques fijos `.ed-intro-block` — introducción al principio
@@ -29,26 +34,43 @@ nombrando la pantalla).
   El cierre del SCORM va lo último de todo en la navegación del alumno (`flatten()` en
   app.js): después incluso del test final y de la pantalla de Resultados, si los hay.
 - **Pantallas propias del módulo y su cierre** (`module.screens`/`closing_screens`,
-  portada/presentación al principio, resumen/despedida al final del bloque): las de
-  `screens` van **siempre antes de las unidades** del módulo y las de `closing_screens`
-  **siempre después** — decisión deliberada: intercalarlas entre unidades complicaría
-  el orden lineal y el menú para un caso de uso dudoso. En el árbol, `screens` se lista
-  bajo el título del módulo (`.ed-module-screens`, mismo `ScreenItem` con puntos de
-  inserción) con su botón «Añadir pantalla al módulo…»; `closing_screens` se lista tras
-  las unidades, con un divisor sutil (`.ed-closing-label`, «Cierre del {módulo}») y su
-  propio botón «Añadir pantalla de cierre del {módulo}…» (mismo `AddScreenModal`; las
-  recetas evalúan `uniquePerUnit` y `defaultTitle` contra el módulo en ambos casos). El
-  recorrido canónico introducción→módulo→(pantallas de módulo)→unidades→(cierre de
-  módulo)→cierre del curso vive en `src/schema/traverse.ts`
-  (`screenContainers`/`allScreens`/`containerLabel`, `module: null` en los contenedores
-  del curso, `closing: true` en los de cierre) — cualquier código nuevo que recorra
-  pantallas debe usarlo, no el doble bucle. En el store, `addScreen`/`moveScreen`
-  aceptan como contenedor el id de una unidad, de un módulo, de su cierre
-  (`moduleClosingContainerId(moduleId)`, formato `"{id}:closing"` — nunca choca con un
-  id real, que nunca lleva `:`), `INTRO_CONTAINER_ID` u `OUTRO_CONTAINER_ID`;
-  `Located.mi === 'intro'/'outro'` señala pantalla suelta de introducción/cierre del
-  curso, `Located.ui === 'closing'` señala pantalla de cierre de módulo (`null` sigue
-  señalando pantalla propia del módulo, antes de sus unidades).
+  portada/presentación al principio, resumen/despedida al final del bloque, DESPUÉS de
+  todas sus unidades): en el árbol, `screens` se lista bajo el título del módulo
+  (`.ed-module-screens`, mismo `ScreenItem` con puntos de inserción) con su botón
+  «Añadir pantalla al módulo…»; `closing_screens` se lista tras las unidades, con un
+  divisor sutil (`.ed-closing-label`, «Cierre del {módulo}») y su propio botón «Añadir
+  pantalla de cierre del {módulo}…» (mismo `AddScreenModal`; las recetas evalúan
+  `uniquePerUnit` y `defaultTitle` contra el módulo en ambos casos). Id de contenedor
+  derivado `moduleClosingContainerId(moduleId)` (formato `"{id}:closing"` — nunca choca
+  con un id real, que nunca lleva `:`).
+- **Cierre de cada unidad, «entre unidades»** (`unit.closing_screens`): pantallas
+  sueltas DESPUÉS de esa unidad, antes de la siguiente (o del cierre del módulo/
+  siguiente módulo si es la última) — el sitio para poner diapositivas sueltas entre
+  unidades sin crear una unidad-envoltorio ni forzar el contenido dentro de la unidad
+  anterior o siguiente. Anidado dentro del propio `<details>` de la unidad, tras su
+  botón «Añadir pantalla…», con el mismo divisor sutil («Cierre de la {unidad}») y su
+  botón «Añadir pantalla de cierre de la {unidad}…»; comparte `scope` con la unidad (las
+  recetas ven este contenedor como si fuera la propia unidad). Id derivado
+  `unitClosingContainerId(unitId)`, mismo convenio `"{id}:closing"`. En el menú del
+  alumno (`buildMenu()`) NO es un bloque aparte: cuenta como más pantallas de la MISMA
+  unidad (mismo `data-count`, misma mini-barra de progreso) — es un cierre de esa
+  unidad, no una unidad nueva.
+
+El recorrido canónico introducción→módulo→(pantallas de módulo)→unidad→(cierre de
+unidad)→…→(cierre de módulo)→cierre del curso vive en `src/schema/traverse.ts`
+(`screenContainers`/`allScreens`/`containerLabel`, `module`/`unit` null en los
+contenedores sin ese nivel, `closing: true` en los de cierre) — cualquier código nuevo
+que recorra pantallas debe usarlo, no el doble bucle. **Cada unidad genera DOS
+contenedores** (propio y de cierre): código que cuenta unidades a partir de
+`screenContainers()` (en vez de `course.modules[].units.length` directamente) debe
+filtrar por `!closing` o contarlas aparte — ver el propio `containerLabel` y los ajustes
+en `report.ts`/`ValidationPanel.tsx`/`ObjectivesModal.tsx` para no duplicar grupos ni
+enlaces de test de unidad. En el store, `addScreen`/`moveScreen` aceptan como
+contenedor el id de una unidad, de su cierre (`unitClosingContainerId`), de un módulo,
+de su cierre (`moduleClosingContainerId`), `INTRO_CONTAINER_ID` u `OUTRO_CONTAINER_ID`;
+`Located` tiene `mi` (módulo, o `'intro'`/`'outro'`), `ui` (índice de unidad, o `null`
+si es del propio módulo) y `part: 'main' | 'closing'` (cuál de los dos contenedores de
+ese módulo/unidad).
 
 - **Módulos y unidades plegables, colapsados por defecto**: ambos son `<details>`
   (`ed-tree-module`/`ed-tree-unit`) con chevron rotatorio (`::before` en

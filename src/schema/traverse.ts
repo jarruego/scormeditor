@@ -25,11 +25,20 @@ export function moduleClosingContainerId(moduleId: string): string {
   return `${moduleId}:closing`
 }
 
-/** Contenedor de pantallas: `module` null = pantallas sueltas del curso
- *  (`course.intro_screens`/`closing_screens`, sin ningún módulo); `unit` null
- *  con `module` no nulo = pantallas propias del módulo (`screens` o
- *  `closing_screens`, distinguidas por `closing`). `closing` true = va
- *  después del resto del contenedor (unidades del módulo, o todo el curso). */
+/** Id de contenedor derivado para `unit.closing_screens` (pantallas sueltas
+ *  DESPUÉS de esa unidad, antes de la siguiente): mismo convenio que
+ *  `moduleClosingContainerId`, con el id de la unidad. */
+export function unitClosingContainerId(unitId: string): string {
+  return `${unitId}:closing`
+}
+
+/** Contenedor de pantallas: `module`/`unit` null = pantallas sueltas del
+ *  curso (`intro_screens`/`closing_screens`); `unit` null con `module` no
+ *  nulo = pantallas propias del módulo (`screens` o `closing_screens`,
+ *  distinguidas por `closing`); `unit` no nulo = pantallas de esa unidad
+ *  (`screens` o, con `closing`, las sueltas DESPUÉS de ella — «entre
+ *  unidades»). `closing` true = va después del resto de su contenedor
+ *  (unidad, unidades del módulo, o todo el curso). */
 export interface ScreenContainer {
   module: Module | null
   unit: Unit | null
@@ -38,14 +47,18 @@ export interface ScreenContainer {
 }
 
 /** Contenedores en el orden del curso: introducción del paquete SCORM
- *  primero; luego, por cada módulo, sus pantallas propias, las de cada
- *  unidad y su cierre; al final del todo, el cierre del paquete SCORM. */
+ *  primero; luego, por cada módulo, sus pantallas propias, y por cada unidad
+ *  sus pantallas y las sueltas de después («entre unidades»), y el cierre del
+ *  módulo; al final de todo, el cierre del paquete SCORM. */
 export function screenContainers(course: Course): ScreenContainer[] {
   return [
     { module: null, unit: null, screens: course.intro_screens },
     ...course.modules.flatMap((m): ScreenContainer[] => [
       { module: m, unit: null, screens: m.screens },
-      ...m.units.map((u) => ({ module: m, unit: u, screens: u.screens })),
+      ...m.units.flatMap((u): ScreenContainer[] => [
+        { module: m, unit: u, screens: u.screens },
+        { module: m, unit: u, screens: u.closing_screens, closing: true },
+      ]),
       { module: m, unit: null, screens: m.closing_screens, closing: true },
     ]),
     { module: null, unit: null, screens: course.closing_screens, closing: true },
@@ -62,7 +75,10 @@ export function allScreens(course: Course): Screen[] {
  *  módulo) que ya usaban esas pantallas antes de que hubiera cierres, más la
  *  distinción de cierre para no confundir un grupo con el otro. */
 export function containerLabel(c: Pick<ScreenContainer, 'module' | 'unit' | 'closing'>): string {
-  if (c.unit) return `${c.module!.title || c.module!.id} › ${c.unit.title || c.unit.id}`
+  if (c.unit) {
+    const base = `${c.module!.title || c.module!.id} › ${c.unit.title || c.unit.id}`
+    return c.closing ? `${base} (cierre)` : base
+  }
   if (c.module) {
     const base = c.module.title || c.module.id
     return c.closing ? `${base} (cierre)` : base

@@ -302,8 +302,14 @@ que lo etiquete).
   es a `intro_screens` lo que el cierre de un módulo es a sus pantallas propias: sueltas,
   sin módulo, pero **al final de todo** `SCREENS` en vez de al principio — después
   incluso del test final y de Resultados, si los hay (`buildMenu` las separa de
-  «Evaluación» en un bloque propio «CIERRE», ver `carcasa-navegacion.md`). Ese orden
-  replica el de `screenContainers()` en el editor (`src/schema/traverse.ts`) — mantener
+  «Evaluación» en un bloque propio «CIERRE», ver `carcasa-navegacion.md`).
+- **Cierre de cada unidad, «entre unidades»** (`unit.closing_screens`): a diferencia de
+  los dos anteriores, NO es un bloque de menú aparte — `flatten()` las inserta justo
+  después de las `screens` propias de esa unidad (mismo `unit`/`module`, antes de pasar
+  a la unidad siguiente) y `buildMenu()` las cuenta como más pantallas de la MISMA
+  unidad (`data-count` combinado, misma mini-barra de progreso): un cierre de unidad no
+  es una unidad nueva. Ese orden replica el de `screenContainers()` en el editor
+  (`src/schema/traverse.ts`) — mantener
   ambos en sincronía.
 - **Cabecera sin marca por defecto**: `shell.brand` tiene default vacío; sin marca,
   `applyBranding` oculta `#me-brand`, añade `.me-no-brand` a la topbar y el título del

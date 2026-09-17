@@ -25,7 +25,7 @@ import { useCourseStore } from '../store/courseStore'
 import type { Screen } from '../schema/course.schema'
 import { screenTypeLabel, screenTypeIcon, screenTypeColor, interactionTypeLabel, TYPE_COLORS, type CoverLevel } from '../schema/labels'
 import { interactionRecipe, interactionColor } from '../schema/interactionRecipes'
-import { INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId } from '../schema/traverse'
+import { INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId, unitClosingContainerId } from '../schema/traverse'
 import { validateCourse, type Issue } from '../validation/validators'
 import { confirmDialog } from '../store/confirm'
 import { InlineRename } from './InlineRename'
@@ -632,6 +632,35 @@ export function CourseTree() {
                     </ul>
                   </SortableContext>
                   {!q && <AddScreenButton containerId={u.id} />}
+                  {/* Pantallas sueltas DESPUÉS de esta unidad, antes de la
+                      siguiente («entre unidades»): mismo tratamiento que el
+                      cierre de módulo, un nivel más abajo. */}
+                  {(() => {
+                    const closingContainerId = unitClosingContainerId(u.id)
+                    const visibleClosing = u.closing_screens.filter(matches)
+                    if (q && visibleClosing.length === 0) return null
+                    return (
+                      <>
+                        {!q && <p className="ed-closing-label">Cierre de la {unitLabel}</p>}
+                        <SortableContext items={u.closing_screens.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                          <ul className="ed-screens">
+                            {visibleClosing.map((s, i) => (
+                              <Fragment key={s.id}>
+                                {!q && <InsertPoint containerId={closingContainerId} index={i} />}
+                                <ScreenItem screen={s} containerId={closingContainerId} issues={issuesByScreen.get(s.id)} level="unit"
+                                  moduleId={m.id} unitId={u.id}
+                                  index={q ? undefined : i} count={q ? undefined : u.closing_screens.length} />
+                              </Fragment>
+                            ))}
+                            {!q && u.closing_screens.length === 0 && <EmptyDropZone containerId={closingContainerId} dragging={dragging} />}
+                          </ul>
+                        </SortableContext>
+                        {!q && (
+                          <AddScreenButton containerId={closingContainerId} label={`Añadir pantalla de cierre de la ${unitLabel}…`} />
+                        )}
+                      </>
+                    )
+                  })()}
                 </details>
               )
             })}

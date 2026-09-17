@@ -85,6 +85,10 @@
       (m.screens || []).forEach(function (sc) { SCREENS.push({ unit: null, module: m, screen: sc, isFinalTest: false }); });
       (m.units || []).forEach(function (u) {
         (u.screens || []).forEach(function (sc) { SCREENS.push({ unit: u, module: m, screen: sc, isFinalTest: false }); });
+        // Pantallas sueltas DESPUÉS de esta unidad, antes de la siguiente (o
+        // del cierre del módulo/siguiente módulo si es la última) — el sitio
+        // para diapositivas sueltas «entre unidades».
+        (u.closing_screens || []).forEach(function (sc) { SCREENS.push({ unit: u, module: m, screen: sc, isFinalTest: false, isClosing: true }); });
       });
       // Pantallas de cierre del módulo (closing_screens): sueltas, después de
       // todas sus unidades — para un resumen/cierre antes de pasar al
@@ -228,13 +232,18 @@
       }
       (m.units || []).forEach(function (u) {
         // data-start/data-count delimitan las pantallas de la unidad para el
-        // contador y la mini-barra de progreso (refreshMenuChecks los rellena).
-        var count = (u.screens || []).length;
+        // contador y la mini-barra de progreso (refreshMenuChecks los
+        // rellena). Las de cierre («entre unidades») cuentan como parte de
+        // ESTA unidad (mismo bloque, mismo contador) — no son la unidad
+        // siguiente ni tienen entidad propia en el menú.
+        var ownScreens = u.screens || [];
+        var afterScreens = u.closing_screens || [];
+        var count = ownScreens.length + afterScreens.length;
         html += '<div class="me-menu-unit" data-start="' + idx + '" data-count="' + count + '">' +
           '<p class="me-menu-utitle"><span>' + esc(u.title) + '</span>' +
           '<span class="me-menu-count"></span></p>' +
           '<div class="me-menu-uprog" aria-hidden="true"><div class="me-menu-uprog-fill"></div></div><ul>';
-        (u.screens || []).forEach(function (sc) {
+        ownScreens.concat(afterScreens).forEach(function (sc) {
           html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(menuScreenLabel(sc)) +
             '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
           idx++;

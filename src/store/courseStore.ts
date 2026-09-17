@@ -3,7 +3,7 @@ import type { Course, Screen, ScreenInput, ScreenType, InteractionType, UnitTest
 import { Course as CourseSchema, Screen as ScreenSchema, Interaction as InteractionSchema } from '../schema/course.schema'
 import { interactionRecipe, migrateInteractionData } from '../schema/interactionRecipes'
 import { migrate } from '../schema/migrations'
-import { allScreens, INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId } from '../schema/traverse'
+import { allScreens, INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId, unitClosingContainerId } from '../schema/traverse'
 import { sampleCourse } from '../schema/sample-course'
 import { isAssetReferenced, orphanAssetPaths } from '../schema/assetRefs'
 import { normalizeObjective } from '../validation/objectives'
@@ -26,31 +26,39 @@ function blankScreen(preset?: Partial<ScreenInput>): Screen {
 
 /** Posición de una pantalla: `mi` 'intro'/'outro' = pantalla suelta de
  *  introducción/cierre del curso (`course.intro_screens`/`closing_screens`,
- *  sin módulo); `ui` null = pantalla propia del módulo, `'closing'` = de
- *  cierre del módulo (`module.closing_screens`), número = de esa unidad. */
-interface Located { mi: number | 'intro' | 'outro'; ui: number | 'closing' | null; si: number }
+ *  sin módulo, `ui`/`part` ignorados); `ui` null = pantalla propia del
+ *  módulo, número = de esa unidad; `part` distingue, dentro de ese módulo o
+ *  esa unidad, sus pantallas propias (`'main'`) de las de cierre (`'closing'`
+ *  — `module.closing_screens` con `ui` null, `unit.closing_screens` con `ui`
+ *  el índice de la unidad: sueltas «entre unidades»). */
+interface Located { mi: number | 'intro' | 'outro'; ui: number | null; part: 'main' | 'closing'; si: number }
 
 /** Lista de pantallas del contenedor localizado (introducción/cierre del
- *  curso, módulo, cierre de módulo o unidad). */
-function screensAt(course: Course, mi: number | 'intro' | 'outro', ui: number | 'closing' | null): Screen[] {
+ *  curso, módulo o unidad, cada uno con su parte propia o de cierre). */
+function screensAt(course: Course, mi: number | 'intro' | 'outro', ui: number | null, part: 'main' | 'closing'): Screen[] {
   if (mi === 'intro') return course.intro_screens
   if (mi === 'outro') return course.closing_screens
   const m = course.modules[mi]
-  if (ui === 'closing') return m.closing_screens
-  return ui == null ? m.screens : m.units[ui].screens
+  if (ui == null) return part === 'closing' ? m.closing_screens : m.screens
+  const u = m.units[ui]
+  return part === 'closing' ? u.closing_screens : u.screens
 }
 
 /** Pantallas del contenedor por id: la introducción o el cierre del curso
- *  (`INTRO_CONTAINER_ID`/`OUTRO_CONTAINER_ID`), una unidad o, en su defecto,
- *  un módulo (pantallas propias o de cierre, `moduleClosingContainerId`). Los
- *  ids son únicos en todo el curso. */
+ *  (`INTRO_CONTAINER_ID`/`OUTRO_CONTAINER_ID`), un módulo o su cierre
+ *  (`moduleClosingContainerId`), o una unidad o las sueltas de después de
+ *  ella (`unitClosingContainerId`, «entre unidades»). Los ids son únicos en
+ *  todo el curso. */
 function containerScreens(course: Course, containerId: string): Screen[] | null {
   if (containerId === INTRO_CONTAINER_ID) return course.intro_screens
   if (containerId === OUTRO_CONTAINER_ID) return course.closing_screens
   for (const m of course.modules) {
     if (m.id === containerId) return m.screens
     if (moduleClosingContainerId(m.id) === containerId) return m.closing_screens
-    for (const u of m.units) if (u.id === containerId) return u.screens
+    for (const u of m.units) {
+      if (u.id === containerId) return u.screens
+      if (unitClosingContainerId(u.id) === containerId) return u.closing_screens
+    }
   }
   return null
 }
@@ -422,7 +430,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
       // portada de módulo (`.me-module-cover`, distinta a propósito de la de
       // unidad — arquitectura-runtime.md) casi nunca llegaba a usarse.
       screens: [blankScreen({ type: 'cover', title: moduleTitle })],
-      units: [{ id: newId('u'), title: unitTitle, summary: '', screens: [blankScreen({ type: 'cover', title: unitTitle })], status: 'ok' }],
+      units: [{ id: newId('u'), title: unitTitle, summary: '', screens: [blankScreen({ type: 'cover', title: unitTitle })], status: 'ok', closing_screens: [] }],
       closing_screens: [],
     })
     set({ course })
@@ -435,7 +443,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     const m = course.modules.find((x) => x.id === moduleId)!
     const unitTitle = `${course.unit_label || 'Unidad'} ${m.units.length + 1}`
     // Portada propia, mismo motivo que en addModule.
-    m.units.push({ id: newId('u'), title: unitTitle, summary: '', screens: [blankScreen({ type: 'cover', title: unitTitle })], status: 'ok' })
+    m.units.push({ id: newId('u'), title: unitTitle, summary: '', screens: [blankScreen({ type: 'cover', title: unitTitle })], status: 'ok', closing_screens: [] })
     set({ course })
   },
 
@@ -447,7 +455,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     for (const m of course.modules) {
       const i = m.units.findIndex((u) => u.id === id)
       if (i >= 0) {
-        removedScreenIds = m.units[i].screens.map((s) => s.id)
+        removedScreenIds = [...m.units[i].screens, ...m.units[i].closing_screens].map((s) => s.id)
         m.units.splice(i, 1)
         break
       }
@@ -461,7 +469,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot()
     const course = clone(get().course)
     const mod = course.modules.find((m) => m.id === id)!
-    const removedScreenIds = [...mod.screens, ...mod.units.flatMap((u) => u.screens), ...mod.closing_screens].map((s) => s.id)
+    const removedScreenIds = [...mod.screens, ...mod.units.flatMap((u) => [...u.screens, ...u.closing_screens]), ...mod.closing_screens].map((s) => s.id)
     course.modules = course.modules.filter((m) => m.id !== id)
     const sel = get().selectedScreenId
     set({ course, selectedScreenId: sel && removedScreenIds.includes(sel) ? null : sel })
@@ -514,14 +522,16 @@ export const useCourseStore = create<CourseState>((set, get) => {
     const [unit] = course.modules[mi].units.splice(i, 1)
     // La unidad SE CONVIERTE en módulo (no queda envuelta como su única unidad
     // dentro): sus pantallas pasan a ser las pantallas propias del nuevo
-    // módulo, directamente. Se pierden `summary`/`status` (campos de unidad sin
+    // módulo, y las sueltas de después de ella (`closing_screens`, «entre
+    // unidades») pasan a ser el cierre del nuevo módulo — mismo papel, un
+    // nivel más arriba. Se pierden `summary`/`status` (campos de unidad sin
     // equivalente en módulo) y cualquier test de unidad que la referenciara por
     // `unit_id` queda huérfano — mismo riesgo, sin aviso, que ya asume
     // `removeUnit` hoy al borrar una unidad con test asociado.
     // Ninguna portada necesita retipado: `cover` es un único tipo cuyo diseño
     // (banda sólida o degradada) lo decide el contenedor donde vive la
     // pantalla en cada momento, no un campo fijo — ver arquitectura-runtime.md.
-    const newModule: Module = { id: newId('m'), title: unit.title, screens: unit.screens, units: [], closing_screens: [] }
+    const newModule: Module = { id: newId('m'), title: unit.title, screens: unit.screens, units: [], closing_screens: unit.closing_screens }
     course.modules.splice(mi + 1, 0, newModule)
     set({ course })
   },
@@ -531,26 +541,30 @@ export const useCourseStore = create<CourseState>((set, get) => {
   locate: (id) => {
     const { course } = get()
     const isi = course.intro_screens.findIndex((s) => s.id === id)
-    if (isi >= 0) return { mi: 'intro', ui: null, si: isi }
+    if (isi >= 0) return { mi: 'intro', ui: null, part: 'main', si: isi }
     for (let mi = 0; mi < course.modules.length; mi++) {
-      const msi = course.modules[mi].screens.findIndex((s) => s.id === id)
-      if (msi >= 0) return { mi, ui: null, si: msi }
-      for (let ui = 0; ui < course.modules[mi].units.length; ui++) {
-        const si = course.modules[mi].units[ui].screens.findIndex((s) => s.id === id)
-        if (si >= 0) return { mi, ui, si }
+      const mod = course.modules[mi]
+      const msi = mod.screens.findIndex((s) => s.id === id)
+      if (msi >= 0) return { mi, ui: null, part: 'main', si: msi }
+      for (let ui = 0; ui < mod.units.length; ui++) {
+        const unit = mod.units[ui]
+        const si = unit.screens.findIndex((s) => s.id === id)
+        if (si >= 0) return { mi, ui, part: 'main', si }
+        const ucsi = unit.closing_screens.findIndex((s) => s.id === id)
+        if (ucsi >= 0) return { mi, ui, part: 'closing', si: ucsi }
       }
-      const csi = course.modules[mi].closing_screens.findIndex((s) => s.id === id)
-      if (csi >= 0) return { mi, ui: 'closing', si: csi }
+      const csi = mod.closing_screens.findIndex((s) => s.id === id)
+      if (csi >= 0) return { mi, ui: null, part: 'closing', si: csi }
     }
     const osi = course.closing_screens.findIndex((s) => s.id === id)
-    if (osi >= 0) return { mi: 'outro', ui: null, si: osi }
+    if (osi >= 0) return { mi: 'outro', ui: null, part: 'main', si: osi }
     return null
   },
 
   getScreen: (id) => {
     const loc = get().locate(id)
     if (!loc) return null
-    return screensAt(get().course, loc.mi, loc.ui)[loc.si]
+    return screensAt(get().course, loc.mi, loc.ui, loc.part)[loc.si]
   },
 
   updateScreen: (id, patch) => {
@@ -558,7 +572,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     if (!loc) return
     snapshot(`update:${id}`)
     const course = clone(get().course)
-    const screens = screensAt(course, loc.mi, loc.ui)
+    const screens = screensAt(course, loc.mi, loc.ui, loc.part)
     screens[loc.si] = { ...screens[loc.si], ...patch }
     set({ course })
   },
@@ -576,12 +590,12 @@ export const useCourseStore = create<CourseState>((set, get) => {
   changeInteractionType: (screenId, type) => {
     const loc = get().locate(screenId)
     if (!loc) return
-    const cur = screensAt(get().course, loc.mi, loc.ui)[loc.si]
+    const cur = screensAt(get().course, loc.mi, loc.ui, loc.part)[loc.si]
     if (!cur.interaction || cur.interaction.type === type) return
     // snapshot sin clave: el cambio de tipo nunca se coalesce con el tecleo.
     snapshot()
     const course = clone(get().course)
-    const s = screensAt(course, loc.mi, loc.ui)[loc.si]
+    const s = screensAt(course, loc.mi, loc.ui, loc.part)[loc.si]
     const it = s.interaction!
     const rec = interactionRecipe(type)
     const mig = migrateInteractionData(it, type)
@@ -753,7 +767,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     if (!loc) return
     snapshot()
     const course = clone(get().course)
-    const screens = screensAt(course, loc.mi, loc.ui)
+    const screens = screensAt(course, loc.mi, loc.ui, loc.part)
     const copy: Screen = { ...clone(screens[loc.si]), id: newId('s'), title: screens[loc.si].title + ' (copia)' }
     if (copy.interaction) copy.interaction.id = newId('i')
     screens.splice(loc.si + 1, 0, copy)
@@ -765,7 +779,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     if (!loc) return
     snapshot()
     const course = clone(get().course)
-    screensAt(course, loc.mi, loc.ui).splice(loc.si, 1)
+    screensAt(course, loc.mi, loc.ui, loc.part).splice(loc.si, 1)
     set({ course, selectedScreenId: get().selectedScreenId === id ? null : get().selectedScreenId })
   },
 
@@ -774,7 +788,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     if (!loc || !containerScreens(get().course, toContainerId)) return
     snapshot()
     const course = clone(get().course)
-    const [moved] = screensAt(course, loc.mi, loc.ui).splice(loc.si, 1)
+    const [moved] = screensAt(course, loc.mi, loc.ui, loc.part).splice(loc.si, 1)
     const target = containerScreens(course, toContainerId)!
     const clamped = Math.max(0, Math.min(toIndex, target.length))
     target.splice(clamped, 0, moved)

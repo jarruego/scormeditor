@@ -27,12 +27,17 @@
   pertenecen a ninguno) — mismo `menuScreenLabel()` que el resto (prefijo
   «Actividad: » si procede). Ver `editor-pantallas.md` para el lado del editor (árbol,
   recetas).
-- **Cierre, en dos niveles**: cada módulo puede llevar `closing_screens` (pantallas
-  sueltas después de sus unidades, mismo bloque `.me-menu-unit.me-menu-modscreens` que
-  las propias de arriba, sin rótulo de unidad) y el curso puede llevar
-  `course.closing_screens` (simétrico a `intro_screens`, pero lo último de todo en
-  `flatten()` — después incluso del test final y de Resultados). Ver «Evaluación» más
-  abajo para cómo `buildMenu()` separa ese cierre del curso del bloque de Evaluación.
+- **Cierre, en tres niveles**: cada unidad puede llevar `closing_screens` propias
+  (pantallas sueltas «entre unidades», después de esa unidad y antes de la siguiente) —
+  a diferencia de los otros dos niveles, NO tienen bloque de menú aparte: cuentan como
+  más pantallas de la MISMA unidad (`data-count`/mini-barra combinados, `ownScreens.
+  concat(afterScreens)` en `buildMenu()`), porque un cierre de unidad no es una unidad
+  nueva. Cada módulo puede llevar `closing_screens` (pantallas sueltas después de TODAS
+  sus unidades, mismo bloque `.me-menu-unit.me-menu-modscreens` que las propias de
+  arriba, sin rótulo de unidad) y el curso puede llevar `course.closing_screens`
+  (simétrico a `intro_screens`, pero lo último de todo en `flatten()` — después incluso
+  del test final y de Resultados). Ver «Evaluación» más abajo para cómo `buildMenu()`
+  separa ese cierre del curso del bloque de Evaluación.
 - **Prefijo «Actividad: » en las pantallas evaluables**: `menuScreenLabel(sc)` (app.js,
   usada por `buildMenu()` en los tres bucles que generan `.me-menu-link`: pantallas de
   módulo, de unidad y sintéticas finales) antepone `"Actividad: "` al rótulo del

@@ -11,9 +11,11 @@ export interface Counts {
 }
 
 function counts(course: Course): Counts {
-  let units = 0, screens = 0, interactions = 0
-  screenContainers(course).forEach(({ unit, screens: ss }) => {
-    if (unit) units++
+  let screens = 0, interactions = 0
+  // Cada unidad genera DOS contenedores (propio y de cierre, «entre
+  // unidades»): contar unidades por contenedor las duplicaría.
+  const units = course.modules.reduce((a, m) => a + m.units.length, 0)
+  screenContainers(course).forEach(({ screens: ss }) => {
     ss.forEach((s) => { screens++; if (s.interaction) interactions++ })
   })
   const questions =
@@ -48,9 +50,11 @@ function traceabilityMatrix(course: Course): MatrixRow[] {
         screenId: s.id,
       })
     })
-    // Tests de unidad: se enlazan a la primera pantalla de su unidad.
+    // Tests de unidad: se enlazan a la primera pantalla de su unidad. Cada
+    // unidad genera DOS contenedores (propio y de cierre, «entre unidades»)
+    // — el test solo se lista una vez, en el contenedor propio (`!c.closing`).
     const u = c.unit
-    if (u) course.assessments.unit_tests.filter((t) => t.unit_id === u.id).forEach((t) =>
+    if (u && !c.closing) course.assessments.unit_tests.filter((t) => t.unit_id === u.id).forEach((t) =>
       t.questions.forEach((q) => rows.push({
         objective: q.learning_objective || '—',
         path,
@@ -81,13 +85,15 @@ function qaTable(course: Course): QARow[] {
     const correct = options.filter((o) => o.correct).map((o) => o.text).join(', ') || '—'
     rows.push({ question: prompt, correct, objective: obj || '—', origin, screenId })
   }
-  screenContainers(course).forEach(({ unit: u, screens }) => {
+  screenContainers(course).forEach(({ unit: u, screens, closing }) => {
     screens.forEach((s) => {
       const it = s.interaction
       if (it && (it.options || []).some((o) => o.correct))
         collect(it.prompt, it.options, s.objective, s.title || s.id, s.id)
     })
-    if (u) course.assessments.unit_tests.filter((t) => t.unit_id === u.id).forEach((t) =>
+    // Igual que en traceabilityMatrix: el test de unidad solo se lista una
+    // vez, no una por cada uno de los dos contenedores de la unidad.
+    if (u && !closing) course.assessments.unit_tests.filter((t) => t.unit_id === u.id).forEach((t) =>
       t.questions.forEach((q) =>
         collect(q.prompt, q.options, q.learning_objective, `Test de unidad «${t.title || t.id}»`, u.screens[0]?.id)))
   })

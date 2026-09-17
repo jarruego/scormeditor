@@ -1,6 +1,6 @@
 import { useCourseStore } from '../store/courseStore'
 import type { ScreenInput } from '../schema/course.schema'
-import { INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId } from '../schema/traverse'
+import { INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId, unitClosingContainerId } from '../schema/traverse'
 import { RECIPE_GROUPS, RECIPE_GROUP_LABELS, RECIPE_GROUP_HINTS, RECIPE_GROUP_COLORS, SCREEN_RECIPES, type ScreenRecipe } from '../schema/screenRecipes'
 import { screenTypeLabel, type CoverLevel } from '../schema/labels'
 import { SettingsWindow } from './SettingsModal'
@@ -13,9 +13,9 @@ import { Icon } from './Icon'
  * pulsables (aviso blando, no bloqueo). Si llega `atIndex` (punto de inserción
  * elegido por el autor en el árbol), esa posición manda sobre la colocación
  * automática de la receta. `containerId` puede ser la introducción o el
- * cierre del curso (`INTRO_CONTAINER_ID`/`OUTRO_CONTAINER_ID`), una unidad o
- * un módulo (pantallas propias del módulo o de su cierre,
- * `moduleClosingContainerId`).
+ * cierre del curso (`INTRO_CONTAINER_ID`/`OUTRO_CONTAINER_ID`), un módulo o su
+ * cierre (`moduleClosingContainerId`), o una unidad o las sueltas de después
+ * de ella (`unitClosingContainerId`, «entre unidades»).
  */
 export function AddScreenModal({ containerId, atIndex, onClose }: { containerId: string; atIndex?: number; onClose: () => void }) {
   const course = useCourseStore((s) => s.course)
@@ -24,7 +24,9 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
   const isIntro = containerId === INTRO_CONTAINER_ID
   const isOutro = containerId === OUTRO_CONTAINER_ID
   const closingModule = course.modules.find((m) => moduleClosingContainerId(m.id) === containerId)
-  const unit = course.modules.flatMap((m) => m.units).find((u) => u.id === containerId)
+  const units = course.modules.flatMap((m) => m.units)
+  const unit = units.find((u) => u.id === containerId)
+  const closingUnit = units.find((u) => unitClosingContainerId(u.id) === containerId)
   const plainModule = course.modules.find((m) => m.id === containerId)
   const container = isIntro
     ? { title: course.course.title, screens: course.intro_screens }
@@ -32,6 +34,8 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
     ? { title: course.course.title, screens: course.closing_screens }
     : closingModule
     ? { title: closingModule.title, screens: closingModule.closing_screens }
+    : closingUnit
+    ? { title: closingUnit.title, screens: closingUnit.closing_screens }
     : (unit ?? plainModule)
   if (!container) return null
   const isModule = !!(closingModule || plainModule)

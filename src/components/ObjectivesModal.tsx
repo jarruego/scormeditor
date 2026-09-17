@@ -98,7 +98,10 @@ function AddObjective() {
   const groups = useMemo(
     () =>
       screenContainers(course)
-        .filter((c) => c.unit || c.screens.length > 0)
+        // El cierre de una unidad («entre unidades») no es la unidad en sí:
+        // solo se lista si tiene pantallas, igual que el resto de cierres —
+        // a diferencia de la unidad real, que se lista aunque esté vacía.
+        .filter((c) => (c.unit && !c.closing) || c.screens.length > 0)
         .map((c) => ({
           label: containerLabel(c),
           screens: c.screens.map((s) => ({ id: s.id, title: s.title || s.id, has: !!s.objective.trim() })),

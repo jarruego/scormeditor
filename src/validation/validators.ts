@@ -252,17 +252,18 @@ function checkQuizQuestions(
 // --- Reglas por unidad -------------------------------------------------------
 function checkUnit(ctx: Ctx, u: Unit, mTitle: string) {
   const loc = `${mTitle} › ${u.title || u.id}`
+  const allScreens = [...u.screens, ...u.closing_screens]
   if (u.status === 'esqueleto_pendiente_desarrollo')
     ctx.push({ code: 'UNIT_SKELETON', severity: 'warning', message: 'Unidad marcada como esqueleto pendiente de desarrollo.', location: loc, unitId: u.id })
-  const hasSummary = !!u.summary.trim() || u.screens.some((s) => s.type === 'summary')
+  const hasSummary = !!u.summary.trim() || allScreens.some((s) => s.type === 'summary')
   if (!hasSummary) ctx.push({ code: 'UNIT_NO_SUMMARY', severity: 'warning', message: 'Unidad sin resumen.', location: loc, unitId: u.id })
 
-  const hasActivity = u.screens.some((s) => s.interaction) ||
+  const hasActivity = allScreens.some((s) => s.interaction) ||
     ctx.course.assessments.unit_tests.some((t) => t.unit_id === u.id)
   if (!hasActivity) ctx.push({ code: 'UNIT_NO_ACTIVITY', severity: 'warning', message: 'Unidad sin actividad ni test.', location: loc, unitId: u.id })
 
-  // Notas editoriales como avisos
-  u.screens.forEach((s) => {
+  // Notas editoriales como avisos (pantallas propias y de cierre, «entre unidades»)
+  allScreens.forEach((s) => {
     s.editor_notes.forEach((n) =>
       ctx.push({ code: 'EDITOR_NOTE', severity: 'info', message: `Nota editorial: ${n}`, location: screenLoc(mTitle, u.title || u.id, s), screenId: s.id }),
     )
@@ -303,6 +304,7 @@ function checkIds(ctx: Ctx) {
     m.units.forEach((u) => {
       check(u.id, `${unitWord} «${u.title || u.id}»`, { unitId: u.id })
       u.screens.forEach((s) => scan(s, u.id))
+      u.closing_screens.forEach((s) => scan(s, u.id))
     })
     m.closing_screens.forEach((s) => scan(s))
   })
@@ -427,6 +429,7 @@ export function validateCourse(course: Course): ValidationResult {
     m.units.forEach((u) => {
       checkUnit(ctx, u, mTitle)
       u.screens.forEach((s) => checkScreen(ctx, s, screenLoc(mTitle, u.title || u.id, s)))
+      u.closing_screens.forEach((s) => checkScreen(ctx, s, screenLoc(mTitle, u.title || u.id, s)))
     })
     // Cierre del módulo: mismas reglas que sus pantallas propias de arriba.
     checkLooseScreens(m.closing_screens, `${mTitle} (cierre)`)

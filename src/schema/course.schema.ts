@@ -248,6 +248,12 @@ export const Unit = z.object({
   summary: z.string().default(''),
   screens: z.array(Screen).default([]),
   status: z.enum(['ok', 'esqueleto_pendiente_desarrollo']).default('ok'),
+  /** Pantallas sueltas DESPUÉS de esta unidad, antes de la siguiente (o del
+   *  cierre del módulo/siguiente módulo si es la última) — el sitio para
+   *  poner diapositivas sueltas «entre unidades». Mismo formato que `screens`;
+   *  contenedor propio (no una unidad más) porque no es contenido de ninguna
+   *  unidad real. Default [] = compatible con proyectos previos. */
+  closing_screens: z.array(Screen).default([]),
 })
 export type Unit = z.infer<typeof Unit>
 
