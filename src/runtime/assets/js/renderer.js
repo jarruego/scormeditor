@@ -233,19 +233,15 @@
     // (.me-module-cover: banda sólida, rompe el margen de la tarjeta, como el
     // separador de capítulo de un libro de texto — un salto de jerarquía
     // cualitativo, no solo cuantitativo, frente al hero degradado y contenido
-    // de 'unit'). Kicker con el rótulo personalizable del curso
-    // (ctx.moduleLabel/unitLabel, por defecto «Módulo»/«Unidad»); 'course'
-    // (portada del paquete SCORM, entre `course.intro_screens`) va **sin**
-    // kicker — un paquete SCORM puede representar un curso entero, un módulo,
-    // una unidad o un tema suelto según el contenido, y esa portada no debe
-    // presuponerlo.
+    // de 'unit'). Deliberadamente SIN ningún rótulo de nivel («Módulo»,
+    // «Unidad»…) encima del título en ningún nivel: al alumno no le aporta
+    // nada y, si el curso usa rótulos personalizados poco frecuentes, chirría
+    // más que ayuda — el propio diseño (banda sólida a sangre completa vs.
+    // hero degradado dentro de la tarjeta) ya distingue el nivel.
     cover: function (s, ctx) {
       var level = (ctx && ctx.coverLevel) || 'unit';
       var solid = level === 'course' || level === 'module';
-      var kicker = level === 'module' ? ((ctx && ctx.moduleLabel) || 'Módulo')
-        : level === 'unit' ? ((ctx && ctx.unitLabel) || 'Unidad') : '';
       return '<header class="me-cover' + (solid ? ' me-module-cover' : '') + '">' +
-        (kicker ? '<p class="me-cover-kicker">' + esc(kicker) + '</p>' : '') +
         '<h1>' + esc(s.title) + '</h1>' +
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
     },

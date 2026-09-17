@@ -501,7 +501,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     // `unit_id` queda huérfano — mismo riesgo, sin aviso, que ya asume
     // `removeUnit` hoy al borrar una unidad con test asociado.
     // Ninguna portada necesita retipado: `cover` es un único tipo cuyo diseño
-    // (kicker, banda sólida o degradada) lo decide el contenedor donde vive la
+    // (banda sólida o degradada) lo decide el contenedor donde vive la
     // pantalla en cada momento, no un campo fijo — ver arquitectura-runtime.md.
     const newModule: Module = { id: newId('m'), title: unit.title, screens: unit.screens, units: [] }
     course.modules.splice(mi + 1, 0, newModule)

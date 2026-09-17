@@ -218,9 +218,10 @@ desplegable «Tipo de pantalla» queda como ajuste avanzado). Decisiones:
   pantalla. El **rótulo mostrado** (`screenTypeLabel(r.type, { level: r.scope, … })` en
   `recipeLabel()`, `AddScreenModal.tsx`) sale del `scope` de la receta, no del `type`
   —por eso hace falta ese parámetro y no basta con `screenTypeLabel(r.type)`—.
-  `scope: 'course'` es el único de los tres **sin** `.me-cover-kicker` en el resultado:
-  no presupone si el paquete es un curso, un módulo, una unidad o un tema suelto (ver
-  «Terminología» más abajo). El resto de recetas sin `scope` (Contenido, Objetivos…)
+  Ninguna de las tres lleva rótulo textual de nivel en la Vista estudiante (ver «Portada
+  unificada» en `arquitectura-runtime.md`) — el `scope` solo decide la etiqueta de la
+  receta en el editor, no nada visible para el alumno. El resto de recetas sin `scope`
+  (Contenido, Objetivos…)
   también valen para la introducción del curso — solo las portadas de módulo/unidad
   quedan fuera de ahí porque su hero anuncia un nivel concreto que la introducción no
   tiene (la de `scope: 'course'` sí vale ahí, es la suya).
@@ -250,13 +251,13 @@ UI). Editable en ⚙ Ajustes → Interfaz (Apariencia), fieldset «Terminología
 - **Alcance de la sustitución** (deliberadamente no exhaustivo): botones del árbol
   (Añadir/Renombrar/Subir/Bajar/Eliminar + diálogos de confirmación, `CourseTree.tsx`),
   las dos portadas en `screenTypeLabel()` («Portada módulo»/«Portada unidad», con
-  `opts?: {level, module, unit}` opcional — ver `labels.ts`) y su tarjeta en «+ Añadir
-  pantalla» (`recipeLabel()` en `AddScreenModal.tsx`, con `level: r.scope` — **no** vía
-  `screenTypeLabel(r.type)` a secas: varias recetas comparten `type` con `label` propio
-  distinto, p. ej. varias de tipo `content`), el kicker de la portada en la Vista
-  estudiante (`ctx.moduleLabel`/`unitLabel`/`coverLevel` en app.js → `renderer.js`,
-  plantilla `cover` con segundo parámetro `ctx`) y las ubicaciones «módulo «X»»/«unidad «X»»
-  de `ID_DUPLICATE` en `validators.ts`. **No** cubierto a propósito: textos largos de
+  `opts?: {level, module, unit}` opcional — ver `labels.ts`, solo texto del editor: la
+  portada en la Vista estudiante no lleva rótulo de nivel, ver «Portada unificada» en
+  `arquitectura-runtime.md`) y su tarjeta en «+ Añadir pantalla» (`recipeLabel()` en
+  `AddScreenModal.tsx`, con `level: r.scope` — **no** vía `screenTypeLabel(r.type)` a
+  secas: varias recetas comparten `type` con `label` propio distinto, p. ej. varias de
+  tipo `content`), y las ubicaciones «módulo «X»»/«unidad «X»» de `ID_DUPLICATE` en
+  `validators.ts`. **No** cubierto a propósito: textos largos de
   ayuda (`HelpModal.tsx`, tour guiado) y las descripciones de las recetas que no son
   portada — quedarían con concordancia de género rota para un rótulo arbitrario («la
   unidad» → «la Tema»); solo la etiqueta corta se sustituye. `pluralize()` en

@@ -11,11 +11,11 @@ import { SCHEMA_VERSION } from './course.schema'
  */
 type Migration = { from: string; to: string; up: (raw: any) => any }
 
-/** `module_cover`/`scorm_cover` se unifican en `cover`: el diseño (kicker,
- *  banda sólida o degradada) ya no lo fija el `type` sino el contenedor donde
- *  vive la pantalla en cada momento (introducción/módulo/unidad) — ver
- *  «Portada unificada» en arquitectura-runtime.md. Muta en sitio: `raw` de
- *  esta iteración ya es una copia de `migrate()`, no el original del llamante. */
+/** `module_cover`/`scorm_cover` se unifican en `cover`: el diseño (banda
+ *  sólida o degradada) ya no lo fija el `type` sino el contenedor donde vive
+ *  la pantalla en cada momento (introducción/módulo/unidad) — ver «Portada
+ *  unificada» en arquitectura-runtime.md. Muta en sitio: `raw` de esta
+ *  iteración ya es una copia de `migrate()`, no el original del llamante. */
 function fixCoverType(s: any): any {
   if (s && (s.type === 'module_cover' || s.type === 'scorm_cover')) s.type = 'cover'
   return s

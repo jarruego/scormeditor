@@ -236,9 +236,7 @@ que lo etiquete).
   el diseño sin retipar nada, porque el nivel se recalcula en cada render. Dos
   registros, no tres:
   - **`'unit'`** — hero **contenido** en la tarjeta `.me-screen`: título grande
-    centrado sobre banda degradada suave del acento, prose centrada a 560 px. Kicker
-    `.me-cover-kicker` con el rótulo personalizable de unidad (`ctx.unitLabel`, por
-    defecto «Unidad» — `course.unit_label`, ver «Terminología» en `editor-pantallas.md`).
+    centrado sobre banda degradada suave del acento, prose centrada a 560 px.
   - **`'module'`/`'course'`** — mismo tratamiento a sangre completa (`.me-module-cover`):
     **rompe el margen de la tarjeta** con márgenes negativos que igualan el padding de
     `.me-screen` en cada punto de corte (bordes a ras en los cuatro lados, como el
@@ -246,12 +244,15 @@ que lo etiquete).
     (`color-mix(in srgb, --me-accent 50%, black)`, no el acento a secas — con texto
     blanco encima no llega a contraste AA) con texto y enlaces en blanco
     (`.me-module-cover a`, subrayado: el azul `--me-primary` del resto del runtime
-    queda casi invisible sobre ese fondo). `'module'` lleva kicker con
-    `ctx.moduleLabel` (por defecto «Módulo»); `'course'` (portada del paquete SCORM,
-    entre `course.intro_screens`) va **sin** kicker — un paquete SCORM puede
-    representar un curso entero, un módulo, una unidad o un tema suelto según el
-    contenido, y esa portada no debe presuponerlo (ni siquiera con el rótulo
-    personalizable, que es por módulo/unidad, no por paquete).
+    queda casi invisible sobre ese fondo).
+
+  Ningún nivel lleva rótulo textual encima del título («Módulo», «Unidad»…, ni
+  siquiera con el rótulo personalizable `course.module_label`/`unit_label`): al
+  alumno no le aporta nada y, con rótulos poco frecuentes, chirría más que ayuda.
+  El propio diseño (banda sólida a sangre completa vs. hero degradado contenido)
+  ya distingue el nivel — sin excepción tampoco para `'course'`, que además nunca
+  podría presuponer un rótulo (un paquete SCORM puede representar un curso
+  entero, un módulo, una unidad o un tema suelto según el contenido).
 
   Impresión: `print-color-adjust: exact` en `print.css` conserva el fondo oscuro de
   `'module'`/`'course'` — sin eso, con «gráficos de fondo» desactivado en el diálogo de

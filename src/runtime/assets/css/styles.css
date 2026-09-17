@@ -228,8 +228,6 @@ body {
 .me-cover h1 { font-size: clamp(1.9rem, 4.5vw, 2.6rem); margin-bottom: .6rem; }
 .me-cover .me-prose { max-width: 560px; margin: 0 auto; }
 .me-cover .me-figure { text-align: center; }
-.me-cover-kicker { margin: 0 0 .35rem; font-size: .78rem; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--me-muted); }
 /* Portada de módulo: salto de jerarquía CUALITATIVO, no solo cuantitativo, sobre
    la portada de unidad — rompe el margen de la tarjeta `.me-screen` (banda sólida
    a sangre completa, como el separador de capítulo de un libro de texto) en vez
@@ -249,7 +247,6 @@ body {
 }
 .me-module-cover h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); }
 .me-module-cover .me-prose { max-width: 620px; font-size: 1.05rem; }
-.me-module-cover .me-cover-kicker { color: rgba(255, 255, 255, .8); }
 .me-module-cover a, .me-module-cover .me-prose a { color: #fff; text-decoration: underline; }
 .me-prose p { margin: .65rem 0; }
 .me-prose h2 { font-size: 1.35rem; margin: 1.4rem 0 .5rem; letter-spacing: -.01em; }

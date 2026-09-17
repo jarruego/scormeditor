@@ -401,13 +401,14 @@ export const Course = z.object({
       .default('auto')
       .describe('Curso narrado: activa los avisos de transcripción/audio pendientes. auto = según haya locución en alguna pantalla'),
   }).default({}),
-  /** Rótulo por el que la UI del editor y la portada de módulo (`.me-cover-kicker`)
-   *  llaman a `modules`: un paquete SCORM puede representar un curso completo, un
-   *  módulo, una unidad o un tema suelto según el contenido, así que «Módulo» no
-   *  siempre encaja — el autor puede renombrarlo (p. ej. a «Tema», «Bloque»). No
-   *  cambia la estructura real (sigue siendo módulo→unidad→pantalla por debajo). */
+  /** Rótulo por el que la UI del editor llama a `modules` (árbol, formularios…):
+   *  un paquete SCORM puede representar un curso completo, un módulo, una unidad
+   *  o un tema suelto según el contenido, así que «Módulo» no siempre encaja — el
+   *  autor puede renombrarlo (p. ej. a «Tema», «Bloque»). No cambia la estructura
+   *  real (sigue siendo módulo→unidad→pantalla por debajo) ni se muestra al
+   *  alumno (la portada no lleva rótulo de nivel, ver `renderer.js`). */
   module_label: z.string().default('Módulo'),
-  /** Igual que `module_label`, para `units` (portada de unidad, botones del árbol…). */
+  /** Igual que `module_label`, para `units` (árbol, formularios…). */
   unit_label: z.string().default('Unidad'),
   modules: z.array(Module).default([]),
   assessments: z.object({
