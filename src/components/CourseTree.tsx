@@ -25,7 +25,7 @@ import { useCourseStore } from '../store/courseStore'
 import type { Screen } from '../schema/course.schema'
 import { screenTypeLabel, screenTypeIcon, screenTypeColor, interactionTypeLabel, TYPE_COLORS, type CoverLevel } from '../schema/labels'
 import { interactionRecipe, interactionColor } from '../schema/interactionRecipes'
-import { INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId, unitClosingContainerId } from '../schema/traverse'
+import { INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId } from '../schema/traverse'
 import { validateCourse, type Issue } from '../validation/validators'
 import { confirmDialog } from '../store/confirm'
 import { InlineRename } from './InlineRename'
@@ -275,6 +275,57 @@ function InsertPoint({ containerId, index }: { containerId: string; index: numbe
   )
 }
 
+/** Punto de inserción ENTRE unidades (incluye antes de la primera y después de
+ *  la última): sin arrastre, un simple «+» (sin texto, como `InsertPoint`)
+ *  que crea un bloque de pantallas sueltas (`unit.loose`, ver
+ *  `courseStore.addLooseUnit`) en la posición `atIndex` de `m.units` y abre el
+ *  selector de recetas sobre él — si se cierra sin añadir nada, el bloque
+ *  —todavía vacío— se retira. Mientras se arrastra una pantalla (`dragging`)
+ *  se sustituye por una zona amplia y droppable (`useDroppable`, mismo
+ *  patrón que `EmptyDropZone`: se MONTA de nuevo con su tamaño real ya
+ *  puesto, no crece un elemento existente — así dnd-kit la mide bien desde
+ *  el primer instante del arrastre en vez de arrastrar el defecto de mover
+ *  varias pantallas de más que tenía agrandar `.ed-insert` con alto real).
+ *  Soltar ahí crea el bloque y mueve la pantalla arrastrada dentro (ver
+ *  `onDragEnd`, rama `unitInsert`). */
+function UnitInsertPoint({ moduleId, atIndex, dragging }: { moduleId: string; atIndex: number; dragging: boolean }) {
+  const addLooseUnit = useCourseStore((s) => s.addLooseUnit)
+  const removeUnit = useCourseStore((s) => s.removeUnit)
+  const [looseId, setLooseId] = useState<string | null>(null)
+  const { setNodeRef, isOver } = useDroppable({
+    id: `unit-insert:${moduleId}:${atIndex}`,
+    data: { moduleId, atIndex, unitInsert: true },
+  })
+
+  function start() {
+    const id = addLooseUnit(moduleId, atIndex)
+    if (id) setLooseId(id)
+  }
+  function finish() {
+    const id = looseId
+    setLooseId(null)
+    if (!id) return
+    const u = useCourseStore.getState().course.modules.flatMap((m) => m.units).find((x) => x.id === id)
+    if (u && u.screens.length === 0) removeUnit(id)
+  }
+
+  if (dragging) {
+    return (
+      <div ref={setNodeRef} className={`ed-unit-drop ${isOver ? 'is-drop-target' : ''}`} role="presentation">
+        Suelta aquí para colocarla entre unidades
+      </div>
+    )
+  }
+  return (
+    <div className="ed-unit-insert" role="presentation">
+      <button aria-label="Insertar una pantalla aquí, entre unidades" title="Insertar una pantalla aquí, entre unidades" onClick={start}>
+        <span aria-hidden="true"><Icon name="plus" size={11} /></span>
+      </button>
+      {looseId && <AddScreenModal containerId={looseId} onClose={finish} />}
+    </div>
+  )
+}
+
 /** Objetivo de drop de un contenedor SIN pantallas: sin ningún `ScreenItem`
  *  dentro (cada uno registra su propio droppable vía `useSortable`) no había
  *  nada donde soltar y arrastrar ahí no hacía nada. Este marcador usa el
@@ -321,6 +372,7 @@ export function CourseTree() {
   const updateUnit = useCourseStore((s) => s.updateUnit)
   const addModule = useCourseStore((s) => s.addModule)
   const addUnit = useCourseStore((s) => s.addUnit)
+  const addLooseUnit = useCourseStore((s) => s.addLooseUnit)
   const removeModule = useCourseStore((s) => s.removeModule)
   const removeUnit = useCourseStore((s) => s.removeUnit)
   const moveModule = useCourseStore((s) => s.moveModule)
@@ -445,7 +497,18 @@ export function CourseTree() {
     setDragging(false)
     resetDropSide()
     const { active, over } = e
-    if (!over || active.id === over.id) return
+    if (!over) return
+    // Soltar en el hueco ENTRE unidades (`UnitInsertPoint` en modo arrastre):
+    // crea ahí mismo un bloque de pantallas sueltas y mete dentro la pantalla
+    // arrastrada — así se puede «sacar» una pantalla entre unidades aunque
+    // todavía no exista ningún bloque suelto en ese módulo.
+    if (over.data.current?.unitInsert) {
+      const { moduleId, atIndex } = over.data.current as { moduleId: string; atIndex: number }
+      const id = addLooseUnit(moduleId, atIndex)
+      if (id) moveScreen(String(active.id), id, 0)
+      return
+    }
+    if (active.id === over.id) return
     const toContainerId = (over.data.current?.containerId as string) ?? (active.data.current?.containerId as string)
     // Contenedor vacío (`EmptyDropZone`): ninguna pantalla dentro sirve de
     // referencia — siempre a la primera posición.
@@ -573,15 +636,45 @@ export function CourseTree() {
             {!q && (
               <AddScreenButton containerId={m.id} label={`Añadir pantalla al ${moduleLabel}…`} />
             )}
+            {!q && <UnitInsertPoint moduleId={m.id} atIndex={0} dragging={dragging} />}
             {m.units.map((u, ui) => {
               const visible = u.screens.filter(matches)
               if (q && visible.length === 0) return null
+              // Bloque de «pantallas sueltas entre unidades» (`unit.loose`): NO
+              // es una unidad real — nada de título, resumen, `<details>`
+              // plegable ni miga de pan de unidad; sus pantallas se tratan
+              // exactamente como las propias del módulo (`level="module"`, sin
+              // `unitId`), igual que en `screenContainers()` (traverse.ts).
+              if (u.loose) {
+                return (
+                  <Fragment key={`${u.id}-${q ? 'f' : 'n'}`}>
+                    <div className="ed-loose-block">
+                      <SortableContext items={u.screens.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                        <ul className="ed-screens ed-module-screens">
+                          {visible.map((s, i) => (
+                            <Fragment key={s.id}>
+                              {!q && <InsertPoint containerId={u.id} index={i} />}
+                              <ScreenItem screen={s} containerId={u.id} issues={issuesByScreen.get(s.id)} level="module"
+                                moduleId={m.id}
+                                index={q ? undefined : i} count={q ? undefined : u.screens.length} />
+                            </Fragment>
+                          ))}
+                          {!q && u.screens.length === 0 && <EmptyDropZone containerId={u.id} dragging={dragging} />}
+                        </ul>
+                      </SortableContext>
+                      {!q && <AddScreenButton containerId={u.id} />}
+                    </div>
+                    {!q && <UnitInsertPoint moduleId={m.id} atIndex={ui + 1} dragging={dragging} />}
+                  </Fragment>
+                )
+              }
               return (
                 // key con el filtro: al (des)activar el filtro se remonta abierto
                 // (con filtro siempre desplegada para ver los resultados). Sin
                 // filtro manda el estado plegado guardado, que sobrevive al
                 // cambio de pestaña (useTreeFold).
-                <details key={`${u.id}-${q ? 'f' : 'n'}`} className="ed-tree-unit"
+                <Fragment key={`${u.id}-${q ? 'f' : 'n'}`}>
+                <details className="ed-tree-unit"
                   open={q ? true : collapsed[u.id] === false}
                   onToggle={(e) => { if (!q) setCollapsed(u.id, !e.currentTarget.open) }}>
                   <summary className="ed-unit-title">
@@ -632,36 +725,9 @@ export function CourseTree() {
                     </ul>
                   </SortableContext>
                   {!q && <AddScreenButton containerId={u.id} />}
-                  {/* Pantallas sueltas DESPUÉS de esta unidad, antes de la
-                      siguiente («entre unidades»): mismo tratamiento que el
-                      cierre de módulo, un nivel más abajo. */}
-                  {(() => {
-                    const closingContainerId = unitClosingContainerId(u.id)
-                    const visibleClosing = u.closing_screens.filter(matches)
-                    if (q && visibleClosing.length === 0) return null
-                    return (
-                      <>
-                        {!q && <p className="ed-closing-label">Cierre de la {unitLabel}</p>}
-                        <SortableContext items={u.closing_screens.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-                          <ul className="ed-screens">
-                            {visibleClosing.map((s, i) => (
-                              <Fragment key={s.id}>
-                                {!q && <InsertPoint containerId={closingContainerId} index={i} />}
-                                <ScreenItem screen={s} containerId={closingContainerId} issues={issuesByScreen.get(s.id)} level="unit"
-                                  moduleId={m.id} unitId={u.id}
-                                  index={q ? undefined : i} count={q ? undefined : u.closing_screens.length} />
-                              </Fragment>
-                            ))}
-                            {!q && u.closing_screens.length === 0 && <EmptyDropZone containerId={closingContainerId} dragging={dragging} />}
-                          </ul>
-                        </SortableContext>
-                        {!q && (
-                          <AddScreenButton containerId={closingContainerId} label={`Añadir pantalla de cierre de la ${unitLabel}…`} />
-                        )}
-                      </>
-                    )
-                  })()}
                 </details>
+                {!q && <UnitInsertPoint moduleId={m.id} atIndex={ui + 1} dragging={dragging} />}
+                </Fragment>
               )
             })}
             {!q && (

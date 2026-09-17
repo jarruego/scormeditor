@@ -250,20 +250,22 @@ function checkQuizQuestions(
 }
 
 // --- Reglas por unidad -------------------------------------------------------
+// No se llama para bloques sueltos «entre unidades» (`unit.loose`): no son
+// unidades reales, así que no exigen resumen ni actividad — sus pantallas se
+// validan como pantallas sueltas del módulo (ver `checkLooseScreens` más abajo).
 function checkUnit(ctx: Ctx, u: Unit, mTitle: string) {
   const loc = `${mTitle} › ${u.title || u.id}`
-  const allScreens = [...u.screens, ...u.closing_screens]
   if (u.status === 'esqueleto_pendiente_desarrollo')
     ctx.push({ code: 'UNIT_SKELETON', severity: 'warning', message: 'Unidad marcada como esqueleto pendiente de desarrollo.', location: loc, unitId: u.id })
-  const hasSummary = !!u.summary.trim() || allScreens.some((s) => s.type === 'summary')
+  const hasSummary = !!u.summary.trim() || u.screens.some((s) => s.type === 'summary')
   if (!hasSummary) ctx.push({ code: 'UNIT_NO_SUMMARY', severity: 'warning', message: 'Unidad sin resumen.', location: loc, unitId: u.id })
 
-  const hasActivity = allScreens.some((s) => s.interaction) ||
+  const hasActivity = u.screens.some((s) => s.interaction) ||
     ctx.course.assessments.unit_tests.some((t) => t.unit_id === u.id)
   if (!hasActivity) ctx.push({ code: 'UNIT_NO_ACTIVITY', severity: 'warning', message: 'Unidad sin actividad ni test.', location: loc, unitId: u.id })
 
-  // Notas editoriales como avisos (pantallas propias y de cierre, «entre unidades»)
-  allScreens.forEach((s) => {
+  // Notas editoriales como avisos
+  u.screens.forEach((s) => {
     s.editor_notes.forEach((n) =>
       ctx.push({ code: 'EDITOR_NOTE', severity: 'info', message: `Nota editorial: ${n}`, location: screenLoc(mTitle, u.title || u.id, s), screenId: s.id }),
     )
@@ -302,9 +304,15 @@ function checkIds(ctx: Ctx) {
     check(m.id, `${moduleWord} «${m.title || m.id}»`, {})
     m.screens.forEach((s) => scan(s))
     m.units.forEach((u) => {
+      // Un bloque suelto «entre unidades» (`unit.loose`) no es una unidad real:
+      // sus pantallas se tratan como las del módulo (sin `unitId`), igual que en
+      // `screenContainers()` (ver traverse.ts).
+      if (u.loose) {
+        u.screens.forEach((s) => scan(s))
+        return
+      }
       check(u.id, `${unitWord} «${u.title || u.id}»`, { unitId: u.id })
       u.screens.forEach((s) => scan(s, u.id))
-      u.closing_screens.forEach((s) => scan(s, u.id))
     })
     m.closing_screens.forEach((s) => scan(s))
   })
@@ -427,9 +435,14 @@ export function validateCourse(course: Course): ValidationResult {
     // unidad (incluidas las notas editoriales, que en unidades pone checkUnit).
     checkLooseScreens(m.screens, mTitle)
     m.units.forEach((u) => {
+      // Un bloque suelto «entre unidades» (`unit.loose`) no exige resumen ni
+      // actividad: sus pantallas se validan como sueltas del módulo.
+      if (u.loose) {
+        checkLooseScreens(u.screens, mTitle)
+        return
+      }
       checkUnit(ctx, u, mTitle)
       u.screens.forEach((s) => checkScreen(ctx, s, screenLoc(mTitle, u.title || u.id, s)))
-      u.closing_screens.forEach((s) => checkScreen(ctx, s, screenLoc(mTitle, u.title || u.id, s)))
     })
     // Cierre del módulo: mismas reglas que sus pantallas propias de arriba.
     checkLooseScreens(m.closing_screens, `${mTitle} (cierre)`)

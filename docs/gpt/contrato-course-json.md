@@ -155,9 +155,9 @@ Reglas que NO se pueden romper:
         "title": "Tema 1. Definición y propósito",
         "summary": "Texto de resumen de la unidad (o incluir una pantalla type=summary).",
         "status": "ok",
-        "screens": [ /* ver §4 */ ],
-        "closing_screens": [ /* OPCIONAL: pantallas sueltas «entre unidades», ver abajo */ ]
-      }
+        "screens": [ /* ver §4 */ ]
+      },
+      { "id": "u1b", "loose": true, "screens": [ /* OPCIONAL: pantallas sueltas «entre unidades», ver abajo */ ] }
     ],
     "closing_screens": [ /* OPCIONAL: pantallas de cierre del módulo, ver abajo */ ]
   }
@@ -179,15 +179,18 @@ Reglas que NO se pueden romper:
   módulo**, mismo formato de §4, simétricas a `modules[].screens` pero al
   revés — se muestran **siempre después** de TODAS las unidades del módulo
   (resumen del bloque, despedida antes de pasar al siguiente módulo…).
-- `units[].closing_screens` (opcional, def. `[]`): pantallas sueltas **DESPUÉS
-  de esa unidad, antes de la siguiente** — el sitio para diapositivas sueltas
-  «entre unidades» que no son contenido de ninguna de las dos (un breve punto
-  y aparte, una transición, una actividad de repaso conjunta…). Nunca crees
-  una unidad-envoltorio ni una unidad vacía solo para alojar esto: usa
-  `closing_screens` de la unidad ANTERIOR al punto donde quieras la pantalla
-  suelta. Úsalo (tanto a nivel de módulo como de unidad) solo si el documento
-  fuente pide explícitamente un cierre o una transición; si no, **omite la
-  clave** (no la rellenes por rellenar).
+- **Pantallas sueltas entre unidades** (`units[].loose`): para meter diapositivas
+  entre dos unidades sin que pertenezcan a ninguna de las dos, añade un elemento
+  MÁS a `units[]`, en la posición donde quieras esas pantallas, con
+  `"loose": true` y sus `screens` (mismo formato de §4) — omite `title`,
+  `summary` y `status`, se ignoran. No es una unidad de verdad: no lleva
+  resumen, no exige actividad y el alumno no la ve como una unidad más, solo
+  como pantallas sueltas en su sitio. Dale igualmente un `id` propio y único
+  (mismo criterio que cualquier otro id). Úsalo solo si el documento fuente
+  pide explícitamente una transición o un punto y aparte entre dos unidades;
+  si no, **no crees estos bloques** (no los añadas por rellenar). `modules[].
+  closing_screens` (arriba) es lo equivalente a nivel de módulo, tras TODAS
+  sus unidades.
 - **El `title` de un módulo nunca repite el título del curso/SCORM**
   (`course.title`/`scorm.title`): esa presentación ya va en la portada de
   `intro_screens` (ver §1). Dale al módulo un nombre propio, específico de lo

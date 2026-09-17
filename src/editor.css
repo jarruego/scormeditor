@@ -268,6 +268,31 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(4
    competir con el título del módulo ni con el de una unidad. */
 .ed-closing-label { margin: .6rem 0 .3rem; padding-top: .6rem; border-top: 1px dashed var(--c-border);
   font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--c-muted); }
+/* Punto de inserción ENTRE unidades (CourseTree.tsx, `UnitInsertPoint`): mismo
+   lenguaje visual que `.ed-insert` (divisor con «+» que solo se revela al
+   pasar el ratón/enfocar), pero fuera de un `<ul>` — vive directo dentro del
+   `<details>` del módulo, entre los `<details>`/bloques de cada unidad. */
+.ed-unit-insert { height: 14px; margin: -7px 0; position: relative; z-index: 1; }
+.ed-unit-insert > button { display: flex; align-items: center; gap: .35rem; width: 100%; height: 100%; padding: 0; border: none; background: none; color: var(--c-primary); cursor: pointer; opacity: 0; font-size: .72rem; }
+.ed-unit-insert > button:hover, .ed-unit-insert > button:focus-visible { opacity: 1; background: none; border: none; }
+.ed-unit-insert > button::before, .ed-unit-insert > button::after { content: ''; flex: 1; height: 2px; border-radius: 1px; background: currentColor; }
+.ed-unit-insert > button > span { display: inline-flex; align-items: center; gap: .2rem; white-space: nowrap; }
+/* Zona de drop ENTRE unidades mientras se arrastra una pantalla: sustituye a
+   `.ed-unit-insert` (`UnitInsertPoint`, `dragging=true`). Igual que
+   `.ed-insert-empty`, un elemento que se MONTA de nuevo con su tamaño real ya
+   puesto en vez de agrandar uno existente — evita el defecto de rects
+   `droppable` obsoletos explicado en `.ed-insert` más arriba. Soltar aquí crea
+   el bloque de pantallas sueltas y mete dentro la pantalla arrastrada. */
+.ed-unit-drop { margin: .35rem 0; padding: .4rem; display: flex; align-items: center; justify-content: center;
+  border: 1px dashed var(--c-border); border-radius: 6px; color: var(--c-muted); font-size: .78rem; animation: ed-insert-pulse 1.1s ease-in-out infinite; }
+.ed-unit-drop.is-drop-target { border-color: var(--c-primary); border-style: solid; color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 14%, #fff); animation: none; }
+/* Bloque de «pantallas sueltas entre unidades» (`unit.loose`): deliberadamente
+   sin `<details>` ni título ni chrome propio — sus pantallas se ven y se
+   validan/exportan igual que las propias del módulo (ver `traverse.ts`); para
+   quitar el bloque basta con borrar sus pantallas (la última se lleva el
+   bloque, ver `pruneIfEmptyLoose` en courseStore.ts). */
+.ed-loose-block { margin: .25rem 0 .5rem; }
 .ed-struct-tools { display: inline-flex; gap: .1rem; margin-left: .25rem; }
 .ed-struct-btn { display: inline-flex; align-items: center; justify-content: center; border: none; background: none; padding: .1rem .2rem; border-radius: 5px; color: var(--c-muted); opacity: .5; }
 .ed-struct-btn:hover:not(:disabled) { opacity: 1; background: color-mix(in srgb, var(--c-primary) 10%, white); color: var(--c-text); border: none; }

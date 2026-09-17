@@ -5,17 +5,17 @@
 > enriquecido en `editor-richtext.md`.
 
 ## El árbol (`CourseTree.tsx`)
-Introducción del paquete SCORM → módulos (pantallas propias → unidades, cada una con su
-propio cierre → cierre del módulo) → cierre del paquete SCORM → secciones «Evaluación»
-(test final) y «Materiales» (glosario/bibliografía). Añadir pantalla por unidad, en el
-cierre de una unidad (entre unidades), por módulo, en el cierre de un módulo, suelta
-antes de todo (introducción) o suelta después de todo (cierre del SCORM); duplicar/
-eliminar por pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la
-pantalla).
+Introducción del paquete SCORM → módulos (pantallas propias → unidades, con bloques de
+pantallas sueltas intercalables entre ellas → cierre del módulo) → cierre del paquete
+SCORM → secciones «Evaluación» (test final) y «Materiales» (glosario/bibliografía).
+Añadir pantalla por unidad, suelta entre unidades, por módulo, en el cierre de un
+módulo, suelta antes de todo (introducción) o suelta después de todo (cierre del
+SCORM); duplicar/eliminar por pantalla (eliminar pide confirmación con `confirmDialog`,
+nombrando la pantalla).
 
-Tres niveles con el mismo patrón «propias + cierre» (curso, módulo, unidad) — cada uno
-son pantallas sueltas que no pertenecen al contenido real de ningún contenedor, solo
-sirven para presentar o cerrar el suyo:
+Dos niveles con el mismo patrón «propias + cierre» (curso y módulo) — pantallas sueltas
+que no pertenecen al contenido real de ningún contenedor, solo sirven para presentar o
+cerrar el suyo:
 
 - **Introducción y cierre del paquete SCORM** (`course.intro_screens`/
   `closing_screens`): dos bloques fijos `.ed-intro-block` — introducción al principio
@@ -43,34 +43,40 @@ sirven para presentar o cerrar el suyo:
   `uniquePerUnit` y `defaultTitle` contra el módulo en ambos casos). Id de contenedor
   derivado `moduleClosingContainerId(moduleId)` (formato `"{id}:closing"` — nunca choca
   con un id real, que nunca lleva `:`).
-- **Cierre de cada unidad, «entre unidades»** (`unit.closing_screens`): pantallas
-  sueltas DESPUÉS de esa unidad, antes de la siguiente (o del cierre del módulo/
-  siguiente módulo si es la última) — el sitio para poner diapositivas sueltas entre
-  unidades sin crear una unidad-envoltorio ni forzar el contenido dentro de la unidad
-  anterior o siguiente. Anidado dentro del propio `<details>` de la unidad, tras su
-  botón «Añadir pantalla…», con el mismo divisor sutil («Cierre de la {unidad}») y su
-  botón «Añadir pantalla de cierre de la {unidad}…»; comparte `scope` con la unidad (las
-  recetas ven este contenedor como si fuera la propia unidad). Id derivado
-  `unitClosingContainerId(unitId)`, mismo convenio `"{id}:closing"`. En el menú del
-  alumno (`buildMenu()`) NO es un bloque aparte: cuenta como más pantallas de la MISMA
-  unidad (mismo `data-count`, misma mini-barra de progreso) — es un cierre de esa
-  unidad, no una unidad nueva.
+- **Pantallas sueltas entre unidades** (`unit.loose`): un elemento de `m.units[]` cuyo
+  flag `loose` vale `true` NO es una unidad real — sin título, sin resumen, sin
+  `<details>` plegable, sin miga de pan de unidad ni exigencia de resumen/actividad;
+  vive en `units[]` (mismo array, misma posición) solo por reutilizar toda la
+  infraestructura de orden/movimiento/id, no por representar contenido. Se ve en el
+  árbol como un bloque desnudo entre el `<details>` de la unidad anterior y el de la
+  siguiente: sus pantallas, botón «Añadir pantalla…» y punto de inserción, sin cabecera
+  ni controles propios — para quitarlo basta con borrar sus pantallas (la última se
+  lleva el bloque, ver `pruneIfEmptyLoose` más abajo). Se crea desde `UnitInsertPoint`,
+  un divisor «+» (sin texto, mismo lenguaje visual que `InsertPoint`) que aparece ANTES
+  de la primera unidad y DESPUÉS de cada una (incluida la última) de cada módulo:
+  al pulsarlo, `courseStore.addLooseUnit(moduleId, atIndex)` inserta el bloque vacío y
+  se abre `AddScreenModal` sobre él; si se cierra sin añadir nada, el bloque —todavía
+  vacío— se retira. Mientras se arrastra una pantalla, ese mismo divisor se sustituye
+  por una zona de drop amplia (`useDroppable`, mismo patrón de montaje que
+  `EmptyDropZone`: aparece con su tamaño real ya puesto en vez de crecer un elemento
+  existente) — soltar ahí crea el bloque y mueve la pantalla arrastrada dentro
+  (`onDragEnd`, rama `data.unitInsert`), así se puede sacar una pantalla «entre
+  unidades» aunque todavía no exista ningún bloque suelto en ese módulo. Sus pantallas
+  se tratan exactamente como las propias del módulo para cualquier propósito transversal
+  (miga de pan, nivel de portada, agrupación de menú): en `screenContainers()`
+  (`traverse.ts`) se reportan con `unit: null`, igual que `module.screens`.
 
-El recorrido canónico introducción→módulo→(pantallas de módulo)→unidad→(cierre de
-unidad)→…→(cierre de módulo)→cierre del curso vive en `src/schema/traverse.ts`
+El recorrido canónico introducción→módulo→(pantallas de módulo)→unidad o bloque
+suelto→…→(cierre de módulo)→cierre del curso vive en `src/schema/traverse.ts`
 (`screenContainers`/`allScreens`/`containerLabel`, `module`/`unit` null en los
-contenedores sin ese nivel, `closing: true` en los de cierre) — cualquier código nuevo
-que recorra pantallas debe usarlo, no el doble bucle. **Cada unidad genera DOS
-contenedores** (propio y de cierre): código que cuenta unidades a partir de
-`screenContainers()` (en vez de `course.modules[].units.length` directamente) debe
-filtrar por `!closing` o contarlas aparte — ver el propio `containerLabel` y los ajustes
-en `report.ts`/`ValidationPanel.tsx`/`ObjectivesModal.tsx` para no duplicar grupos ni
-enlaces de test de unidad. En el store, `addScreen`/`moveScreen` aceptan como
-contenedor el id de una unidad, de su cierre (`unitClosingContainerId`), de un módulo,
-de su cierre (`moduleClosingContainerId`), `INTRO_CONTAINER_ID` u `OUTRO_CONTAINER_ID`;
+contenedores sin ese nivel — incluidos los bloques `unit.loose`, `closing: true` en los
+de cierre) — cualquier código nuevo que recorra pantallas debe usarlo, no el doble
+bucle. En el store, `addScreen`/`moveScreen` aceptan como contenedor el id de una
+unidad (real o bloque suelto, ambos son un `Unit` con id propio), de un módulo, de su
+cierre (`moduleClosingContainerId`), `INTRO_CONTAINER_ID` u `OUTRO_CONTAINER_ID`;
 `Located` tiene `mi` (módulo, o `'intro'`/`'outro'`), `ui` (índice de unidad, o `null`
-si es del propio módulo) y `part: 'main' | 'closing'` (cuál de los dos contenedores de
-ese módulo/unidad).
+si es del propio módulo) y `part: 'main' | 'closing'` (solo relevante a nivel de
+módulo/curso, que sí tienen los dos contenedores).
 
 - **Módulos y unidades plegables, colapsados por defecto**: ambos son `<details>`
   (`ed-tree-module`/`ed-tree-unit`) con chevron rotatorio (`::before` en

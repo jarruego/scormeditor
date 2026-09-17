@@ -150,6 +150,13 @@ export async function buildElpx(courseWithDrafts: Course, assets: AssetMap = {})
     for (const screen of mod.screens) addScreenPage(screen, modPageId, childOrder++)
 
     for (const unit of mod.units) {
+      // Bloque suelto «entre unidades» (unit.loose): no es una unidad real,
+      // sin título ni subpágina propia — sus pantallas cuelgan del módulo
+      // directamente, en su sitio en el orden, igual que `mod.screens`.
+      if (unit.loose) {
+        for (const screen of unit.screens) addScreenPage(screen, modPageId, childOrder++)
+        continue
+      }
       const unitPageId = pageId('unit_' + unit.id)
       const unitBlocks: ElpxBlock[] = []
       if (unit.summary && unit.summary.trim()) {
@@ -174,8 +181,6 @@ export async function buildElpx(courseWithDrafts: Course, assets: AssetMap = {})
 
       let scrOrder = 0
       for (const screen of unit.screens) addScreenPage(screen, unitPageId, scrOrder++)
-      // Cierre de la unidad («entre unidades»): mismo nivel, después de sus propias pantallas.
-      for (const screen of unit.closing_screens) addScreenPage(screen, unitPageId, scrOrder++)
     }
 
     // Cierre del módulo: después de sus unidades, mismo nivel que `mod.screens`.

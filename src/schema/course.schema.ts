@@ -248,12 +248,17 @@ export const Unit = z.object({
   summary: z.string().default(''),
   screens: z.array(Screen).default([]),
   status: z.enum(['ok', 'esqueleto_pendiente_desarrollo']).default('ok'),
-  /** Pantallas sueltas DESPUÉS de esta unidad, antes de la siguiente (o del
-   *  cierre del módulo/siguiente módulo si es la última) — el sitio para
-   *  poner diapositivas sueltas «entre unidades». Mismo formato que `screens`;
-   *  contenedor propio (no una unidad más) porque no es contenido de ninguna
-   *  unidad real. Default [] = compatible con proyectos previos. */
-  closing_screens: z.array(Screen).default([]),
+  /** `true` = este elemento de `units[]` NO es una unidad real: es un bloque
+   *  anónimo de pantallas sueltas «entre unidades» — el sitio para poner
+   *  diapositivas sueltas entre dos unidades sin que pertenezcan a ninguna de
+   *  las dos, ni a nivel visual (el árbol no le pinta título/resumen/miga de
+   *  pan) ni de editor (sin resumen, sin exigencia de actividad, no aparece
+   *  como entrada propia en el menú del alumno). `title`/`summary`/`status`
+   *  se ignoran cuando es `true` — sigue siendo un `Unit` por reutilizar toda
+   *  la infraestructura de `units[]` (orden, mover, `id` propio y estable),
+   *  no por representar contenido real. Default `false` = unidad normal,
+   *  compatible con proyectos previos. */
+  loose: z.boolean().default(false),
 })
 export type Unit = z.infer<typeof Unit>
 

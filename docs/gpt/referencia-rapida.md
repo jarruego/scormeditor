@@ -119,11 +119,12 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   contenedor, se funde en pantallas de la unidad de nivel 2 que le toque, sin arrastrar
   su numeración (esa sí se quita, como cualquier epígrafe de nivel 3+, contrato §3/§4 —
   el árbol solo distingue dos niveles a propósito); **cierre opcional**
-  (`closing_screens` del curso, de cada módulo y de cada unidad, contrato §1/§3):
-  simétrico a `intro_screens`/`screens` pero al final de todo el paquete, del módulo o
-  de la unidad (la de unidad es el sitio para una pantalla suelta «entre unidades», sin
-  crear una unidad-envoltorio) — solo si el documento lo pide explícitamente, si no se
-  omite la clave;
+  (`closing_screens` del curso y de cada módulo, contrato §1/§3): simétrico a
+  `intro_screens`/`screens` pero al final de todo el paquete o del módulo — solo si el
+  documento lo pide explícitamente, si no se omite la clave; **pantallas sueltas entre
+  unidades** (`units[].loose`, contrato §3): un elemento más de `units[]` con
+  `"loose": true` en vez de unidad de verdad, sin crear una unidad-envoltorio — solo si
+  el documento lo pide explícitamente, si no se omite;
   **pantallas divididas por unidad de sentido** (una idea y una sola acción mental por
   pantalla; pantalla nueva al cambiar la intención — definición→aplicación,
   explicación→actividad, procedimiento→beneficios; los ~800 caracteres son alarma

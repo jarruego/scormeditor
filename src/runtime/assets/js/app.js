@@ -84,11 +84,12 @@
       // las de sus unidades. Mismo orden que screenContainers() en el editor.
       (m.screens || []).forEach(function (sc) { SCREENS.push({ unit: null, module: m, screen: sc, isFinalTest: false }); });
       (m.units || []).forEach(function (u) {
-        (u.screens || []).forEach(function (sc) { SCREENS.push({ unit: u, module: m, screen: sc, isFinalTest: false }); });
-        // Pantallas sueltas DESPUÉS de esta unidad, antes de la siguiente (o
-        // del cierre del módulo/siguiente módulo si es la última) — el sitio
-        // para diapositivas sueltas «entre unidades».
-        (u.closing_screens || []).forEach(function (sc) { SCREENS.push({ unit: u, module: m, screen: sc, isFinalTest: false, isClosing: true }); });
+        // Bloque de «pantallas sueltas entre unidades» (u.loose): NO es una
+        // unidad real — se pasa `unit: null` para que se traten exactamente
+        // como las pantallas propias del módulo (miga de pan, coverLevel,
+        // entrada de menú), igual que screenContainers() en el editor.
+        var owner = u.loose ? null : u;
+        (u.screens || []).forEach(function (sc) { SCREENS.push({ unit: owner, module: m, screen: sc, isFinalTest: false }); });
       });
       // Pantallas de cierre del módulo (closing_screens): sueltas, después de
       // todas sus unidades — para un resumen/cierre antes de pasar al
@@ -231,19 +232,30 @@
         html += '</ul></div>';
       }
       (m.units || []).forEach(function (u) {
+        // Bloque de «pantallas sueltas entre unidades» (u.loose): NO es una
+        // unidad real — mismo tratamiento que las pantallas propias/de cierre
+        // del módulo, arriba: sueltas, sin título de unidad ni mini-barra de
+        // progreso, sin bloque propio si está vacío.
+        if (u.loose) {
+          var looseScreens = u.screens || [];
+          if (!looseScreens.length) return;
+          html += '<div class="me-menu-unit me-menu-modscreens" data-start="' + idx + '" data-count="' + looseScreens.length + '"><ul>';
+          looseScreens.forEach(function (sc) {
+            html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(menuScreenLabel(sc)) +
+              '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
+            idx++;
+          });
+          html += '</ul></div>';
+          return;
+        }
         // data-start/data-count delimitan las pantallas de la unidad para el
-        // contador y la mini-barra de progreso (refreshMenuChecks los
-        // rellena). Las de cierre («entre unidades») cuentan como parte de
-        // ESTA unidad (mismo bloque, mismo contador) — no son la unidad
-        // siguiente ni tienen entidad propia en el menú.
-        var ownScreens = u.screens || [];
-        var afterScreens = u.closing_screens || [];
-        var count = ownScreens.length + afterScreens.length;
+        // contador y la mini-barra de progreso (refreshMenuChecks los rellena).
+        var count = (u.screens || []).length;
         html += '<div class="me-menu-unit" data-start="' + idx + '" data-count="' + count + '">' +
           '<p class="me-menu-utitle"><span>' + esc(u.title) + '</span>' +
           '<span class="me-menu-count"></span></p>' +
           '<div class="me-menu-uprog" aria-hidden="true"><div class="me-menu-uprog-fill"></div></div><ul>';
-        ownScreens.concat(afterScreens).forEach(function (sc) {
+        (u.screens || []).forEach(function (sc) {
           html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(menuScreenLabel(sc)) +
             '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
           idx++;

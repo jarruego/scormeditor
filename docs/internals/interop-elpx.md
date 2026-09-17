@@ -40,11 +40,12 @@ Cada **pantalla** del editor → una **página** eXe (módulo→página raíz,
 unidad→subpágina, pantalla→subpágina de la unidad; las **pantallas propias del
 módulo** cuelgan directamente del nodo módulo, ordenadas antes de sus unidades,
 y las de **cierre del módulo** (`closing_screens`) igual, después de todas sus
-unidades; el **cierre de cada unidad** (`unit.closing_screens`, «entre
-unidades») cuelga de la subpágina de esa misma unidad, después de sus propias
-pantallas) con un bloque de contenido (iDevice `text` con el `student_text`
-convertido a HTML + el recurso visual) y, si la hay, un bloque con la
-interacción (helper `addScreenPage`, común a pantallas de módulo y de unidad).
+unidades; los **bloques de pantallas sueltas entre unidades** (`unit.loose`)
+NO generan subpágina propia — sus pantallas cuelgan directamente del nodo
+módulo, en su sitio en el orden, igual que las propias de arriba) con un
+bloque de contenido (iDevice `text` con el `student_text` convertido a HTML +
+el recurso visual) y, si la hay, un bloque con la interacción (helper
+`addScreenPage`, común a pantallas de módulo y de unidad).
 El **test final** va como página raíz con una pregunta `quick-questions` por
 bloque; **glosario** y **bibliografía**, como páginas raíz de texto.
 **No incluido**: `course.intro_screens`/`closing_screens` (pantallas sueltas de

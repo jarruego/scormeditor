@@ -303,14 +303,14 @@ que lo etiquete).
   sin módulo, pero **al final de todo** `SCREENS` en vez de al principio — después
   incluso del test final y de Resultados, si los hay (`buildMenu` las separa de
   «Evaluación» en un bloque propio «CIERRE», ver `carcasa-navegacion.md`).
-- **Cierre de cada unidad, «entre unidades»** (`unit.closing_screens`): a diferencia de
-  los dos anteriores, NO es un bloque de menú aparte — `flatten()` las inserta justo
-  después de las `screens` propias de esa unidad (mismo `unit`/`module`, antes de pasar
-  a la unidad siguiente) y `buildMenu()` las cuenta como más pantallas de la MISMA
-  unidad (`data-count` combinado, misma mini-barra de progreso): un cierre de unidad no
-  es una unidad nueva. Ese orden replica el de `screenContainers()` en el editor
-  (`src/schema/traverse.ts`) — mantener
-  ambos en sincronía.
+- **Pantallas sueltas entre unidades** (`unit.loose`): un elemento de `m.units` con
+  `loose: true` no es una unidad real — `flatten()` empuja sus `screens` con
+  `unit: null` (igual que `module.screens`, arriba), NO con `unit: u`. En `buildMenu()`
+  sus pantallas cuelgan sueltas en un bloque `.me-menu-modscreens` (sin rótulo de unidad
+  ni mini-barra), igual tratamiento que las propias/de cierre del módulo, en vez de
+  agruparse bajo el título de ninguna unidad. Ese orden replica el de
+  `screenContainers()` en el editor (`src/schema/traverse.ts`) — mantener ambos en
+  sincronía.
 - **Cabecera sin marca por defecto**: `shell.brand` tiene default vacío; sin marca,
   `applyBranding` oculta `#me-brand`, añade `.me-no-brand` a la topbar y el título del
   curso pasa a ser el único texto (destacado; en móvil deja de ocultarse). El valor
