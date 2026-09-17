@@ -251,11 +251,20 @@ body {
   color: #fff; box-shadow: none;
 }
 .me-module-cover { background: color-mix(in srgb, var(--me-accent) 50%, black); }
-.me-course-cover { background: color-mix(in srgb, var(--me-accent) 30%, black); }
+.me-course-cover { background: color-mix(in srgb, var(--me-accent) 30%, black); border-radius: 0; }
 .me-module-cover h1, .me-course-cover h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); }
 .me-module-cover .me-prose, .me-course-cover .me-prose { max-width: 620px; font-size: 1.05rem; }
 .me-module-cover a, .me-module-cover .me-prose a,
 .me-course-cover a, .me-course-cover .me-prose a { color: #fff; text-decoration: underline; }
+/* Marca ornamental de la portada de SCORM (`.me-course-mark`, nunca texto):
+   línea-rombo-línea centrada sobre el título, como una portada de libro —
+   `.me-module-cover` (separador de capítulo) se queda sin ella y con las
+   esquinas superiores redondeadas (`.me-course-cover` las tiene rectas, más
+   arriba), para que las dos bandas a sangre completa no se distingan solo
+   por el tono de color. */
+.me-course-mark { display: flex; align-items: center; justify-content: center; gap: .7rem; margin: 0 0 1.1rem; }
+.me-course-mark::before, .me-course-mark::after { content: ''; flex: none; width: clamp(28px, 6vw, 56px); height: 2px; background: rgba(255, 255, 255, .5); }
+.me-course-mark span { flex: none; width: 8px; height: 8px; background: rgba(255, 255, 255, .75); transform: rotate(45deg); }
 .me-prose p { margin: .65rem 0; }
 .me-prose h2 { font-size: 1.35rem; margin: 1.4rem 0 .5rem; letter-spacing: -.01em; }
 .me-prose h3 { font-size: 1.1rem; margin: 1.1rem 0 .4rem; }

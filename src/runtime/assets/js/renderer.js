@@ -232,19 +232,25 @@
     // retipar nada. Tres niveles, tres tratamientos — sin ningún rótulo de
     // nivel («Módulo», «Unidad»…) encima del título en ninguno: al alumno no
     // le aporta nada y, si el curso usa rótulos personalizados poco
-    // frecuentes, chirría más que ayuda.
+    // frecuentes, chirría más que ayuda. La diferencia entre 'course' y
+    // 'module' NO es solo de color (con solo eso quedaban demasiado
+    // parecidas): 'course' añade una marca ornamental (`.me-course-mark`,
+    // rombo entre dos líneas — nunca texto) y esquinas rectas, de «portada de
+    // libro»; 'module' se queda sin marca y con esquinas superiores
+    // redondeadas, de «separador de capítulo» que fluye hacia la tarjeta.
     // - 'course' (.me-course-cover): banda sólida a sangre completa, la más
-    //   oscura de las tres — el paquete SCORM es el nivel más externo.
-    // - 'module' (.me-module-cover): misma banda a sangre completa (rompe el
-    //   margen de la tarjeta, como el separador de capítulo de un libro de
-    //   texto) pero más clara que la de 'course' — un salto de jerarquía
-    //   cualitativo frente al hero degradado y CONTENIDO de 'unit', pero un
-    //   escalón por debajo de 'course'.
+    //   oscura de las tres, esquinas rectas y marca ornamental — el paquete
+    //   SCORM es el nivel más externo.
+    // - 'module' (.me-module-cover): banda sólida a sangre completa también,
+    //   pero más clara, sin marca y con esquinas superiores redondeadas — un
+    //   salto de jerarquía cualitativo frente al hero degradado y CONTENIDO
+    //   de 'unit', pero un escalón por debajo de 'course'.
     // - 'unit' (.me-cover a secas): hero degradado, contenido en la tarjeta.
     cover: function (s, ctx) {
       var level = (ctx && ctx.coverLevel) || 'unit';
       var levelClass = level === 'course' ? ' me-course-cover' : level === 'module' ? ' me-module-cover' : '';
-      return '<header class="me-cover' + levelClass + '">' +
+      var mark = level === 'course' ? '<p class="me-course-mark" aria-hidden="true"><span></span></p>' : '';
+      return '<header class="me-cover' + levelClass + '">' + mark +
         '<h1>' + esc(s.title) + '</h1>' +
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
     },
