@@ -329,6 +329,7 @@ export function Toolbar() {
                       <Icon name="copy" size={13} /> Guardar copia local…
                     </button>
                   )}
+                  <hr className="ed-menu-sep" />
                 </>
               ) : (
                 <>
@@ -361,15 +362,19 @@ export function Toolbar() {
                       <Icon name="copy" size={13} /> Guardar como…
                     </button>
                   )}
+                  <hr className="ed-menu-sep" />
                 </>
               )}
 
               {orphanCount > 0 && (
-                <button role="menuitem"
-                  onClick={() => runMenu(() => void onPruneOrphans())}
-                  title="Elimina del proyecto los archivos que ya no usa ninguna diapositiva, para reducir su tamaño (el SCORM exportado ya los ignora)">
-                  <Icon name="trash" size={13} /> Borrar recursos huérfanos ({orphanCount})
-                </button>
+                <>
+                  <button role="menuitem"
+                    onClick={() => runMenu(() => void onPruneOrphans())}
+                    title="Elimina del proyecto los archivos que ya no usa ninguna diapositiva, para reducir su tamaño (el SCORM exportado ya los ignora)">
+                    <Icon name="trash" size={13} /> Borrar recursos huérfanos ({orphanCount})
+                  </button>
+                  <hr className="ed-menu-sep" />
+                </>
               )}
               <button role="menuitem" className="ed-menu-primary" disabled={busy} onClick={() => runMenu(onExportScorm)}>
                 <Icon name="download" size={13} /> {busy ? 'Generando…' : 'Exportar SCORM ZIP'}
