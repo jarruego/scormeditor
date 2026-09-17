@@ -233,18 +233,19 @@
     // nivel («Módulo», «Unidad»…) encima del título en ninguno: al alumno no
     // le aporta nada y, si el curso usa rótulos personalizados poco
     // frecuentes, chirría más que ayuda. La diferencia entre 'course' y
-    // 'module' NO es solo de color (con solo eso quedaban demasiado
-    // parecidas): 'course' añade una marca ornamental (`.me-course-mark`,
-    // rombo entre dos líneas — nunca texto) y esquinas rectas, de «portada de
-    // libro»; 'module' se queda sin marca y con esquinas superiores
-    // redondeadas, de «separador de capítulo» que fluye hacia la tarjeta.
+    // 'module' NO es solo de tono (con solo eso quedaban demasiado
+    // parecidas): mismas esquinas superiores redondeadas y mismo «a sangre
+    // completa», pero 'module' lleva degradado y 'course' fondo sólido más
+    // oscuro que cualquier punto de ese degradado, además de una marca
+    // ornamental (`.me-course-mark`, rombo entre dos líneas — nunca texto)
+    // que 'module' no lleva.
     // - 'course' (.me-course-cover): banda sólida a sangre completa, la más
-    //   oscura de las tres, esquinas rectas y marca ornamental — el paquete
-    //   SCORM es el nivel más externo.
-    // - 'module' (.me-module-cover): banda sólida a sangre completa también,
-    //   pero más clara, sin marca y con esquinas superiores redondeadas — un
-    //   salto de jerarquía cualitativo frente al hero degradado y CONTENIDO
-    //   de 'unit', pero un escalón por debajo de 'course'.
+    //   oscura de las tres, con marca ornamental — el paquete SCORM es el
+    //   nivel más externo.
+    // - 'module' (.me-module-cover): banda degradada a sangre completa, sin
+    //   marca — un salto de jerarquía cualitativo frente al hero degradado y
+    //   CONTENIDO de 'unit' (el degradado es más oscuro y a sangre completa
+    //   en vez de contenido), pero un escalón por debajo de 'course'.
     // - 'unit' (.me-cover a secas): hero degradado, contenido en la tarjeta.
     cover: function (s, ctx) {
       var level = (ctx && ctx.coverLevel) || 'unit';

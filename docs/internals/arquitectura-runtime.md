@@ -240,21 +240,21 @@ que lo etiquete).
   - **`'module'`/`'course'`** — mismo tratamiento ESTRUCTURAL de base a sangre completa
     (`.me-module-cover`/`.me-course-cover`): **rompen el margen de la tarjeta** con
     márgenes negativos que igualan el padding de `.me-screen` en cada punto de corte
-    (bordes a ras en los cuatro lados) y usan un **fondo sólido oscurecido** con texto
-    y enlaces en blanco (`.me-module-cover a`/`.me-course-cover a`, subrayado: el azul
-    `--me-primary` del resto del runtime queda casi invisible sobre ese fondo). A partir
-    de ahí se diferencian en tres cosas a la vez (con solo el tono de color quedaban
-    demasiado parecidas):
-    - **Tono**: `'course'` (el nivel más externo) usa más negro que `'module'`
-      (`color-mix(in srgb, --me-accent 30%, black)` frente a `50%` — menos porcentaje
-      de acento en `color-mix` es MÁS negro, no al revés). Ninguno de los dos usa el
-      acento a secas (con texto blanco encima no llega a contraste AA); ambos
-      porcentajes dejan margen de sobra (contraste ≥5:1 con blanco) incluso para
-      acentos claros elegidos libremente por el autor (`shell.accent_color`).
-    - **Esquinas**: `'module'` las redondea solo por arriba (`border-radius: 12px 12px
-      0 0`, fluye hacia la tarjeta de abajo, como el separador de capítulo de un libro
-      de texto); `'course'` las deja rectas (`border-radius: 0`, portada de libro
-      cerrada, sin continuidad con lo de abajo).
+    (bordes a ras en los cuatro lados), esquinas superiores redondeadas
+    (`border-radius: 12px 12px 0 0`, fluye hacia la tarjeta de abajo, como el separador
+    de capítulo de un libro de texto) y texto/enlaces en blanco (`.me-module-cover a`/
+    `.me-course-cover a`, subrayado: el azul `--me-primary` del resto del runtime queda
+    casi invisible sobre ese fondo). A partir de ahí se diferencian en dos cosas a la
+    vez (con solo el tono de color quedaban demasiado parecidas):
+    - **Sólido vs. degradado**: `'module'` lleva un degradado (mismo estilo que el
+      hero de `.me-cover`, pero mezclado con negro en vez de blanco para mantener
+      contraste AA con el texto blanco en todo el degradado, no solo en un extremo);
+      `'course'` (el nivel más externo, el paquete SCORM) usa un fondo sólido, más
+      oscuro que cualquier punto del degradado de `'module'` — no un simple matiz.
+      Ninguno de los dos usa el acento a secas (con texto blanco encima no llega a
+      contraste AA); los porcentajes de `color-mix` elegidos dejan margen de sobra
+      (contraste ≥5:1 con blanco) incluso para acentos claros elegidos libremente por
+      el autor (`shell.accent_color`).
     - **Marca ornamental**: solo `'course'` lleva `.me-course-mark` (línea—rombo—línea
       centrada sobre el título, puramente gráfica — nunca texto, `aria-hidden`).
       `'module'` no lleva ninguna.

@@ -230,38 +230,36 @@ body {
 .me-cover .me-figure { text-align: center; }
 /* Portada de módulo y de SCORM: salto de jerarquía CUALITATIVO, no solo
    cuantitativo, sobre la portada de unidad — rompen el margen de la tarjeta
-   `.me-screen` (banda sólida a sangre completa, como el separador de capítulo
-   de un libro de texto) en vez del hero degradado y contenido de `.me-cover`.
-   Comparten estructura (`.me-module-cover`/`.me-course-cover`) pero NO el
-   mismo tono, para que sigan distinguiéndose entre sí sin ningún rótulo de
-   texto: `.me-course-cover` (el nivel más externo, el paquete SCORM) usa más
-   negro que `.me-module-cover` (30% de acento frente a 50%: `color-mix(in
-   srgb, accent P%, black)` es P% de acento, así que menos porcentaje de
-   acento = más negro = más oscuro, no al revés). Fondo sólido oscurecido en
-   ambos (no el acento a secas: con texto blanco encima no cumple contraste
-   AA) — deja margen de sobra (contraste ≥5:1 con blanco) incluso para
-   acentos claros elegidos libremente por el autor (`shell.accent_color`, ver
-   `editor-ui.md`), no solo el turquesa por defecto. Los márgenes
-   negativos igualan el padding de `.me-screen` en cada punto de corte (ver el
-   mismo ajuste en el media query responsive) para que encajen a ras en los
-   cuatro lados sin descuadrar el resto de la tarjeta. */
+   `.me-screen` a sangre completa (esquinas superiores redondeadas, como el
+   separador de capítulo de un libro de texto) con fondo oscurecido y texto/
+   enlaces en blanco (`.me-module-cover a`/`.me-course-cover a`, subrayado: el
+   azul `--me-primary` del resto del runtime queda casi invisible sobre ese
+   fondo). Comparten esa estructura pero NO el mismo tratamiento de color, para
+   que sigan distinguiéndose entre sí sin ningún rótulo de texto:
+   `.me-module-cover` lleva un degradado (mismo estilo que el hero de
+   `.me-cover`, pero mezclado con negro en vez de blanco para mantener
+   contraste AA con el texto blanco); `.me-course-cover` (el nivel más
+   externo, el paquete SCORM) se queda con un fondo sólido más oscuro que
+   cualquier punto del degradado de módulo — sólido vs. degradado, no un
+   simple matiz — y suma la marca ornamental de abajo. Los márgenes negativos
+   igualan el padding de `.me-screen` en cada punto de corte (ver el mismo
+   ajuste en el media query responsive) para que encajen a ras en los cuatro
+   lados sin descuadrar el resto de la tarjeta. */
 .me-module-cover, .me-course-cover {
   margin: -1.75rem -2rem 1.75rem; padding: clamp(2.2rem, 7vw, 4.5rem) 2rem;
   border-radius: 12px 12px 0 0;
   color: #fff; box-shadow: none;
 }
-.me-module-cover { background: color-mix(in srgb, var(--me-accent) 50%, black); }
-.me-course-cover { background: color-mix(in srgb, var(--me-accent) 30%, black); border-radius: 0; }
+.me-module-cover { background: linear-gradient(160deg, color-mix(in srgb, var(--me-accent) 65%, black), color-mix(in srgb, var(--me-accent) 40%, black) 75%); }
+.me-course-cover { background: color-mix(in srgb, var(--me-accent) 30%, black); }
 .me-module-cover h1, .me-course-cover h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); }
 .me-module-cover .me-prose, .me-course-cover .me-prose { max-width: 620px; font-size: 1.05rem; }
 .me-module-cover a, .me-module-cover .me-prose a,
 .me-course-cover a, .me-course-cover .me-prose a { color: #fff; text-decoration: underline; }
 /* Marca ornamental de la portada de SCORM (`.me-course-mark`, nunca texto):
    línea-rombo-línea centrada sobre el título, como una portada de libro —
-   `.me-module-cover` (separador de capítulo) se queda sin ella y con las
-   esquinas superiores redondeadas (`.me-course-cover` las tiene rectas, más
-   arriba), para que las dos bandas a sangre completa no se distingan solo
-   por el tono de color. */
+   `.me-module-cover` (separador de capítulo) se queda sin ella, para que las
+   dos bandas a sangre completa no se distingan solo por el color. */
 .me-course-mark { display: flex; align-items: center; justify-content: center; gap: .7rem; margin: 0 0 1.1rem; }
 .me-course-mark::before, .me-course-mark::after { content: ''; flex: none; width: clamp(28px, 6vw, 56px); height: 2px; background: rgba(255, 255, 255, .5); }
 .me-course-mark span { flex: none; width: 8px; height: 8px; background: rgba(255, 255, 255, .75); transform: rotate(45deg); }
