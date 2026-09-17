@@ -52,6 +52,22 @@ pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla
   allModuleIds)` en el `onToggle` del `<details>` de módulo. Con más de un módulo abierto
   a la vez el árbol se hacía largo de recorrer; con uno solo se ve siempre el contexto
   completo de dónde se está.
+- **CRÍTICO — un `<details>` cerrado necesita `display:none` explícito en sus hijos**:
+  cualquier regla de autor que fije `display` en un descendiente (`.ed-screens{display:
+  grid}`, `.ed-add{...}`) gana SIEMPRE al valor por defecto del user-agent para
+  `details:not([open]) > *`, con independencia de la especificidad — el origen «autor»
+  pesa más que «user-agent» en la cascada. Sin la regla explícita
+  `details.ed-tree-module:not([open]) > :not(summary), details.ed-tree-unit:not([open])
+  > :not(summary) { display: none }` (`editor.css`), un módulo o unidad «cerrados»
+  seguían renderizando su contenido a tamaño real, desbordado fuera de la caja del
+  `<details>` (colapsada a la altura del resumen) y solapado con lo que hubiera debajo:
+  invisible a la vista (lo tapa el contenido que pinta después) pero perfectamente
+  «tocable» para `pointerWithin` de dnd-kit, que ignora el orden de pintado — al
+  arrastrar cerca de otro módulo/unidad el puntero podía coincidir geométricamente con
+  pantallas de un contenedor cerrado bastante alejado y el drop se colaba ahí (síntoma:
+  soltar «se iba» varias pantallas arriba/abajo, en otro módulo, sin relación aparente
+  con la posición real del cursor). Verificado midiendo `getBoundingClientRect` con y sin
+  la regla.
 - **Filtro** (`.ed-tree-filter`): por título o etiqueta de tipo; oculta módulos/unidades
   sin coincidencias y las secciones Evaluación/añadir mientras está activo. El dnd sigue
   funcionando (mueve por id, no por índice visible).

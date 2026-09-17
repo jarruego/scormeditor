@@ -135,7 +135,21 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
    tratamiento de tarjeta que un módulo, sin renombrado (no hay título que
    editar) ni controles de mover/borrar (contenedor único, siempre el primero). */
 /* Módulos plegables: mismo lenguaje visual que las unidades (chevron, oculta el
-   marcador nativo de <summary>) — colapsados por defecto (useTreeFold). */
+   marcador nativo de <summary>) — colapsados por defecto (useTreeFold).
+   CRÍTICO: `.ed-screens{display:grid}`, `.ed-add{...}` y similares fijan
+   `display` en descendientes del <details> — el origen «autor» de esas reglas
+   gana SIEMPRE al valor por defecto del user-agent para
+   `details:not([open]) > *`, con independencia de la especificidad, así que
+   sin esta regla explícita un módulo/unidad «cerrado» seguía renderizando su
+   contenido a tamaño real, desbordado fuera de la caja del <details>
+   (colapsada a la altura de un simple resumen) y solapado con lo que hubiera
+   debajo — invisible a la vista (lo tapa el contenido visible que pinta
+   después) pero perfectamente «tocable» para `pointerWithin` de dnd-kit, que
+   ignora el orden de pintado: al arrastrar cerca de otro módulo/unidad el
+   puntero podía coincidir geométricamente con pantallas de un contenedor
+   cerrado bastante alejado, y el drop se colaba ahí (ver editor-pantallas.md). */
+details.ed-tree-module:not([open]) > :not(summary),
+details.ed-tree-unit:not([open]) > :not(summary) { display: none; }
 details.ed-tree-module > summary.ed-module-title { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; cursor: pointer; user-select: none; list-style: none; }
 details.ed-tree-module > summary.ed-module-title::-webkit-details-marker { display: none; }
 details.ed-tree-module > summary .ed-module-name::before { content: ''; display: inline-block; width: 7px; height: 7px; margin: 0 .45rem .1rem 0; border-right: 1.8px solid var(--c-muted); border-bottom: 1.8px solid var(--c-muted); transform: rotate(-45deg); transition: transform .15s ease; }
