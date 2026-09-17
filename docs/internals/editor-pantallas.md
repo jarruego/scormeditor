@@ -85,6 +85,14 @@ pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla
     nada. `EmptyDropZone` (visible solo mientras se arrastra) registra el propio
     `containerId` como droppable con `data.empty`, que `onDragEnd` reconoce e inserta
     siempre en la primera posición.
+  - Dentro del mismo contenedor, dnd-kit abre hueco solo (su `SortableContext` desplaza
+    el resto de pantallas con `transform`); al cruzar a un contenedor distinto no hay tal
+    desplazamiento porque cada contenedor tiene su propio `SortableContext`, ajeno al de
+    origen. `useDropSide` guarda también el contenedor de origen y el alto real de la
+    pantalla arrastrada (`onDragOver`), y `ScreenItem` simula el hueco con un `<li
+    className="ed-drop-gap">` de ese mismo alto, antes o después de la pantalla apuntada
+    — visualmente equivalente al desplazamiento nativo, aunque no mueve la pantalla
+    arrastrada de contenedor hasta soltar.
 - **Pantallas también con Subir/Bajar** (`ScreenItem`, además del arrastre dnd-kit):
   botones que llaman a `moveScreen(id, containerId, index±1)` — mismo contenedor, sin
   cruzar a uno adyacente (a diferencia de `moveUnit`/`moveModule`). Reciben `index`/
