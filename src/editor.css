@@ -197,13 +197,27 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(4
 .ed-screens { list-style: none; margin: 0; padding: 0; display: grid; gap: .25rem; }
 /* Punto de inserción entre pantallas: zona fina que revela un divisor con «+» al pasar el ratón o enfocar con Tab.
    Selectores de hijo directo (>): el modal de recetas se renderiza dentro del <li> y no debe heredar estos estilos. */
-.ed-insert { height: 10px; margin: -5px 0; }
+.ed-insert { height: 10px; margin: -5px 0; transition: height .12s ease, margin .12s ease; }
 .ed-insert > button { display: flex; align-items: center; gap: .35rem; width: 100%; height: 100%; padding: 0; border: none; background: none; color: var(--c-primary); cursor: pointer; opacity: 0; }
 .ed-insert > button:hover, .ed-insert > button:focus-visible { opacity: 1; background: none; border: none; }
 .ed-insert > button::before, .ed-insert > button::after { content: ''; flex: 1; height: 2px; border-radius: 1px; background: currentColor; }
 .ed-insert > button > span { display: inline-flex; line-height: 1; }
-.ed-screen { display: flex; align-items: center; gap: .25rem; border: 1px solid var(--c-border); border-radius: 6px; background: #fff; padding: .2rem .3rem; }
+/* Arrastrando una pantalla (`is-dragging`, CourseTree.tsx): los huecos entre
+   pantallas se agrandan y parpadean para que se vean como zonas donde se
+   puede soltar, aunque el hueco concreto que recibe el drop lo decide
+   dnd-kit por pantalla (ver `.ed-screen.is-drop-target` más abajo, la
+   «diana» real). */
+.ed-tree-inner.is-dragging .ed-insert { height: 18px; margin: -2px 0; }
+.ed-tree-inner.is-dragging .ed-insert > button { opacity: .55; animation: ed-insert-pulse 1.1s ease-in-out infinite; }
+.ed-tree-inner.is-dragging .ed-insert > button:hover,
+.ed-tree-inner.is-dragging .ed-insert > button:focus-visible { opacity: 1; animation: none; }
+@keyframes ed-insert-pulse { 0%, 100% { opacity: .3; } 50% { opacity: .85; } }
+.ed-screen { display: flex; align-items: center; gap: .25rem; border: 1px solid var(--c-border); border-radius: 6px; background: #fff; padding: .2rem .3rem; transition: background-color .1s ease, border-color .1s ease, box-shadow .1s ease; }
 .ed-screen.is-selected { border-color: var(--c-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c-primary) 25%, transparent); }
+/* «Diana»: la pantalla que recibiría el drop si soltaras ahora mismo
+   (`isOver` de `useSortable`, ver CourseTree.tsx) — feedback inequívoco antes
+   de soltar, distinto del simple `is-selected`. */
+.ed-screen.is-drop-target { border-color: var(--c-primary); background: color-mix(in srgb, var(--c-primary) 14%, #fff); box-shadow: 0 0 0 2px var(--c-primary); }
 .ed-grip { cursor: grab; border: none; background: none; color: var(--c-muted); padding: .2rem; }
 .ed-screen-label { flex: 1; display: flex; flex-direction: column; align-items: flex-start; border: none; background: none; text-align: left; padding: .2rem; }
 .ed-screen-type { font-size: .7rem; color: var(--c-muted); }

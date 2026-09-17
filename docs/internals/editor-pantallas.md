@@ -55,6 +55,22 @@ pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla
 - **Filtro** (`.ed-tree-filter`): por título o etiqueta de tipo; oculta módulos/unidades
   sin coincidencias y las secciones Evaluación/añadir mientras está activo. El dnd sigue
   funcionando (mueve por id, no por índice visible).
+- **Feedback visual del arrastre y precisión en los bordes**: con `closestCenter` a
+  secas (colisión por defecto de dnd-kit) el objetivo del drop se calculaba por
+  distancia de centros entre **todas** las pantallas del árbol, sin respetar fronteras
+  de unidad/módulo — cerca del borde de un tema el centro más próximo podía ser el de
+  una pantalla de otro módulo bastante alejada en la estructura, y el arrastre «se iba a
+  otro sitio» sin avisar. La detección de colisión ahora es un híbrido
+  (`collisionDetection` en `CourseTree.tsx`): primero `pointerWithin` (el puntero tiene
+  que estar literalmente dentro del rectángulo de la pantalla candidata) y solo si no
+  hay ninguna pantalla bajo el puntero (huecos entre contenedores) cae a `closestCenter`
+  como respaldo. Sobre esa base, dos señales durante el arrastre: mientras `dragging`
+  (estado local, `onDragStart`/`onDragEnd`/`onDragCancel`) los puntos de inserción
+  (`.ed-insert`, el «+» entre pantallas) se agrandan y parpadean (`is-dragging` en
+  `editor.css`) como aviso general de zonas donde se puede soltar; la pantalla que
+  recibiría el drop ahora mismo se ilumina de forma sólida (`isOver` de `useSortable`,
+  clase `.ed-screen.is-drop-target`) como confirmación inequívoca de «diana» antes de
+  soltar.
 - **Pantallas también con Subir/Bajar** (`ScreenItem`, además del arrastre dnd-kit):
   botones que llaman a `moveScreen(id, containerId, index±1)` — mismo contenedor, sin
   cruzar a uno adyacente (a diferencia de `moveUnit`/`moveModule`). Reciben `index`/

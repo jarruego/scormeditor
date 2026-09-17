@@ -6,8 +6,11 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
+  pointerWithin,
   closestCenter,
+  type CollisionDetection,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -128,7 +131,7 @@ function ScreenItem({ screen, containerId, issues, index, count, level, moduleId
   screen: Screen; containerId: string; issues?: ScreenIssues; index?: number; count?: number; level: CoverLevel
   moduleId?: string; unitId?: string
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
     id: screen.id,
     data: { containerId },
   })
@@ -150,7 +153,8 @@ function ScreenItem({ screen, containerId, issues, index, count, level, moduleId
   const setRefs = (el: HTMLLIElement | null) => { liRef.current = el; setNodeRef(el) }
 
   return (
-    <li ref={setRefs} style={style} className={`ed-screen ${selected ? 'is-selected' : ''}`}>
+    <li ref={setRefs} style={style}
+      className={`ed-screen ${selected ? 'is-selected' : ''} ${isOver && !isDragging ? 'is-drop-target' : ''}`}>
       <button className="ed-grip" {...attributes} {...listeners} aria-label="Arrastrar para reordenar">
         <Icon name="grip" size={14} />
       </button>
@@ -346,7 +350,31 @@ export function CourseTree() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
+  // Feedback visual del arrastre: `dragging` agranda y anima los huecos entre
+  // pantallas (ver `.ed-insert` en editor.css); el resaltado de la pantalla
+  // apuntada («diana») usa `isOver` de `useSortable` en `ScreenItem`, así que
+  // no hace falta rastrear aquí sobre qué elemento está el puntero.
+  const [dragging, setDragging] = useState(false)
+  function onDragStart(_e: DragStartEvent) { setDragging(true) }
+  function onDragCancel() { setDragging(false) }
+
+  // `closestCenter` a secas compara TODAS las pantallas del árbol por
+  // distancia de su centro al puntero, sin tener en cuenta las fronteras
+  // visuales entre unidades/módulos: cerca del borde de un tema, el centro
+  // más próximo podía ser el de una pantalla de otro módulo bastante alejada
+  // en la estructura, y el arrastre «se iba a otro sitio» sin avisar.
+  // `pointerWithin` exige que el puntero esté literalmente dentro del
+  // rectángulo de la pantalla candidata — mucho más preciso y coherente con
+  // el resaltado de «diana» — y solo cuando el puntero cae en un hueco sin
+  // ninguna pantalla debajo (huecos entre contenedores) se recurre a
+  // `closestCenter` como respaldo.
+  const collisionDetection: CollisionDetection = (args) => {
+    const pointerHits = pointerWithin(args)
+    return pointerHits.length > 0 ? pointerHits : closestCenter(args)
+  }
+
   function onDragEnd(e: DragEndEvent) {
+    setDragging(false)
     const { active, over } = e
     if (!over || active.id === over.id) return
     const toContainerId = (over.data.current?.containerId as string) ?? (active.data.current?.containerId as string)
@@ -361,7 +389,7 @@ export function CourseTree() {
     screenTypeLabel(s.type, { module: course.module_label, unit: course.unit_label }).toLowerCase().includes(q)
 
   return (
-    <div className="ed-tree-inner">
+    <div className={`ed-tree-inner ${dragging ? 'is-dragging' : ''}`}>
       <h2 className="ed-tree-title">Estructura</h2>
       <input
         className="ed-tree-filter"
@@ -371,7 +399,8 @@ export function CourseTree() {
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
       />
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={collisionDetection}
+        onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={onDragCancel}>
         <div className="ed-module ed-intro-block">
           <p className="ed-module-title">
             <span className="ed-intro-title-text">Introducción del paquete SCORM</span>
