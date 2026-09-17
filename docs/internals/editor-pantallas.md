@@ -82,8 +82,9 @@ pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla
   hay ninguna pantalla bajo el puntero (huecos entre contenedores) cae a `closestCenter`
   como respaldo. Sobre esa base, tres señales durante el arrastre:
   - Mientras `dragging` (estado local, `onDragStart`/`onDragEnd`/`onDragCancel`) los
-    puntos de inserción (`.ed-insert`, el «+» entre pantallas) se agrandan y parpadean
-    (`is-dragging` en `editor.css`) como aviso general de zonas donde se puede soltar.
+    puntos de inserción (`.ed-insert`, el «+» entre pantallas) parpadean y se ven más
+    grandes (`is-dragging` en `editor.css`) como aviso general de zonas donde se puede
+    soltar.
   - La pantalla que recibiría el drop ahora mismo se ilumina de forma sólida (`isOver`
     de `useSortable`, clase `.ed-screen.is-drop-target`) como confirmación inequívoca de
     «diana» antes de soltar, con una línea gruesa arriba o abajo (`is-drop-before`/
@@ -101,14 +102,22 @@ pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla
     nada. `EmptyDropZone` (visible solo mientras se arrastra) registra el propio
     `containerId` como droppable con `data.empty`, que `onDragEnd` reconoce e inserta
     siempre en la primera posición.
-  - Dentro del mismo contenedor, dnd-kit abre hueco solo (su `SortableContext` desplaza
-    el resto de pantallas con `transform`); al cruzar a un contenedor distinto no hay tal
-    desplazamiento porque cada contenedor tiene su propio `SortableContext`, ajeno al de
-    origen. `useDropSide` guarda también el contenedor de origen y el alto real de la
-    pantalla arrastrada (`onDragOver`), y `ScreenItem` simula el hueco con un `<li
-    className="ed-drop-gap">` de ese mismo alto, antes o después de la pantalla apuntada
-    — visualmente equivalente al desplazamiento nativo, aunque no mueve la pantalla
-    arrastrada de contenedor hasta soltar.
+  - **CRÍTICO — nunca cambiar tamaño/posición reales mientras se arrastra**: dnd-kit
+    (`MeasuringStrategy.WhileDragging`, el valor por defecto) mide los rectángulos
+    droppable **una sola vez** al empezar el arrastre, y solo vuelve a medir un elemento
+    si un `ResizeObserver` detecta que ESE MISMO elemento cambia de tamaño — el cambio de
+    tamaño de un HERMANO (que empuja al resto hacia abajo por flujo normal) no dispara
+    ninguna remedición. Se probaron dos efectos que violaban esto y ambos causaban el
+    mismo síntoma (arrastrar varias pantallas de más para acertar, porque dnd-kit seguía
+    creyendo que estaban en su posición de antes): (1) agrandar `.ed-insert` con
+    `height`/`margin` reales (con o sin `transition`) al iniciar el arrastre — todas las
+    pantallas siguientes quedaban con su posición «real» más abajo de la que dnd-kit
+    creía; (2) un hueco simulado con altura real (`ed-drop-gap`) al cruzar de contenedor.
+    Los dos se sustituyeron por `transform`/`opacity` (solo pintado, nunca de layout): el
+    agrandado de `.ed-insert` usa `transform: scaleY()`, y el cruce de contenedor se
+    conforma con la línea de diana (`is-drop-before`/`is-drop-after`) sin abrir hueco de
+    verdad. Verificado midiendo `getBoundingClientRect` de `.ed-insert` antes y durante un
+    arrastre simulado: con `transform`/`opacity` el rectángulo no cambia.
 - **Pantallas también con Subir/Bajar** (`ScreenItem`, además del arrastre dnd-kit):
   botones que llaman a `moveScreen(id, containerId, index±1)` — mismo contenedor, sin
   cruzar a uno adyacente (a diferencia de `moveUnit`/`moveModule`). Reciben `index`/

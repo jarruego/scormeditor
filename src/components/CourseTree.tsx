@@ -56,22 +56,29 @@ const useTreeFold = create<{
 
 /** Lado de inserción («antes»/«después» de la pantalla apuntada) durante un
  *  arrastre: se recalcula en `onDragOver` (posición real del puntero) y lo lee
- *  cada `ScreenItem` para dibujar la línea de «diana» en el borde correcto y,
- *  si se cruza de contenedor, el hueco animado (`height`/`fromContainerId`,
- *  ver `ScreenItem`). Solo hace falta un estado global (no por id): en cada
- *  instante únicamente la pantalla con `isOver` (de `useSortable`) lo usa. */
+ *  cada `ScreenItem` para dibujar la línea de «diana» en el borde correcto.
+ *  Solo hace falta un estado global (no por id): en cada instante únicamente
+ *  la pantalla con `isOver` (de `useSortable`) lo usa.
+ *
+ *  Deliberadamente NO se simula aquí un «hueco» real (con alto propio) al
+ *  cruzar de contenedor, aunque se probó: dnd-kit solo mide los rectángulos
+ *  droppable UNA VEZ al empezar el arrastre («WhileDragging» mide al iniciar
+ *  y luego solo si un `ResizeObserver` ve que ESE MISMO elemento cambia de
+ *  tamaño). Insertar un `<li>` con alto real desplaza las pantallas
+ *  siguientes sin que dnd-kit se entere, dejándolas con una posición «real»
+ *  más abajo de la que dnd-kit sigue creyendo — exactamente el mismo defecto
+ *  que tenían los puntos de inserción agrandados (ver `.ed-insert` en
+ *  `editor.css`) y la causa de tener que arrastrar varias pantallas de más
+ *  para acertar. La línea de diana (`is-drop-before`/`is-drop-after`, solo
+ *  `box-shadow`) no mueve nada del documento y no tiene ese problema. */
 const useDropSide = create<{
   after: boolean
-  height: number
-  fromContainerId: string | null
-  set: (v: { after: boolean; height: number; fromContainerId: string | null }) => void
+  set: (v: { after: boolean }) => void
   reset: () => void
 }>((set) => ({
   after: false,
-  height: 0,
-  fromContainerId: null,
   set: (v) => set(v),
-  reset: () => set({ after: false, height: 0, fromContainerId: null }),
+  reset: () => set({ after: false }),
 }))
 
 /** Scroll del árbol hasta el nodo, solo si no está ya del todo a la vista.
@@ -158,8 +165,6 @@ function ScreenItem({ screen, containerId, issues, index, count, level, moduleId
     data: { containerId },
   })
   const dropAfter = useDropSide((s) => s.after)
-  const dropHeight = useDropSide((s) => s.height)
-  const dropFromContainerId = useDropSide((s) => s.fromContainerId)
   const selected = useCourseStore((s) => s.selectedScreenId === screen.id)
   const select = useCourseStore((s) => s.selectScreen)
   const duplicate = useCourseStore((s) => s.duplicateScreen)
@@ -178,19 +183,9 @@ function ScreenItem({ screen, containerId, issues, index, count, level, moduleId
   const setRefs = (el: HTMLLIElement | null) => { liRef.current = el; setNodeRef(el) }
 
   const isDropTarget = isOver && !isDragging
-  // Al arrastrar DENTRO del mismo contenedor, dnd-kit ya abre hueco moviendo
-  // el resto de pantallas con su propio `transform` (strategy del
-  // `SortableContext`). Al cruzar de contenedor eso no ocurre — cada
-  // contenedor tiene su propio `SortableContext`, ajeno al de origen — así
-  // que aquí se simula con un hueco animado del alto real de la pantalla
-  // arrastrada (`dropHeight`, calculado en `onDragOver`).
-  const crossContainerGap = isDropTarget && dropFromContainerId != null && dropFromContainerId !== containerId
-  const gap = crossContainerGap && <li className="ed-drop-gap" style={{ height: dropHeight }} aria-hidden="true" />
   return (
-    <>
-      {crossContainerGap && !dropAfter && gap}
-      <li ref={setRefs} style={style}
-        className={`ed-screen ${selected ? 'is-selected' : ''} ${isDropTarget ? `is-drop-target ${dropAfter ? 'is-drop-after' : 'is-drop-before'}` : ''}`}>
+    <li ref={setRefs} style={style}
+      className={`ed-screen ${selected ? 'is-selected' : ''} ${isDropTarget ? `is-drop-target ${dropAfter ? 'is-drop-after' : 'is-drop-before'}` : ''}`}>
       <button className="ed-grip" {...attributes} {...listeners} aria-label="Arrastrar para reordenar">
         <Icon name="grip" size={14} />
       </button>
@@ -250,9 +245,7 @@ function ScreenItem({ screen, containerId, issues, index, count, level, moduleId
           title="Eliminar" aria-label="Eliminar"
         ><Icon name="trash" size={14} /></button>
       </span>
-      </li>
-      {crossContainerGap && dropAfter && gap}
-    </>
+    </li>
   )
 }
 
@@ -405,12 +398,12 @@ export function CourseTree() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
-  // Feedback visual del arrastre: `dragging` agranda y anima los huecos entre
-  // pantallas (ver `.ed-insert` en editor.css); el resaltado de la pantalla
-  // apuntada («diana») usa `isOver` de `useSortable` en `ScreenItem`, y
-  // `useDropSide` (actualizado en `onDragOver`) decide si la línea de diana
-  // va arriba o abajo de esa pantalla y si hace falta el hueco animado de
-  // cruce de contenedor (`ed-drop-gap`, ver `ScreenItem`).
+  // Feedback visual del arrastre: `dragging` anima los huecos entre pantallas
+  // (ver `.ed-insert` en editor.css, solo con `transform`/`opacity` — nunca
+  // con tamaño real, para no desajustar las medidas de dnd-kit, ver más
+  // abajo); el resaltado de la pantalla apuntada («diana») usa `isOver` de
+  // `useSortable` en `ScreenItem`, y `useDropSide` decide si la línea de
+  // diana va arriba o abajo de esa pantalla.
   const [dragging, setDragging] = useState(false)
   const setDropSide = useDropSide((s) => s.set)
   const resetDropSide = useDropSide((s) => s.reset)
@@ -422,11 +415,7 @@ export function CourseTree() {
   // del objetivo. Solo importa el borde superior/inferior, así que basta con
   // los rects que ya trae el propio evento — sin esto, soltar sobre un
   // contenedor con una única pantalla SIEMPRE la insertaba delante (ver
-  // `onDragEnd`), sin forma de indicar ni de elegir «después». De paso se
-  // guarda el contenedor de origen y el alto real de la pantalla arrastrada:
-  // dentro del mismo contenedor dnd-kit ya abre hueco solo (su propio
-  // `SortableContext`); al cruzar a otro no, así que `ScreenItem` simula ese
-  // hueco con un `<li>` del mismo alto.
+  // `onDragEnd`), sin forma de indicar ni de elegir «después».
   function onDragOver(e: DragOverEvent) {
     const { active, over } = e
     if (!over) { resetDropSide(); return }
@@ -434,11 +423,7 @@ export function CourseTree() {
     if (!activeRect) { resetDropSide(); return }
     const activeMid = activeRect.top + activeRect.height / 2
     const overMid = over.rect.top + over.rect.height / 2
-    setDropSide({
-      after: activeMid > overMid,
-      height: activeRect.height,
-      fromContainerId: (active.data.current?.containerId as string) ?? null,
-    })
+    setDropSide({ after: activeMid > overMid })
   }
 
   // `closestCenter` a secas compara TODAS las pantallas del árbol por
