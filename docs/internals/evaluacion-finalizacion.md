@@ -93,7 +93,10 @@ de `progressSnapshot()` (app.js), que reutiliza `computeScore`/`requiredScreens`
   precisamente para estos botones; no tiene otro consumidor.
 
 ## Pantallas sintéticas (no están en `course.json`)
-`flatten()` añade al final de `SCREENS`:
+`flatten()` añade estas pantallas justo después de todo el contenido de
+`course.json` (módulos/unidades) — pero antes de `course.closing_screens`, si
+las hay: el cierre del paquete SCORM va lo último de todo, después incluso de
+Resultados (ver `arquitectura-runtime.md`). Añade:
 - **Test final** `__final__` (si `assessments.final_test` tiene preguntas):
   `renderFinalTest()` pinta el formulario; al **Comprobar test**, feedback por pregunta
   y guarda `STATE.results.__final__`. Las **opciones de cada pregunta se barajan**

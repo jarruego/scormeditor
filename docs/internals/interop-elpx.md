@@ -38,12 +38,16 @@ todos los tipos de interacción).
 ## Mapa de la conversión
 Cada **pantalla** del editor → una **página** eXe (módulo→página raíz,
 unidad→subpágina, pantalla→subpágina de la unidad; las **pantallas propias del
-módulo** cuelgan directamente del nodo módulo, ordenadas antes de sus unidades)
-con un bloque de contenido (iDevice `text` con el `student_text` convertido a
-HTML + el recurso visual) y, si la hay, un bloque con la interacción (helper
-`addScreenPage`, común a pantallas de módulo y de unidad). El **test final** va
-como página raíz con una pregunta `quick-questions` por bloque; **glosario** y
-**bibliografía**, como páginas raíz de texto.
+módulo** cuelgan directamente del nodo módulo, ordenadas antes de sus unidades,
+y las de **cierre del módulo** (`closing_screens`) igual, después de todas sus
+unidades) con un bloque de contenido (iDevice `text` con el `student_text`
+convertido a HTML + el recurso visual) y, si la hay, un bloque con la
+interacción (helper `addScreenPage`, común a pantallas de módulo y de unidad).
+El **test final** va como página raíz con una pregunta `quick-questions` por
+bloque; **glosario** y **bibliografía**, como páginas raíz de texto.
+**No incluido**: `course.intro_screens`/`closing_screens` (pantallas sueltas de
+introducción/cierre de TODO el paquete, sin módulo) no tienen página propia en
+el `.elpx` — limitación conocida, sin página raíz natural donde colgarlas.
 
 `mapping.ts` (`NATIVE_IDEVICE`) decide iDevice por tipo de interacción:
 

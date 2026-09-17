@@ -1,5 +1,5 @@
 import type { Course, QuizQuestion, Screen, Unit, UnitTest } from '../schema/course.schema'
-import { allScreens, screenContainers } from '../schema/traverse'
+import { allScreens, screenContainers, containerLabel } from '../schema/traverse'
 import { normalizeObjective } from './objectives'
 import { buildTranscript, itemsOf } from '../tts/buildTranscript'
 import { countFlaggedForReview } from '../schema/review'
@@ -304,7 +304,9 @@ function checkIds(ctx: Ctx) {
       check(u.id, `${unitWord} «${u.title || u.id}»`, { unitId: u.id })
       u.screens.forEach((s) => scan(s, u.id))
     })
+    m.closing_screens.forEach((s) => scan(s))
   })
+  c.closing_screens.forEach((s) => scan(s))
   const tests = [c.assessments.final_test, ...c.assessments.unit_tests].filter(Boolean) as UnitTest[]
   tests.forEach((t) => {
     const link = t === c.assessments.final_test ? { screenId: '__final__' } : { unitId: t.unit_id }
@@ -368,11 +370,11 @@ function checkGlobal(ctx: Ctx) {
   // y abundan pares «casi iguales» que no deben contar como desvinculados.
   const declaredBy = new Map<string, { obj: string; screen: Screen; loc: string }>()
   const evaluatedObjectives = new Set<string>()
-  screenContainers(c).forEach(({ module: m, unit: u, screens }) => screens.forEach((s) => {
+  screenContainers(c).forEach((sc) => sc.screens.forEach((s) => {
     const obj = s.objective.trim()
     const key = normalizeObjective(obj)
     if (key && !declaredBy.has(key))
-      declaredBy.set(key, { obj, screen: s, loc: screenLoc(m ? m.title || m.id : 'Introducción del paquete SCORM', u ? u.title || u.id : null, s) })
+      declaredBy.set(key, { obj, screen: s, loc: screenLoc(containerLabel({ module: sc.module, unit: null, closing: sc.closing }), sc.unit ? sc.unit.title || sc.unit.id : null, s) })
     if (s.interaction?.scored && key)
       evaluatedObjectives.add(key)
   }))
@@ -409,25 +411,27 @@ export function validateCourse(course: Course): ValidationResult {
 
   // Pantallas sueltas de introducción (antes de cualquier módulo): mismas
   // reglas por pantalla que las propias de un módulo.
-  course.intro_screens.forEach((s) => {
-    checkScreen(ctx, s, screenLoc('Introducción del paquete SCORM', null, s))
-    s.editor_notes.forEach((n) =>
-      ctx.push({ code: 'EDITOR_NOTE', severity: 'info', message: `Nota editorial: ${n}`, location: screenLoc('Introducción del paquete SCORM', null, s), screenId: s.id }))
-  })
+  const checkLooseScreens = (screens: Screen[], loc: string) => {
+    screens.forEach((s) => {
+      checkScreen(ctx, s, screenLoc(loc, null, s))
+      s.editor_notes.forEach((n) =>
+        ctx.push({ code: 'EDITOR_NOTE', severity: 'info', message: `Nota editorial: ${n}`, location: screenLoc(loc, null, s), screenId: s.id }))
+    })
+  }
+  checkLooseScreens(course.intro_screens, 'Introducción del paquete SCORM')
   course.modules.forEach((m) => {
     const mTitle = m.title || m.id
     // Pantallas propias del módulo: mismas reglas por pantalla que las de
     // unidad (incluidas las notas editoriales, que en unidades pone checkUnit).
-    m.screens.forEach((s) => {
-      checkScreen(ctx, s, screenLoc(mTitle, null, s))
-      s.editor_notes.forEach((n) =>
-        ctx.push({ code: 'EDITOR_NOTE', severity: 'info', message: `Nota editorial: ${n}`, location: screenLoc(mTitle, null, s), screenId: s.id }))
-    })
+    checkLooseScreens(m.screens, mTitle)
     m.units.forEach((u) => {
       checkUnit(ctx, u, mTitle)
       u.screens.forEach((s) => checkScreen(ctx, s, screenLoc(mTitle, u.title || u.id, s)))
     })
+    // Cierre del módulo: mismas reglas que sus pantallas propias de arriba.
+    checkLooseScreens(m.closing_screens, `${mTitle} (cierre)`)
   })
+  checkLooseScreens(course.closing_screens, 'Cierre del paquete SCORM')
   checkIds(ctx)
   checkGlobal(ctx)
 

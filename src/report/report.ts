@@ -1,5 +1,5 @@
 import type { Course } from '../schema/course.schema'
-import { screenContainers } from '../schema/traverse'
+import { screenContainers, containerLabel } from '../schema/traverse'
 import { validateCourse, type Issue, type ValidationResult } from '../validation/validators'
 
 export interface Counts {
@@ -35,9 +35,9 @@ export interface MatrixRow {
 
 function traceabilityMatrix(course: Course): MatrixRow[] {
   const rows: MatrixRow[] = []
-  screenContainers(course).forEach(({ module: m, unit: u, screens }) => {
-    const path = m ? (u ? `${m.title || m.id} › ${u.title || u.id}` : m.title || m.id) : 'Introducción del paquete SCORM'
-    screens.forEach((s) => {
+  screenContainers(course).forEach((c) => {
+    const path = containerLabel(c)
+    c.screens.forEach((s) => {
       if (!s.objective && !s.interaction) return
       rows.push({
         objective: s.objective || '—',
@@ -49,6 +49,7 @@ function traceabilityMatrix(course: Course): MatrixRow[] {
       })
     })
     // Tests de unidad: se enlazan a la primera pantalla de su unidad.
+    const u = c.unit
     if (u) course.assessments.unit_tests.filter((t) => t.unit_id === u.id).forEach((t) =>
       t.questions.forEach((q) => rows.push({
         objective: q.learning_objective || '—',

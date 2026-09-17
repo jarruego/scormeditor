@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { collectObjectives, type ObjectiveInfo } from '../validation/objectives'
-import { screenContainers } from '../schema/traverse'
+import { screenContainers, containerLabel } from '../schema/traverse'
 import { confirmDialog } from '../store/confirm'
 import { SettingsWindow } from './SettingsModal'
 import { Icon } from './Icon'
@@ -99,9 +99,9 @@ function AddObjective() {
     () =>
       screenContainers(course)
         .filter((c) => c.unit || c.screens.length > 0)
-        .map(({ module: m, unit: u, screens }) => ({
-          label: m ? (u ? `${m.title} › ${u.title}` : m.title) : 'Introducción del paquete SCORM',
-          screens: screens.map((s) => ({ id: s.id, title: s.title || s.id, has: !!s.objective.trim() })),
+        .map((c) => ({
+          label: containerLabel(c),
+          screens: c.screens.map((s) => ({ id: s.id, title: s.title || s.id, has: !!s.objective.trim() })),
         })),
     [course],
   )

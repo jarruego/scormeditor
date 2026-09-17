@@ -292,13 +292,19 @@ que lo etiquete).
   corta antes de `goTo` con un mensaje amable en `#me-content` y navegación
   deshabilitada (`refreshNavState` y `startMinTimer` toleran `SCREENS` vacío) — antes
   rompía leyendo `SCREENS[0]`.
-- **Pantallas propias del módulo** (`module.screens`): `flatten()` las inserta en la
-  lista plana **antes** de las de sus unidades (con `unit: null` — el resto del runtime
-  ya tolera ese null: crumb, progressSnapshot, gating). En el menú cuelgan del título
-  del módulo en un bloque `.me-menu-modscreens` sin rótulo de unidad ni mini-barra
-  (`refreshMenuChecks` tolera la ausencia de contador/barra). Ese orden replica el de
-  `screenContainers()` en el editor (`src/schema/traverse.ts`) — mantener ambos en
-  sincronía.
+- **Pantallas propias del módulo y su cierre** (`module.screens`/`closing_screens`):
+  `flatten()` inserta `screens` en la lista plana **antes** de las unidades del módulo y
+  `closing_screens` **después** de ellas (ambas con `unit: null` — el resto del runtime
+  ya tolera ese null: crumb, coverLevel, progressSnapshot, gating). En el menú, las dos
+  cuelgan del título del módulo en sendos bloques `.me-menu-modscreens` sin rótulo de
+  unidad ni mini-barra (`refreshMenuChecks` tolera la ausencia de contador/barra) — el
+  segundo, tras el bloque de la última unidad. Simétricamente, `course.closing_screens`
+  es a `intro_screens` lo que el cierre de un módulo es a sus pantallas propias: sueltas,
+  sin módulo, pero **al final de todo** `SCREENS` en vez de al principio — después
+  incluso del test final y de Resultados, si los hay (`buildMenu` las separa de
+  «Evaluación» en un bloque propio «CIERRE», ver `carcasa-navegacion.md`). Ese orden
+  replica el de `screenContainers()` en el editor (`src/schema/traverse.ts`) — mantener
+  ambos en sincronía.
 - **Cabecera sin marca por defecto**: `shell.brand` tiene default vacío; sin marca,
   `applyBranding` oculta `#me-brand`, añade `.me-no-brand` a la topbar y el título del
   curso pasa a ser el único texto (destacado; en móvil deja de ocultarse). El valor

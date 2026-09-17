@@ -25,7 +25,7 @@ import { useCourseStore } from '../store/courseStore'
 import type { Screen } from '../schema/course.schema'
 import { screenTypeLabel, screenTypeIcon, screenTypeColor, interactionTypeLabel, TYPE_COLORS, type CoverLevel } from '../schema/labels'
 import { interactionRecipe, interactionColor } from '../schema/interactionRecipes'
-import { INTRO_CONTAINER_ID } from '../schema/traverse'
+import { INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId } from '../schema/traverse'
 import { validateCourse, type Issue } from '../validation/validators'
 import { confirmDialog } from '../store/confirm'
 import { InlineRename } from './InlineRename'
@@ -638,20 +638,78 @@ export function CourseTree() {
             {!q && (
               <button className="ed-add" onClick={() => addUnit(m.id)}><Icon name="plus" size={13} /> Añadir {unitLabel}</button>
             )}
+            {/* Pantallas de cierre del módulo: siempre DESPUÉS de sus unidades
+                (resumen/despedida antes de pasar al siguiente módulo). Mismo
+                tratamiento que las propias de arriba (sortable, puntos de
+                inserción, badge de validación), contenedor propio
+                (`moduleClosingContainerId`) para no mezclarse con `m.screens`. */}
+            {(() => {
+              const closingContainerId = moduleClosingContainerId(m.id)
+              const visible = m.closing_screens.filter(matches)
+              if (q && visible.length === 0) return null
+              return (
+                <>
+                  {!q && <p className="ed-closing-label">Cierre del {moduleLabel}</p>}
+                  <SortableContext items={m.closing_screens.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                    <ul className="ed-screens ed-module-screens">
+                      {visible.map((s, i) => (
+                        <Fragment key={s.id}>
+                          {!q && <InsertPoint containerId={closingContainerId} index={i} />}
+                          <ScreenItem screen={s} containerId={closingContainerId} issues={issuesByScreen.get(s.id)} level="module"
+                            moduleId={m.id}
+                            index={q ? undefined : i} count={q ? undefined : m.closing_screens.length} />
+                        </Fragment>
+                      ))}
+                      {!q && m.closing_screens.length === 0 && <EmptyDropZone containerId={closingContainerId} dragging={dragging} />}
+                    </ul>
+                  </SortableContext>
+                  {!q && (
+                    <AddScreenButton containerId={closingContainerId} label={`Añadir pantalla de cierre del ${moduleLabel}…`} />
+                  )}
+                </>
+              )
+            })()}
           </details>
         ))}
-      </DndContext>
 
-      {!q && (
-        course.modules.length === 0 ? (
-          <div className="ed-tree-empty">
-            <p className="ed-hint">El curso no tiene {moduleLabelPlural}. Crea el primero para empezar a añadir pantallas.</p>
-            <button className="ed-primary" onClick={addModule}><Icon name="plus" size={13} /> Crear el primer {moduleLabel}</button>
-          </div>
-        ) : (
-          <button className="ed-add ed-add-module" onClick={addModule}><Icon name="plus" size={13} /> Añadir {moduleLabel}</button>
-        )
-      )}
+        {!q && (
+          course.modules.length === 0 ? (
+            <div className="ed-tree-empty">
+              <p className="ed-hint">El curso no tiene {moduleLabelPlural}. Crea el primero para empezar a añadir pantallas.</p>
+              <button className="ed-primary" onClick={addModule}><Icon name="plus" size={13} /> Crear el primer {moduleLabel}</button>
+            </div>
+          ) : (
+            <button className="ed-add ed-add-module" onClick={addModule}><Icon name="plus" size={13} /> Añadir {moduleLabel}</button>
+          )
+        )}
+
+        <div className="ed-module ed-intro-block">
+          <p className="ed-module-title">
+            <span className="ed-intro-title-text">Cierre del paquete SCORM</span>
+          </p>
+          {(() => {
+            const visible = course.closing_screens.filter(matches)
+            if (q && visible.length === 0) return null
+            return (
+              <SortableContext items={course.closing_screens.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                <ul className="ed-screens ed-module-screens">
+                  {visible.map((s, i) => (
+                    <Fragment key={s.id}>
+                      {!q && <InsertPoint containerId={OUTRO_CONTAINER_ID} index={i} />}
+                      <ScreenItem screen={s} containerId={OUTRO_CONTAINER_ID} issues={issuesByScreen.get(s.id)} level="course"
+                        index={q ? undefined : i} count={q ? undefined : course.closing_screens.length} />
+                    </Fragment>
+                  ))}
+                  {!q && course.closing_screens.length === 0 && <EmptyDropZone containerId={OUTRO_CONTAINER_ID} dragging={dragging} />}
+                </ul>
+              </SortableContext>
+            )
+          })()}
+          {!q && (
+            <AddScreenButton containerId={OUTRO_CONTAINER_ID} label="Añadir pantalla de cierre del SCORM…" />
+          )}
+        </div>
+      </DndContext>
 
       {!q && (
         <>

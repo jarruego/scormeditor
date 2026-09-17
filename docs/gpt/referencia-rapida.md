@@ -118,7 +118,10 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   pierde la referencia al documento original); un tercer nivel (`1.1.1`…) no crea
   contenedor, se funde en pantallas de la unidad de nivel 2 que le toque, sin arrastrar
   su numeración (esa sí se quita, como cualquier epígrafe de nivel 3+, contrato §3/§4 —
-  el árbol solo distingue dos niveles a propósito);
+  el árbol solo distingue dos niveles a propósito); **cierre opcional**
+  (`closing_screens` del curso y de cada módulo, contrato §1/§3): simétrico a
+  `intro_screens`/`screens` pero al final de todo el paquete o del módulo — solo si el
+  documento lo pide explícitamente, si no se omite la clave;
   **pantallas divididas por unidad de sentido** (una idea y una sola acción mental por
   pantalla; pantalla nueva al cambiar la intención — definición→aplicación,
   explicación→actividad, procedimiento→beneficios; los ~800 caracteres son alarma

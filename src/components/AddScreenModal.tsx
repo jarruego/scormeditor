@@ -1,6 +1,6 @@
 import { useCourseStore } from '../store/courseStore'
 import type { ScreenInput } from '../schema/course.schema'
-import { INTRO_CONTAINER_ID } from '../schema/traverse'
+import { INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId } from '../schema/traverse'
 import { RECIPE_GROUPS, RECIPE_GROUP_LABELS, RECIPE_GROUP_HINTS, RECIPE_GROUP_COLORS, SCREEN_RECIPES, type ScreenRecipe } from '../schema/screenRecipes'
 import { screenTypeLabel, type CoverLevel } from '../schema/labels'
 import { SettingsWindow } from './SettingsModal'
@@ -12,22 +12,30 @@ import { Icon } from './Icon'
  * Las recetas «únicas por unidad» ya presentes se atenúan pero siguen siendo
  * pulsables (aviso blando, no bloqueo). Si llega `atIndex` (punto de inserción
  * elegido por el autor en el árbol), esa posición manda sobre la colocación
- * automática de la receta. `containerId` puede ser la introducción del curso
- * (`INTRO_CONTAINER_ID`), una unidad o un módulo (pantallas propias del
- * módulo, antes de sus unidades).
+ * automática de la receta. `containerId` puede ser la introducción o el
+ * cierre del curso (`INTRO_CONTAINER_ID`/`OUTRO_CONTAINER_ID`), una unidad o
+ * un módulo (pantallas propias del módulo o de su cierre,
+ * `moduleClosingContainerId`).
  */
 export function AddScreenModal({ containerId, atIndex, onClose }: { containerId: string; atIndex?: number; onClose: () => void }) {
   const course = useCourseStore((s) => s.course)
   const addScreen = useCourseStore((s) => s.addScreen)
 
   const isIntro = containerId === INTRO_CONTAINER_ID
+  const isOutro = containerId === OUTRO_CONTAINER_ID
+  const closingModule = course.modules.find((m) => moduleClosingContainerId(m.id) === containerId)
   const unit = course.modules.flatMap((m) => m.units).find((u) => u.id === containerId)
+  const plainModule = course.modules.find((m) => m.id === containerId)
   const container = isIntro
     ? { title: course.course.title, screens: course.intro_screens }
-    : (unit ?? course.modules.find((m) => m.id === containerId))
+    : isOutro
+    ? { title: course.course.title, screens: course.closing_screens }
+    : closingModule
+    ? { title: closingModule.title, screens: closingModule.closing_screens }
+    : (unit ?? plainModule)
   if (!container) return null
-  const isModule = !isIntro && !unit
-  const scope: CoverLevel = isIntro ? 'course' : isModule ? 'module' : 'unit'
+  const isModule = !!(closingModule || plainModule)
+  const scope: CoverLevel = (isIntro || isOutro) ? 'course' : isModule ? 'module' : 'unit'
 
   // Las tres recetas de portada comparten `type: 'cover'` (el diseño lo decide
   // el contenedor, no el tipo — ver arquitectura-runtime.md) pero cada una

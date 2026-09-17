@@ -86,6 +86,11 @@
       (m.units || []).forEach(function (u) {
         (u.screens || []).forEach(function (sc) { SCREENS.push({ unit: u, module: m, screen: sc, isFinalTest: false }); });
       });
+      // Pantallas de cierre del módulo (closing_screens): sueltas, después de
+      // todas sus unidades — para un resumen/cierre antes de pasar al
+      // siguiente módulo. Mismo tratamiento que las de arriba (module, sin
+      // unit), solo cambia dónde caen en el orden.
+      (m.closing_screens || []).forEach(function (sc) { SCREENS.push({ unit: null, module: m, screen: sc, isFinalTest: false, isClosing: true }); });
     });
     if (COURSE.assessments && COURSE.assessments.final_test && (COURSE.assessments.final_test.questions || []).length) {
       SCREENS.push({ unit: null, module: null, screen: { id: '__final__', type: 'final_test', title: COURSE.assessments.final_test.title || 'Test final', required: true }, isFinalTest: true });
@@ -97,6 +102,10 @@
     if (hasFinal || hasScoredInter) {
       SCREENS.push({ unit: null, module: null, screen: { id: '__results__', type: 'results', title: 'Resultados', required: false }, isResults: true });
     }
+    // Pantallas sueltas de cierre del paquete SCORM (COURSE.closing_screens):
+    // lo último de todo, después incluso del test final y los resultados —
+    // simétrico a intro_screens, que va lo primero de todo.
+    (COURSE.closing_screens || []).forEach(function (sc) { SCREENS.push({ unit: null, module: null, screen: sc, isFinalTest: false, isOutro: true }); });
   }
 
   // ---- Setup UI ----------------------------------------------------------
@@ -232,18 +241,43 @@
         });
         html += '</ul></div>';
       });
+      // Pantallas de cierre del módulo: mismo tratamiento que las propias de
+      // arriba (sueltas, sin unidad ni mini-barra), después de sus unidades.
+      var closingCount = (m.closing_screens || []).length;
+      if (closingCount) {
+        html += '<div class="me-menu-unit me-menu-modscreens" data-start="' + idx + '" data-count="' + closingCount + '"><ul>';
+        (m.closing_screens || []).forEach(function (sc) {
+          html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(menuScreenLabel(sc)) +
+            '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
+          idx++;
+        });
+        html += '</ul></div>';
+      }
       html += '</div>';
     });
     // Pantallas sintéticas finales (test final y/o resultados), que van tras los
     // módulos en SCREENS a partir del índice acumulado. Agrupadas bajo un
     // rótulo propio («Evaluación»), con el mismo tratamiento visual que un
     // módulo/tema (.me-menu-final, ver styles.css) — antes salían sueltas,
-    // sin distinguirse del resto del índice.
-    if (idx < SCREENS.length) {
+    // sin distinguirse del resto del índice. Acotado por `evalEnd`, no por
+    // `SCREENS.length`: el cierre del paquete SCORM (COURSE.closing_screens)
+    // va SIEMPRE lo último de todo (flatten()) y necesita su propio grupo,
+    // no colarse dentro de «Evaluación».
+    var evalEnd = SCREENS.length - (COURSE.closing_screens || []).length;
+    if (idx < evalEnd) {
       html += '<div class="me-menu-final"><p class="me-menu-mtitle">Evaluación</p><ul>';
-      for (var k = idx; k < SCREENS.length; k++) {
+      for (var k = idx; k < evalEnd; k++) {
         html += '<li><button class="me-menu-link" data-idx="' + k + '">' +
           esc(menuScreenLabel(SCREENS[k].screen)) + '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
+      }
+      html += '</ul></div>';
+      idx = evalEnd;
+    }
+    if (idx < SCREENS.length) {
+      html += '<div class="me-menu-final"><p class="me-menu-mtitle">Cierre</p><ul>';
+      for (var k2 = idx; k2 < SCREENS.length; k2++) {
+        html += '<li><button class="me-menu-link" data-idx="' + k2 + '">' +
+          esc(menuScreenLabel(SCREENS[k2].screen)) + '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
       }
       html += '</ul></div>';
     }

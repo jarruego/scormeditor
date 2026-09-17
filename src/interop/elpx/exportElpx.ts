@@ -175,6 +175,9 @@ export async function buildElpx(courseWithDrafts: Course, assets: AssetMap = {})
       let scrOrder = 0
       for (const screen of unit.screens) addScreenPage(screen, unitPageId, scrOrder++)
     }
+
+    // Cierre del módulo: después de sus unidades, mismo nivel que `mod.screens`.
+    for (const screen of mod.closing_screens) addScreenPage(screen, modPageId, childOrder++)
   }
 
   // --- Test final → página raíz con una pregunta (quick-questions) por bloque ---

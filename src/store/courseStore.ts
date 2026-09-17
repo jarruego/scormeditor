@@ -3,7 +3,7 @@ import type { Course, Screen, ScreenInput, ScreenType, InteractionType, UnitTest
 import { Course as CourseSchema, Screen as ScreenSchema, Interaction as InteractionSchema } from '../schema/course.schema'
 import { interactionRecipe, migrateInteractionData } from '../schema/interactionRecipes'
 import { migrate } from '../schema/migrations'
-import { allScreens, INTRO_CONTAINER_ID } from '../schema/traverse'
+import { allScreens, INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId } from '../schema/traverse'
 import { sampleCourse } from '../schema/sample-course'
 import { isAssetReferenced, orphanAssetPaths } from '../schema/assetRefs'
 import { normalizeObjective } from '../validation/objectives'
@@ -24,24 +24,32 @@ function blankScreen(preset?: Partial<ScreenInput>): Screen {
   return ScreenSchema.parse({ id: newId('s'), type: 'content', title: 'Nueva pantalla', ...(preset || {}) })
 }
 
-/** Posición de una pantalla: `mi` 'intro' = pantalla suelta de introducción
- *  del curso (`course.intro_screens`, sin módulo); `ui` null = pantalla propia
- *  del módulo. */
-interface Located { mi: number | 'intro'; ui: number | null; si: number }
+/** Posición de una pantalla: `mi` 'intro'/'outro' = pantalla suelta de
+ *  introducción/cierre del curso (`course.intro_screens`/`closing_screens`,
+ *  sin módulo); `ui` null = pantalla propia del módulo, `'closing'` = de
+ *  cierre del módulo (`module.closing_screens`), número = de esa unidad. */
+interface Located { mi: number | 'intro' | 'outro'; ui: number | 'closing' | null; si: number }
 
-/** Lista de pantallas del contenedor localizado (introducción, módulo o unidad). */
-function screensAt(course: Course, mi: number | 'intro', ui: number | null): Screen[] {
+/** Lista de pantallas del contenedor localizado (introducción/cierre del
+ *  curso, módulo, cierre de módulo o unidad). */
+function screensAt(course: Course, mi: number | 'intro' | 'outro', ui: number | 'closing' | null): Screen[] {
   if (mi === 'intro') return course.intro_screens
-  return ui == null ? course.modules[mi].screens : course.modules[mi].units[ui].screens
+  if (mi === 'outro') return course.closing_screens
+  const m = course.modules[mi]
+  if (ui === 'closing') return m.closing_screens
+  return ui == null ? m.screens : m.units[ui].screens
 }
 
-/** Pantallas del contenedor por id: la introducción del curso
- *  (`INTRO_CONTAINER_ID`), una unidad o, en su defecto, un módulo (pantallas
- *  propias del módulo). Los ids son únicos en todo el curso. */
+/** Pantallas del contenedor por id: la introducción o el cierre del curso
+ *  (`INTRO_CONTAINER_ID`/`OUTRO_CONTAINER_ID`), una unidad o, en su defecto,
+ *  un módulo (pantallas propias o de cierre, `moduleClosingContainerId`). Los
+ *  ids son únicos en todo el curso. */
 function containerScreens(course: Course, containerId: string): Screen[] | null {
   if (containerId === INTRO_CONTAINER_ID) return course.intro_screens
+  if (containerId === OUTRO_CONTAINER_ID) return course.closing_screens
   for (const m of course.modules) {
     if (m.id === containerId) return m.screens
+    if (moduleClosingContainerId(m.id) === containerId) return m.closing_screens
     for (const u of m.units) if (u.id === containerId) return u.screens
   }
   return null
@@ -415,6 +423,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
       // unidad — arquitectura-runtime.md) casi nunca llegaba a usarse.
       screens: [blankScreen({ type: 'cover', title: moduleTitle })],
       units: [{ id: newId('u'), title: unitTitle, summary: '', screens: [blankScreen({ type: 'cover', title: unitTitle })], status: 'ok' }],
+      closing_screens: [],
     })
     set({ course })
   },
@@ -452,7 +461,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot()
     const course = clone(get().course)
     const mod = course.modules.find((m) => m.id === id)!
-    const removedScreenIds = [...mod.screens, ...mod.units.flatMap((u) => u.screens)].map((s) => s.id)
+    const removedScreenIds = [...mod.screens, ...mod.units.flatMap((u) => u.screens), ...mod.closing_screens].map((s) => s.id)
     course.modules = course.modules.filter((m) => m.id !== id)
     const sel = get().selectedScreenId
     set({ course, selectedScreenId: sel && removedScreenIds.includes(sel) ? null : sel })
@@ -512,7 +521,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     // Ninguna portada necesita retipado: `cover` es un único tipo cuyo diseño
     // (banda sólida o degradada) lo decide el contenedor donde vive la
     // pantalla en cada momento, no un campo fijo — ver arquitectura-runtime.md.
-    const newModule: Module = { id: newId('m'), title: unit.title, screens: unit.screens, units: [] }
+    const newModule: Module = { id: newId('m'), title: unit.title, screens: unit.screens, units: [], closing_screens: [] }
     course.modules.splice(mi + 1, 0, newModule)
     set({ course })
   },
@@ -530,7 +539,11 @@ export const useCourseStore = create<CourseState>((set, get) => {
         const si = course.modules[mi].units[ui].screens.findIndex((s) => s.id === id)
         if (si >= 0) return { mi, ui, si }
       }
+      const csi = course.modules[mi].closing_screens.findIndex((s) => s.id === id)
+      if (csi >= 0) return { mi, ui: 'closing', si: csi }
     }
+    const osi = course.closing_screens.findIndex((s) => s.id === id)
+    if (osi >= 0) return { mi: 'outro', ui: null, si: osi }
     return null
   },
 

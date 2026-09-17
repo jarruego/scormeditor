@@ -5,34 +5,50 @@
 > enriquecido en `editor-richtext.md`.
 
 ## El árbol (`CourseTree.tsx`)
-Introducción del paquete SCORM → módulos → unidades → pantallas (reordenables con dnd-kit) +
-secciones «Evaluación» (test final) y «Materiales» (glosario/bibliografía). Añadir
-pantalla por unidad, por módulo **o suelta antes de todo**; duplicar/eliminar por
-pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla).
+Introducción del paquete SCORM → módulos (pantallas propias → unidades → cierre del
+módulo) → cierre del paquete SCORM → secciones «Evaluación» (test final) y «Materiales»
+(glosario/bibliografía). Añadir pantalla por unidad, por módulo, en el cierre de un
+módulo, suelta antes de todo (introducción) o suelta después de todo (cierre del
+SCORM); duplicar/eliminar por pantalla (eliminar pide confirmación con `confirmDialog`,
+nombrando la pantalla).
 
-- **Introducción del paquete SCORM** (`course.intro_screens`): bloque fijo `.ed-intro-block` al
-  principio del árbol, antes del primer módulo — pantallas sueltas que no pertenecen a
-  ningún módulo ni unidad (portada del curso, bienvenida, objetivos generales… lo que el
-  profesor quiera poner antes de entrar en el contenido). Sin renombrado ni controles de
-  mover/eliminar el propio bloque (contenedor único, siempre el primero; las pantallas de
-  dentro sí se reordenan/eliminan como cualquier otra). Contenedor con id reservado
-  `INTRO_CONTAINER_ID` (`src/schema/traverse.ts`) para `addScreen`/`moveScreen`/
-  `AddScreenModal` — nunca coincide con un id real de módulo/unidad. Aparecen también
-  en el menú lateral del alumno, sueltas y primero (`buildMenu()` en app.js, bloque
-  `.me-menu-intro` sin rótulo de módulo — ver `carcasa-navegacion.md`); para todo lo
-  demás (progreso, finalización, validación) cuentan como cualquier pantalla.
-- **Pantallas propias del módulo** (`module.screens`, portada/presentación del bloque):
-  van **siempre antes de las unidades** del módulo — decisión deliberada: intercalarlas
-  entre unidades complicaría el orden lineal y el menú para un caso de uso dudoso. En el
-  árbol se listan bajo el título del módulo (`.ed-module-screens`, mismo `ScreenItem` con
-  puntos de inserción) con su botón «Añadir pantalla al módulo…» (mismo `AddScreenModal`;
-  las recetas evalúan `uniquePerUnit` y `defaultTitle` contra el módulo). El recorrido
-  canónico introducción→módulo→(pantallas de módulo)→unidades vive en
-  `src/schema/traverse.ts` (`screenContainers`/`allScreens`, `module: null` en el
-  contenedor de introducción) — cualquier código nuevo que recorra pantallas debe usarlo,
-  no el doble bucle. En el store, `addScreen`/`moveScreen` aceptan como contenedor el id
-  de una unidad, de un módulo o `INTRO_CONTAINER_ID`; `Located.mi === 'intro'` señala
-  pantalla de introducción (`Located.ui === null` sigue señalando pantalla de módulo).
+- **Introducción y cierre del paquete SCORM** (`course.intro_screens`/
+  `closing_screens`): dos bloques fijos `.ed-intro-block` — introducción al principio
+  del árbol (antes del primer módulo) y cierre al final (después del último módulo,
+  antes de «Evaluación»/«Materiales») — con pantallas sueltas que no pertenecen a
+  ningún módulo ni unidad (portada del curso, bienvenida… / despedida, «gracias por
+  completar el curso»… lo que el profesor quiera poner antes o después de todo el
+  contenido). Sin renombrado ni controles de mover/eliminar el propio bloque
+  (contenedores únicos, siempre en su extremo; las pantallas de dentro sí se
+  reordenan/eliminan como cualquier otra). Ids reservados `INTRO_CONTAINER_ID`/
+  `OUTRO_CONTAINER_ID` (`src/schema/traverse.ts`) para `addScreen`/`moveScreen`/
+  `AddScreenModal` — nunca coinciden con un id real de módulo/unidad. Aparecen también
+  en el menú lateral del alumno, sueltas (`buildMenu()` en app.js, bloques
+  `.me-menu-intro`/«CIERRE» sin rótulo de módulo — ver `carcasa-navegacion.md`); para
+  todo lo demás (progreso, finalización, validación) cuentan como cualquier pantalla.
+  El cierre del SCORM va lo último de todo en la navegación del alumno (`flatten()` en
+  app.js): después incluso del test final y de la pantalla de Resultados, si los hay.
+- **Pantallas propias del módulo y su cierre** (`module.screens`/`closing_screens`,
+  portada/presentación al principio, resumen/despedida al final del bloque): las de
+  `screens` van **siempre antes de las unidades** del módulo y las de `closing_screens`
+  **siempre después** — decisión deliberada: intercalarlas entre unidades complicaría
+  el orden lineal y el menú para un caso de uso dudoso. En el árbol, `screens` se lista
+  bajo el título del módulo (`.ed-module-screens`, mismo `ScreenItem` con puntos de
+  inserción) con su botón «Añadir pantalla al módulo…»; `closing_screens` se lista tras
+  las unidades, con un divisor sutil (`.ed-closing-label`, «Cierre del {módulo}») y su
+  propio botón «Añadir pantalla de cierre del {módulo}…» (mismo `AddScreenModal`; las
+  recetas evalúan `uniquePerUnit` y `defaultTitle` contra el módulo en ambos casos). El
+  recorrido canónico introducción→módulo→(pantallas de módulo)→unidades→(cierre de
+  módulo)→cierre del curso vive en `src/schema/traverse.ts`
+  (`screenContainers`/`allScreens`/`containerLabel`, `module: null` en los contenedores
+  del curso, `closing: true` en los de cierre) — cualquier código nuevo que recorra
+  pantallas debe usarlo, no el doble bucle. En el store, `addScreen`/`moveScreen`
+  aceptan como contenedor el id de una unidad, de un módulo, de su cierre
+  (`moduleClosingContainerId(moduleId)`, formato `"{id}:closing"` — nunca choca con un
+  id real, que nunca lleva `:`), `INTRO_CONTAINER_ID` u `OUTRO_CONTAINER_ID`;
+  `Located.mi === 'intro'/'outro'` señala pantalla suelta de introducción/cierre del
+  curso, `Located.ui === 'closing'` señala pantalla de cierre de módulo (`null` sigue
+  señalando pantalla propia del módulo, antes de sus unidades).
 
 - **Módulos y unidades plegables, colapsados por defecto**: ambos son `<details>`
   (`ed-tree-module`/`ed-tree-unit`) con chevron rotatorio (`::before` en
@@ -213,8 +229,10 @@ desplegable «Tipo de pantalla» queda como ajuste avanzado). Decisiones:
   existe…») pero **no bloquea** — aviso blando.
 - `scope?: 'unit' | 'module' | 'course'` **sí filtra** (la tarjeta no aparece, a
   diferencia de `uniquePerUnit`): `AddScreenModal` calcula `scope` del contenedor
-  (`'course'` si `containerId === INTRO_CONTAINER_ID`, si no `'module'`/`'unit'` como
-  antes) y lo compara con el de cada receta antes de listar el grupo. Uso hoy: las tres
+  (`'course'` si `containerId` es `INTRO_CONTAINER_ID` u `OUTRO_CONTAINER_ID`, `'module'`
+  si es un módulo o su cierre, `'unit'` en el resto) y lo compara con el de cada receta
+  antes de listar el grupo — el cierre de un módulo o del curso comparte el `scope` de
+  su contraparte de introducción, mismo nivel jerárquico. Uso hoy: las tres
   portadas — recetas `scorm-cover` (`scope: 'course'`), `cover` (`scope: 'unit'`) y
   `module-cover` (`scope: 'module'`) — **comparten el mismo tipo** `cover` (una sola
   plantilla en `renderer.js`, ver «Portada unificada» en `arquitectura-runtime.md`): son

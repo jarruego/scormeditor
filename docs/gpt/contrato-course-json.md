@@ -24,6 +24,7 @@ contrato. Todo `id` debe ser único y estable.
   "shell": { ... },
   "intro_screens": [ ... ],
   "modules": [ ... ],
+  "closing_screens": [ ... ],
   "assessments": { "unit_tests": [], "final_test": null },
   "glossary": [ ... ],
   "bibliography": [ ... ],
@@ -44,6 +45,11 @@ Reglas que NO se pueden romper:
   pero sin rótulo de nivel). Esta portada es el sitio para presentar el
   paquete completo — **no** repitas esa presentación como título de un módulo
   (ver regla siguiente).
+- `closing_screens` (opcional, def. `[]`): simétrico a `intro_screens` pero al
+  final de TODO — después incluso del test final, si lo hay. Pantallas sueltas
+  de cierre de TODO el paquete (despedida, «gracias por completar el curso»,
+  próximos pasos…), sin pertenecer a ningún módulo. Úsalo solo si el documento
+  fuente pide explícitamente un cierre; si no, **omite la clave**.
 - `quality_checklist` es un **objeto** `{"texto del criterio": true|false}`,
   **no** un array.
 - **IDs deterministas, nunca «inventados»**: numeración secuencial por orden de
@@ -151,7 +157,8 @@ Reglas que NO se pueden romper:
         "status": "ok",
         "screens": [ /* ver §4 */ ]
       }
-    ]
+    ],
+    "closing_screens": [ /* OPCIONAL: pantallas de cierre del módulo, ver abajo */ ]
   }
 ]
 ```
@@ -167,6 +174,13 @@ Reglas que NO se pueden romper:
   tipo que la portada de unidad: puesta aquí, en `modules[].screens`, se
   presenta sola con más peso visual); el contenido didáctico va en las
   unidades. Si no hace falta, **omite la clave**.
+- `modules[].closing_screens` (opcional, def. `[]`): pantallas de **cierre del
+  módulo**, mismo formato de §4, simétricas a `modules[].screens` pero al
+  revés — se muestran **siempre después** de TODAS las unidades del módulo
+  (resumen del bloque, despedida antes de pasar al siguiente módulo…), nunca
+  intercaladas entre unidades. Úsalo solo si el documento fuente pide
+  explícitamente un cierre por bloque; si no, **omite la clave** (no lo
+  rellenes por rellenar).
 - **El `title` de un módulo nunca repite el título del curso/SCORM**
   (`course.title`/`scorm.title`): esa presentación ya va en la portada de
   `intro_screens` (ver §1). Dale al módulo un nombre propio, específico de lo

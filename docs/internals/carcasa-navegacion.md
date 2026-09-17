@@ -27,6 +27,12 @@
   pertenecen a ninguno) — mismo `menuScreenLabel()` que el resto (prefijo
   «Actividad: » si procede). Ver `editor-pantallas.md` para el lado del editor (árbol,
   recetas).
+- **Cierre, en dos niveles**: cada módulo puede llevar `closing_screens` (pantallas
+  sueltas después de sus unidades, mismo bloque `.me-menu-unit.me-menu-modscreens` que
+  las propias de arriba, sin rótulo de unidad) y el curso puede llevar
+  `course.closing_screens` (simétrico a `intro_screens`, pero lo último de todo en
+  `flatten()` — después incluso del test final y de Resultados). Ver «Evaluación» más
+  abajo para cómo `buildMenu()` separa ese cierre del curso del bloque de Evaluación.
 - **Prefijo «Actividad: » en las pantallas evaluables**: `menuScreenLabel(sc)` (app.js,
   usada por `buildMenu()` en los tres bucles que generan `.me-menu-link`: pantallas de
   módulo, de unidad y sintéticas finales) antepone `"Actividad: "` al rótulo del
@@ -62,7 +68,12 @@
 - **Evaluación (Test final/Resultados)**: `buildMenu()` agrupa las pantallas sintéticas
   finales bajo un bloque `.me-menu-final` con rótulo propio («EVALUACIÓN», mismo estilo
   que `.me-menu-mtitle`) — antes salían sueltas, una por `.me-menu-unit`, sin
-  distinguirse visualmente del resto del índice ni agruparse entre sí.
+  distinguirse visualmente del resto del índice ni agruparse entre sí. El rango de este
+  bloque es `[idx, evalEnd)`, no `[idx, SCREENS.length)`: `evalEnd = SCREENS.length -
+  course.closing_screens.length`, para no tragarse el cierre del curso (que va lo
+  último de todo en `flatten()`) dentro de «Evaluación». El cierre del curso, si lo hay,
+  sale aparte justo después, en OTRO bloque `.me-menu-final` con rótulo «CIERRE» — misma
+  clase, mismo tratamiento visual, solo cambia el rótulo y el rango.
 - **Pestaña de plegado del índice**: asa gris plana (`#me-menu-tab`, `.me-menu-tab`)
   centrada verticalmente en el borde derecho del menú, con flecha ◂; plegado el menú,
   asoma pegada al lateral izquierdo con ▸. Es un segundo control del mismo `toggleMenu()`

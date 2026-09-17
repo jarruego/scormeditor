@@ -263,6 +263,11 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(4
 .ed-add { width: 100%; margin: .35rem 0 .75rem; border-style: dashed; color: var(--c-muted); }
 /* Estructura desde el árbol (plan UX fase 7): mover/eliminar módulo y unidad */
 .ed-add-module { margin-top: 0; }
+/* Divisor sutil antes de las pantallas de cierre de un módulo (después de sus
+   unidades): mismo lenguaje visual discreto que el resto del árbol, sin
+   competir con el título del módulo ni con el de una unidad. */
+.ed-closing-label { margin: .6rem 0 .3rem; padding-top: .6rem; border-top: 1px dashed var(--c-border);
+  font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--c-muted); }
 .ed-struct-tools { display: inline-flex; gap: .1rem; margin-left: .25rem; }
 .ed-struct-btn { display: inline-flex; align-items: center; justify-content: center; border: none; background: none; padding: .1rem .2rem; border-radius: 5px; color: var(--c-muted); opacity: .5; }
 .ed-struct-btn:hover:not(:disabled) { opacity: 1; background: color-mix(in srgb, var(--c-primary) 10%, white); color: var(--c-text); border: none; }

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { validateCourse, type Issue, type Severity } from '../validation/validators'
-import { screenContainers } from '../schema/traverse'
+import { screenContainers, containerLabel } from '../schema/traverse'
 import { IssueItem } from './IssueList'
 import { Icon } from './Icon'
 
@@ -63,12 +63,12 @@ export function ValidationPanel() {
     const pathByScreen = new Map<string, string>()
     const pathByUnit = new Map<string, string>()
     const groupOrder: string[] = []
-    screenContainers(course).forEach(({ module: m, unit: u, screens }) => {
-      if (!u && screens.length === 0) return
-      const path = m ? (u ? `${m.title || m.id} › ${u.title || u.id}` : m.title || m.id) : 'Introducción del paquete SCORM'
-      if (u) pathByUnit.set(u.id, path)
+    screenContainers(course).forEach((c) => {
+      if (!c.unit && c.screens.length === 0) return
+      const path = containerLabel(c)
+      if (c.unit) pathByUnit.set(c.unit.id, path)
       groupOrder.push(path)
-      screens.forEach((s) => pathByScreen.set(s.id, path))
+      c.screens.forEach((s) => pathByScreen.set(s.id, path))
     })
     groupOrder.push(FINAL_GROUP, GLOBAL_GROUP)
     return { pathByScreen, pathByUnit, groupOrder }

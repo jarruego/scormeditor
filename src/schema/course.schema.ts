@@ -258,6 +258,12 @@ export const Module = z.object({
    *  antes de las de sus unidades. Default [] = compatible con proyectos previos. */
   screens: z.array(Screen).default([]),
   units: z.array(Unit).default([]),
+  /** Pantallas de cierre del módulo: se muestran SIEMPRE después de sus
+   *  unidades (resumen/despedida antes de pasar al siguiente módulo). Mismo
+   *  formato que `screens`; contenedor propio (no una unidad más) porque no
+   *  tiene sentido en la miga de pan ni en `units[]` (no es contenido, es
+   *  cierre). Default [] = compatible con proyectos previos. */
+  closing_screens: z.array(Screen).default([]),
 })
 export type Module = z.infer<typeof Module>
 
@@ -390,11 +396,16 @@ export const Course = z.object({
   shell: ShellConfig,
   /** Pantallas sueltas de introducción, antes de cualquier módulo (portada del
    *  paquete SCORM, bienvenida, objetivos generales…): no pertenecen a ningún
-   *  módulo ni unidad y no aparecen en el menú lateral del alumno (a diferencia
-   *  de `module.screens`, que sí) — se navegan con Anterior/Siguiente como
-   *  cualquier otra pantalla, sin entrada de índice. Default [] = compatible
-   *  con proyectos previos. */
+   *  módulo ni unidad, sueltas en el menú lateral del alumno (sin agrupar bajo
+   *  un título de módulo, porque no pertenecen a ninguno). Default [] =
+   *  compatible con proyectos previos. */
   intro_screens: z.array(Screen).default([]),
+  /** Pantallas sueltas de cierre, después de TODO lo demás (incluido el test
+   *  final y la pantalla de resultados, si los hay) — simétricas a
+   *  `intro_screens`, con el mismo tratamiento: no pertenecen a ningún módulo
+   *  ni unidad, sueltas en el menú lateral, sin agrupar. Default [] =
+   *  compatible con proyectos previos. */
+  closing_screens: z.array(Screen).default([]),
   narration: z.object({
     mode: z
       .enum(['auto', 'on', 'off'])

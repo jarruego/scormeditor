@@ -132,12 +132,14 @@ export const sampleCourse: Course = {
       }
     }
   ],
+  "closing_screens": [],
   "module_label": "Módulo",
   "unit_label": "Unidad",
   "modules": [
     {
       "id": "m1",
       "title": "Cómo se organiza un curso",
+      "closing_screens": [],
       "screens": [
         {
           "id": "s100",
@@ -708,6 +710,7 @@ export const sampleCourse: Course = {
     {
       "id": "m2",
       "title": "Presentar contenido",
+      "closing_screens": [],
       "screens": [],
       "units": [
         {
@@ -1249,6 +1252,7 @@ export const sampleCourse: Course = {
     {
       "id": "m3",
       "title": "Preguntar y corregir",
+      "closing_screens": [],
       "screens": [],
       "units": [
         {
@@ -1472,6 +1476,7 @@ export const sampleCourse: Course = {
     {
       "id": "m4",
       "title": "Manipular elementos",
+      "closing_screens": [],
       "screens": [],
       "units": [
         {
@@ -1744,6 +1749,7 @@ export const sampleCourse: Course = {
     {
       "id": "m5",
       "title": "Juegos didácticos y piezas avanzadas",
+      "closing_screens": [],
       "screens": [],
       "units": [
         {
