@@ -216,8 +216,20 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(4
 .ed-screen.is-selected { border-color: var(--c-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c-primary) 25%, transparent); }
 /* «Diana»: la pantalla que recibiría el drop si soltaras ahora mismo
    (`isOver` de `useSortable`, ver CourseTree.tsx) — feedback inequívoco antes
-   de soltar, distinto del simple `is-selected`. */
-.ed-screen.is-drop-target { border-color: var(--c-primary); background: color-mix(in srgb, var(--c-primary) 14%, #fff); box-shadow: 0 0 0 2px var(--c-primary); }
+   de soltar, distinto del simple `is-selected`. La línea gruesa arriba/abajo
+   (`is-drop-before`/`is-drop-after`, según `useDropSide`) marca el lado
+   exacto de inserción — sin ella, soltar sobre un contenedor con una sola
+   pantalla no dejaba ver si iba a quedar encima o debajo. */
+.ed-screen.is-drop-target { border-color: var(--c-primary); background: color-mix(in srgb, var(--c-primary) 14%, #fff); }
+.ed-screen.is-drop-before { box-shadow: inset 0 3px 0 0 var(--c-primary); }
+.ed-screen.is-drop-after { box-shadow: inset 0 -3px 0 0 var(--c-primary); }
+/* Contenedor sin pantallas: sin ningún `ScreenItem` no hay droppable dentro
+   (`EmptyDropZone`, CourseTree.tsx, usa el propio id del contenedor). Solo
+   visible mientras se arrastra. */
+.ed-insert-empty { height: auto; margin: 0; padding: .4rem; display: flex; align-items: center; justify-content: center;
+  border: 1px dashed var(--c-border); border-radius: 6px; color: var(--c-muted); font-size: .78rem; animation: ed-insert-pulse 1.1s ease-in-out infinite; }
+.ed-insert-empty.is-drop-target { border-color: var(--c-primary); border-style: solid; color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 14%, #fff); animation: none; }
 .ed-grip { cursor: grab; border: none; background: none; color: var(--c-muted); padding: .2rem; }
 .ed-screen-label { flex: 1; display: flex; flex-direction: column; align-items: flex-start; border: none; background: none; text-align: left; padding: .2rem; }
 .ed-screen-type { font-size: .7rem; color: var(--c-muted); }

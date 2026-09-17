@@ -6,11 +6,13 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
+  useDroppable,
   pointerWithin,
   closestCenter,
   type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
+  type DragOverEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -50,6 +52,16 @@ const useTreeFold = create<{
       for (const other of allIds) next[other] = other !== id
       return { collapsed: next }
     }),
+}))
+
+/** Lado de inserción («antes»/«después» de la pantalla apuntada) durante un
+ *  arrastre: se recalcula en `onDragOver` (posición real del puntero) y lo lee
+ *  cada `ScreenItem` para dibujar la línea de «diana» en el borde correcto.
+ *  Solo hace falta un booleano global (no por id): en cada instante únicamente
+ *  la pantalla con `isOver` (de `useSortable`) pinta el indicador. */
+const useDropSide = create<{ after: boolean; setAfter: (v: boolean) => void }>((set) => ({
+  after: false,
+  setAfter: (v) => set({ after: v }),
 }))
 
 /** Scroll del árbol hasta el nodo, solo si no está ya del todo a la vista.
@@ -135,6 +147,7 @@ function ScreenItem({ screen, containerId, issues, index, count, level, moduleId
     id: screen.id,
     data: { containerId },
   })
+  const dropAfter = useDropSide((s) => s.after)
   const selected = useCourseStore((s) => s.selectedScreenId === screen.id)
   const select = useCourseStore((s) => s.selectScreen)
   const duplicate = useCourseStore((s) => s.duplicateScreen)
@@ -152,9 +165,10 @@ function ScreenItem({ screen, containerId, issues, index, count, level, moduleId
   const liRef = useScrollWhenSelected(selected, moduleId, unitId)
   const setRefs = (el: HTMLLIElement | null) => { liRef.current = el; setNodeRef(el) }
 
+  const isDropTarget = isOver && !isDragging
   return (
     <li ref={setRefs} style={style}
-      className={`ed-screen ${selected ? 'is-selected' : ''} ${isOver && !isDragging ? 'is-drop-target' : ''}`}>
+      className={`ed-screen ${selected ? 'is-selected' : ''} ${isDropTarget ? `is-drop-target ${dropAfter ? 'is-drop-after' : 'is-drop-before'}` : ''}`}>
       <button className="ed-grip" {...attributes} {...listeners} aria-label="Arrastrar para reordenar">
         <Icon name="grip" size={14} />
       </button>
@@ -240,6 +254,23 @@ function InsertPoint({ containerId, index }: { containerId: string; index: numbe
         <span aria-hidden="true"><Icon name="plus" size={12} /></span>
       </button>
       {open && <AddScreenModal containerId={containerId} atIndex={index} onClose={() => setOpen(false)} />}
+    </li>
+  )
+}
+
+/** Objetivo de drop de un contenedor SIN pantallas: sin ningún `ScreenItem`
+ *  dentro (cada uno registra su propio droppable vía `useSortable`) no había
+ *  nada donde soltar y arrastrar ahí no hacía nada. Este marcador usa el
+ *  propio `containerId` como id droppable — `onDragEnd` lo distingue por
+ *  `data.current.empty` e inserta siempre en la primera posición. Solo se
+ *  muestra mientras se arrastra (`dragging`), para no alterar el aspecto
+ *  habitual de un contenedor vacío. */
+function EmptyDropZone({ containerId, dragging }: { containerId: string; dragging: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({ id: containerId, data: { containerId, empty: true } })
+  if (!dragging) return null
+  return (
+    <li ref={setNodeRef} className={`ed-insert-empty ${isOver ? 'is-drop-target' : ''}`} role="presentation">
+      Suelta aquí
     </li>
   )
 }
@@ -352,11 +383,29 @@ export function CourseTree() {
 
   // Feedback visual del arrastre: `dragging` agranda y anima los huecos entre
   // pantallas (ver `.ed-insert` en editor.css); el resaltado de la pantalla
-  // apuntada («diana») usa `isOver` de `useSortable` en `ScreenItem`, así que
-  // no hace falta rastrear aquí sobre qué elemento está el puntero.
+  // apuntada («diana») usa `isOver` de `useSortable` en `ScreenItem`, y
+  // `useDropSide` (más abajo, en `onDragOver`) decide si la línea de diana va
+  // arriba o abajo de esa pantalla.
   const [dragging, setDragging] = useState(false)
-  function onDragStart(_e: DragStartEvent) { setDragging(true) }
-  function onDragCancel() { setDragging(false) }
+  const setDropAfter = useDropSide((s) => s.setAfter)
+  function onDragStart(_e: DragStartEvent) { setDragging(true); setDropAfter(false) }
+  function onDragCancel() { setDragging(false); setDropAfter(false) }
+
+  // Antes/después de la pantalla apuntada: comparar el centro vertical del
+  // elemento arrastrado (posición real del puntero) con el centro vertical
+  // del objetivo. Solo importa el borde superior/inferior, así que basta con
+  // los rects que ya trae el propio evento — sin esto, soltar sobre un
+  // contenedor con una única pantalla SIEMPRE la insertaba delante (ver
+  // `onDragEnd`), sin forma de indicar ni de elegir «después».
+  function onDragOver(e: DragOverEvent) {
+    const { active, over } = e
+    if (!over) { setDropAfter(false); return }
+    const activeRect = active.rect.current.translated
+    if (!activeRect) { setDropAfter(false); return }
+    const activeMid = activeRect.top + activeRect.height / 2
+    const overMid = over.rect.top + over.rect.height / 2
+    setDropAfter(activeMid > overMid)
+  }
 
   // `closestCenter` a secas compara TODAS las pantallas del árbol por
   // distancia de su centro al puntero, sin tener en cuenta las fronteras
@@ -375,12 +424,34 @@ export function CourseTree() {
 
   function onDragEnd(e: DragEndEvent) {
     setDragging(false)
+    setDropAfter(false)
     const { active, over } = e
     if (!over || active.id === over.id) return
     const toContainerId = (over.data.current?.containerId as string) ?? (active.data.current?.containerId as string)
+    // Contenedor vacío (`EmptyDropZone`): ninguna pantalla dentro sirve de
+    // referencia — siempre a la primera posición.
+    if (over.data.current?.empty) {
+      moveScreen(String(active.id), toContainerId, 0)
+      return
+    }
     const overLoc = locate(String(over.id))
     if (!overLoc) return
-    moveScreen(String(active.id), toContainerId, overLoc.si)
+    let targetIndex = overLoc.si
+    // Al reordenar DENTRO del mismo contenedor, la dirección del arrastre
+    // (de dónde a dónde) ya decide antes/después de forma natural — mismo
+    // convenio que `arrayMove` de dnd-kit. Al soltar en un contenedor
+    // DISTINTO no hay ninguna otra pantalla con la que comparar esa
+    // dirección (con una sola pantalla dentro, `overLoc.si` siempre
+    // apuntaría delante de ella) — ahí decide la posición real del puntero
+    // calculada en `onDragOver`.
+    const fromContainerId = active.data.current?.containerId as string | undefined
+    if (fromContainerId && fromContainerId !== toContainerId) {
+      const activeRect = active.rect.current.translated
+      if (activeRect && activeRect.top + activeRect.height / 2 > over.rect.top + over.rect.height / 2) {
+        targetIndex = overLoc.si + 1
+      }
+    }
+    moveScreen(String(active.id), toContainerId, targetIndex)
   }
 
   const q = filter.trim().toLowerCase()
@@ -400,7 +471,7 @@ export function CourseTree() {
         onChange={(e) => setFilter(e.target.value)}
       />
       <DndContext sensors={sensors} collisionDetection={collisionDetection}
-        onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={onDragCancel}>
+        onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={onDragCancel}>
         <div className="ed-module ed-intro-block">
           <p className="ed-module-title">
             <span className="ed-intro-title-text">Introducción del paquete SCORM</span>
@@ -418,6 +489,7 @@ export function CourseTree() {
                         index={q ? undefined : i} count={q ? undefined : course.intro_screens.length} />
                     </Fragment>
                   ))}
+                  {!q && course.intro_screens.length === 0 && <EmptyDropZone containerId={INTRO_CONTAINER_ID} dragging={dragging} />}
                 </ul>
               </SortableContext>
             )
@@ -474,6 +546,7 @@ export function CourseTree() {
                           index={q ? undefined : i} count={q ? undefined : m.screens.length} />
                       </Fragment>
                     ))}
+                    {!q && m.screens.length === 0 && <EmptyDropZone containerId={m.id} dragging={dragging} />}
                   </ul>
                 </SortableContext>
               )
@@ -536,6 +609,7 @@ export function CourseTree() {
                             index={q ? undefined : i} count={q ? undefined : u.screens.length} />
                         </Fragment>
                       ))}
+                      {!q && u.screens.length === 0 && <EmptyDropZone containerId={u.id} dragging={dragging} />}
                     </ul>
                   </SortableContext>
                   {!q && <AddScreenButton containerId={u.id} />}

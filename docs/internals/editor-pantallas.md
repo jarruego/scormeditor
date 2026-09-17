@@ -64,13 +64,27 @@ pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla
   (`collisionDetection` en `CourseTree.tsx`): primero `pointerWithin` (el puntero tiene
   que estar literalmente dentro del rectángulo de la pantalla candidata) y solo si no
   hay ninguna pantalla bajo el puntero (huecos entre contenedores) cae a `closestCenter`
-  como respaldo. Sobre esa base, dos señales durante el arrastre: mientras `dragging`
-  (estado local, `onDragStart`/`onDragEnd`/`onDragCancel`) los puntos de inserción
-  (`.ed-insert`, el «+» entre pantallas) se agrandan y parpadean (`is-dragging` en
-  `editor.css`) como aviso general de zonas donde se puede soltar; la pantalla que
-  recibiría el drop ahora mismo se ilumina de forma sólida (`isOver` de `useSortable`,
-  clase `.ed-screen.is-drop-target`) como confirmación inequívoca de «diana» antes de
-  soltar.
+  como respaldo. Sobre esa base, tres señales durante el arrastre:
+  - Mientras `dragging` (estado local, `onDragStart`/`onDragEnd`/`onDragCancel`) los
+    puntos de inserción (`.ed-insert`, el «+» entre pantallas) se agrandan y parpadean
+    (`is-dragging` en `editor.css`) como aviso general de zonas donde se puede soltar.
+  - La pantalla que recibiría el drop ahora mismo se ilumina de forma sólida (`isOver`
+    de `useSortable`, clase `.ed-screen.is-drop-target`) como confirmación inequívoca de
+    «diana» antes de soltar, con una línea gruesa arriba o abajo (`is-drop-before`/
+    `is-drop-after`, estado compartido `useDropSide` actualizado en `onDragOver`
+    comparando el centro vertical de la pantalla arrastrada con el del objetivo) que
+    marca el lado exacto de inserción — antes no había forma de saber si, al soltar
+    sobre un contenedor con una única pantalla, iba a quedar encima o debajo (`onDragEnd`
+    solo insertaba «antes» al cruzar de contenedor). Al reordenar dentro del mismo
+    contenedor esa dirección ya la decide el propio dnd-kit (mismo convenio que
+    `arrayMove`: origen antes del destino → después; origen después del destino →
+    antes), así que el ajuste de `onDragEnd` solo aplica al cruzar a un contenedor
+    distinto.
+  - Un contenedor **sin pantallas** (módulo, unidad o introducción vacíos) no tenía
+    ningún `ScreenItem` dentro que registrara un droppable — arrastrar ahí no hacía
+    nada. `EmptyDropZone` (visible solo mientras se arrastra) registra el propio
+    `containerId` como droppable con `data.empty`, que `onDragEnd` reconoce e inserta
+    siempre en la primera posición.
 - **Pantallas también con Subir/Bajar** (`ScreenItem`, además del arrastre dnd-kit):
   botones que llaman a `moveScreen(id, containerId, index±1)` — mismo contenedor, sin
   cruzar a uno adyacente (a diferencia de `moveUnit`/`moveModule`). Reciben `index`/
