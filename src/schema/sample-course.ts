@@ -186,6 +186,7 @@ export const sampleCourse: Course = {
         {
           "id": "u1",
           "loose": false,
+          "hide_menu_title": false,
           "title": "Estructura y navegación",
           "summary": "",
           "screens": [
@@ -717,6 +718,7 @@ export const sampleCourse: Course = {
         {
           "id": "u2",
           "loose": false,
+          "hide_menu_title": false,
           "title": "Interacciones exploratorias",
           "summary": "Interacciones informativas: el alumno explora, abre o compara, sin preguntas que corregir.",
           "screens": [
@@ -1260,6 +1262,7 @@ export const sampleCourse: Course = {
         {
           "id": "u3",
           "loose": false,
+          "hide_menu_title": false,
           "title": "Interacciones que corrigen",
           "summary": "Interacciones evaluables: el alumno responde y recibe corrección automática, con intentos configurables.",
           "screens": [
@@ -1485,6 +1488,7 @@ export const sampleCourse: Course = {
         {
           "id": "u4",
           "loose": false,
+          "hide_menu_title": false,
           "title": "Ordenar, emparejar, clasificar",
           "summary": "El alumno arrastra o reordena elementos; también se puede hacer con teclado o táctil.",
           "screens": [
@@ -1759,6 +1763,7 @@ export const sampleCourse: Course = {
         {
           "id": "u5",
           "loose": false,
+          "hide_menu_title": false,
           "title": "Juegos y piezas especiales",
           "summary": "Dinámicas lúdicas que se autocorrigen sin botón «Comprobar», más una pieza especial: HTML a medida (el vídeo interactivo ya se vio en el módulo 1).",
           "screens": [

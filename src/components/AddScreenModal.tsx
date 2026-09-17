@@ -36,6 +36,12 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
   if (!container) return null
   const isModule = !!(closingModule || plainModule)
   const scope: CoverLevel = (isIntro || isOutro) ? 'course' : isModule ? 'module' : 'unit'
+  // El título deja siempre clara la ceja del menú donde va a caer la pantalla
+  // nueva (SCORM/módulo/unidad, con el rótulo personalizado si lo hay) — el
+  // selector se abre igual desde un botón «Añadir pantalla…» que desde un
+  // punto de inserción «+» sin texto, así que el nivel no siempre viene ya
+  // dicho por lo que se pulsó para llegar aquí.
+  const levelLabel = scope === 'course' ? 'SCORM' : scope === 'module' ? (course.module_label || 'Módulo') : (course.unit_label || 'Unidad')
 
   // Las tres recetas de portada comparten `type: 'cover'` (el diseño lo decide
   // el contenedor, no el tipo — ver arquitectura-runtime.md) pero cada una
@@ -77,7 +83,7 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
   }
 
   return (
-    <SettingsWindow title="Nueva pantalla" onClose={onClose} wide>
+    <SettingsWindow title={`Nueva pantalla · ${levelLabel}`} onClose={onClose} wide>
       <div className="ed-recipes" onKeyDown={onKeyDown}>
         {RECIPE_GROUPS.map((g) => (
           <section key={g} className="ed-recipe-group">

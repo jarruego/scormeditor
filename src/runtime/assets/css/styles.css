@@ -101,6 +101,11 @@ body {
 .me-menu-module + .me-menu-module { border-top: 1px solid var(--me-border); padding-top: .5rem; margin-top: .5rem; }
 /* Pantallas propias del módulo: cuelgan del título del módulo, sin rótulo de unidad */
 .me-menu-modscreens { margin: .15rem 0 .35rem; }
+/* Unidad con el título oculto en el menú (`unit.hide_menu_title`, app.js): sin
+   título ni mini-barra dentro, la tarjeta de `.me-menu-unit` (fondo, padding,
+   esquinas) no pintaba nada — solo dejaba un hueco de aire de más alrededor
+   de sus pantallas sueltas. Quita ese envoltorio del todo. */
+.me-menu-notitle { background: none; border-radius: 0; padding: 0; margin: 0; }
 .me-menu-link {
   display: flex; justify-content: space-between; align-items: center; gap: .5rem; width: 100%;
   text-align: left; background: none; border: none; padding: .4rem .5rem; border-radius: 6px;

@@ -250,12 +250,14 @@ function ScreenItem({ screen, containerId, issues, index, count, level, moduleId
 }
 
 /** Botón «+ Añadir pantalla»: abre el selector de recetas (AddScreenModal).
- *  `containerId` puede ser una unidad o un módulo (pantallas del módulo). */
-function AddScreenButton({ containerId, label = 'Añadir pantalla…' }: { containerId: string; label?: string }) {
+ *  `containerId` puede ser una unidad o un módulo (pantallas del módulo). `level`
+ *  colorea el botón según la zona (SCORM/módulo/unidad, ver «Zonas por nivel»
+ *  en editor.css) — quien llama ya sabe a qué nivel pertenece ese contenedor. */
+function AddScreenButton({ containerId, label = 'Añadir pantalla…', level }: { containerId: string; label?: string; level?: CoverLevel }) {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <button className="ed-add" onClick={() => setOpen(true)}><Icon name="plus" size={13} /> {label}</button>
+      <button className={`ed-add${level ? ` ed-add-${level}` : ''}`} onClick={() => setOpen(true)}><Icon name="plus" size={13} /> {label}</button>
       {open && <AddScreenModal containerId={containerId} onClose={() => setOpen(false)} />}
     </>
   )
@@ -577,7 +579,7 @@ export function CourseTree() {
             )
           })()}
           {!q && (
-            <AddScreenButton containerId={INTRO_CONTAINER_ID} label="Añadir pantalla de introducción…" />
+            <AddScreenButton containerId={INTRO_CONTAINER_ID} label="Añadir pantalla de introducción…" level="course" />
           )}
         </div>
         {course.modules.map((m, mi) => (
@@ -634,7 +636,7 @@ export function CourseTree() {
               )
             })()}
             {!q && (
-              <AddScreenButton containerId={m.id} label={`Añadir pantalla al ${moduleLabel}…`} />
+              <AddScreenButton containerId={m.id} label={`Añadir pantalla al ${moduleLabel}…`} level="module" />
             )}
             {!q && <UnitInsertPoint moduleId={m.id} atIndex={0} dragging={dragging} />}
             {m.units.map((u, ui) => {
@@ -662,7 +664,7 @@ export function CourseTree() {
                           {!q && u.screens.length === 0 && <EmptyDropZone containerId={u.id} dragging={dragging} />}
                         </ul>
                       </SortableContext>
-                      {!q && <AddScreenButton containerId={u.id} />}
+                      {!q && <AddScreenButton containerId={u.id} label={`Añadir pantalla al ${moduleLabel}…`} level="module" />}
                     </div>
                     {!q && <UnitInsertPoint moduleId={m.id} atIndex={ui + 1} dragging={dragging} />}
                   </Fragment>
@@ -681,6 +683,15 @@ export function CourseTree() {
                     <span className="ed-unit-name">
                       <InlineRename value={u.title} title={`Renombrar ${unitLabel}`}
                         onChange={(title) => updateUnit(u.id, { title })} />
+                      <button type="button" className={`ed-visibility-toggle${u.hide_menu_title ? ' is-hidden' : ''}`}
+                        title={u.hide_menu_title
+                          ? `Título oculto en el menú del alumno: solo se ven sus pantallas sueltas. Clic para volver a mostrarlo`
+                          : `Ocultar el título de esta ${unitLabel} en el menú del alumno (sus pantallas se seguirán viendo)`}
+                        aria-label={u.hide_menu_title ? `Mostrar título de ${unitLabel} en el menú` : `Ocultar título de ${unitLabel} en el menú`}
+                        aria-pressed={u.hide_menu_title}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateUnit(u.id, { hide_menu_title: !u.hide_menu_title }) }}>
+                        <Icon name={u.hide_menu_title ? 'eye-off' : 'eye'} size={13} />
+                      </button>
                     </span>
                     <span className="ed-unit-count">{q ? `${visible.length}/${u.screens.length}` : u.screens.length}</span>
                     {!q && (
@@ -724,27 +735,28 @@ export function CourseTree() {
                       {!q && u.screens.length === 0 && <EmptyDropZone containerId={u.id} dragging={dragging} />}
                     </ul>
                   </SortableContext>
-                  {!q && <AddScreenButton containerId={u.id} />}
+                  {!q && <AddScreenButton containerId={u.id} label={`Añadir pantalla a la ${unitLabel}…`} level="unit" />}
                 </details>
                 {!q && <UnitInsertPoint moduleId={m.id} atIndex={ui + 1} dragging={dragging} />}
                 </Fragment>
               )
             })}
             {!q && (
-              <button className="ed-add" onClick={() => addUnit(m.id)}><Icon name="plus" size={13} /> Añadir {unitLabel}</button>
+              <button className="ed-add ed-add-unit" onClick={() => addUnit(m.id)}><Icon name="plus" size={13} /> Añadir {unitLabel}</button>
             )}
-            {/* Pantallas de cierre del módulo: siempre DESPUÉS de sus unidades
-                (resumen/despedida antes de pasar al siguiente módulo). Mismo
-                tratamiento que las propias de arriba (sortable, puntos de
-                inserción, badge de validación), contenedor propio
-                (`moduleClosingContainerId`) para no mezclarse con `m.screens`. */}
+            {/* Más pantallas del módulo, siempre DESPUÉS de sus unidades (resumen/
+                despedida antes de pasar al siguiente módulo): mismo contenedor de
+                siempre (`module.closing_screens`, `moduleClosingContainerId`) pero
+                sin tratarlo como una «zona de cierre» aparte — ya no hace falta
+                distinguirlo visualmente ahora que lo suelto «entre unidades» tiene
+                su propio mecanismo (`unit.loose`); aquí basta con dejar siempre a
+                mano el botón de añadir al final del módulo. */}
             {(() => {
               const closingContainerId = moduleClosingContainerId(m.id)
               const visible = m.closing_screens.filter(matches)
               if (q && visible.length === 0) return null
               return (
                 <>
-                  {!q && <p className="ed-closing-label">Cierre del {moduleLabel}</p>}
                   <SortableContext items={m.closing_screens.map((s) => s.id)} strategy={verticalListSortingStrategy}>
                     <ul className="ed-screens ed-module-screens">
                       {visible.map((s, i) => (
@@ -759,7 +771,7 @@ export function CourseTree() {
                     </ul>
                   </SortableContext>
                   {!q && (
-                    <AddScreenButton containerId={closingContainerId} label={`Añadir pantalla de cierre del ${moduleLabel}…`} />
+                    <AddScreenButton containerId={closingContainerId} label={`Añadir pantalla al final del ${moduleLabel}…`} level="module" />
                   )}
                 </>
               )
@@ -801,7 +813,7 @@ export function CourseTree() {
             )
           })()}
           {!q && (
-            <AddScreenButton containerId={OUTRO_CONTAINER_ID} label="Añadir pantalla de cierre del SCORM…" />
+            <AddScreenButton containerId={OUTRO_CONTAINER_ID} label="Añadir pantalla de cierre del SCORM…" level="course" />
           )}
         </div>
       </DndContext>

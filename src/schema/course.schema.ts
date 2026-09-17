@@ -259,6 +259,17 @@ export const Unit = z.object({
    *  no por representar contenido real. Default `false` = unidad normal,
    *  compatible con proyectos previos. */
   loose: z.boolean().default(false),
+  /** `true` = esta unidad SÍ es real (título, resumen, exigencia de actividad,
+   *  validación… todo igual) pero su título NO aparece en el menú lateral de
+   *  Vista estudiante ni del SCORM exportado — solo se oculta ahí ese rótulo
+   *  de nivel 2 y la mini-barra de progreso de la unidad; sus pantallas
+   *  siguen listadas en el menú, sueltas (mismo tratamiento visual que
+   *  `module.screens`/`unit.loose`), y la miga de pan de cada pantalla sigue
+   *  nombrando la unidad. No afecta al árbol del editor (ahí la unidad se ve
+   *  igual que siempre) ni a `screenContainers()`/validación: es un ajuste
+   *  puramente de qué pinta `buildMenu()` en la carcasa. Default `false` =
+   *  visible, compatible con proyectos previos. */
+  hide_menu_title: z.boolean().default(false),
 })
 export type Unit = z.infer<typeof Unit>
 

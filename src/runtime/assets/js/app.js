@@ -248,6 +248,26 @@
           html += '</ul></div>';
           return;
         }
+        // Unidad real con el título oculto en el menú (`unit.hide_menu_title`):
+        // sus pantallas se listan igual, solo desaparecen el rótulo de la
+        // unidad y la mini-barra de progreso (la unidad sigue existiendo a
+        // todos los demás efectos: editor, validación, miga de pan de cada
+        // pantalla). `.me-menu-notitle` (no `.me-menu-modscreens`, que SÍ
+        // conserva el aspecto de tarjeta) quita también el padding/margin del
+        // envoltorio: sin título ni barra dentro, esa tarjeta ya no pintaba
+        // nada, solo dejaba un hueco de aire alrededor de la lista.
+        if (u.hide_menu_title) {
+          var titledScreens = u.screens || [];
+          if (!titledScreens.length) return;
+          html += '<div class="me-menu-unit me-menu-notitle" data-start="' + idx + '" data-count="' + titledScreens.length + '"><ul>';
+          titledScreens.forEach(function (sc) {
+            html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(menuScreenLabel(sc)) +
+              '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
+            idx++;
+          });
+          html += '</ul></div>';
+          return;
+        }
         // data-start/data-count delimitan las pantallas de la unidad para el
         // contador y la mini-barra de progreso (refreshMenuChecks los rellena).
         var count = (u.screens || []).length;

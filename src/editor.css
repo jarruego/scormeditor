@@ -9,6 +9,15 @@
      así cualquier cosa teñida de este color se lee de un vistazo como "esto
      es de la nube", en vez de competir visualmente con botones normales. */
   --c-cloud: #0e7c86;
+  /* Acentos de NIVEL en el árbol (SCORM/módulo/unidad): tres tonos bien
+     distinguibles entre sí y de los ya usados en otro sitio con otro
+     significado (TYPE_COLORS de labels.ts, --c-primary, --c-cloud) — aquí no
+     marcan el TIPO de una pantalla ni una acción, marcan A QUÉ ZONA del árbol
+     pertenece una caja o un botón «Añadir…», para que se distingan de un
+     vistazo sin leer el texto. */
+  --c-level-scorm: #3454a5;
+  --c-level-module: #1f8a4c;
+  --c-level-unit: #b5590f;
 }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: system-ui, "Segoe UI", Roboto, sans-serif; color: var(--c-text); background: var(--c-bg); }
@@ -128,8 +137,11 @@ input, select, textarea { font: inherit; padding: .45rem .55rem; border: 1px sol
 .ed-tree-title, .ed-module-title { font-size: .8rem; text-transform: uppercase; color: var(--c-muted); margin: .5rem 0 .25rem; }
 .ed-tree-filter { margin: 0 0 .5rem; }
 /* Cada módulo (y las secciones Evaluación/Materiales) como card suave, para
-   delimitarlo del siguiente sin ruido: borde y fondo apenas perceptibles. */
-.ed-module { border: 1px solid color-mix(in srgb, var(--c-border) 55%, transparent); background: color-mix(in srgb, var(--c-bg) 45%, white); border-radius: 10px; padding: .3rem .55rem .55rem; margin: 0 0 .7rem; }
+   delimitarlo del siguiente sin ruido: borde y fondo apenas perceptibles. Es
+   también la caja de nivel SCORM por defecto (introducción/cierre del
+   paquete, Evaluación, Materiales — ver más abajo «Zonas por nivel»);
+   `details.ed-tree-module` la sobreescribe con el acento de módulo. */
+.ed-module { border: 1px solid color-mix(in srgb, var(--c-level-scorm) 30%, var(--c-border)); background: color-mix(in srgb, var(--c-level-scorm) 4%, white); border-radius: 10px; padding: .3rem .55rem .55rem; margin: 0 0 .7rem; }
 .ed-module > .ed-module-title { margin-top: .2rem; }
 /* Introducción del paquete SCORM: pantallas sueltas antes de cualquier módulo — mismo
    tratamiento de tarjeta que un módulo, sin renombrado (no hay título que
@@ -154,9 +166,16 @@ details.ed-tree-module > summary.ed-module-title { display: flex; align-items: b
 details.ed-tree-module > summary.ed-module-title::-webkit-details-marker { display: none; }
 details.ed-tree-module > summary .ed-module-name::before { content: ''; display: inline-block; width: 7px; height: 7px; margin: 0 .45rem .1rem 0; border-right: 1.8px solid var(--c-muted); border-bottom: 1.8px solid var(--c-muted); transform: rotate(-45deg); transition: transform .15s ease; }
 details.ed-tree-module[open] > summary .ed-module-name::before { transform: rotate(45deg); }
+/* Zonas por nivel: cada módulo real, en el acento de módulo — un punto más
+   marcado que el genérico `.ed-module` (nivel SCORM) por ser el contenedor
+   principal del árbol; cada unidad, en su propia caja con el acento de
+   unidad (antes solo tenía margen, sin caja propia) — así las tres zonas
+   (SCORM/módulo/unidad) se distinguen de un vistazo sin leer nada, tanto por
+   el borde como por el fondo. */
+details.ed-tree-module { border-color: color-mix(in srgb, var(--c-level-module) 40%, var(--c-border)); background: color-mix(in srgb, var(--c-level-module) 5%, white); }
 /* Unidades plegables */
-details.ed-tree-unit { margin: .25rem 0 .5rem; }
-details.ed-tree-unit > summary.ed-unit-title { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; font-weight: 600; margin: .5rem 0 .25rem; cursor: pointer; user-select: none; list-style: none; }
+details.ed-tree-unit { margin: .35rem 0 .5rem; padding: .3rem .5rem .45rem; border: 1px solid color-mix(in srgb, var(--c-level-unit) 38%, var(--c-border)); border-radius: 8px; background: color-mix(in srgb, var(--c-level-unit) 6%, white); }
+details.ed-tree-unit > summary.ed-unit-title { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; font-weight: 600; margin: 0 0 .25rem; cursor: pointer; user-select: none; list-style: none; }
 details.ed-tree-unit > summary.ed-unit-title::-webkit-details-marker { display: none; }
 /* Chevron propio (borde girado, mismo lenguaje que los iconos SVG). */
 details.ed-tree-unit > summary .ed-unit-name::before { content: ''; display: inline-block; width: 7px; height: 7px; margin: 0 .45rem .1rem 0; border-right: 1.8px solid var(--c-muted); border-bottom: 1.8px solid var(--c-muted); transform: rotate(-45deg); transition: transform .15s ease; }
@@ -263,11 +282,16 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(4
 .ed-add { width: 100%; margin: .35rem 0 .75rem; border-style: dashed; color: var(--c-muted); }
 /* Estructura desde el árbol (plan UX fase 7): mover/eliminar módulo y unidad */
 .ed-add-module { margin-top: 0; }
-/* Divisor sutil antes de las pantallas de cierre de un módulo (después de sus
-   unidades): mismo lenguaje visual discreto que el resto del árbol, sin
-   competir con el título del módulo ni con el de una unidad. */
-.ed-closing-label { margin: .6rem 0 .3rem; padding-top: .6rem; border-top: 1px dashed var(--c-border);
-  font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--c-muted); }
+/* Botones «Añadir…» coloreados por nivel (SCORM/módulo/unidad, `AddScreenButton`
+   `level` y los botones de añadir módulo/unidad) — mismo acento que la caja de
+   esa zona (arriba), para que se lea de un vistazo a qué nivel cae la pantalla
+   o el contenedor nuevo antes de leer el texto del botón. */
+.ed-add-course { border-color: color-mix(in srgb, var(--c-level-scorm) 55%, var(--c-border)); color: color-mix(in srgb, var(--c-level-scorm) 75%, var(--c-muted)); }
+.ed-add-course:hover:not(:disabled) { border-color: var(--c-level-scorm); background: color-mix(in srgb, var(--c-level-scorm) 8%, var(--c-surface)); color: var(--c-level-scorm); }
+.ed-add-module { border-color: color-mix(in srgb, var(--c-level-module) 55%, var(--c-border)); color: color-mix(in srgb, var(--c-level-module) 75%, var(--c-muted)); }
+.ed-add-module:hover:not(:disabled) { border-color: var(--c-level-module); background: color-mix(in srgb, var(--c-level-module) 8%, var(--c-surface)); color: var(--c-level-module); }
+.ed-add-unit { border-color: color-mix(in srgb, var(--c-level-unit) 55%, var(--c-border)); color: color-mix(in srgb, var(--c-level-unit) 75%, var(--c-muted)); }
+.ed-add-unit:hover:not(:disabled) { border-color: var(--c-level-unit); background: color-mix(in srgb, var(--c-level-unit) 8%, var(--c-surface)); color: var(--c-level-unit); }
 /* Punto de inserción ENTRE unidades (CourseTree.tsx, `UnitInsertPoint`): mismo
    lenguaje visual que `.ed-insert` (divisor con «+» que solo se revela al
    pasar el ratón/enfocar), pero fuera de un `<ul>` — vive directo dentro del
@@ -785,6 +809,16 @@ button.ed-pill.info:hover:not(:disabled) { background: #e8f0fe; }
 /* Renombrado inline (título del curso, módulos y unidades) */
 .ed-rename { border: none; background: none; padding: 0 .25rem; margin-left: .15rem; color: var(--c-muted); font-size: .85rem; cursor: pointer; opacity: .35; }
 .ed-rename:focus, .ed-module-title:hover .ed-rename, .ed-unit-title:hover .ed-rename, .ed-course-name:hover .ed-rename { opacity: 1; }
+/* Ojo a la derecha del lápiz (solo unidades): oculta/muestra el título de esa
+   unidad en el menú lateral de Vista estudiante/SCORM (`unit.hide_menu_title`)
+   sin tocar sus pantallas, que se siguen viendo sueltas ahí (ver
+   `carcasa-navegacion.md`). Mismo lenguaje de opacidad-al-pasar-el-ratón que
+   el lápiz, pero con estado propio: activado (oculto) se queda siempre visible
+   y en rojo, para no perder de vista que ese título no sale en el menú. */
+.ed-visibility-toggle { display: inline-flex; align-items: center; border: none; background: none; padding: 0 .2rem; margin-left: .1rem; color: var(--c-muted); cursor: pointer; opacity: .35; }
+.ed-visibility-toggle:focus, .ed-unit-title:hover .ed-visibility-toggle { opacity: 1; }
+.ed-visibility-toggle.is-hidden { opacity: 1; color: #b3261e; }
+.ed-visibility-toggle.is-hidden:hover { color: #8f1e17; }
 .ed-rename-input { font: inherit; width: 100%; min-width: 8rem; padding: .1rem .3rem; border: 1px solid var(--c-primary); border-radius: 4px; }
 
 /* Gestor de objetivos de aprendizaje (modal) */

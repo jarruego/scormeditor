@@ -6,12 +6,22 @@
 
 ## El árbol (`CourseTree.tsx`)
 Introducción del paquete SCORM → módulos (pantallas propias → unidades, con bloques de
-pantallas sueltas intercalables entre ellas → cierre del módulo) → cierre del paquete
-SCORM → secciones «Evaluación» (test final) y «Materiales» (glosario/bibliografía).
-Añadir pantalla por unidad, suelta entre unidades, por módulo, en el cierre de un
-módulo, suelta antes de todo (introducción) o suelta después de todo (cierre del
-SCORM); duplicar/eliminar por pantalla (eliminar pide confirmación con `confirmDialog`,
-nombrando la pantalla).
+pantallas sueltas intercalables entre ellas → más pantallas al final del módulo) →
+cierre del paquete SCORM → secciones «Evaluación» (test final) y «Materiales»
+(glosario/bibliografía). Añadir pantalla por unidad, suelta entre unidades, por módulo,
+al final de un módulo, suelta antes de todo (introducción) o suelta después de todo
+(cierre del SCORM) — cada botón «Añadir pantalla…» deja siempre claro el nivel
+(SCORM/módulo/unidad) en su texto y en el título del propio selector de recetas
+(`AddScreenModal`, «Nueva pantalla · {nivel}»); duplicar/eliminar por pantalla (eliminar
+pide confirmación con `confirmDialog`, nombrando la pantalla).
+
+**Zonas por nivel, con color propio**: SCORM (azul, `--c-level-scorm`), módulo (verde,
+`--c-level-module`) y unidad (ámbar, `--c-level-unit`) — variables en `editor.css`. Cada
+caja del árbol (`.ed-module` para SCORM/Evaluación/Materiales, `details.ed-tree-module`
+para un módulo real, `details.ed-tree-unit` para una unidad) lleva el borde y el fondo
+tintados con el acento de su nivel, y los botones «Añadir pantalla…»/«Añadir
+módulo»/«Añadir unidad» (`ed-add-course`/`ed-add-module`/`ed-add-unit`) se colorean
+igual — así se distingue de un vistazo a qué zona pertenece algo sin leer el texto.
 
 Dos niveles con el mismo patrón «propias + cierre» (curso y módulo) — pantallas sueltas
 que no pertenecen al contenido real de ningún contenedor, solo sirven para presentar o
@@ -33,16 +43,18 @@ cerrar el suyo:
   todo lo demás (progreso, finalización, validación) cuentan como cualquier pantalla.
   El cierre del SCORM va lo último de todo en la navegación del alumno (`flatten()` en
   app.js): después incluso del test final y de la pantalla de Resultados, si los hay.
-- **Pantallas propias del módulo y su cierre** (`module.screens`/`closing_screens`,
-  portada/presentación al principio, resumen/despedida al final del bloque, DESPUÉS de
-  todas sus unidades): en el árbol, `screens` se lista bajo el título del módulo
+- **Pantallas propias del módulo y más pantallas al final** (`module.screens`/
+  `closing_screens`, portada/presentación al principio, más contenido DESPUÉS de todas
+  sus unidades): en el árbol, `screens` se lista bajo el título del módulo
   (`.ed-module-screens`, mismo `ScreenItem` con puntos de inserción) con su botón
-  «Añadir pantalla al módulo…»; `closing_screens` se lista tras las unidades, con un
-  divisor sutil (`.ed-closing-label`, «Cierre del {módulo}») y su propio botón «Añadir
-  pantalla de cierre del {módulo}…» (mismo `AddScreenModal`; las recetas evalúan
-  `uniquePerUnit` y `defaultTitle` contra el módulo en ambos casos). Id de contenedor
-  derivado `moduleClosingContainerId(moduleId)` (formato `"{id}:closing"` — nunca choca
-  con un id real, que nunca lleva `:`).
+  «Añadir pantalla al módulo…»; `closing_screens` se lista tras las unidades, con el
+  botón siempre a mano «Añadir pantalla al final del módulo…» — sin ningún divisor ni
+  rótulo de «cierre» aparte: ya no hace falta distinguirlo como una zona propia ahora
+  que lo suelto «entre unidades» tiene su propio mecanismo (`unit.loose`, abajo); sigue
+  siendo el mismo contenedor de siempre por debajo (mismo `AddScreenModal`; las recetas
+  evalúan `uniquePerUnit` y `defaultTitle` contra el módulo en ambos casos). Id de
+  contenedor derivado `moduleClosingContainerId(moduleId)` (formato `"{id}:closing"` —
+  nunca choca con un id real, que nunca lleva `:`).
 - **Pantallas sueltas entre unidades** (`unit.loose`): un elemento de `m.units[]` cuyo
   flag `loose` vale `true` NO es una unidad real — sin título, sin resumen, sin
   `<details>` plegable, sin miga de pan de unidad ni exigencia de resumen/actividad;
@@ -65,6 +77,19 @@ cerrar el suyo:
   se tratan exactamente como las propias del módulo para cualquier propósito transversal
   (miga de pan, nivel de portada, agrupación de menú): en `screenContainers()`
   (`traverse.ts`) se reportan con `unit: null`, igual que `module.screens`.
+- **Ocultar el título de una unidad en el menú del alumno** (`unit.hide_menu_title`): a
+  diferencia de `unit.loose`, esta SÍ es una unidad real en todo lo demás — título,
+  resumen, exigencia de actividad, validación, árbol del editor, todo igual. Solo cambia
+  qué pinta `buildMenu()` en la carcasa (ver `carcasa-navegacion.md`): con el flag a
+  `true` desaparecen el rótulo de la unidad y su mini-barra de progreso del menú lateral,
+  pero sus pantallas se siguen listando ahí, sueltas y sin el envoltorio en tarjeta
+  (`.me-menu-unit.me-menu-notitle`, sin fondo/padding — distinto de `.me-menu-modscreens`,
+  que sí conserva ese aspecto de tarjeta en `unit.loose`/`module.screens`) — la miga de pan
+  de cada pantalla sigue nombrando la unidad, solo el menú deja de hacerlo. Se activa con
+  el botón ojo/ojo-tachado a la derecha del lápiz de `InlineRename`
+  (`.ed-visibility-toggle`, icono `eye`/`eye-off`) en el `<summary>` de la unidad —
+  siempre visible en rojo cuando está activo, para no perderlo de vista; ausente en un
+  bloque `unit.loose` (no tiene título que ocultar).
 
 El recorrido canónico introducción→módulo→(pantallas de módulo)→unidad o bloque
 suelto→…→(cierre de módulo)→cierre del curso vive en `src/schema/traverse.ts`

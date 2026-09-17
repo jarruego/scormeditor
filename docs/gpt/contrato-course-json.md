@@ -191,6 +191,10 @@ Reglas que NO se pueden romper:
   si no, **no crees estos bloques** (no los añadas por rellenar). `modules[].
   closing_screens` (arriba) es lo equivalente a nivel de módulo, tras TODAS
   sus unidades.
+- `units[].hide_menu_title` (opcional, def. `false`): preferencia puramente de
+  presentación (oculta el rótulo de esa unidad en el menú del alumno, sus
+  pantallas se siguen viendo) que decide el autor humano después, desde el
+  editor — **nunca la pongas tú**: omite siempre esta clave.
 - **El `title` de un módulo nunca repite el título del curso/SCORM**
   (`course.title`/`scorm.title`): esa presentación ya va en la portada de
   `intro_screens` (ver §1). Dale al módulo un nombre propio, específico de lo

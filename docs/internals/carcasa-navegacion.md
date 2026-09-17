@@ -39,6 +39,16 @@
   las propias/de cierre del módulo, arriba), en su sitio en el orden entre el bloque de
   la unidad anterior y el de la siguiente, sin `data-count`/mini-barra de progreso ni
   título propio.
+- **Título de unidad oculto en el menú** (`unit.hide_menu_title`): a diferencia de
+  `unit.loose`, esta unidad SÍ es real (título, resumen, validación… todo igual, ver
+  `editor-pantallas.md`) — solo cambia lo que pinta `buildMenu()`: con el flag a `true`
+  sus pantallas se listan sueltas, sin `.me-menu-utitle`/`.me-menu-uprog`, en un
+  envoltorio `.me-menu-unit.me-menu-notitle` (NO `.me-menu-modscreens`, que conserva el
+  aspecto de tarjeta de `.me-menu-unit` — sin título ni barra dentro no pintaba nada:
+  `.me-menu-notitle` quita también el fondo/padding/margen, así no queda un hueco de
+  aire de más). `flatten()` no cambia nada (sigue reportando `unit: u`, no `null`): la
+  miga de pan de cada pantalla y el `coverLevel` de una portada siguen contando la
+  unidad real — solo el menú lateral deja de nombrarla.
 - **Prefijo «Actividad: » en las pantallas evaluables**: `menuScreenLabel(sc)` (app.js,
   usada por `buildMenu()` en los tres bucles que generan `.me-menu-link`: pantallas de
   módulo, de unidad y sintéticas finales) antepone `"Actividad: "` al rótulo del

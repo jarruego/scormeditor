@@ -227,7 +227,7 @@ interface CourseState {
   /** Renombra un módulo (título estructural del menú lateral). */
   updateModule: (id: string, patch: { title?: string }) => void
   /** Renombra una unidad (título estructural del menú lateral). */
-  updateUnit: (id: string, patch: { title?: string; summary?: string }) => void
+  updateUnit: (id: string, patch: { title?: string; summary?: string; hide_menu_title?: boolean }) => void
   /** Renombra un objetivo de aprendizaje en TODOS sus usos (pantallas,
    *  interacciones y preguntas de test; comparación normalizada). */
   renameObjective: (from: string, to: string) => void
@@ -442,7 +442,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
       // portada de módulo (`.me-module-cover`, distinta a propósito de la de
       // unidad — arquitectura-runtime.md) casi nunca llegaba a usarse.
       screens: [blankScreen({ type: 'cover', title: moduleTitle })],
-      units: [{ id: newId('u'), title: unitTitle, summary: '', screens: [blankScreen({ type: 'cover', title: unitTitle })], status: 'ok', loose: false }],
+      units: [{ id: newId('u'), title: unitTitle, summary: '', screens: [blankScreen({ type: 'cover', title: unitTitle })], status: 'ok', loose: false, hide_menu_title: false }],
       closing_screens: [],
     })
     set({ course })
@@ -455,7 +455,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     const m = course.modules.find((x) => x.id === moduleId)!
     const unitTitle = `${course.unit_label || 'Unidad'} ${m.units.length + 1}`
     // Portada propia, mismo motivo que en addModule.
-    m.units.push({ id: newId('u'), title: unitTitle, summary: '', screens: [blankScreen({ type: 'cover', title: unitTitle })], status: 'ok', loose: false })
+    m.units.push({ id: newId('u'), title: unitTitle, summary: '', screens: [blankScreen({ type: 'cover', title: unitTitle })], status: 'ok', loose: false, hide_menu_title: false })
     set({ course })
   },
 
@@ -475,7 +475,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     const mod = course.modules.find((x) => x.id === moduleId)!
     const id = newId('u')
     const clamped = Math.max(0, Math.min(atIndex, mod.units.length))
-    mod.units.splice(clamped, 0, { id, title: '', summary: '', screens: [], status: 'ok', loose: true })
+    mod.units.splice(clamped, 0, { id, title: '', summary: '', screens: [], status: 'ok', loose: true, hide_menu_title: false })
     set({ course })
     return id
   },
