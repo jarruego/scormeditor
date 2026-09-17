@@ -146,11 +146,16 @@ pantalla (eliminar pide confirmación con `confirmDialog`, nombrando la pantalla
 ### Estructura desde el árbol y «Nuevo (vacío)»
 Sin esto, borrar la estructura demo era un callejón sin salida (no había forma de crear
 módulos/unidades):
-- **Store**: `addModule()` (módulo al final con una unidad vacía), `addUnit(moduleId)`,
-  `removeUnit(id)` y `removeModule(id)` (limpian `selectedScreenId` si la pantalla
-  seleccionada estaba dentro), y `resetEmpty()` (curso mínimo vía `Course.parse`: un
-  módulo/unidad con la portada; **vacía también los assets**, a diferencia de
-  `resetSample`, para no arrastrar binarios del proyecto anterior).
+- **Store**: `addModule()` (módulo al final con una unidad dentro) y `addUnit(moduleId)`
+  dan a cada contenedor nuevo **su propia portada** (`blankScreen({type:'cover', title})`
+  con el mismo título que el contenedor) — así se ve el título en grande antes de entrar
+  en materia, en vez de saltar directo al primer contenido; sin esto la portada de
+  módulo (`.me-module-cover`, con diseño propio a propósito — `arquitectura-runtime.md`)
+  casi nunca llegaba a usarse. `removeUnit(id)` y `removeModule(id)` limpian
+  `selectedScreenId` si la pantalla seleccionada estaba dentro. `resetEmpty()` (curso
+  mínimo vía `Course.parse`: un módulo/unidad con una única portada compartida, no dos)
+  **vacía también los assets**, a diferencia de `resetSample`, para no arrastrar
+  binarios del proyecto anterior.
 - **Árbol**: «+ Añadir unidad» al pie de cada módulo, «+ Añadir módulo» tras el último
   (`.ed-add-module`), y junto al nombre de módulo/unidad las herramientas discretas
   `.ed-struct-tools`: **▲/▼ para reordenar** — módulos dentro del curso; unidades dentro

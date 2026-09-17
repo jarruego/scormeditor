@@ -403,11 +403,18 @@ export const useCourseStore = create<CourseState>((set, get) => {
   addModule: () => {
     snapshot()
     const course = clone(get().course)
+    const moduleTitle = `${course.module_label || 'Módulo'} ${course.modules.length + 1}`
+    const unitTitle = `${course.unit_label || 'Unidad'} 1`
     course.modules.push({
       id: newId('m'),
-      title: `${course.module_label || 'Módulo'} ${course.modules.length + 1}`,
-      screens: [],
-      units: [{ id: newId('u'), title: `${course.unit_label || 'Unidad'} 1`, summary: '', screens: [], status: 'ok' }],
+      title: moduleTitle,
+      // Portada propia (mismo título que el módulo, editable después sin
+      // vínculo): así el alumno ve el título en grande antes de entrar en
+      // materia, en vez de saltar directo a la primera unidad. Sin esto la
+      // portada de módulo (`.me-module-cover`, distinta a propósito de la de
+      // unidad — arquitectura-runtime.md) casi nunca llegaba a usarse.
+      screens: [blankScreen({ type: 'cover', title: moduleTitle })],
+      units: [{ id: newId('u'), title: unitTitle, summary: '', screens: [blankScreen({ type: 'cover', title: unitTitle })], status: 'ok' }],
     })
     set({ course })
   },
@@ -417,7 +424,9 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot()
     const course = clone(get().course)
     const m = course.modules.find((x) => x.id === moduleId)!
-    m.units.push({ id: newId('u'), title: `${course.unit_label || 'Unidad'} ${m.units.length + 1}`, summary: '', screens: [], status: 'ok' })
+    const unitTitle = `${course.unit_label || 'Unidad'} ${m.units.length + 1}`
+    // Portada propia, mismo motivo que en addModule.
+    m.units.push({ id: newId('u'), title: unitTitle, summary: '', screens: [blankScreen({ type: 'cover', title: unitTitle })], status: 'ok' })
     set({ course })
   },
 
