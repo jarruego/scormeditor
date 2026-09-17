@@ -174,8 +174,14 @@ details.ed-tree-module[open] > summary .ed-module-name::before { transform: rota
    el borde como por el fondo. */
 details.ed-tree-module { border-color: color-mix(in srgb, var(--c-level-module) 40%, var(--c-border)); background: color-mix(in srgb, var(--c-level-module) 5%, white); }
 /* Unidades plegables */
-details.ed-tree-unit { margin: .35rem 0 .5rem; padding: .3rem .5rem .45rem; border: 1px solid color-mix(in srgb, var(--c-level-unit) 38%, var(--c-border)); border-radius: 8px; background: color-mix(in srgb, var(--c-level-unit) 6%, white); }
-details.ed-tree-unit > summary.ed-unit-title { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; font-weight: 600; margin: 0 0 .25rem; cursor: pointer; user-select: none; list-style: none; }
+/* Sin padding lateral en la propia caja: las pantallas de la unidad (y su
+   botón «Añadir pantalla…») quedan exactamente al mismo ancho que las del
+   módulo, en vez de un nivel extra de sangrado por encima del que ya pone el
+   módulo — la caja de nivel unidad solo debe verse en el borde/fondo, no
+   desplazar el contenido. El respiro lateral que sí necesita el título vive
+   en el propio `summary`, no en el `<details>`. */
+details.ed-tree-unit { margin: .35rem 0 .5rem; padding: .3rem 0 .45rem; border: 1px solid color-mix(in srgb, var(--c-level-unit) 38%, var(--c-border)); border-radius: 8px; background: color-mix(in srgb, var(--c-level-unit) 6%, white); }
+details.ed-tree-unit > summary.ed-unit-title { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; font-weight: 600; margin: 0 0 .25rem; padding: 0 .5rem; cursor: pointer; user-select: none; list-style: none; }
 details.ed-tree-unit > summary.ed-unit-title::-webkit-details-marker { display: none; }
 /* Chevron propio (borde girado, mismo lenguaje que los iconos SVG). */
 details.ed-tree-unit > summary .ed-unit-name::before { content: ''; display: inline-block; width: 7px; height: 7px; margin: 0 .45rem .1rem 0; border-right: 1.8px solid var(--c-muted); border-bottom: 1.8px solid var(--c-muted); transform: rotate(-45deg); transition: transform .15s ease; }
