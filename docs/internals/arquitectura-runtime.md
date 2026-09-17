@@ -296,8 +296,8 @@ que lo etiquete).
   `flatten()` inserta `screens` en la lista plana **antes** de las unidades del módulo y
   `closing_screens` **después** de ellas (ambas con `unit: null` — el resto del runtime
   ya tolera ese null: crumb, coverLevel, progressSnapshot, gating). En el menú, las dos
-  cuelgan del título del módulo en sendos bloques `.me-menu-modscreens` sin rótulo de
-  unidad ni mini-barra (`refreshMenuChecks` tolera la ausencia de contador/barra) — el
+  cuelgan del título del módulo en sendos bloques `.me-menu-unit` sin rótulo de unidad
+  ni mini-barra (`refreshMenuChecks` tolera la ausencia de contador/barra) — el
   segundo, tras el bloque de la última unidad. Simétricamente, `course.closing_screens`
   es a `intro_screens` lo que el cierre de un módulo es a sus pantallas propias: sueltas,
   sin módulo, pero **al final de todo** `SCREENS` en vez de al principio — después
@@ -306,7 +306,7 @@ que lo etiquete).
 - **Pantallas sueltas entre unidades** (`unit.loose`): un elemento de `m.units` con
   `loose: true` no es una unidad real — `flatten()` empuja sus `screens` con
   `unit: null` (igual que `module.screens`, arriba), NO con `unit: u`. En `buildMenu()`
-  sus pantallas cuelgan sueltas en un bloque `.me-menu-modscreens` (sin rótulo de unidad
+  sus pantallas cuelgan sueltas en un bloque `.me-menu-unit` (sin rótulo de unidad
   ni mini-barra), igual tratamiento que las propias/de cierre del módulo, en vez de
   agruparse bajo el título de ninguna unidad. Ese orden replica el de
   `screenContainers()` en el editor (`src/schema/traverse.ts`) — mantener ambos en

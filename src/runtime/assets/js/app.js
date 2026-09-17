@@ -223,7 +223,7 @@
       // de unidad ni mini-barra (refreshMenuChecks tolera su ausencia).
       var mCount = (m.screens || []).length;
       if (mCount) {
-        html += '<div class="me-menu-unit me-menu-modscreens" data-start="' + idx + '" data-count="' + mCount + '"><ul>';
+        html += '<div class="me-menu-unit" data-start="' + idx + '" data-count="' + mCount + '"><ul>';
         (m.screens || []).forEach(function (sc) {
           html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(menuScreenLabel(sc)) +
             '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
@@ -239,7 +239,7 @@
         if (u.loose) {
           var looseScreens = u.screens || [];
           if (!looseScreens.length) return;
-          html += '<div class="me-menu-unit me-menu-modscreens" data-start="' + idx + '" data-count="' + looseScreens.length + '"><ul>';
+          html += '<div class="me-menu-unit" data-start="' + idx + '" data-count="' + looseScreens.length + '"><ul>';
           looseScreens.forEach(function (sc) {
             html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(menuScreenLabel(sc)) +
               '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
@@ -252,14 +252,11 @@
         // sus pantallas se listan igual, solo desaparecen el rótulo de la
         // unidad y la mini-barra de progreso (la unidad sigue existiendo a
         // todos los demás efectos: editor, validación, miga de pan de cada
-        // pantalla). `.me-menu-notitle` (no `.me-menu-modscreens`, que SÍ
-        // conserva el aspecto de tarjeta) quita también el padding/margin del
-        // envoltorio: sin título ni barra dentro, esa tarjeta ya no pintaba
-        // nada, solo dejaba un hueco de aire alrededor de la lista.
+        // pantalla).
         if (u.hide_menu_title) {
           var titledScreens = u.screens || [];
           if (!titledScreens.length) return;
-          html += '<div class="me-menu-unit me-menu-notitle" data-start="' + idx + '" data-count="' + titledScreens.length + '"><ul>';
+          html += '<div class="me-menu-unit" data-start="' + idx + '" data-count="' + titledScreens.length + '"><ul>';
           titledScreens.forEach(function (sc) {
             html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(menuScreenLabel(sc)) +
               '<span class="me-menu-check" aria-hidden="true"></span></button></li>';
@@ -286,7 +283,7 @@
       // arriba (sueltas, sin unidad ni mini-barra), después de sus unidades.
       var closingCount = (m.closing_screens || []).length;
       if (closingCount) {
-        html += '<div class="me-menu-unit me-menu-modscreens" data-start="' + idx + '" data-count="' + closingCount + '"><ul>';
+        html += '<div class="me-menu-unit" data-start="' + idx + '" data-count="' + closingCount + '"><ul>';
         (m.closing_screens || []).forEach(function (sc) {
           html += '<li><button class="me-menu-link" data-idx="' + idx + '">' + esc(menuScreenLabel(sc)) +
             '<span class="me-menu-check" aria-hidden="true"></span></button></li>';

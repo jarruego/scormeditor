@@ -88,24 +88,20 @@ body {
 .me-menu-uprog { height: 4px; border-radius: 99px; background: var(--me-border); margin: 0 0 .35rem; overflow: hidden; }
 .me-menu-uprog-fill { height: 100%; width: 0; background: var(--me-accent); border-radius: 99px; transition: width .3s ease; }
 .me-menu ul { list-style: none; margin: 0; padding: 0; }
-/* Tema/unidad como bloque diferenciado: fondo sutil + esquinas redondeadas,
-   nada de bordes duros ni sombras — el mismo tratamiento lo llevan más abajo
-   Materiales (Glosario/Recursos) y Evaluación (Test final/Resultados), así
-   todos los "bloques" del índice se leen con el mismo lenguaje visual. */
-.me-menu-unit {
-  background: color-mix(in srgb, var(--me-bg) 65%, transparent);
-  border-radius: 8px; padding: .45rem .55rem .55rem; margin: 0 0 .4rem;
-}
+/* Envoltorio de cada bloque de pantallas del índice (unidad con título,
+   pantallas propias/de cierre del módulo, bloque suelto entre unidades,
+   unidad con el título oculto): SIN tarjeta propia (ni fondo, ni padding, ni
+   esquinas) — mismo margen exterior siempre, para que una pantalla se vea
+   igual de espaciada esté donde esté. Antes llevaba fondo sutil + padding
+   (`me-menu-modscreens`/`me-menu-notitle` corregían caso a caso encima de
+   eso); ahora es la MISMA regla para los cinco casos, sin excepciones que
+   mantener sincronizadas. El agrupamiento visual de una unidad con título lo
+   dan `.me-menu-utitle`/`.me-menu-uprog` (con su propio margen), no una caja
+   alrededor de sus pantallas. */
+.me-menu-unit { margin: 0 0 .4rem; }
 /* Separador entre módulos (si hay más de uno): línea fina, sin fondo — el
    propio módulo no lleva tarjeta (su título ya destaca en mayúsculas). */
 .me-menu-module + .me-menu-module { border-top: 1px solid var(--me-border); padding-top: .5rem; margin-top: .5rem; }
-/* Pantallas propias del módulo: cuelgan del título del módulo, sin rótulo de unidad */
-.me-menu-modscreens { margin: .15rem 0 .35rem; }
-/* Unidad con el título oculto en el menú (`unit.hide_menu_title`, app.js): sin
-   título ni mini-barra dentro, la tarjeta de `.me-menu-unit` (fondo, padding,
-   esquinas) no pintaba nada — solo dejaba un hueco de aire de más alrededor
-   de sus pantallas sueltas. Quita ese envoltorio del todo. */
-.me-menu-notitle { background: none; border-radius: 0; padding: 0; margin: 0; }
 .me-menu-link {
   display: flex; justify-content: space-between; align-items: center; gap: .5rem; width: 100%;
   text-align: left; background: none; border: none; padding: .4rem .5rem; border-radius: 6px;

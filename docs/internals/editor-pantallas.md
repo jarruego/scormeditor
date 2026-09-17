@@ -82,10 +82,10 @@ cerrar el suyo:
   resumen, exigencia de actividad, validación, árbol del editor, todo igual. Solo cambia
   qué pinta `buildMenu()` en la carcasa (ver `carcasa-navegacion.md`): con el flag a
   `true` desaparecen el rótulo de la unidad y su mini-barra de progreso del menú lateral,
-  pero sus pantallas se siguen listando ahí, sueltas y sin el envoltorio en tarjeta
-  (`.me-menu-unit.me-menu-notitle`, sin fondo/padding — distinto de `.me-menu-modscreens`,
-  que sí conserva ese aspecto de tarjeta en `unit.loose`/`module.screens`) — la miga de pan
-  de cada pantalla sigue nombrando la unidad, solo el menú deja de hacerlo. Se activa con
+  pero sus pantallas se siguen listando ahí, sueltas en el mismo `.me-menu-unit` sin
+  tarjeta propia que usan también `unit.loose`/`module.screens` (ver
+  `carcasa-navegacion.md`) — la miga de pan de cada pantalla sigue nombrando la unidad,
+  solo el menú deja de hacerlo. Se activa con
   el botón ojo/ojo-tachado a la derecha del lápiz de `InlineRename`
   (`.ed-visibility-toggle`, icono `eye`/`eye-off`) en el `<summary>` de la unidad —
   siempre visible en rojo cuando está activo, para no perderlo de vista; ausente en un

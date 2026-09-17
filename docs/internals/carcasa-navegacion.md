@@ -27,27 +27,32 @@
   pertenecen a ninguno) — mismo `menuScreenLabel()` que el resto (prefijo
   «Actividad: » si procede). Ver `editor-pantallas.md` para el lado del editor (árbol,
   recetas).
+- **`.me-menu-unit`, un único envoltorio sin tarjeta propia**: el `<div>` que agrupa
+  cada bloque de pantallas del índice (unidad con título, pantallas propias/de cierre
+  del módulo, bloque suelto entre unidades, unidad con el título oculto) no lleva fondo
+  ni padding — solo `margin: 0 0 .4rem`, igual en los cinco casos, para que una pantalla
+  se vea igual de espaciada esté donde esté. El agrupamiento visual de una unidad con
+  título lo dan `.me-menu-utitle`/`.me-menu-uprog` (con su propio margen), no una caja
+  alrededor de sus pantallas. (Antes había `.me-menu-modscreens`/`.me-menu-notitle`
+  corrigiendo caso a caso encima de una tarjeta con fondo/padding heredada de
+  `.me-menu-unit` — una sola regla sin tarjeta sustituye a las tres.)
 - **Cierre, en dos niveles**: cada módulo puede llevar `closing_screens` (pantallas
-  sueltas después de TODAS sus unidades, bloque `.me-menu-unit.me-menu-modscreens` sin
-  rótulo de unidad) y el curso puede llevar `course.closing_screens` (simétrico a
-  `intro_screens`, pero lo último de todo en `flatten()` — después incluso del test
-  final y de Resultados). Ver «Evaluación» más abajo para cómo `buildMenu()` separa ese
-  cierre del curso del bloque de Evaluación.
+  sueltas después de TODAS sus unidades, mismo `.me-menu-unit` sin rótulo de unidad) y
+  el curso puede llevar `course.closing_screens` (simétrico a `intro_screens`, pero lo
+  último de todo en `flatten()` — después incluso del test final y de Resultados). Ver
+  «Evaluación» más abajo para cómo `buildMenu()` separa ese cierre del curso del bloque
+  de Evaluación.
 - **Pantallas sueltas entre unidades** (`unit.loose`): un elemento de `m.units` con
   `loose: true` no es una unidad real y no tiene bloque de menú aparte — sus pantallas
-  cuelgan sueltas en un bloque `.me-menu-unit.me-menu-modscreens` (mismo tratamiento que
-  las propias/de cierre del módulo, arriba), en su sitio en el orden entre el bloque de
-  la unidad anterior y el de la siguiente, sin `data-count`/mini-barra de progreso ni
-  título propio.
+  cuelgan sueltas en un `.me-menu-unit` (mismo tratamiento que las propias/de cierre del
+  módulo, arriba), en su sitio en el orden entre el bloque de la unidad anterior y el de
+  la siguiente, sin `data-count`/mini-barra de progreso ni título propio.
 - **Título de unidad oculto en el menú** (`unit.hide_menu_title`): a diferencia de
   `unit.loose`, esta unidad SÍ es real (título, resumen, validación… todo igual, ver
   `editor-pantallas.md`) — solo cambia lo que pinta `buildMenu()`: con el flag a `true`
-  sus pantallas se listan sueltas, sin `.me-menu-utitle`/`.me-menu-uprog`, en un
-  envoltorio `.me-menu-unit.me-menu-notitle` (NO `.me-menu-modscreens`, que conserva el
-  aspecto de tarjeta de `.me-menu-unit` — sin título ni barra dentro no pintaba nada:
-  `.me-menu-notitle` quita también el fondo/padding/margen, así no queda un hueco de
-  aire de más). `flatten()` no cambia nada (sigue reportando `unit: u`, no `null`): la
-  miga de pan de cada pantalla y el `coverLevel` de una portada siguen contando la
+  sus pantallas se listan sueltas en un `.me-menu-unit`, sin `.me-menu-utitle`/
+  `.me-menu-uprog`. `flatten()` no cambia nada (sigue reportando `unit: u`, no `null`):
+  la miga de pan de cada pantalla y el `coverLevel` de una portada siguen contando la
   unidad real — solo el menú lateral deja de nombrarla.
 - **Prefijo «Actividad: » en las pantallas evaluables**: `menuScreenLabel(sc)` (app.js,
   usada por `buildMenu()` en los tres bucles que generan `.me-menu-link`: pantallas de
