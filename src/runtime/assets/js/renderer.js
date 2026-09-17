@@ -229,19 +229,22 @@
     // calculado en app.js a partir de entry.module/entry.unit), no un campo
     // fijo del esquema — mover la pantalla de nivel (p. ej. «Subir de nivel»
     // en el árbol, o arrastrarla a mano) le cambia el diseño solo con eso, sin
-    // retipar nada. 'module'/'course' comparten el hero a sangre completa
-    // (.me-module-cover: banda sólida, rompe el margen de la tarjeta, como el
-    // separador de capítulo de un libro de texto — un salto de jerarquía
-    // cualitativo, no solo cuantitativo, frente al hero degradado y contenido
-    // de 'unit'). Deliberadamente SIN ningún rótulo de nivel («Módulo»,
-    // «Unidad»…) encima del título en ningún nivel: al alumno no le aporta
-    // nada y, si el curso usa rótulos personalizados poco frecuentes, chirría
-    // más que ayuda — el propio diseño (banda sólida a sangre completa vs.
-    // hero degradado dentro de la tarjeta) ya distingue el nivel.
+    // retipar nada. Tres niveles, tres tratamientos — sin ningún rótulo de
+    // nivel («Módulo», «Unidad»…) encima del título en ninguno: al alumno no
+    // le aporta nada y, si el curso usa rótulos personalizados poco
+    // frecuentes, chirría más que ayuda.
+    // - 'course' (.me-course-cover): banda sólida a sangre completa, la más
+    //   oscura de las tres — el paquete SCORM es el nivel más externo.
+    // - 'module' (.me-module-cover): misma banda a sangre completa (rompe el
+    //   margen de la tarjeta, como el separador de capítulo de un libro de
+    //   texto) pero más clara que la de 'course' — un salto de jerarquía
+    //   cualitativo frente al hero degradado y CONTENIDO de 'unit', pero un
+    //   escalón por debajo de 'course'.
+    // - 'unit' (.me-cover a secas): hero degradado, contenido en la tarjeta.
     cover: function (s, ctx) {
       var level = (ctx && ctx.coverLevel) || 'unit';
-      var solid = level === 'course' || level === 'module';
-      return '<header class="me-cover' + (solid ? ' me-module-cover' : '') + '">' +
+      var levelClass = level === 'course' ? ' me-course-cover' : level === 'module' ? ' me-module-cover' : '';
+      return '<header class="me-cover' + levelClass + '">' +
         '<h1>' + esc(s.title) + '</h1>' +
         mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) + '</header>';
     },

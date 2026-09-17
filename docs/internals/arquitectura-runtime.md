@@ -233,26 +233,32 @@ que lo etiquete).
   de **esta** pantalla en `SCREENS` y lo pasa a la plantilla como segundo argumento
   (`tpl(screen, ctx)`, solo la plantilla `cover` lo usa) — mover la pantalla de sitio
   (botón «Subir de nivel», arrastre en el árbol, editar `course.json` a mano) le cambia
-  el diseño sin retipar nada, porque el nivel se recalcula en cada render. Dos
-  registros, no tres:
+  el diseño sin retipar nada, porque el nivel se recalcula en cada render. Tres
+  registros, tres tratamientos:
   - **`'unit'`** — hero **contenido** en la tarjeta `.me-screen`: título grande
     centrado sobre banda degradada suave del acento, prose centrada a 560 px.
-  - **`'module'`/`'course'`** — mismo tratamiento a sangre completa (`.me-module-cover`):
-    **rompe el margen de la tarjeta** con márgenes negativos que igualan el padding de
-    `.me-screen` en cada punto de corte (bordes a ras en los cuatro lados, como el
-    separador de capítulo de un libro de texto) y usa un **fondo sólido oscurecido**
-    (`color-mix(in srgb, --me-accent 50%, black)`, no el acento a secas — con texto
-    blanco encima no llega a contraste AA) con texto y enlaces en blanco
-    (`.me-module-cover a`, subrayado: el azul `--me-primary` del resto del runtime
-    queda casi invisible sobre ese fondo).
+  - **`'module'`/`'course'`** — mismo tratamiento ESTRUCTURAL a sangre completa
+    (`.me-module-cover`/`.me-course-cover`): **rompen el margen de la tarjeta** con
+    márgenes negativos que igualan el padding de `.me-screen` en cada punto de corte
+    (bordes a ras en los cuatro lados, como el separador de capítulo de un libro de
+    texto) y usan un **fondo sólido oscurecido** con texto y enlaces en blanco
+    (`.me-module-cover a`/`.me-course-cover a`, subrayado: el azul `--me-primary` del
+    resto del runtime queda casi invisible sobre ese fondo) — pero NO el mismo tono:
+    `'course'` (el nivel más externo) usa más negro que `'module'`
+    (`color-mix(in srgb, --me-accent 30%, black)` frente a `50%` — menos porcentaje de
+    acento en `color-mix` es MÁS negro, no al revés), para que las dos bandas a sangre
+    completa sigan distinguiéndose entre sí. Ninguno de los dos usa el acento a secas
+    (con texto blanco encima no llega a contraste AA); ambos porcentajes dejan margen
+    de sobra (contraste ≥5:1 con blanco) incluso para acentos claros elegidos
+    libremente por el autor (`shell.accent_color`).
 
   Ningún nivel lleva rótulo textual encima del título («Módulo», «Unidad»…, ni
   siquiera con el rótulo personalizable `course.module_label`/`unit_label`): al
   alumno no le aporta nada y, con rótulos poco frecuentes, chirría más que ayuda.
-  El propio diseño (banda sólida a sangre completa vs. hero degradado contenido)
-  ya distingue el nivel — sin excepción tampoco para `'course'`, que además nunca
-  podría presuponer un rótulo (un paquete SCORM puede representar un curso
-  entero, un módulo, una unidad o un tema suelto según el contenido).
+  El propio diseño (tres tonos/tratamientos distintos) ya distingue el nivel — sin
+  excepción tampoco para `'course'`, que además nunca podría presuponer un rótulo
+  (un paquete SCORM puede representar un curso entero, un módulo, una unidad o un
+  tema suelto según el contenido).
 
   Impresión: `print-color-adjust: exact` en `print.css` conserva el fondo oscuro de
   `'module'`/`'course'` — sin eso, con «gráficos de fondo» desactivado en el diálogo de

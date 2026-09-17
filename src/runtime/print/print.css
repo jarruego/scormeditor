@@ -49,12 +49,12 @@
   .me-ba-print figcaption { font-weight: 600; font-size: .85rem; }
   /* Sopa de letras: el tablero se imprime tal cual (celdas con borde). */
   .me-ws-cell { box-shadow: none; }
-  /* Portada de módulo: fondo sólido con texto blanco (styles.css) — sin forzar
-     que el navegador imprima el color de fondo, el `body{color:#000}` de arriba
-     no la pisa (más específico) pero el fondo sí podría desaparecer con
-     «gráficos de fondo» desactivado, dejando texto blanco sobre papel blanco.
-     print-color-adjust conserva el fondo tal cual se ve en pantalla. */
-  .me-module-cover {
+  /* Portada de módulo/SCORM: fondo sólido con texto blanco (styles.css) — sin
+     forzar que el navegador imprima el color de fondo, el `body{color:#000}`
+     de arriba no la pisa (más específico) pero el fondo sí podría desaparecer
+     con «gráficos de fondo» desactivado, dejando texto blanco sobre papel
+     blanco. print-color-adjust conserva el fondo tal cual se ve en pantalla. */
+  .me-module-cover, .me-course-cover {
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
 }
