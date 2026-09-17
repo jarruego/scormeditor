@@ -192,12 +192,21 @@ Reglas que NO se pueden romper:
   - **Si el documento numera DOS niveles a la vez** (p. ej. `1.`/`2.`/`3.`…
     para temas y `1.1`/`1.2`/`2.1`… para subtemas dentro de cada uno): esos
     dos niveles **sí** son dos módulos/unidades reales — cada punto de nivel 1
-    es un objeto propio en `modules[]` (su propio `title`, p. ej. `"Tema 1. …"`)
-    y cada punto de nivel 2 de ESE tema es una `unit` real en su `units[]`
-    (p. ej. `"1.2 Comunicación con la familia"` → `title: "Comunicación con
-    la familia"`, conservando el orden). N módulos, cada uno con sus propias
-    M unidades — no lo aplanes a un único módulo con todas las unidades
-    seguidas, perderías la agrupación real del documento.
+    es un objeto propio en `modules[]` y cada punto de nivel 2 de ESE tema es
+    una `unit` real en su `units[]`, conservando el orden. N módulos, cada uno
+    con sus propias M unidades — no lo aplanes a un único módulo con todas las
+    unidades seguidas, perderías la agrupación real del documento.
+    **Los dos niveles conservan su numeración en el `title`**, tal cual la
+    trae el documento (`"1. Definición y propósito"` para el módulo,
+    `"1.2 Comunicación con la familia"` para la unidad — no `title:
+    "Comunicación con la familia"` a secas): sin el número delante, el árbol
+    del editor y el menú del alumno pierden la referencia a qué tema/subtema
+    del documento original es cada uno. Esto es la EXCEPCIÓN a «quita la
+    numeración de epígrafes» de §4 — esa regla sigue aplicando tal cual a
+    encabezados, ítems y cuerpo de las pantallas (nivel 3 en adelante,
+    `1.1.1`… incluido: se funden en la unidad sin arrastrar su numeración,
+    ver el punto siguiente); solo el `title` de módulo y de unidad de estos
+    dos niveles reales es la excepción.
     - **Un tercer nivel (`1.1.1`, `2.3.1`…) NUNCA crea un tercer contenedor**
       (el esquema no lo tiene, y es deliberado: el árbol del editor y el menú
       del alumno solo distinguen dos niveles, para no complicar la navegación

@@ -152,10 +152,14 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   `2.1`… subtemas dentro de cada uno), esos dos niveles **no** se aplanan a `###` — se
   reflejan en el esquema real, un `module` por punto de nivel 1 y una `unit` por punto
   de nivel 2 (contrato §3), con `module_label`/`unit_label` a juego si el documento trae
-  su propio vocabulario. Un tercer nivel (`1.1.1`…) sigue sin crear contenedor —eso sí
-  se aplana, dentro de la unidad de nivel 2 que le toque— porque el árbol del editor y
-  el menú/miga de pan del alumno solo distinguen dos niveles, a propósito (decisión de
-  UI, no limitación del esquema). **`cover` = solo portada** (título/subtítulo;
+  su propio vocabulario, y el `title` de AMBOS conserva su número tal cual lo trae el
+  documento (`"1. …"` en el módulo, `"1.2 …"` en la unidad) — es la única excepción a
+  «quitar la numeración de epígrafes» de más arriba, precisamente porque aquí el número
+  ya no es maquetación: es la referencia real al tema/subtema del documento origen. Un
+  tercer nivel (`1.1.1`…) sigue sin crear contenedor —eso sí se aplana, dentro de la
+  unidad de nivel 2 que le toque, y sin arrastrar su numeración— porque el árbol del
+  editor y el menú/miga de pan del alumno solo distinguen dos niveles, a propósito
+  (decisión de UI, no limitación del esquema). **`cover` = solo portada** (título/subtítulo;
   la intro va en la 1ª de contenido) pero **con el número del tema visible** («Tema 1»,
   «Tema 2»… en `subtitle` o antepuesto al título). **Ejercicios prácticos en pantalla
   propia**: `case_practice`/`reflection` y callouts con tarea (`::: case`/`::: reflect`)

@@ -31,7 +31,8 @@ La diapositiva es **solo el contenido**. Detalle en §4.1.
 - **`title` corto** (2-6 palabras), **NO** un fragmento a mitad de frase **ni repetido
   como primera línea del `student_text`**. Continuación de un apartado partido → **mismo
   `title`**. Interacción: `title` = el del tema.
-- **Quita la numeración de epígrafes** (`1.3`…) salvo DOS niveles reales (`1.`/`1.1`) → módulo/unidad (contrato §3).
+- **Quita la numeración de epígrafes** (`1.3`…); excepción: con DOS niveles
+  reales (`1.`/`1.1`), título de módulo y unidad la conservan (contrato §3).
 - **Análisis estructural**: encabezado + subtítulo + cuerpo = **una** pantalla; ninguna
   vacía ni diminuta. `cover` = **solo portada** con «Tema N» +
   título (sin `student_text`); la intro, en la 1ª de contenido. **Texto + imagen = UNA

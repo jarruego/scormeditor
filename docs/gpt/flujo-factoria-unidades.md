@@ -136,6 +136,11 @@ el `module` que agrupa varios parciales. Dos cambios sobre lo anterior:
   título del tema (módulo) al que pertenece ese subtema, idéntico car-a-car en todos
   los subtemas de un mismo tema (así la fusión los agrupa). Ejemplo: `"tema_id":
   "u01_t01_st01", "modulo_title": "Tema 1. Definición y propósito"`.
+- **`unit.title` es ahora el del SUBTEMA, no el del tema** — conserva el número de dos
+  niveles tal cual lo trae el documento (`"1.2 Comunicación con la familia"`, no
+  `"Tema 1. ..."` del ejemplo de un solo nivel de más arriba, que ahí sí sería el tema):
+  sin el número delante se pierde qué subtema del documento original es cada unidad
+  (contrato §3).
 
 Todo lo demás (control de cobertura, Fase 2, formato de `unit`) es igual que con un
 solo nivel — la única diferencia es a qué contenedor va cada parcial en la fusión.
