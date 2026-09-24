@@ -122,14 +122,15 @@
     // otros LMS descartan el progreso si no se marca suspend.
     setExit: function (v) { if (!this.isReview()) this.set('cmi.core.exit', v); },
 
+    // Devuelve el string crudo de cmi.suspend_data (o '' si no hay nada
+    // guardado todavía). La codificación/decodificación es cosa de
+    // StateCodec (state_codec.js) — esta capa solo habla con el LMS.
     getSuspend: function () {
-      var raw = this.get('cmi.suspend_data');
-      if (!raw) return {};
-      try { return JSON.parse(raw); } catch (e) { log('suspend_data corrupto'); return {}; }
+      return this.get('cmi.suspend_data') || '';
     },
-    setSuspend: function (obj) {
+    setSuspend: function (str) {
       if (this.isReview()) return;
-      try { this.set('cmi.suspend_data', JSON.stringify(obj)); } catch (e) { log('No se pudo serializar suspend_data'); }
+      try { this.set('cmi.suspend_data', str); } catch (e) { log('No se pudo guardar suspend_data'); }
     },
 
     // Formatea segundos a CMITimespan HHHH:MM:SS.SS

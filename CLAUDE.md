@@ -53,6 +53,9 @@ Lee el que corresponda al tocar esa área:
 - `evaluacion-finalizacion.md` — navegación/gating, `computeScore` por `score_source`
   (incl. `mixed_final_weight`), finalización, pantallas sintéticas `__final__`/
   `__results__`.
+- `../suspend-data.md` (fuera de `internals/`, junto a este índice) — formato v2 de
+  `cmi.suspend_data` (`state_codec.js`): codificación posicional compacta, huella de
+  estructura, migración desde el formato antiguo.
 - `persistencia-scormproj.md` — el documento `.scormproj`, autosave/IndexedDB, File System
   Access, ciclo de vida de los assets, indicador de guardado.
 - `nube-sincronizacion.md` — `src/cloud/`: organizaciones/roles en Supabase, guardado en
@@ -74,7 +77,10 @@ Lee el que corresponda al tocar esa área:
 ### Flujos típicos (qué leer según la tarea)
 - **Añadir/cambiar un tipo de interacción** → `interacciones.md` +
   `editor-pantallas.md` (catálogo `interactionRecipes`) + `informes-validacion.md`
-  (validadores) + `ingesta-gpt.md` si cambia el contrato + actualizar el proyecto demo.
+  (validadores) + `../suspend-data.md` (codec compacto del tipo en `state_codec.js`,
+  `TYPE_CODECS`) + `ingesta-gpt.md` si cambia el contrato + actualizar el proyecto demo.
+- **Progreso, reanudación o tamaño de `suspend_data`** → `../suspend-data.md`
+  (+ `evaluacion-finalizacion.md` si toca nota/gating, porque leen el mismo `STATE`).
 - **UX del editor** (árbol, formularios, modales) → `editor-pantallas.md`; añade
   `editor-ui.md` si toca Ajustes/toolbar/sync y `editor-richtext.md` si toca la caja de
   texto.

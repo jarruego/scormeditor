@@ -26,6 +26,7 @@ export function buildPreviewHtml(course: Course, assetUrls: Record<string, strin
     'assets/js/icons.js',
     'assets/js/interactions.js',
     'assets/js/renderer.js',
+    'assets/js/state_codec.js',
     'assets/js/app.js',
   ]
   const js = jsOrder.map(get).join('\n;\n')

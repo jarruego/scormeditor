@@ -51,23 +51,25 @@
   // ---- Carga -------------------------------------------------------------
   function boot() {
     SCORM.initialize();
-    restore();
+    // restore() necesita COURSE (StateCodec decodifica por posición contra su
+    // estructura), así que se llama tras cargarlo, no antes.
     // Modo previsualización del editor: datos inyectados en memoria.
-    if (global.__COURSE_DATA__) { COURSE = global.__COURSE_DATA__; setup(); return; }
+    if (global.__COURSE_DATA__) { COURSE = global.__COURSE_DATA__; restore(); setup(); return; }
     fetch('data/course.json', { cache: 'no-store' })
       .then(function (r) { return r.json(); })
-      .then(function (data) { COURSE = data; setup(); })
+      .then(function (data) { COURSE = data; restore(); setup(); })
       .catch(function (e) {
         document.getElementById('me-content').innerHTML = '<p class="me-warn">No se pudo cargar el curso: ' + esc(e) + '</p>';
       });
   }
 
+  // Formato v2 (posicional, compacto) con migración automática del formato
+  // antiguo (JSON por ids) — ver state_codec.js.
   function restore() {
-    var s = SCORM.getSuspend();
-    if (s && typeof s === 'object') STATE = Object.assign(STATE, s);
+    STATE = StateCodec.decode(SCORM.getSuspend(), COURSE, (COURSE.scorm && COURSE.scorm.layouts) || []);
   }
   function persist() {
-    SCORM.setSuspend(STATE);
+    SCORM.setSuspend(StateCodec.encode(STATE, COURSE));
     SCORM.setLocation(String(current));
     SCORM.commit();
   }
