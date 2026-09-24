@@ -811,6 +811,13 @@ button.ed-pill.info:hover:not(:disabled) { background: #e8f0fe; }
 
 /* Campos de código (interacción HTML a medida) */
 .ed-code { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: .85rem; white-space: pre; }
+/* Imágenes subidas para el HTML a medida: lista de rutas (una por subida)
+   con «Copiar» (inserta en el cursor del campo activo) y eliminar. */
+.ed-embed-assets { display: grid; gap: .35rem; padding: .5rem .6rem; border: 1px dashed var(--c-border); border-radius: 8px; }
+.ed-embed-assets-label { font-size: .85rem; color: var(--c-muted); }
+.ed-embed-asset-row { display: flex; gap: .4rem; align-items: center; }
+.ed-embed-asset-row input { flex: 1; font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: .8rem; color: var(--c-muted); }
+.ed-embed-asset-row .ed-icobtn { width: auto; padding: .2rem .5rem; gap: .25rem; border: 1px solid var(--c-border); }
 
 /* Renombrado inline (título del curso, módulos y unidades) */
 .ed-rename { border: none; background: none; padding: 0 .25rem; margin-left: .15rem; color: var(--c-muted); font-size: .85rem; cursor: pointer; opacity: .35; }

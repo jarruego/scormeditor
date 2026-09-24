@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { Interaction, InteractionOption } from '../schema/course.schema'
+import { useCourseStore } from '../store/courseStore'
 import { RichTextArea } from './RichTextArea'
 import { FileButton } from './FileButton'
 import { HotspotZonesModal, type HotspotSpot } from './HotspotZonesModal'
@@ -116,6 +117,15 @@ export function InteractionConfigEditor({
   // Modal del editor visual de zonas (solo lo usa el caso `hotspots`; el hook
   // vive aquí porque dentro del switch no puede haber hooks).
   const [zonesOpen, setZonesOpen] = useState(false)
+  // Imágenes subidas para el HTML a medida (solo lo usa `html_embed`, mismo
+  // motivo que `zonesOpen`): refs a los tres textareas (para reenfocar y
+  // mover el cursor tras insertar) y el último campo/posición donde escribió
+  // el autor (para saber dónde insertar la ruta al pulsar «Copiar»).
+  const embedHtmlRef = useRef<HTMLTextAreaElement>(null)
+  const embedCssRef = useRef<HTMLTextAreaElement>(null)
+  const embedJsRef = useRef<HTMLTextAreaElement>(null)
+  const embedCursorRef = useRef<{ field: 'html' | 'css' | 'js'; pos: number }>({ field: 'html', pos: 0 })
+  const removeAsset = useCourseStore((s) => s.removeAsset)
 
   switch (it.type) {
     // ---- Elección simple / Verdadero-Falso --------------------------------
@@ -674,7 +684,34 @@ export function InteractionConfigEditor({
       )
 
     // ---- HTML a medida (iframe sandbox) ------------------------------------
-    case 'html_embed':
+    case 'html_embed': {
+      const embedAssets: string[] = cfg.embed_assets || []
+      const embedRefs = { html: embedHtmlRef, css: embedCssRef, js: embedJsRef }
+      // Recuerda el campo y la posición del cursor en cada textarea (clic,
+      // flechas, selección…) para saber dónde insertar la ruta al pulsar
+      // «Copiar». `onSelect` cubre todos los casos (React lo dispara con
+      // cualquier cambio de selección/cursor, no solo al seleccionar texto).
+      const trackCursor = (field: 'html' | 'css' | 'js') => (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+        embedCursorRef.current = { field, pos: e.currentTarget.selectionStart }
+      }
+      function insertEmbedAsset(path: string) {
+        const { field, pos } = embedCursorRef.current
+        const current = String(cfg[field] || '')
+        const at = Math.min(pos, current.length)
+        setConfig({ [field]: current.slice(0, at) + path + current.slice(at) })
+        navigator.clipboard?.writeText(path).catch(() => {})
+        const ta = embedRefs[field].current
+        const newPos = at + path.length
+        embedCursorRef.current = { field, pos: newPos }
+        // El value del textarea aún no se ha repintado con el `setConfig` de
+        // arriba (React es asíncrono) — esperar un frame antes de reenfocar y
+        // mover el cursor, si no `setSelectionRange` cae fuera del texto viejo.
+        requestAnimationFrame(() => { ta?.focus(); ta?.setSelectionRange(newPos, newPos) })
+      }
+      function removeEmbedAsset(path: string) {
+        setConfig({ embed_assets: embedAssets.filter((p) => p !== path) })
+        removeAsset(path)
+      }
       return (
         <div className="ed-stack">
           <p className="ed-hint">
@@ -683,23 +720,48 @@ export function InteractionConfigEditor({
             resto de la pantalla. Debe ser autocontenido (sin cargar librerías externas por CDN si
             el curso puede verse sin conexión).
           </p>
+          <div className="ed-embed-assets">
+            <span className="ed-embed-assets-label">Imágenes del código:</span>
+            {embedAssets.map((path) => (
+              <div key={path} className="ed-embed-asset-row">
+                <input value={path} readOnly onFocus={(e) => e.target.select()} />
+                <button type="button" className="ed-icobtn" title="Insertar en el cursor del campo donde estabas escribiendo (y copiar la ruta)"
+                  onClick={() => insertEmbedAsset(path)}><Icon name="copy" size={13} /> Copiar</button>
+                <button type="button" className="ed-icobtn ed-icobtn-danger" title="Quitar imagen" aria-label={`Quitar ${path}`}
+                  onClick={() => removeEmbedAsset(path)}><Icon name="trash" size={13} /></button>
+              </div>
+            ))}
+            <FileButton accept="image/*" label="Subir imagen…"
+              makePath={(ext) => `assets/img/${it.id}-${rid('emb')}.${ext}`}
+              onUploaded={(path) => setConfig({ embed_assets: [...embedAssets, path] })} />
+            <p className="ed-hint">
+              Sube aquí las imágenes que uses dentro del HTML/CSS/JS. «Copiar» inserta la ruta en el
+              campo y la posición donde tenías el cursor (además de copiarla al portapapeles) — pégala
+              tú donde haga falta si prefieres moverla, por ejemplo en un <code>src="…"</code> o un
+              <code>url(…)</code> de CSS.
+            </p>
+          </div>
           <label className="ed-field"><span>HTML</span>
-            <textarea className="ed-code" rows={8} spellCheck={false} value={cfg.html || ''}
+            <textarea ref={embedHtmlRef} className="ed-code" rows={8} spellCheck={false} value={cfg.html || ''}
               placeholder={'<div id="demo">…</div>'}
-              onChange={(e) => setConfig({ html: e.target.value })} /></label>
+              onChange={(e) => setConfig({ html: e.target.value })}
+              onSelect={trackCursor('html')} onFocus={trackCursor('html')} /></label>
           <label className="ed-field"><span>CSS</span>
-            <textarea className="ed-code" rows={5} spellCheck={false} value={cfg.css || ''}
+            <textarea ref={embedCssRef} className="ed-code" rows={5} spellCheck={false} value={cfg.css || ''}
               placeholder={'#demo { color: teal; }'}
-              onChange={(e) => setConfig({ css: e.target.value })} /></label>
+              onChange={(e) => setConfig({ css: e.target.value })}
+              onSelect={trackCursor('css')} onFocus={trackCursor('css')} /></label>
           <label className="ed-field"><span>JavaScript</span>
-            <textarea className="ed-code" rows={8} spellCheck={false} value={cfg.js || ''}
+            <textarea ref={embedJsRef} className="ed-code" rows={8} spellCheck={false} value={cfg.js || ''}
               placeholder={"document.getElementById('demo').addEventListener('click', …)"}
-              onChange={(e) => setConfig({ js: e.target.value })} /></label>
+              onChange={(e) => setConfig({ js: e.target.value })}
+              onSelect={trackCursor('js')} onFocus={trackCursor('js')} /></label>
           <label className="ed-field ed-field-narrow"><span>Alto fijo en px (vacío = automático)</span>
             <input type="number" min={0} value={cfg.height ?? ''}
               onChange={(e) => setConfig({ height: e.target.value === '' ? undefined : Number(e.target.value) })} /></label>
         </div>
       )
+    }
 
     default:
       return null

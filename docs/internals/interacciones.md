@@ -161,7 +161,19 @@ restaurable. Validadores: `FC_EMPTY` y `FC_SCORED` (warning si `scored: true`).
 ### `html_embed` — HTML/CSS/JS a medida
 Tipo informativo para animaciones e interactivos ad hoc que el **autor pega a mano** en
 el editor (tres textareas de código + alto opcional). `config: { html, css, js,
-height? }`.
+height?, embed_assets? }`.
+- **Imágenes referenciadas desde el código**: sin campo de imagen fijo (el HTML/CSS/JS
+  es texto libre, la imagen puede ir en cualquier `src="…"` o `url(…)`), así que
+  `InteractionConfigEditor` lleva su propia mini-lista de subida (`config.embed_assets`,
+  array de rutas `assets/img/…`) en vez del `FileButton` de campo único que usan otras
+  interacciones. Cada imagen subida aparece con un botón «Copiar», que inserta la ruta
+  en el campo (HTML/CSS/JS) y la posición donde tenía el cursor el autor la última vez
+  (un ref por textarea + `onSelect`/`onFocus` van registrando dónde), además de copiarla
+  al portapapeles — el autor la deja ahí o la mueve a mano. Quitar una imagen de la
+  lista no borra el binario si la ruta sigue pegada en el código (mismo
+  `removeAsset`/`isAssetReferenced` de siempre — `collectAssetPaths`, en
+  `schema/assetRefs.ts`, ya rastrea cualquier `assets/…` dentro de un `config` de
+  interacción, así que el export no la trata como huérfana).
 - **Excepción controlada a la invariante anti-XSS**: es el único tipo que guarda código
   en `course.json`, y por eso corre en un `<iframe sandbox="allow-scripts">` **sin**
   `allow-same-origin` (origen opaco): no puede tocar la API SCORM, `suspend_data` ni el
