@@ -8,6 +8,9 @@
  * curso empaquetado, y se reinterpreta contra la config ACTUAL al decodificar.
  *
  * API: encode(STATE, course) -> string ; decode(raw, course, layouts) -> STATE
+ * ; encodeWithBudget(STATE, course, limit=4096) -> { raw, fits, degraded,
+ * size, breakdown } (degrada el detalle ya redundante hasta que quepa, ver
+ * degradeDetail más abajo; la usa app.js en persist()).
  * STATE es el MISMO objeto que usa app.js (visited/interactions/results/
  * attempts/finalScore/finalAnswers) — este módulo no cambia ese contrato,
  * solo cómo se serializa.
@@ -669,7 +672,14 @@
       for (var i = 0; i < items.length; i++) {
         if (!arr[i]) continue;
         var given = asciiUnescape(arr[i]);
-        res[i] = { given: given, correct: normLettersLite(given) === normLettersLite(items[i].answer) };
+        // Degradado por tamaño (Fase 3): "" + '1'/'0' sustituye el texto
+        // tecleado por el alumno, ya innecesario, por su acierto explícito
+        // (nunca se reexpone `given` al restaurar, ver interactions.js).
+        if (given.charAt(0) === '') {
+          res[i] = { given: '', correct: given.charAt(1) === '1' };
+        } else {
+          res[i] = { given: given, correct: normLettersLite(given) === normLettersLite(items[i].answer) };
+        }
       }
       if (arr[items.length]) res.__last = fromB36(arr[items.length]);
       return { res: res };
@@ -778,14 +788,61 @@
     return { completed: true, scored: true, correct: false, score: raw, maxScore: maxScore };
   }
 
+  // ---- Degradación por tamaño (Fase 3, ver scorm_api.js/app.js) -----------
+  // El `result` de cada interacción (results/attempts/finalScore) NUNCA se
+  // toca: solo se recorta el DETALLE (`STATE.interactions[id]`), y solo
+  // cuando ya no hace falta para que el runtime se comporte igual. Orden,
+  // de menos a más agresivo (encodeWithBudget prueba niveles 0..3 hasta que
+  // quepa):
+  //  1. Interacciones exploratorias (sin nota) ya completadas: su detalle
+  //     (qué se ha abierto/marcado) es redundante una vez completas — todo
+  //     estaba visto/marcado, si no no estarían completas.
+  //  2. Respuestas ESCRITAS ya acertadas del todo (crucigrama, rosco): el
+  //     texto en sí ya no hace falta para nada — ni se vuelve a mostrar
+  //     (el rosco nunca reexpone lo tecleado) ni afecta al bloqueo, que lee
+  //     `correct`/`attempts` directamente. Se conservan esos dos campos
+  //     (vacíos, el bloqueo por intentos agotados de un crucigrama YA
+  //     correcto es irrelevante) para que la interacción siga quedando
+  //     bloqueada al restaurar.
+  //  3. `data` de `html_embed` ya completados: se pierde el estado interno
+  //     del interactivo del autor (MeEmbed.state), pero `done` (y por tanto
+  //     el bloqueo de navegación) se conserva intacto.
+  var EXPLORATORY_TYPES = {
+    accordion: 1, tabs: 1, flip_cards: 1, timeline: 1, image_cards: 1, case_practice: 1,
+  };
+  function degradeDetail(type, detail, resultChar, level) {
+    if (detail == null || level <= 0) return detail;
+    if (level >= 1 && EXPLORATORY_TYPES[type] && resultChar !== '.') return null;
+    if (level >= 2 && type === 'crossword' && resultChar === 'c') {
+      return { correct: true, attempts: detail.attempts || 0, values: {} };
+    }
+    if (level >= 2 && type === 'az_quiz' && detail.res) {
+      var res2 = {};
+      Object.keys(detail.res).forEach(function (k) {
+        if (k === '__last') { res2.__last = detail.res.__last; return; }
+        var r = detail.res[k];
+        if (r) res2[k] = { given: '' + (r.correct ? '1' : '0'), correct: r.correct };
+      });
+      return { res: res2 };
+    }
+    if (level >= 3 && type === 'html_embed' && detail.done) {
+      return { done: true, data: null };
+    }
+    return detail;
+  }
+
   // ---- API pública ---------------------------------------------------------
 
   function defaultState() {
     return { visited: {}, interactions: {}, results: {}, attempts: 0, finalScore: 0, finalAnswers: {} };
   }
 
-  function encode(state, course) {
+  // Construye los 7 segmentos de nivel superior (sin unirlos) contra un
+  // nivel de degradación dado. La usan tanto encode() como encodeWithBudget()
+  // (que además necesita el tamaño de cada segmento por separado para el log).
+  function encodeParts(state, course, level) {
     state = state || {};
+    level = level || 0;
     var screens = flattenScreens(course);
     var interactions = collectInteractions(screens);
     var finalQs = finalQuestions(course);
@@ -800,10 +857,12 @@
     var hasFinal = finalQs.length > 0;
     var stateChars = '';
     var scoreList = [];
+    var resultChars = [];
     for (i = 0; i < interactions.length; i++) {
       var r = results[interactions[i].id];
       var ch = classify(r);
       stateChars += ch;
+      resultChars.push(ch);
       scoreList.push(encodeScore(r, ch, false));
     }
     if (hasFinal) {
@@ -816,7 +875,8 @@
     var detailsIn = state.interactions || {};
     var interactionChunks = [];
     for (i = 0; i < interactions.length; i++) {
-      interactionChunks.push(encodeDetail(interactions[i].type, detailsIn[interactions[i].id], interactions[i].interaction));
+      var degraded = degradeDetail(interactions[i].type, detailsIn[interactions[i].id], resultChars[i], level);
+      interactionChunks.push(encodeDetail(interactions[i].type, degraded, interactions[i].interaction));
     }
 
     var faIn = state.finalAnswers || {};
@@ -828,17 +888,55 @@
       faChunks.push(oi < 0 ? '' : b36(oi));
     }
 
-    var body = packChunks([
-      visitedB64,
-      stateChars,
-      packChunks(scoreList),
-      packChunks(interactionChunks),
-      packChunks(faChunks),
-      b36(state.attempts || 0),
-      b36(state.finalScore || 0),
-    ]);
+    return {
+      fp: fp,
+      visited: visitedB64,
+      results: stateChars,
+      scores: packChunks(scoreList),
+      interactions: packChunks(interactionChunks),
+      finalAnswers: packChunks(faChunks),
+      attempts: b36(state.attempts || 0),
+      finalScore: b36(state.finalScore || 0),
+    };
+  }
 
-    return '2|' + fp + '|' + body;
+  function joinParts(parts) {
+    return '2|' + parts.fp + '|' + packChunks([
+      parts.visited, parts.results, parts.scores, parts.interactions,
+      parts.finalAnswers, parts.attempts, parts.finalScore,
+    ]);
+  }
+
+  function encode(state, course, level) {
+    return joinParts(encodeParts(state, course, level || 0));
+  }
+
+  // Prueba niveles de degradación 0..3 (ver degradeDetail) hasta que el
+  // string codificado quepa en `limit` (4096 por defecto, el límite real de
+  // cmi.suspend_data en SCORM 1.2). Nunca toca visited/results/attempts/
+  // finalScore — solo recorta detalle de interacciones ya resuelto.
+  // Devuelve { raw, fits, degraded, size, breakdown } — si `fits` es false
+  // ni siquiera el nivel más agresivo cupo: `raw` es igualmente el mejor
+  // intento (el más pequeño posible), para que quien llama decida si
+  // arriesgarse a escribirlo o conservar lo que ya hubiera en el LMS.
+  function encodeWithBudget(state, course, limit) {
+    limit = limit || 4096;
+    var best = null;
+    for (var level = 0; level <= 3; level++) {
+      var parts = encodeParts(state, course, level);
+      var raw = joinParts(parts);
+      var breakdown = {
+        visited: parts.visited.length,
+        results: parts.results.length + parts.scores.length,
+        interactions: parts.interactions.length,
+        finalAnswers: parts.finalAnswers.length,
+        attempts: parts.attempts.length,
+        finalScore: parts.finalScore.length,
+      };
+      best = { raw: raw, fits: raw.length <= limit, degraded: level, size: raw.length, breakdown: breakdown };
+      if (best.fits) return best;
+    }
+    return best;
   }
 
   function findLayout(layouts, fp) {
@@ -992,6 +1090,7 @@
     VERSION: 2,
     encode: encode,
     decode: decode,
+    encodeWithBudget: encodeWithBudget,
     buildLayoutEntry: buildLayoutEntry,
     // Expuesto solo para scripts/test-state-codec.ts (Fase 1: demostrar que
     // el estado se puede trocear en segmentos sin conocer tipo ni config).
@@ -1005,6 +1104,7 @@
       finalQuestions: finalQuestions,
       fingerprint: fingerprint,
       hasCodec: function (type) { return !!TYPE_CODECS[type]; },
+      isExploratoryType: function (type) { return !!EXPLORATORY_TYPES[type]; },
     },
   };
 })(typeof window !== 'undefined' ? window : this);

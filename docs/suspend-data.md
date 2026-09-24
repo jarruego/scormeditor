@@ -108,6 +108,44 @@ estructura actual difiere de la última publicada; `LAYOUT_IDS_REPLACED`
 (aviso) si menos de la mitad de los ids de la última versión publicada
 siguen existiendo.
 
+## Protección de tamaño (`encodeWithBudget`)
+
+Incluso con el formato v2, un curso lo bastante grande —o con mucho detalle
+acumulado en interacciones tipo crucigrama/rosco/HTML a medida— puede seguir
+sin caber en 4096. `app.js` (`persist()`) no llama a `StateCodec.encode()`
+directamente: llama a `StateCodec.encodeWithBudget(STATE, COURSE, 4096)`, que
+prueba niveles de degradación crecientes (`degradeDetail` en
+`state_codec.js`) hasta que el string quepa. **Nunca se toca `visited`,
+`results`, `attempts` ni `finalScore`** — solo se recorta detalle de
+interacciones que ya es redundante para el comportamiento del runtime:
+
+1. **Interacciones exploratorias sin nota ya completadas** (`accordion`,
+   `tabs`, `flip_cards`, `timeline`, `image_cards`, `case_practice`): su
+   detalle (qué se ha abierto/marcado) es redundante una vez completas — si
+   no estuviera todo visto/marcado, no estarían completas.
+2. **Respuestas escritas ya acertadas del todo** en `crossword` y `az_quiz`
+   (las dos interacciones con texto libre real, ver más abajo): el texto en
+   sí no hace falta para nada — ni se vuelve a mostrar al alumno, ni afecta
+   al bloqueo por intentos, que lee `correct`/`attempts` directamente. Se
+   conservan esos dos campos (vacíos si no aplican) para que la interacción
+   siga apareciendo bloqueada al restaurar, en vez de "sin responder".
+   (El encargo original hablaba de "huecos/crucigramas"; `fill_blanks` ya es
+   compacto por índice —son `<select>`, no texto libre— así que el par
+   equivalente de interacciones con texto realmente libre es `crossword` y
+   `az_quiz`, y son las que se degradan aquí.)
+3. **`data` de `html_embed` ya completados**: se pierde el estado interno del
+   interactivo del autor (`MeEmbed.state`), pero `done` —y por tanto el
+   bloqueo de navegación— se conserva intacto.
+
+Si ni con la degradación máxima cabe, `persist()` **no escribe nada**: es
+preferible conservar la última escritura válida del LMS que guardar un
+`suspend_data` cortado o corrupto. Se registra un aviso en consola con el
+tamaño y un desglose por segmento (`console.warn`, `budget.breakdown`).
+
+Si `LMSSetValue` devuelve error (por cualquier motivo, no solo tamaño),
+`scorm_api.js` ya lo registra con `LMSGetLastError`/`LMSGetErrorString` en su
+`set()` genérico — no es específico de `suspend_data`.
+
 ## Migración desde el formato antiguo
 Antes de la v2, `scorm_api.js` guardaba `JSON.stringify(STATE)` tal cual
 (por ids). Si `decode()` recibe un string que no empieza por `"2|"`, intenta
@@ -121,6 +159,9 @@ contra el curso demo (`sample-course.ts`, que cubre los 23 tipos de
 interacción): el troceado ciego, el round-trip completo por tipo, la
 migración del formato antiguo, el descarte seguro ante huella desconocida, el
 remapeo real (reordenar/insertar/eliminar pantallas e interacciones, cambiar
-el tipo de una interacción) y que el curso demo con **todo** el progreso
-guardado cabe muy por debajo de 4096 caracteres. También comprueba que todo
-`InteractionType` del esquema tiene codec propio en `TYPE_CODECS`.
+el tipo de una interacción), la degradación por tamaño (un estado inflado a
+propósito hasta no caber ni de lejos en 4096 debe degradarse en el orden
+documentado hasta caber, sin tocar resultados) y que el curso demo con
+**todo** el progreso guardado cabe muy por debajo de 4096 caracteres sin
+degradar nada. También comprueba que todo `InteractionType` del esquema tiene
+codec propio en `TYPE_CODECS`.

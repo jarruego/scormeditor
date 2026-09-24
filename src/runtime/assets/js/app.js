@@ -68,8 +68,21 @@
   function restore() {
     STATE = StateCodec.decode(SCORM.getSuspend(), COURSE, (COURSE.scorm && COURSE.scorm.layouts) || []);
   }
+  // Protección de tamaño: cmi.suspend_data tiene un límite de 4096 caracteres
+  // en SCORM 1.2. Si el estado completo no cabe, se prueba con degradación
+  // creciente (ver degradeDetail en state_codec.js: primero el detalle de
+  // exploratorias ya completas, luego respuestas escritas ya acertadas,
+  // luego el estado interno de html_embed ya completados) — nunca se tocan
+  // visited/results/attempts/finalScore. Si ni así cabe, no se sobrescribe:
+  // es preferible conservar la última escritura válida que guardar un
+  // suspend_data cortado que el LMS podría truncar o rechazar.
   function persist() {
-    SCORM.setSuspend(StateCodec.encode(STATE, COURSE));
+    var budget = StateCodec.encodeWithBudget(STATE, COURSE, 4096);
+    if (budget.fits) {
+      SCORM.setSuspend(budget.raw);
+    } else if (global.console && global.console.warn) {
+      global.console.warn('[SCORM] suspend_data no cabe ni degradado al máximo (' + budget.size + ' > 4096): se conserva la última escritura válida.', budget.breakdown);
+    }
     SCORM.setLocation(String(current));
     SCORM.commit();
   }

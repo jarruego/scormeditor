@@ -22,6 +22,11 @@
  *     solo lo suyo; cambiar el tipo de una interacción descarta su resultado
  *     Y su detalle (nunca se aplican datos desplazados); lo que no se toca
  *     sobrevive exacto.
+ *  7) DEGRADACIÓN POR TAMAÑO (encodeWithBudget): con un estado inflado que no
+ *     cabe en 4096 ni de lejos, prueba niveles crecientes hasta que cabe, sin
+ *     tocar NUNCA visited/results/attempts/finalScore — solo detalle ya
+ *     redundante (exploratorias completas, texto ya acertado de crucigrama/
+ *     rosco, estado interno de html_embed completados), en ese orden.
  * ===========================================================================*/
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -426,8 +431,87 @@ interactions.forEach((it, i) => {
   ok(fullEncoded.length <= 4096, `el curso demo con TODO el progreso guardado supera el límite de 4096 (${fullEncoded.length})`)
 }
 
+// --- 8) Degradación por tamaño (Fase 3): nunca toca visited/results/attempts/
+//        finalScore, y actúa en el orden documentado hasta que quepa --------
+{
+  const bloated: AnyRec = { visited: {}, interactions: {}, results: {}, attempts: 4, finalScore: 88, finalAnswers: {} }
+  screens.forEach((sc: AnyRec) => { bloated.visited[sc.id] = true })
+  interactions.forEach((it) => {
+    const detail = synthDetail(it.type, it.interaction)
+    if (detail) bloated.interactions[it.id] = detail
+    bloated.results[it.id] = synthResult(it.interaction)
+  })
+  finalQs.forEach((q) => { if ((q.options || []).length) bloated.finalAnswers[q.id] = q.options[0].id })
+
+  // Infla artificialmente detalle de tipos concretos para forzar que el
+  // nivel 0 no quepa y comprobar el orden exacto de la degradación.
+  const explor = interactions.find((it) => StateCodec._internal.isExploratoryType(it.type))
+  const crossword = interactions.find((it) => it.type === 'crossword')
+  const azQuiz = interactions.find((it) => it.type === 'az_quiz')
+  const htmlEmbed = interactions.find((it) => it.type === 'html_embed')
+  ok(!!explor && !!crossword && !!azQuiz && !!htmlEmbed,
+    'degradación: el curso demo debería tener al menos un tipo de cada categoría a degradar')
+
+  if (crossword) {
+    const values: AnyRec = {}
+    for (let i = 0; i < 30; i++) for (let j = 0; j < 30; j++) values[`${i},${j}`] = 'A'
+    bloated.interactions[crossword.id] = { values, correct: true, attempts: 2 }
+    bloated.results[crossword.id] = { completed: true, scored: true, correct: true, score: crossword.interaction.points || 1, maxScore: crossword.interaction.points || 1 }
+  }
+  if (azQuiz) {
+    const n = ((azQuiz.interaction.config || {}).items || []).length || 1
+    const res: AnyRec = {}
+    for (let i = 0; i < n; i++) res[i] = { given: 'x'.repeat(200), correct: true }
+    bloated.interactions[azQuiz.id] = { res }
+    bloated.results[azQuiz.id] = { completed: true, scored: true, correct: true, score: azQuiz.interaction.points || 1, maxScore: azQuiz.interaction.points || 1 }
+  }
+  if (htmlEmbed) {
+    bloated.interactions[htmlEmbed.id] = { done: true, data: { blob: 'y'.repeat(4500) } }
+    bloated.results[htmlEmbed.id] = { completed: true, scored: false }
+  }
+
+  const level0 = StateCodec.encode(bloated, course, 0)
+  ok(level0.length > 4096, `degradación: el estado inflado debería superar 4096 en nivel 0 para que la prueba sea significativa (mide ${level0.length})`)
+
+  const budget = StateCodec.encodeWithBudget(bloated, course, 4096)
+  console.log(`Degradación: nivel 0 = ${level0.length} caracteres; elegido nivel ${budget.degraded} = ${budget.size} caracteres (cabe: ${budget.fits}).`)
+  ok(budget.fits, `degradación: debería caber con degradación máxima (mide ${budget.size} en nivel ${budget.degraded})`)
+  ok(budget.degraded >= 3, `degradación: con esta inflación debería necesitar llegar al nivel 3 (html_embed), llegó a ${budget.degraded}`)
+
+  const afterDegrade = StateCodec.decode(budget.raw, course, [])
+  ok(afterDegrade.attempts === bloated.attempts, 'degradación: attempts no debería alterarse')
+  ok(afterDegrade.finalScore === bloated.finalScore, 'degradación: finalScore no debería alterarse')
+  ok(deepEqual(afterDegrade.visited, bloated.visited), 'degradación: visited no debería alterarse')
+  ok(deepEqual(afterDegrade.results, bloated.results), 'degradación: NINGÚN resultado debería alterarse, solo el detalle')
+
+  if (explor) ok(!afterDegrade.interactions[explor.id],
+    `degradación [nivel 1, ${explor.type}]: el detalle de una exploratoria ya completada debería desaparecer`)
+  if (crossword) {
+    const d = afterDegrade.interactions[crossword.id]
+    ok(!!d && Object.keys(d.values).length === 0 && d.correct === true && d.attempts === 2,
+      'degradación [nivel 2, crossword]: values debería vaciarse conservando correct/attempts')
+  }
+  if (azQuiz) {
+    const d = afterDegrade.interactions[azQuiz.id]
+    const items = Object.keys(d?.res || {}).filter((k) => k !== '__last')
+    ok(!!d && items.length > 0 && items.every((k) => d.res[k].given === '' && d.res[k].correct === true),
+      'degradación [nivel 2, az_quiz]: given debería vaciarse conservando correct')
+  }
+  if (htmlEmbed) {
+    const d = afterDegrade.interactions[htmlEmbed.id]
+    ok(!!d && d.done === true && d.data === null,
+      'degradación [nivel 3, html_embed]: data debería vaciarse conservando done')
+  }
+
+  // Ni siquiera el nivel 3 basta: no debe fingir que cupo, y el tamaño
+  // reportado debe ser el del intento más pequeño (nivel 3), no el original.
+  const tinyBudget = StateCodec.encodeWithBudget(bloated, course, 100)
+  ok(!tinyBudget.fits && tinyBudget.degraded === 3 && tinyBudget.size === budget.size,
+    'degradación: con un límite imposible debe reportar fits=false en el nivel 3 (el más pequeño posible)')
+}
+
 if (failures) {
   console.error(`\n${failures} fallo(s).`)
   process.exit(1)
 }
-console.log(`state_codec.js — Fases 1-2: OK. ${interactions.length} interacciones y ${finalQs.length} preguntas de test final comprobadas contra el curso demo, ${InteractionType.options.length} tipos con codec propio, remapeo por huella verificado.`)
+console.log(`state_codec.js — Fases 1-3: OK. ${interactions.length} interacciones y ${finalQs.length} preguntas de test final comprobadas contra el curso demo, ${InteractionType.options.length} tipos con codec propio, remapeo por huella y degradación por tamaño verificados.`)
