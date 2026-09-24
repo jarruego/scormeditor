@@ -9,7 +9,10 @@ export const SEVERITY_ICON: Record<Severity, IconName> = {
 }
 
 /** Códigos globales cuyo arreglo pasa por el modal de Ajustes (origen de la nota). */
-const SETTINGS_CODES = new Set(['SCORM_NO_ACTIVITIES', 'SCORM_MIXED_EMPTY', 'SCORM_MIXED_NO_ACTIVITIES'])
+const SETTINGS_CODES = new Set([
+  'SCORM_NO_ACTIVITIES', 'SCORM_MIXED_EMPTY', 'SCORM_MIXED_NO_ACTIVITIES',
+  'LAYOUT_CHANGED', 'LAYOUT_IDS_REPLACED',
+])
 
 export interface IssueTarget {
   label: string

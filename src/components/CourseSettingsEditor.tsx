@@ -160,6 +160,12 @@ export function AppearanceSection() {
   )
 }
 
+function fmtLayoutDate(iso: string) {
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
 export function CourseSettingsSection() {
   const scorm = useCourseStore((s) => s.course.scorm)
   const updateScorm = useCourseStore((s) => s.updateScorm)
@@ -171,6 +177,18 @@ export function CourseSettingsSection() {
 
   const setRule = (p: Partial<ScormConfig['rules']>) => updateScorm({ rules: { ...scorm.rules, ...p } })
   const r = scorm.rules
+  const layouts = scorm.layouts || []
+
+  async function onDeleteLayout(fp: string) {
+    const ok = await confirmDialog({
+      title: 'Borrar versión publicada',
+      message: 'Un alumno que reanude un intento guardado con esta estructura exacta ya no podrá recuperar su progreso por posición si el curso ha cambiado desde entonces (se le conservarán los intentos y la nota, pero no las pantallas vistas ni las respuestas). ¿Continuar?',
+      confirmLabel: 'Borrar',
+      danger: true,
+    })
+    if (!ok) return
+    updateScorm({ layouts: layouts.filter((l) => l.fp !== fp) })
+  }
 
   async function onApplyMinTime() {
     const secs = Math.max(0, Math.min(30, Math.round(bulkTime)))
@@ -290,6 +308,35 @@ export function CourseSettingsSection() {
           </label>
         </div>
       </fieldset>
+
+      {layouts.length > 0 && (
+        <fieldset className="ed-group">
+          <legend>Versiones publicadas: {layouts.length}</legend>
+          <p className="ed-hint">
+            Cada estructura distinta exportada como SCORM queda registrada aquí, para que un
+            alumno que reanude un intento guardado con una versión antigua no pierda su progreso
+            si el curso se reordena, o se añaden o quitan pantallas o interacciones después.
+          </p>
+          <div className="ed-layouts-list">
+            {layouts.slice().reverse().map((l) => (
+              <div className="ed-layouts-row" key={l.fp}>
+                <div className="ed-layouts-row-info">
+                  <strong>{fmtLayoutDate(l.exported_at)}</strong>
+                  <span className="ed-hint">
+                    {l.screens.length} pantallas · {l.interactions.length} interacciones
+                    {l.final_questions.length ? ` · ${l.final_questions.length} preguntas de test final` : ''}
+                    {' · huella '}{l.fp}
+                  </span>
+                </div>
+                <button type="button" className="ed-icobtn ed-icobtn-danger" title="Borrar esta versión del historial"
+                  onClick={() => void onDeleteLayout(l.fp)}>
+                  <Icon name="trash" size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </fieldset>
+      )}
     </>
   )
 }

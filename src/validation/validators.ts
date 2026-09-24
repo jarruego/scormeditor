@@ -3,6 +3,7 @@ import { allScreens, screenContainers, containerLabel } from '../schema/traverse
 import { normalizeObjective } from './objectives'
 import { buildTranscript, itemsOf } from '../tts/buildTranscript'
 import { countFlaggedForReview } from '../schema/review'
+import { getStateCodec } from '../scorm/stateCodec'
 
 export type Severity = 'error' | 'warning' | 'info'
 
@@ -382,6 +383,34 @@ function checkGlobal(ctx: Ctx) {
   }
   if (!c.scorm.identifier.trim())
     ctx.push({ code: 'SCORM_NO_ID', severity: 'error', message: 'Falta el identificador SCORM.', location: 'SCORM' })
+
+  // Historial de estructuras publicadas (remapeo de suspend_data v2, ver
+  // docs/suspend-data.md): avisa si la estructura actual ya no coincide con
+  // la última versión exportada, y si el cambio es tan grande que un alumno
+  // con progreso de esa versión perdería casi todo su avance por posición.
+  const layouts = c.scorm.layouts || []
+  if (layouts.length > 0) {
+    try {
+      const last = layouts[layouts.length - 1]
+      const current = getStateCodec().buildLayoutEntry(c)
+      if (current.fp !== last.fp) {
+        ctx.push({
+          code: 'LAYOUT_CHANGED', severity: 'info',
+          message: 'La estructura del curso (pantallas, interacciones o preguntas del test final) cambió desde la última versión exportada: al exportar de nuevo se registrará como una versión publicada más, para que los alumnos con progreso guardado no lo pierdan.',
+          location: 'SCORM',
+        })
+        const lastIds = new Set([...last.screens, ...last.interactions.map((i) => i.id), ...last.final_questions])
+        const currentIds = new Set([...current.screens, ...current.interactions.map((i) => i.id), ...current.final_questions])
+        const survivors = [...lastIds].filter((id) => currentIds.has(id)).length
+        if (lastIds.size > 0 && survivors < lastIds.size / 2)
+          ctx.push({
+            code: 'LAYOUT_IDS_REPLACED', severity: 'warning',
+            message: `Menos de la mitad de los ids de la última versión publicada siguen existiendo (${survivors} de ${lastIds.size}): los alumnos con progreso de esa versión perderán casi todo su avance por posición al reanudar (conservan los intentos y la nota).`,
+            location: 'SCORM',
+          })
+      }
+    } catch { /* state_codec.js no disponible: no bloquea el resto del informe */ }
+  }
 
   // Preguntas de los tests (final y por unidad): mismas exigencias que las
   // interacciones de pantalla (respuesta correcta y feedback).

@@ -643,6 +643,10 @@ button.ed-pill.info:hover:not(:disabled) { background: #e8f0fe; }
 .ed-cloud-row-actions select { width: auto; min-width: 9rem; }
 .ed-cloud-row-actions .ed-menu-trigger { font-size: .85rem; padding: .35rem .6rem; }
 
+.ed-layouts-list { display: grid; gap: .4rem; }
+.ed-layouts-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; border: 1px solid var(--c-border); border-radius: 8px; padding: .5rem .75rem; }
+.ed-layouts-row-info { display: grid; gap: .1rem; min-width: 0; }
+
 /* Jerarquía de botones del explorador: antes todo se veía igual (mismo
    botón con borde) y costaba distinguir la acción principal de una fila de
    las utilidades. Ahora: "Abrir" es sólido y coloreado (la acción que

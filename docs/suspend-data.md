@@ -29,13 +29,7 @@ prueba de troceado ciego).
 
 - **Huella**: hash corto (6 caracteres) del orden de ids de pantallas,
   interacciones (con su tipo) y preguntas del test final tal como está
-  empaquetado el curso. Si no coincide con la huella actual, se descartan
-  `visited`/`interactions`/`results`/`finalAnswers` (nunca se aplican datos
-  posicionales a una estructura que no es la suya) pero se conservan
-  `attempts` y `finalScore`, que no dependen de la posición. `decode()` ya
-  acepta un tercer parámetro `layouts` (historial de estructuras publicadas)
-  para sustituir ese descarte por un remapeo real cuando la estructura
-  cambió mid-curso; de momento no se usa.
+  empaquetado el curso.
 - **`visited`**: mapa de bits sobre el índice de pantalla (mismo orden que
   `flatten()` en `app.js`), en base64url.
 - **`results`**: un carácter por interacción — `.` pendiente, `d` completada
@@ -61,6 +55,59 @@ prueba de troceado ciego).
   JSON de estado de `html_embed`, el fallback JSON genérico) se escapa
   carácter a carácter fuera de `0x20-0x7E`.
 
+## Historial de estructuras y remapeo (`scorm.layouts`)
+
+Republicar un curso (reordenar, añadir o quitar pantallas/interacciones/
+preguntas) cambia la huella. Sin más, eso dejaría sin progreso reanudable a
+cualquier alumno con un intento a medias de la versión anterior. Para
+evitarlo, `course.scorm.layouts` (`CourseLayout[]`, `course.schema.ts`) guarda
+una entrada por cada estructura distinta que se ha **exportado como SCORM**
+(nunca en Vista previa): `{ fp, screens: [ids], interactions: [{id,type}],
+final_questions: [ids], exported_at }`. `Toolbar.tsx` (`onExportScorm`)
+calcula la huella actual con `StateCodec.buildLayoutEntry(course)` al pulsar
+«Exportar SCORM ZIP»; si no está ya en el historial, añade la entrada
+(dedupe por `fp`) antes de generar el paquete — así el historial completo
+viaja dentro del `course.json` del propio ZIP, no en `suspend_data`.
+
+`decode()` no distingue "huella igual" de "huella conocida pero distinta": en
+ambos casos resuelve una **lista de referencia** (ids de pantallas, `{id,
+type}` de interacciones, ids de preguntas) — la del curso actual si la huella
+coincide, o la de la entrada de `layouts` que coincida si no — y decodifica
+cada posición contra esa lista:
+- Si el id de la pantalla/interacción/pregunta de esa posición **ya no
+  existe** en el curso actual, se descarta (pantalla eliminada, interacción
+  eliminada…). Si sigue existiendo, se traduce esa posición antigua a su id y
+  se decodifica contra la config **actual** de ese id, con la misma
+  validación por tipo de la Fase 1.
+- Si una interacción **cambió de tipo** (mismo id, tipo distinto), se
+  descartan tanto su detalle como su resultado — ninguno de los dos es de
+  fiar contra un tipo distinto al que se guardó.
+- Huella **desconocida** (ni coincide ni está en `layouts`) → se descarta
+  todo lo posicional (`visited`/`interactions`/`results`/`finalAnswers`) pero
+  se conservan `attempts` y `finalScore`, que no dependen de la posición; se
+  registra un aviso en consola (`console.warn`).
+
+En el siguiente `persist()` el estado se reescribe con la huella actual —el
+remapeo solo ocurre en la lectura de un intento antiguo, nunca se arrastra.
+
+**Límite conocido, aceptado por diseño**: `layouts` guarda ids y tipos, no la
+config completa de cada interacción (por eso es ligero y cabe en el propio
+`course.json`). Si una interacción conserva su id y su tipo pero su config
+interna cambia de forma que las mismas posiciones significan algo distinto
+(p. ej. se reordenan las opciones de un `single_choice` sin cambiar el número
+de opciones), la validación por tipo no puede detectarlo — decodificará un
+valor estructuralmente válido pero semánticamente distinto. Es el mismo
+límite que ya existe dentro de una única estructura (Fase 1): la validación
+comprueba forma (cardinalidad, rango), no significado.
+
+**Editor** (Ajustes del curso → «Versiones publicadas»): lista las entradas
+de `layouts` con su fecha, permite borrar entradas antiguas (con aviso: los
+alumnos con progreso de esa versión dejan de poder remapearse, aunque
+conservan intentos y nota). Validadores: `LAYOUT_CHANGED` (info) si la
+estructura actual difiere de la última publicada; `LAYOUT_IDS_REPLACED`
+(aviso) si menos de la mitad de los ids de la última versión publicada
+siguen existiendo.
+
 ## Migración desde el formato antiguo
 Antes de la v2, `scorm_api.js` guardaba `JSON.stringify(STATE)` tal cual
 (por ids). Si `decode()` recibe un string que no empieza por `"2|"`, intenta
@@ -72,7 +119,8 @@ las claves que falten — sin pérdida de progreso.
 `scripts/test-state-codec.ts` (`npx tsx scripts/test-state-codec.ts`) comprueba,
 contra el curso demo (`sample-course.ts`, que cubre los 23 tipos de
 interacción): el troceado ciego, el round-trip completo por tipo, la
-migración del formato antiguo, el descarte seguro ante huella desconocida, y
-que el curso demo con **todo** el progreso guardado cabe muy por debajo de
-4096 caracteres. También comprueba que todo `InteractionType` del esquema
-tiene codec propio en `TYPE_CODECS`.
+migración del formato antiguo, el descarte seguro ante huella desconocida, el
+remapeo real (reordenar/insertar/eliminar pantallas e interacciones, cambiar
+el tipo de una interacción) y que el curso demo con **todo** el progreso
+guardado cabe muy por debajo de 4096 caracteres. También comprueba que todo
+`InteractionType` del esquema tiene codec propio en `TYPE_CODECS`.

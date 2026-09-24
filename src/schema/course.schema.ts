@@ -345,6 +345,19 @@ export type BibliographyEntry = z.infer<typeof BibliographyEntry>
 // Configuración SCORM y carcasa
 // ----------------------------------------------------------------------------
 
+// Estructura del curso en el momento de un export SCORM (huella de posiciones
+// de suspend_data v2, ver docs/suspend-data.md). Se añade una entrada nueva
+// por cada estructura distinta publicada, para que el runtime pueda remapear
+// el progreso de un alumno tras reordenar/añadir/quitar contenido.
+export const CourseLayout = z.object({
+  fp: z.string(),
+  screens: z.array(z.string()),
+  interactions: z.array(z.object({ id: z.string(), type: InteractionType })),
+  final_questions: z.array(z.string()),
+  exported_at: z.string(),
+})
+export type CourseLayout = z.infer<typeof CourseLayout>
+
 export const ScormConfig = z.object({
   version: z.literal('1.2').default('1.2'),
   identifier: z.string().default('SCORMEDITOR-COURSE'),
@@ -365,6 +378,7 @@ export const ScormConfig = z.object({
     navigation: NavigationMode.default('mixed'),
     allow_resume: z.boolean().default(true),
   }).default({}),
+  layouts: z.array(CourseLayout).default([]).describe('Historial de estructuras publicadas (suspend_data v2)'),
 })
 export type ScormConfig = z.infer<typeof ScormConfig>
 

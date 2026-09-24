@@ -86,8 +86,9 @@ Validación e Informe):
 - `screenId` → `goToScreen(id)` del store (= `selectScreen` **+** `activeTab: 'editor'`);
   `'__final__'` abre el `FinalTestEditor`.
 - `unitId` → primera pantalla de la unidad (no hay editor de unidad).
-- Códigos de origen de la nota (`SCORM_NO_ACTIVITIES`, `SCORM_MIXED_*`) → abren la
-  ventana de Ajustes correspondiente; su estado (`settingsModal`) vive en el store para
+- Códigos de origen de la nota (`SCORM_NO_ACTIVITIES`, `SCORM_MIXED_*`) y de historial de
+  estructuras (`LAYOUT_CHANGED`, `LAYOUT_IDS_REPLACED`, ver `../suspend-data.md`) → abren
+  la ventana de Ajustes correspondiente; su estado (`settingsModal`) vive en el store para
   poder abrirse desde aquí.
 - Sin superficie de edición en la UI (`scorm.identifier`…) → sin enlace: solo se editan
   vía JSON/GPT.

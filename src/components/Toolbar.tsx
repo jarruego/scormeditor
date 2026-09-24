@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { downloadScorm } from '../export/exportScorm'
+import { getStateCodec } from '../scorm/stateCodec'
 import {
   isFsSupported,
   openProject,
@@ -129,7 +130,17 @@ export function Toolbar() {
   async function onExportScorm() {
     setBusy(true)
     try {
-      await downloadScorm({ course, assets })
+      // Registra la estructura actual en el historial de layouts (para el
+      // remapeo de suspend_data, ver docs/suspend-data.md) SOLO al exportar
+      // el paquete real, nunca en Vista previa. Deduplica por huella.
+      const entry = getStateCodec().buildLayoutEntry(course)
+      const layouts = course.scorm.layouts || []
+      let exportCourse = course
+      if (!layouts.some((l) => l.fp === entry.fp)) {
+        useCourseStore.getState().updateScorm({ layouts: [...layouts, { ...entry, exported_at: new Date().toISOString() }] })
+        exportCourse = useCourseStore.getState().course
+      }
+      await downloadScorm({ course: exportCourse, assets })
     } finally {
       setBusy(false)
     }

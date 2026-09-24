@@ -124,6 +124,8 @@ editor.
 | `SCORM_MIXED_NO_ACTIVITIES` | ⚠ | Nota mixta sin actividades evaluables | Marca `scored:true` en los checkpoints (o añádelos) | GPT |
 | `SCORM_ACTIVITIES_IGNORED` | ⚠ | Hay actividades `scored` pero la nota sale solo del test final: no contarán | Decisión del autor: propón `score_source:"mixed"` y aplica lo que él decida | Según |
 | `SCORM_NO_ID` | ⛔ | `scorm.identifier` vacío | Genera uno estable a partir de `course.id` (MAYÚSCULAS y guiones bajos) | GPT |
+| `LAYOUT_CHANGED` | ℹ | La estructura actual (pantallas/interacciones/preguntas del test final) ya no coincide con la última versión exportada como SCORM | Informativo, no es un error de contenido: al exportar de nuevo se registra una versión más en el historial (Ajustes del curso → «Versiones publicadas»), para que los alumnos con progreso guardado no lo pierdan | Editor |
+| `LAYOUT_IDS_REPLACED` | ⚠ | Menos de la mitad de los ids de la última versión publicada siguen existiendo en el curso actual | Decisión del autor: si el reordenamiento/borrado masivo fue intencionado, exporta con normalidad; si no, revisa qué se movió o eliminó sin querer antes de publicar | Editor |
 | `OBJ_NOT_EVALUATED` | ℹ | Objetivo declarado sin evaluación que lo mida. Causa 1 (la habitual): el `learning_objective` de una pregunta de test no está copiado **carácter a carácter** del `objective`. Causa 2: falta la evaluación (ni una interacción `scored` en una pantalla con ese `objective`, ni una pregunta de test) | Causa 1: corrige el texto para que coincida exactamente. Causa 2: añade una pregunta al test, o marca `scored` una interacción de una pantalla con ese objetivo | GPT |
 
 > Esta tabla se deriva de los validadores de SCORMEditor (`validators.ts`) y se

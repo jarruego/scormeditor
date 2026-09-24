@@ -35,7 +35,8 @@ export const sampleCourse: Course = {
       "mixed_final_weight": 60,
       "navigation": "free",
       "allow_resume": true
-    }
+    },
+    "layouts": []
   },
   "shell": {
     "brand": "",

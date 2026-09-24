@@ -20,13 +20,20 @@
  * ya tenía exactamente el shape de STATE.
  *
  * La huella es un hash corto del orden de ids de pantallas/interacciones/
- * preguntas del test final tal como está empaquetado el curso. Si no coincide
- * con la huella actual, esta fase descarta con seguridad visited/interactions/
- * results/finalAnswers (nunca se aplican datos posicionales a una estructura
- * que no es la suya) pero conserva attempts y finalScore, que no dependen de
- * la posición. La Fase 2 (historial de estructuras) sustituirá ese descarte
- * por un remapeo real contra `layouts`; por eso decode() ya acepta ese
- * parámetro, aunque de momento no lo usa.
+ * preguntas del test final tal como está empaquetado el curso. decode() no
+ * distingue "huella igual" de "huella distinta pero conocida": en ambos
+ * casos resuelve una lista de referencia (ids de pantallas, {id,type} de
+ * interacciones, ids de preguntas) — la del curso ACTUAL si la huella
+ * coincide, o la de la entrada de `layouts` (historial de estructuras
+ * publicadas, ver course.schema.ts `scorm.layouts`) que coincida si no — y
+ * decodifica cada posición contra esa lista: si el id ya no existe en el
+ * curso actual, o su tipo cambió, se descarta (nunca se aplican datos
+ * desplazados); si sigue existiendo con el mismo tipo, se decodifica con el
+ * decoder de ese tipo contra la config ACTUAL (la validación de la Fase 1).
+ * Huella desconocida (ni coincide ni está en `layouts`) → se descarta todo lo
+ * posicional (visited/interactions/results/finalAnswers) pero se conservan
+ * attempts y finalScore, que no dependen de la posición, y se registra un
+ * aviso en consola.
  *
  * Convención del proyecto: los ficheros de src/runtime/assets/js/ son scripts
  * planos que se cargan con <script src> (no hay bundler en el paquete SCORM),
@@ -834,8 +841,13 @@
     return '2|' + fp + '|' + body;
   }
 
+  function findLayout(layouts, fp) {
+    if (!layouts) return null;
+    for (var i = 0; i < layouts.length; i++) if (layouts[i] && layouts[i].fp === fp) return layouts[i];
+    return null;
+  }
+
   function decode(raw, course, layouts) {
-    void layouts; // reservado para el remapeo real de la Fase 2
     var screens = flattenScreens(course);
     var interactions = collectInteractions(screens);
     var finalQs = finalQuestions(course);
@@ -852,48 +864,93 @@
       st.finalScore = fromB36(parts[6]);
 
       var currentFp = fingerprint(screens, interactions, finalQs);
-      if (fp !== currentFp) return st; // huella desconocida: ver nota de cabecera
 
+      // Lista de referencia contra la que interpretar cada posición: la del
+      // curso actual si la huella coincide, o la de la entrada de `layouts`
+      // que coincida si no (remapeo). Huella desconocida → nada posicional.
+      var refScreenIds, refInteractions, refFinalQIds;
+      if (fp === currentFp) {
+        refScreenIds = screens.map(function (sc) { return sc.id; });
+        refInteractions = interactions.map(function (it) { return { id: it.id, type: it.type }; });
+        refFinalQIds = finalQs.map(function (q) { return q.id; });
+      } else {
+        var oldLayout = findLayout(layouts, fp);
+        if (!oldLayout) {
+          if (global.console && global.console.warn) {
+            global.console.warn('[StateCodec] huella de suspend_data desconocida (' + fp +
+              '): se descarta el progreso posicional (pantallas vistas, interacciones, ' +
+              'resultados, respuestas del test final) y se conservan intentos y nota.');
+          }
+          return st;
+        }
+        refScreenIds = oldLayout.screens || [];
+        refInteractions = oldLayout.interactions || [];
+        refFinalQIds = oldLayout.final_questions || [];
+      }
+
+      var i;
+      var currentScreenIdSet = {};
+      for (i = 0; i < screens.length; i++) currentScreenIdSet[screens[i].id] = true;
+      var currentInteractionById = {};
+      for (i = 0; i < interactions.length; i++) currentInteractionById[interactions[i].id] = interactions[i];
+      var currentFinalQById = {};
+      for (i = 0; i < finalQs.length; i++) currentFinalQById[finalQs[i].id] = finalQs[i];
+
+      // visited: solo se propaga lo que sigue existiendo en el curso actual.
       var visitedBits = unpackBits(parts[0]);
       st.visited = {};
-      var i;
-      for (i = 0; i < screens.length; i++) if (visitedBits[i]) st.visited[screens[i].id] = true;
+      for (i = 0; i < refScreenIds.length; i++) {
+        if (visitedBits[i] && currentScreenIdSet[refScreenIds[i]]) st.visited[refScreenIds[i]] = true;
+      }
 
+      // resultados: por id, solo si la interacción sigue existiendo con el
+      // MISMO tipo (si cambió de tipo, ni su resultado ni su detalle son de
+      // fiar — se descartan los dos, nunca se aplican datos desplazados).
       var stateChars = parts[1];
       var scoreList = unpackChunks(parts[2]) || [];
-      var hasFinal = finalQs.length > 0;
-      var expectedSlots = interactions.length + (hasFinal ? 1 : 0);
+      var refHasFinal = refFinalQIds.length > 0;
+      var expectedSlots = refInteractions.length + (refHasFinal ? 1 : 0);
       st.results = {};
       if (stateChars.length === expectedSlots && scoreList.length === expectedSlots) {
-        for (i = 0; i < interactions.length; i++) {
-          var maxScore = interactions[i].interaction.points || 1;
+        for (i = 0; i < refInteractions.length; i++) {
+          var cur = currentInteractionById[refInteractions[i].id];
+          if (!cur || cur.type !== refInteractions[i].type) continue;
+          var maxScore = cur.interaction.points || 1;
           var r = decodeResultSlot(stateChars.charAt(i), scoreList[i], maxScore, false);
-          if (r) st.results[interactions[i].id] = r;
+          if (r) st.results[cur.id] = r;
         }
-        if (hasFinal) {
+        if (refHasFinal) {
           var maxFinal = 0;
           for (i = 0; i < finalQs.length; i++) maxFinal += finalQs[i].points || 1;
-          var rf = decodeResultSlot(stateChars.charAt(interactions.length), scoreList[interactions.length], maxFinal, true);
+          var rf = decodeResultSlot(stateChars.charAt(refInteractions.length), scoreList[refInteractions.length], maxFinal, true);
           if (rf) st.results.__final__ = rf;
         }
       }
 
+      // detalle de interacciones: misma condición (id vivo + tipo sin cambiar),
+      // decodificado con el codec de ese tipo contra la config ACTUAL.
       var detailRaw = unpackChunks(parts[3]);
       st.interactions = {};
-      if (detailRaw && detailRaw.length === interactions.length) {
-        for (i = 0; i < interactions.length; i++) {
-          var det = decodeDetail(interactions[i].type, detailRaw[i], interactions[i].interaction);
-          if (det != null) st.interactions[interactions[i].id] = det;
+      if (detailRaw && detailRaw.length === refInteractions.length) {
+        for (i = 0; i < refInteractions.length; i++) {
+          var cur2 = currentInteractionById[refInteractions[i].id];
+          if (!cur2 || cur2.type !== refInteractions[i].type) continue;
+          var det = decodeDetail(cur2.type, detailRaw[i], cur2.interaction);
+          if (det != null) st.interactions[cur2.id] = det;
         }
       }
 
+      // respuestas del test final: por id de pregunta; el índice de opción se
+      // reinterpreta contra las opciones ACTUALES de esa pregunta.
       var faRaw = unpackChunks(parts[4]);
       st.finalAnswers = {};
-      if (faRaw && faRaw.length === finalQs.length) {
-        for (i = 0; i < finalQs.length; i++) {
+      if (faRaw && faRaw.length === refFinalQIds.length) {
+        for (i = 0; i < refFinalQIds.length; i++) {
           if (!faRaw[i]) continue;
-          var opt = (finalQs[i].options || [])[fromB36(faRaw[i])];
-          if (opt) st.finalAnswers[finalQs[i].id] = opt.id;
+          var curQ = currentFinalQById[refFinalQIds[i]];
+          if (!curQ) continue;
+          var opt = (curQ.options || [])[fromB36(faRaw[i])];
+          if (opt) st.finalAnswers[curQ.id] = opt.id;
         }
       }
       return st;
@@ -915,10 +972,27 @@
     return st;
   }
 
+  // Entrada de `course.scorm.layouts` para la estructura ACTUAL del curso
+  // (sin `exported_at`: lo añade quien exporta, es un dato de reloj, no de
+  // codec). La usa el flujo de exportación del editor para registrar cada
+  // estructura publicada — nunca se genera en la Vista previa.
+  function buildLayoutEntry(course) {
+    var screens = flattenScreens(course);
+    var interactions = collectInteractions(screens);
+    var finalQs = finalQuestions(course);
+    return {
+      fp: fingerprint(screens, interactions, finalQs),
+      screens: screens.map(function (sc) { return sc.id; }),
+      interactions: interactions.map(function (it) { return { id: it.id, type: it.type }; }),
+      final_questions: finalQs.map(function (q) { return q.id; }),
+    };
+  }
+
   global.StateCodec = {
     VERSION: 2,
     encode: encode,
     decode: decode,
+    buildLayoutEntry: buildLayoutEntry,
     // Expuesto solo para scripts/test-state-codec.ts (Fase 1: demostrar que
     // el estado se puede trocear en segmentos sin conocer tipo ni config).
     _internal: {

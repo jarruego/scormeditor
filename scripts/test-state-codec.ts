@@ -1,22 +1,27 @@
 /* =============================================================================
- * test-state-codec.ts — Batería de la Fase 1 del codec v2 de suspend_data.
+ * test-state-codec.ts — Batería del codec v2 de suspend_data (Fases 1 y 2).
  * Ejecutar:  npx tsx scripts/test-state-codec.ts
  *
  * Garantías que comprueba:
  *  1) TROCEADO CIEGO: unpackChunks() recupera segmentos arbitrarios (con
  *     cualquier contenido) sin conocer su longitud ni su tipo de antemano —
- *     la pieza de la que depende la Fase 2 (remapeo por huella) para poder
- *     interpretar cada segmento con el decoder de SU tipo actual.
+ *     la pieza de la que depende el remapeo por huella para poder interpretar
+ *     cada segmento con el decoder de SU tipo actual.
  *  2) ROUND-TRIP: decode(encode(STATE)) reproduce visited/attempts/finalScore/
  *     finalAnswers y, para cada uno de los 23 tipos de interacción del curso
  *     demo (sample-course.ts, que los cubre todos), el detalle y el resultado
  *     esperados — incluidas las interacciones sin resolver todavía ('.').
  *  3) MIGRACIÓN: un suspend_data del formato antiguo (JSON por ids) se lee
  *     sin pérdida, porque ya tenía el shape de STATE.
- *  4) HUELLA DESCONOCIDA: si la estructura del curso cambia, se descartan
- *     visited/interactions/results/finalAnswers pero se conservan attempts y
+ *  4) HUELLA DESCONOCIDA (sin entrada en `layouts`): se descartan visited/
+ *     interactions/results/finalAnswers pero se conservan attempts y
  *     finalScore (nunca se aplican datos posicionales a una estructura ajena).
  *  5) COBERTURA: todo el enum InteractionType tiene codec compacto propio.
+ *  6) REMAPEO (historial de estructuras, `layouts`): reordenar e insertar
+ *     pantallas no pierde nada; eliminar una pantalla/interacción descarta
+ *     solo lo suyo; cambiar el tipo de una interacción descarta su resultado
+ *     Y su detalle (nunca se aplican datos desplazados); lo que no se toca
+ *     sobrevive exacto.
  * ===========================================================================*/
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -328,6 +333,84 @@ interactions.forEach((it, i) => {
   ok(decodedAfterChange.finalScore === state.finalScore, 'huella desconocida: finalScore debería conservarse')
 }
 
+// --- 6b) Remapeo (Fase 2): reordenar, insertar, eliminar y cambiar tipo -----
+{
+  const oldLayout = StateCodec.buildLayoutEntry(course)
+  ok(oldLayout.fp === encoded.slice(2, 8), 'buildLayoutEntry: la huella del curso original no coincide con la del encode() ya hecho')
+  ok(
+    oldLayout.screens.length === screens.length &&
+    oldLayout.interactions.length === interactions.length &&
+    oldLayout.final_questions.length === finalQs.length,
+    'buildLayoutEntry: no reproduce el mismo recuento de pantallas/interacciones/preguntas',
+  )
+
+  function findScreenArrays(c: AnyRec): AnyRec[][] {
+    const arrs: AnyRec[][] = []
+    ;(c.modules || []).forEach((m: AnyRec) => {
+      arrs.push(m.screens || [])
+      ;(m.units || []).forEach((u: AnyRec) => arrs.push(u.screens || []))
+      arrs.push(m.closing_screens || [])
+    })
+    return arrs
+  }
+  function findInteractionScreen(c: AnyRec, id: string): AnyRec | undefined {
+    for (const arr of findScreenArrays(c)) {
+      const sc = arr.find((s: AnyRec) => s.interaction?.id === id)
+      if (sc) return sc
+    }
+    return undefined
+  }
+
+  const mutated: AnyRec = JSON.parse(JSON.stringify(course))
+  const modWithScreens = (mutated.modules || []).find((m: AnyRec) => (m.screens || []).length > 0)
+
+  // 1) Reordena las pantallas propias del módulo (cambia la huella, no los ids).
+  modWithScreens.screens.reverse()
+  // 2) Inserta una pantalla nueva sin interacción: no debería afectar a nada existente.
+  modWithScreens.screens.push({ id: '__test_new_screen__', type: 'content', title: 'Nueva' })
+
+  // 3) Elimina la pantalla que aloja la 1ª interacción activa: su id desaparece.
+  const removedId = active[0]
+  const removedScreenId = findInteractionScreen(course as AnyRec, removedId)!.id
+  for (const arr of findScreenArrays(mutated)) {
+    const idx = arr.findIndex((s: AnyRec) => s.interaction?.id === removedId)
+    if (idx !== -1) arr.splice(idx, 1)
+  }
+
+  // 4) Cambia el tipo de la 2ª interacción activa (mismo id, tipo distinto).
+  const retypedId = active[1]
+  const retypedScreen = findInteractionScreen(mutated, retypedId)!
+  retypedScreen.interaction.type = retypedScreen.interaction.type === 'true_false' ? 'single_choice' : 'true_false'
+
+  // Una 3ª interacción activa que NO se toca: debe sobrevivir intacta.
+  const untouchedId = active.find((id) => id !== removedId && id !== retypedId)!
+
+  const remapped = StateCodec.decode(encoded, mutated, [oldLayout])
+
+  ok(remapped.attempts === state.attempts, 'remapeo: attempts debería conservarse')
+  ok(remapped.finalScore === state.finalScore, 'remapeo: finalScore debería conservarse')
+  ok(!remapped.visited[removedScreenId], 'remapeo: la pantalla eliminada no debería quedar visited')
+  const otherVisited = Object.keys(state.visited).filter((id) => id !== removedScreenId)
+  ok(otherVisited.every((id) => remapped.visited[id]), 'remapeo: las pantallas que siguen existiendo deberían conservar su visited')
+
+  ok(!remapped.results[removedId] && !remapped.interactions[removedId],
+    'remapeo: la interacción eliminada no debería tener resultado ni detalle')
+  ok(!remapped.results[retypedId] && !remapped.interactions[retypedId],
+    'remapeo: la interacción que cambió de tipo no debería conservar ni resultado ni detalle')
+  ok(deepEqual(remapped.results[untouchedId], state.results[untouchedId]),
+    'remapeo: una interacción sin tocar debería conservar su resultado exacto')
+  ok(deepEqual(remapped.interactions[untouchedId], decoded.interactions[untouchedId]),
+    'remapeo: una interacción sin tocar debería conservar su detalle exacto')
+  ok(deepEqual(remapped.finalAnswers, state.finalAnswers),
+    'remapeo: las respuestas del test final (sin tocar) deberían conservarse íntegras')
+
+  // Huella conocida en `layouts` pero SIN mutar nada: debe comportarse igual
+  // que decodificar contra el curso original (round-trip también por esta vía).
+  const sameStructureViaLayouts = StateCodec.decode(encoded, course, [oldLayout])
+  ok(deepEqual(sameStructureViaLayouts, decoded),
+    'remapeo: decodificar vía `layouts` con la MISMA estructura debe dar el mismo resultado que la vía rápida (huella igual)')
+}
+
 // --- 7) Tamaño real: el curso demo completo, con progreso total, cabe ------
 {
   const fullState: AnyRec = { visited: {}, interactions: {}, results: {}, attempts: 1, finalScore: 100, finalAnswers: {} }
@@ -347,4 +430,4 @@ if (failures) {
   console.error(`\n${failures} fallo(s).`)
   process.exit(1)
 }
-console.log(`state_codec.js — Fase 1: OK. ${interactions.length} interacciones y ${finalQs.length} preguntas de test final comprobadas contra el curso demo, ${InteractionType.options.length} tipos con codec propio.`)
+console.log(`state_codec.js — Fases 1-2: OK. ${interactions.length} interacciones y ${finalQs.length} preguntas de test final comprobadas contra el curso demo, ${InteractionType.options.length} tipos con codec propio, remapeo por huella verificado.`)
