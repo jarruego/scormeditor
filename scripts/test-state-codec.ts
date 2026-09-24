@@ -339,6 +339,23 @@ interactions.forEach((it, i) => {
   ok(decodedAfterChange.finalScore === state.finalScore, 'huella desconocida: finalScore debería conservarse')
 }
 
+function findScreenArrays(c: AnyRec): AnyRec[][] {
+  const arrs: AnyRec[][] = []
+  ;(c.modules || []).forEach((m: AnyRec) => {
+    arrs.push(m.screens || [])
+    ;(m.units || []).forEach((u: AnyRec) => arrs.push(u.screens || []))
+    arrs.push(m.closing_screens || [])
+  })
+  return arrs
+}
+function findInteractionScreen(c: AnyRec, id: string): AnyRec | undefined {
+  for (const arr of findScreenArrays(c)) {
+    const sc = arr.find((s: AnyRec) => s.interaction?.id === id)
+    if (sc) return sc
+  }
+  return undefined
+}
+
 // --- 6b) Remapeo (Fase 2): reordenar, insertar, eliminar y cambiar tipo -----
 {
   const oldLayout = StateCodec.buildLayoutEntry(course)
@@ -349,23 +366,6 @@ interactions.forEach((it, i) => {
     oldLayout.final_questions.length === finalQs.length,
     'buildLayoutEntry: no reproduce el mismo recuento de pantallas/interacciones/preguntas',
   )
-
-  function findScreenArrays(c: AnyRec): AnyRec[][] {
-    const arrs: AnyRec[][] = []
-    ;(c.modules || []).forEach((m: AnyRec) => {
-      arrs.push(m.screens || [])
-      ;(m.units || []).forEach((u: AnyRec) => arrs.push(u.screens || []))
-      arrs.push(m.closing_screens || [])
-    })
-    return arrs
-  }
-  function findInteractionScreen(c: AnyRec, id: string): AnyRec | undefined {
-    for (const arr of findScreenArrays(c)) {
-      const sc = arr.find((s: AnyRec) => s.interaction?.id === id)
-      if (sc) return sc
-    }
-    return undefined
-  }
 
   const mutated: AnyRec = JSON.parse(JSON.stringify(course))
   const modWithScreens = (mutated.modules || []).find((m: AnyRec) => (m.screens || []).length > 0)
@@ -391,6 +391,16 @@ interactions.forEach((it, i) => {
   // Una 3ª interacción activa que NO se toca: debe sobrevivir intacta.
   const untouchedId = active.find((id) => id !== removedId && id !== retypedId)!
 
+  // 5) Preguntas del test final: elimina la primera respondida (su respuesta
+  // desaparece) e inserta una nueva (no debería afectar a las demás).
+  const answeredFinalQId = Object.keys(state.finalAnswers)[0]
+  const survivingFinalQId = Object.keys(state.finalAnswers).find((id) => id !== answeredFinalQId)
+  const ft = mutated.assessments?.final_test
+  if (ft && answeredFinalQId) {
+    ft.questions = ft.questions.filter((q: AnyRec) => q.id !== answeredFinalQId)
+    ft.questions.push({ id: '__test_new_question__', prompt: 'Nueva', type: 'single_choice', points: 1, options: [{ id: 'a', text: 'A', correct: true }] })
+  }
+
   const remapped = StateCodec.decode(encoded, mutated, [oldLayout])
 
   ok(remapped.attempts === state.attempts, 'remapeo: attempts debería conservarse')
@@ -407,14 +417,137 @@ interactions.forEach((it, i) => {
     'remapeo: una interacción sin tocar debería conservar su resultado exacto')
   ok(deepEqual(remapped.interactions[untouchedId], decoded.interactions[untouchedId]),
     'remapeo: una interacción sin tocar debería conservar su detalle exacto')
-  ok(deepEqual(remapped.finalAnswers, state.finalAnswers),
-    'remapeo: las respuestas del test final (sin tocar) deberían conservarse íntegras')
+  if (answeredFinalQId) {
+    ok(remapped.finalAnswers[answeredFinalQId] === undefined,
+      'remapeo: la respuesta de una pregunta de test final ELIMINADA no debería sobrevivir')
+  } else {
+    ok(deepEqual(remapped.finalAnswers, state.finalAnswers),
+      'remapeo: las respuestas del test final (sin tocar) deberían conservarse íntegras')
+  }
+  if (survivingFinalQId) {
+    ok(remapped.finalAnswers[survivingFinalQId] === state.finalAnswers[survivingFinalQId],
+      'remapeo: la respuesta de una pregunta de test final que sigue existiendo (con una nueva insertada al lado) debería conservarse')
+  }
 
   // Huella conocida en `layouts` pero SIN mutar nada: debe comportarse igual
   // que decodificar contra el curso original (round-trip también por esta vía).
   const sameStructureViaLayouts = StateCodec.decode(encoded, course, [oldLayout])
   ok(deepEqual(sameStructureViaLayouts, decoded),
     'remapeo: decodificar vía `layouts` con la MISMA estructura debe dar el mismo resultado que la vía rápida (huella igual)')
+}
+
+// --- 6c) Config de interacción cambiada (mismo id, mismo tipo, huella IGUAL:
+//         el fp no depende de la config, así que esto pasa por la vía rápida,
+//         no por el remapeo — es la validación por tipo de la Fase 1) --------
+{
+  const choiceId = active.find((id) => {
+    const it = interactions.find((x) => x.id === id)
+    return !!it && (it.type === 'single_choice' || it.type === 'true_false')
+  })
+  ok(!!choiceId, 'config cambiada: el curso demo debería tener alguna single_choice/true_false activa para esta prueba')
+  if (choiceId) {
+    const configMutated: AnyRec = JSON.parse(JSON.stringify(course))
+    const sc = findInteractionScreen(configMutated, choiceId)!
+    sc.interaction.options = [] // la opción codificada (índice 0) deja de existir
+    const currentFpUnchanged = StateCodec._internal.fingerprint(
+      StateCodec._internal.flattenScreens(configMutated),
+      StateCodec._internal.collectInteractions(StateCodec._internal.flattenScreens(configMutated)),
+      StateCodec._internal.finalQuestions(configMutated),
+    )
+    ok(currentFpUnchanged === encoded.slice(2, 8),
+      'config cambiada: vaciar las opciones de una interacción no debería cambiar la huella (no es un cambio de ids/tipos)')
+
+    const afterConfigChange = StateCodec.decode(encoded, configMutated, [])
+    ok(!afterConfigChange.interactions[choiceId],
+      'config cambiada: el detalle de la interacción con la config incompatible debería descartarse, no lanzar ni devolver basura')
+    ok(deepEqual(afterConfigChange.results[choiceId], state.results[choiceId]),
+      'config cambiada: el RESULTADO no depende de `options`, así que debería conservarse igual')
+    const otherActiveId = active.find((id) => id !== choiceId)!
+    ok(deepEqual(afterConfigChange.interactions[otherActiveId], decoded.interactions[otherActiveId]),
+      'config cambiada: una interacción sin relación no debería verse afectada')
+  }
+}
+
+// --- 6d) Exportar dos veces sin duplicar el historial de layouts -----------
+// (mismo criterio de deduplicación por huella que Toolbar.tsx: `onExportScorm`)
+{
+  let layouts: AnyRec[] = []
+  function registerExport(c: AnyRec) {
+    const entry = StateCodec.buildLayoutEntry(c)
+    if (!layouts.some((l) => l.fp === entry.fp)) layouts = [...layouts, { ...entry, exported_at: new Date().toISOString() }]
+  }
+  registerExport(course)
+  registerExport(course) // segunda exportación seguida, sin cambiar nada
+  ok(layouts.length === 1, `exportar dos veces sin cambios no debería duplicar el historial (quedaron ${layouts.length})`)
+  const reordered: AnyRec = JSON.parse(JSON.stringify(course))
+  const m = (reordered.modules || []).find((mm: AnyRec) => (mm.screens || []).length > 0)
+  m.screens.push({ id: '__test_export_twice_screen__', type: 'content', title: 'Nueva' }) // cambia la huella de verdad
+  registerExport(reordered) // estructura distinta: sí debe añadir una entrada nueva
+  ok(layouts.length === 2, `una estructura distinta sí debería añadir una entrada nueva al historial (quedaron ${layouts.length})`)
+}
+
+// --- 6e) Curso sintético de 150 pantallas: el peor caso debe seguir siendo
+//         pequeño (la razón de ser de todo este rediseño: el problema
+//         original era ~10.000 caracteres frente al límite de 4096) --------
+{
+  const bigCourse: AnyRec = {
+    modules: [{ id: 'm1', screens: [], units: [{ id: 'u1', screens: [] }], closing_screens: [] }],
+    intro_screens: [], closing_screens: [],
+    assessments: { final_test: { questions: [] } },
+    scorm: {},
+  }
+  const unitScreens = bigCourse.modules[0].units[0].screens
+  let n = 0
+  function addScreen(interaction?: AnyRec) {
+    n++
+    unitScreens.push({ id: `s${n}`, type: 'content', title: `Pantalla ${n}`, interaction })
+  }
+  // 20 exploratorias (acordeón/pestañas/volteo), como en el enunciado original.
+  for (let i = 0; i < 20; i++) {
+    addScreen({
+      id: `i-exp-${i}`, type: (['accordion', 'tabs', 'flip_cards'] as const)[i % 3],
+      scored: false, points: 0, options: [],
+      config: { items: [{ title: 'a' }, { title: 'b' }, { title: 'c' }], cards: [{ front: 'a', back: 'b' }, { front: 'c', back: 'd' }] },
+    })
+  }
+  // 15 rellenar huecos.
+  for (let i = 0; i < 15; i++) {
+    addScreen({
+      id: `i-fb-${i}`, type: 'fill_blanks', scored: true, points: 1, options: [],
+      config: { text: 'Un [[hueco]] y otro [[hueco2]] más.', distractors: ['x', 'y'] },
+    })
+  }
+  // 10 elección (single_choice).
+  for (let i = 0; i < 10; i++) {
+    addScreen({
+      id: `i-sc-${i}`, type: 'single_choice', scored: true, points: 1,
+      options: [{ id: 'a', text: 'A', correct: true }, { id: 'b', text: 'B' }, { id: 'c', text: 'C' }],
+      config: {},
+    })
+  }
+  // 5 ordenar (sort_steps).
+  for (let i = 0; i < 5; i++) {
+    addScreen({
+      id: `i-ss-${i}`, type: 'sort_steps', scored: true, points: 1, options: [],
+      config: { steps: [{ id: 'p1', text: 'uno', order: 1 }, { id: 'p2', text: 'dos', order: 2 }, { id: 'p3', text: 'tres', order: 3 }] },
+    })
+  }
+  // 4 html_embed. state_max realista (docs/html-embed-contract.md recomienda
+  // un estado compacto tipo {"s":[0,2]}, no el techo de 100 por defecto).
+  for (let i = 0; i < 4; i++) {
+    addScreen({ id: `i-he-${i}`, type: 'html_embed', scored: false, points: 0, options: [], config: { state_max: 20 } })
+  }
+  // El resto, hasta 150, pantallas de contenido sin interacción.
+  while (n < 150) addScreen()
+  ok(n === 150, `curso sintético: debería tener 150 pantallas, tiene ${n}`)
+  ok(unitScreens.filter((s: AnyRec) => s.interaction).length === 54,
+    `curso sintético: debería tener 54 interacciones (20+15+10+5+4), tiene ${unitScreens.filter((s: AnyRec) => s.interaction).length}`)
+
+  const bigEstimate = StateCodec.estimateSuspendSize(bigCourse)
+  console.log(`Curso sintético (150 pantallas, 54 interacciones, como en el enunciado original): peor caso ${bigEstimate.worstCase} / ${bigEstimate.limit} caracteres.`)
+  ok(bigEstimate.missingEstimator.length === 0, 'curso sintético: no debería haber tipos sin estimador')
+  ok(bigEstimate.worstCase < 1500,
+    `curso sintético: el peor caso debería quedar por debajo de 1500 caracteres (dio ${bigEstimate.worstCase}) — el problema original eran ~10.000 caracteres frente al límite de 4096`)
 }
 
 // --- 7) Tamaño real: el curso demo completo, con progreso total, cabe ------

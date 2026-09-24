@@ -194,14 +194,28 @@ las claves que falten — sin pérdida de progreso.
 ## Verificación
 `scripts/test-state-codec.ts` (`npx tsx scripts/test-state-codec.ts`) comprueba,
 contra el curso demo (`sample-course.ts`, que cubre los 23 tipos de
-interacción): el troceado ciego, el round-trip completo por tipo, la
-migración del formato antiguo, el descarte seguro ante huella desconocida, el
-remapeo real (reordenar/insertar/eliminar pantallas e interacciones, cambiar
-el tipo de una interacción), la degradación por tamaño (un estado inflado a
-propósito hasta no caber ni de lejos en 4096 debe degradarse en el orden
-documentado hasta caber, sin tocar resultados) y que el curso demo con
-**todo** el progreso guardado cabe muy por debajo de 4096 caracteres sin
-degradar nada, y que `estimateSuspendSize` del propio curso demo no señala
-ningún tipo sin estimador y da un peor caso mayor o igual que ese progreso
-real completo. También comprueba que todo `InteractionType` del esquema tiene
-codec y estimador propios en `TYPE_CODECS`/`worstCaseDetail`.
+interacción):
+- Troceado ciego y round-trip completo por tipo (incluidas las interacciones
+  sin resolver todavía).
+- Migración del formato antiguo (JSON por ids), sin pérdida.
+- Descarte seguro ante huella desconocida (sin entrada en `layouts`).
+- Remapeo real contra `layouts`: reordenar e insertar pantallas sin perder
+  nada; eliminar una pantalla/interacción descarta solo lo suyo; eliminar o
+  insertar una pregunta del test final igual; cambiar el tipo de una
+  interacción descarta su resultado Y su detalle.
+- Config de interacción cambiada con la MISMA huella (mismo id y tipo, config
+  distinta — no pasa por `layouts`, es la validación por tipo de la Fase 1):
+  el detalle incompatible se descarta sin afectar a nada más.
+- Exportar dos veces sin cambios no duplica el historial; una estructura
+  distinta sí añade una entrada.
+- Degradación por tamaño: un estado inflado a propósito hasta no caber ni de
+  lejos en 4096 se degrada en el orden documentado hasta caber, sin tocar
+  resultados.
+- Un curso sintético de 150 pantallas y 54 interacciones (la proporción del
+  problema original: 20 exploratorias, 15 huecos, 10 elección, 5 ordenar, 4
+  HTML a medida) da un peor caso por debajo de 1500 caracteres — el problema
+  original eran ~10.000 caracteres frente al límite de 4096.
+- `estimateSuspendSize` del curso demo no señala ningún tipo sin estimador y
+  da un peor caso mayor o igual que su progreso real completo sin degradar.
+- Todo `InteractionType` del esquema tiene codec y estimador propios en
+  `TYPE_CODECS`/`worstCaseDetail`.
