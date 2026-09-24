@@ -568,6 +568,67 @@
       .split(MARK).join(NTILDE)
       .replace(new RegExp('[^A-Z' + NTILDE + ']', 'g'), '');
   }
+
+  // Reproduce EXACTAMENTE el algoritmo de colocación de crossword en
+  // interactions.js — determinista, sin PRNG: ordena por longitud
+  // descendente, coloca la más larga en (0,0) horizontal y cada una de las
+  // demás en el primer cruce válido con las ya colocadas (o la descarta si
+  // no encaja) — para poder dar el número REAL de casillas del peor caso en
+  // vez de una cota aproximada (la suma de longitudes, que ignora los
+  // cruces). Si ese algoritmo cambia alguna vez en interactions.js, hay que
+  // replicar el cambio aquí también.
+  function crosswordFilledCells(cfg) {
+    var seenW = {};
+    var entries = (cfg.entries || []).map(function (en) { return normWord(en.word || ''); })
+      .filter(function (w) { return w.length >= 3 && w.length <= 12; })
+      .filter(function (w) { if (seenW[w]) return false; seenW[w] = 1; return true; });
+    if (!entries.length) return 0;
+
+    var grid = {};
+    var placed = [];
+    function fits(word, r, c, dr, dc) {
+      if (grid[(r - dr) + ',' + (c - dc)] != null) return false;
+      if (grid[(r + dr * word.length) + ',' + (c + dc * word.length)] != null) return false;
+      var crosses = 0;
+      for (var k = 0; k < word.length; k++) {
+        var rr = r + dr * k, cc = c + dc * k;
+        var cur = grid[rr + ',' + cc];
+        if (cur != null) {
+          if (cur !== word.charAt(k)) return false;
+          crosses++;
+        } else {
+          if (grid[(rr + dc) + ',' + (cc + dr)] != null) return false;
+          if (grid[(rr - dc) + ',' + (cc - dr)] != null) return false;
+        }
+      }
+      return placed.length === 0 || crosses > 0;
+    }
+    function put(word, r, c, dr, dc) {
+      for (var k = 0; k < word.length; k++) grid[(r + dr * k) + ',' + (c + dc * k)] = word.charAt(k);
+      placed.push({ word: word, r: r, c: c, dr: dr, dc: dc });
+    }
+
+    var sorted = entries.slice().sort(function (a, b) { return b.length - a.length; });
+    put(sorted[0], 0, 0, 0, 1);
+    sorted.slice(1).forEach(function (w) {
+      for (var pi = 0; pi < placed.length; pi++) {
+        var p = placed[pi];
+        var pdr = p.dr === 0 ? 1 : 0, pdc = p.dc === 0 ? 1 : 0;
+        for (var k = 0; k < w.length; k++) {
+          for (var m = 0; m < p.word.length; m++) {
+            if (p.word.charAt(m) !== w.charAt(k)) continue;
+            var cr = p.r + p.dr * m, cc = p.c + p.dc * m;
+            var r0 = cr - pdr * k, c0 = cc - pdc * k;
+            if (fits(w, r0, c0, pdr, pdc)) { put(w, r0, c0, pdr, pdc); return; }
+          }
+        }
+      }
+      // sin encaje: descartada (igual que en interactions.js)
+    });
+
+    return Object.keys(grid).length;
+  }
+
   TYPE_CODECS.word_search = {
     encode: function (detail, it) {
       if (!detail || !detail.found) return null;
@@ -1055,9 +1116,7 @@
       case 'word_search':
         return { found: (cfg.words || []).slice() };
       case 'crossword': {
-        var entries = (cfg.entries || []).map(function (en) { return normWord(en.word || ''); })
-          .filter(function (w) { return w.length >= 3 && w.length <= 12; });
-        var totalCells = entries.reduce(function (acc, w) { return acc + w.length; }, 0);
+        var totalCells = crosswordFilledCells(cfg);
         var values = {};
         for (var c = 0; c < totalCells; c++) values[c + ',0'] = 'A';
         return { values: values, correct: false, attempts: 999 };
@@ -1114,12 +1173,8 @@
         items.forEach(function (q) { maxLen = Math.max(maxLen, Math.min(120, Math.max(40, (q.answer || '').length + 10))); });
         return 'az_quiz: ' + items.length + ' preguntas × hasta ' + maxLen + ' caracteres';
       }
-      case 'crossword': {
-        var entries = (cfg.entries || []).map(function (en) { return normWord(en.word || ''); })
-          .filter(function (w) { return w.length >= 3 && w.length <= 12; });
-        var totalCells = entries.reduce(function (acc, w) { return acc + w.length; }, 0);
-        return 'crossword: ' + totalCells + ' casillas (cota superior)';
-      }
+      case 'crossword':
+        return 'crossword: ' + crosswordFilledCells(cfg) + ' casillas';
       case 'accordion': case 'tabs':
         return type + ': ' + ((cfg.items || []).length) + ' elementos';
       case 'flip_cards': case 'image_cards':

@@ -33,9 +33,14 @@
  *     factor de escape porque el RUNTIME (interactions.js) garantiza ASCII —
  *     se comprueba contra el shim MeEmbed REAL (extraído y evaluado, no
  *     reimplementado): acepta ASCII dentro de presupuesto, rechaza tildes/'~'
- *     y lo que se pasa de tamaño. Invariante por tipo: un estado real nunca
- *     pesa más que la estimación, y para html_embed/az_quiz la estimación no
- *     se pasa de un 10% sobre el real máximo alcanzable.
+ *     y lo que se pasa de tamaño. `az_quiz` guarda por la posición de autor
+ *     (`origIdx`), no por la del rosco pintado (alfabética): editar solo el
+ *     texto de una respuesta no desplaza lo ya respondido de otras preguntas.
+ *     `crossword` reproduce el algoritmo de colocación REAL (número exacto de
+ *     casillas, verificado contra el propio factory de interactions.js), no
+ *     una cota aproximada. Invariante por tipo: un estado real nunca pesa más
+ *     que la estimación, y para html_embed/az_quiz la estimación no se pasa
+ *     de un 10% sobre el real máximo alcanzable.
  * ===========================================================================*/
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -102,6 +107,35 @@ function runMeEmbedSaveState(shimSrc: string, obj: unknown): { posted: AnyRec | 
   vm.runInContext(shimSrc, sandbox)
   sandbox.MeEmbed.saveState(obj)
   return { posted, warnings: sandbox.warnings, state: sandbox.MeEmbed.state }
+}
+
+// DOM mínimo simulado, suficiente para que un factory de interactions.js
+// termine de renderizar sin lanzar (listeners y consultas son no-op).
+function fakeEl(): AnyRec {
+  const e: AnyRec = {
+    addEventListener: () => {}, removeEventListener: () => {},
+    querySelector: () => fakeEl(), querySelectorAll: () => [],
+    classList: { add: () => {}, remove: () => {}, contains: () => false, toggle: () => {} },
+    style: {}, dataset: {}, setAttribute: () => {}, getAttribute: () => null, disabled: false,
+  }
+  let html = ''
+  Object.defineProperty(e, 'innerHTML', { get: () => html, set: (v) => { html = v } })
+  return e
+}
+
+// Renderiza el factory REAL de crossword (interactions.js) y cuenta sus
+// casillas rellenas (`.me-cw-box`) tal como las pinta de verdad, para
+// comprobar que `crosswordFilledCells` (state_codec.js) reproduce el mismo
+// algoritmo de colocación y no una reimplementación distinta.
+function renderCrosswordCellCount(config: AnyRec): number {
+  const Interactions = loadInteractions()
+  const el = fakeEl()
+  const data = {
+    id: 'cw-test', type: 'crossword', prompt: '', feedback: { correct: '', incorrect: '', explanation: '' },
+    scored: false, points: 0, options: [], config,
+  }
+  Interactions.render(el, data, { state: null, save: () => {}, announce: () => {} })
+  return (el.innerHTML.match(/me-cw-box/g) || []).length
 }
 
 const StateCodec = loadStateCodec()
@@ -719,6 +753,28 @@ ok(fullEncoded.length <= 4096, `el curso demo con TODO el progreso guardado supe
   const emptyEstimate = StateCodec.estimateSuspendSize(emptyCourse)
   ok(emptyEstimate.worstCase > 0 && emptyEstimate.worstCase < 100,
     `estimateSuspendSize: un curso vacío debería dar un peor caso pequeño y sensato (dio ${emptyEstimate.worstCase})`)
+}
+
+// --- 9b) crossword: el estimador reproduce el algoritmo de colocación REAL
+//         (número exacto de casillas, no una cota aproximada) --------------
+{
+  function checkCrosswordCount(entries: AnyRec[], label: string) {
+    const real = renderCrosswordCellCount({ entries })
+    const it: AnyRec = { id: 'cw-check', type: 'crossword', config: { entries }, options: [], scored: false, points: 0 }
+    const singleCourse: AnyRec = { modules: [{ id: 'm1', screens: [{ id: 's1', interaction: it }] }], intro_screens: [], closing_screens: [], assessments: {}, scorm: {} }
+    const motivo = StateCodec.estimateSuspendSize(singleCourse).perInteraction[0].motivo as string
+    const estimated = Number(/(\d+) casillas/.exec(motivo)?.[1])
+    ok(estimated === real, `crossword [${label}]: el estimador (${estimated} casillas) debería coincidir EXACTO con el runtime real (${real})`, motivo)
+  }
+  checkCrosswordCount([{ word: 'CASA', clue: 'a' }, { word: 'SOL', clue: 'b' }, { word: 'ARBOL', clue: 'c' }, { word: 'LUNA', clue: 'd' }], 'con cruces')
+  checkCrosswordCount([{ word: 'PERRO', clue: 'a' }], 'una sola palabra')
+  checkCrosswordCount(
+    [{ word: 'GATO', clue: 'a' }, { word: 'GATO', clue: 'a2' }, { word: 'YO', clue: 'b' }, { word: 'OTORRINOLARINGOLOGO', clue: 'c' }, { word: 'TREN', clue: 'd' }],
+    'con duplicado y entradas fuera de rango (2 y 19 letras)',
+  )
+  // El crucigrama real del curso demo, tal cual está en sample-course.ts.
+  const demoCrossword = interactions.find((it) => it.type === 'crossword')
+  if (demoCrossword) checkCrosswordCount((demoCrossword.interaction.config?.entries || []), 'curso demo')
 }
 
 // --- 10) html_embed: el runtime REAL hace cumplir el mismo state_max/ASCII

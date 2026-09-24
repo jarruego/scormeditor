@@ -176,11 +176,13 @@ ASCII; sobrestimaba el peor caso real varias veces):
   incorrectas al límite de su `maxlength` (`Math.min(120, Math.max(40,
   respuesta.length + 10))`, nunca por debajo de la propia respuesta
   correcta).
-- **`crossword`**: sigue siendo la excepción con cota aproximada, no exacta —
-  no se reproduce el algoritmo de colocación (Fase 1), así que se usa una
-  cota honesta: la suma de las longitudes de sus palabras es un límite
-  superior real del número de casillas (los cruces solo pueden REDUCIR ese
-  número).
+- **`crossword`**: el número de casillas es EXACTO, no una cota aproximada —
+  `crosswordFilledCells` reproduce el mismo algoritmo de colocación
+  determinista de `interactions.js` (sin PRNG: ordena por longitud
+  descendente y coloca cada palabra en el primer cruce válido con las ya
+  colocadas), así que da el mismo número de casillas que pintaría el
+  runtime. Si ese algoritmo cambia alguna vez en `interactions.js`, hay que
+  replicar el cambio en `state_codec.js` también.
 
 Un tipo sin entrada en `worstCaseDetail` (futuro, sin estimador todavía) usa
 una cota conservadora fija y se lista en `missingEstimator`, para avisar en
@@ -277,3 +279,8 @@ interacción):
   texto libre real) la estimación no se pasa de un 10% sobre el mayor estado
   real alcanzable — de hecho coincide con un 2-4% de margen, porque ya no
   lleva ningún factor de escape.
+- `crossword`: `crosswordFilledCells` da el mismo número de casillas, EXACTO
+  (no una aproximación), que renderiza el factory real de `interactions.js`
+  (contando `.me-cw-box` en su HTML) para varios crucigramas de prueba —
+  con cruces, una sola palabra, con duplicados y entradas fuera de rango, y
+  el crucigrama real del curso demo.
