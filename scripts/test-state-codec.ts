@@ -810,6 +810,43 @@ ok(fullEncoded.length <= 4096, `el curso demo con TODO el progreso guardado supe
     'az_quiz migración: tras el siguiente guardado, el acierto migrado se conserva sin necesitar ya el texto')
 }
 
+// --- 11b) az_quiz: la posición guardada NO depende del orden alfabético ----
+// Bug real (corregido ahora): antes se guardaba `res[posición en el rosco
+// pintado]`, y el rosco se pinta ordenado por la letra inicial de cada
+// respuesta — editar solo el TEXTO de una respuesta (sin tocar el id/tipo de
+// la interacción, así que la huella no cambia) podía reordenar el rosco
+// entero y desplazar lo ya respondido de OTRAS preguntas al reanudar.
+{
+  const itPos: AnyRec = {
+    id: 'az2', type: 'az_quiz', options: [], scored: true, points: 1,
+    config: { items: [{ clue: 'c-bruno', answer: 'bruno' }, { clue: 'c-ana', answer: 'ana' }] }, // B, A: "ana" pinta primero
+  }
+  const courseOrig: AnyRec = { modules: [{ id: 'm1', screens: [{ id: 's1', interaction: itPos }] }], intro_screens: [], closing_screens: [], assessments: {}, scorm: {} }
+  // origIdx 0 = "bruno" (falla, guarda texto); origIdx 1 = "ana" (acierta).
+  const detailPos = { res: { 0: { given: 'BRUNOX', correct: false }, 1: { correct: true } } }
+  const statePos: AnyRec = { visited: {}, interactions: { [itPos.id]: detailPos }, results: { [itPos.id]: { completed: true, scored: true, correct: false, score: 0.5, maxScore: 1 } }, attempts: 0, finalScore: 0, finalAnswers: {} }
+  const encodedPos = StateCodec.encode(statePos, courseOrig)
+
+  // Se edita SOLO el texto de "ana" -> "zorro" (Z en vez de A): el rosco
+  // pintaría ahora en el orden ["bruno"(B), "zorro"(Z)] — el orden alfabético
+  // se invierte — pero el id/tipo de la interacción no cambia, así que la
+  // huella sigue siendo la MISMA (decode toma la vía rápida, no el remapeo).
+  const courseEdited: AnyRec = JSON.parse(JSON.stringify(courseOrig))
+  courseEdited.modules[0].screens[0].interaction.config.items[1].answer = 'zorro'
+  const fpOrig = StateCodec._internal.fingerprint(
+    StateCodec._internal.flattenScreens(courseOrig), StateCodec._internal.collectInteractions(StateCodec._internal.flattenScreens(courseOrig)), [])
+  const fpEdited = StateCodec._internal.fingerprint(
+    StateCodec._internal.flattenScreens(courseEdited), StateCodec._internal.collectInteractions(StateCodec._internal.flattenScreens(courseEdited)), [])
+  ok(fpOrig === fpEdited, 'az_quiz posición estable: editar solo el texto de una respuesta no debería cambiar la huella (mismo id/tipo)')
+
+  const decodedAfterEdit = StateCodec.decode(encodedPos, courseEdited, [])
+  const dp = decodedAfterEdit.interactions[itPos.id]
+  ok(!!dp && dp.res[0] && dp.res[0].given === 'BRUNOX' && dp.res[0].correct === false,
+    'az_quiz posición estable: la pregunta "bruno" (origIdx 0) debe conservar SU respuesta aunque el rosco se repinte en otro orden')
+  ok(!!dp && dp.res[1] && dp.res[1].correct === true,
+    'az_quiz posición estable: la pregunta que era "ana" (origIdx 1, ahora "zorro") debe conservar SU acierto, no el de "bruno"')
+}
+
 // --- 12) Invariante por tipo: un estado real alcanzable nunca pesa más que
 //         la estimación de peor caso (y para html_embed/az_quiz, no más de
 //         un 10% menos que ella — deberían coincidir casi exactamente) -----

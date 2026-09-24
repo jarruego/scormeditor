@@ -632,11 +632,6 @@
   // escape de `asciiEscape` en el caso normal (solo entra en juego si algún
   // día ese supuesto deja de cumplirse, o al leer suspend_data del formato
   // antiguo).
-  // Nota (Fase 2): el orden de `items` aquí es el de la config ACTUAL
-  // (ordenado por letra inicial); si un republicado cambia la respuesta de un
-  // ítem, su letra —y por tanto su posición— puede desplazarse. El remapeo
-  // por huella de la Fase 2 deberá indexar por la posición en `config.items`
-  // TAL COMO LA ESCRIBIÓ EL AUTOR (antes de este `sort`), no por esta.
   function normLettersLite(s) {
     var NTILDE = String.fromCharCode(209);
     var MARK = String.fromCharCode(1);
@@ -648,13 +643,17 @@
       .replace(new RegExp('[^A-Z' + NTILDE + '0-9 ]', 'g'), '')
       .replace(/\s+/g, ' ').trim();
   }
+  // Orden de AUTOR (filtrado, SIN ordenar por letra): es la base estable de
+  // las posiciones que se codifican (slot i == origIdx en interactions.js).
+  // El orden alfabético del rosco es cosa de PINTADO en el runtime, no de
+  // almacenamiento — si aquí se ordenara por letra (como antes), editar el
+  // texto de una respuesta y que le cambiara la inicial desplazaría lo ya
+  // respondido de OTRAS preguntas al decodificar.
   function azQuizItems(it) {
-    var items = ((it.config || {}).items || []).map(function (q) {
+    return ((it.config || {}).items || []).map(function (q) {
       var answer = String(q.answer || '').trim();
       return { answer: answer, letter: normLettersLite(answer).charAt(0), clue: String(q.clue || '').trim() };
     }).filter(function (q) { return q.clue && q.answer && q.letter; });
-    items.sort(function (a, b) { return a.letter < b.letter ? -1 : a.letter > b.letter ? 1 : 0; });
-    return items;
   }
   // Marcador de formato nuevo: '~_' no lo produce nunca asciiEscape() sobre
   // texto real (tras un '~' literal siempre escribe 4 digitos hex en

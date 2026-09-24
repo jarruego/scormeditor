@@ -307,8 +307,15 @@ para restaurar desde `suspend_data`). Inspirados en el catálogo de eXeLearning.
   Validadores: `HI_NO_IMAGE`, `HI_NO_QUESTIONS`, `HI_Q_*`.
 - **`az_quiz`** (evaluable, autovalidante, tipo pasapalabra): `config.items [{clue,
   answer}]` — la **letra se deriva de la inicial de la respuesta** (también en el editor,
-  chip `.ed-az-letter`). Chips del rosco con estados (actual con pulso / acierto verde /
-  fallo rojo); respuesta escrita (Enter envía) comparada con `normLetters` y
+  chip `.ed-az-letter`), y con ella se ordena el rosco PINTADO. El estado se guarda por
+  `origIdx` (posición en `config.items` tal como lo escribió el autor, ya filtrado pero
+  SIN ordenar), nunca por la posición en el rosco pintado — si se guardara por esta
+  última, editar solo el TEXTO de una respuesta (sin tocar el id/tipo de la interacción,
+  así que la huella de `suspend_data` no cambia) podría reordenar el rosco entero y
+  desplazar lo ya respondido de OTRAS preguntas al reanudar. `state_codec.js`
+  (`azQuizItems`) usa el mismo orden de autor, sin ordenar por letra, para que sus
+  posiciones coincidan con `origIdx`. Chips del rosco con estados (actual con pulso /
+  acierto verde / fallo rojo); respuesta escrita (Enter envía) comparada con `normLetters` y
   **Pasapalabra** deja la letra para la siguiente vuelta. Al fallar se muestra la
   respuesta correcta. El campo de respuesta lleva `maxlength` (`Math.min(120,
   Math.max(40, respuesta.length + 10))`, nunca por debajo de la propia respuesta

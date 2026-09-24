@@ -197,6 +197,17 @@ distinción usa un marcador (`'~_'`) que `asciiEscape()` nunca produce sobre
 texto real (tras un `~` literal siempre escribe 4 dígitos hex en minúscula),
 así que es indistinguible del formato antiguo sin ambigüedad.
 
+**`az_quiz`, posición estable frente a ediciones de contenido**: el rosco se
+PINTA ordenado por la letra inicial de cada respuesta, pero el estado se
+guarda por `origIdx` — la posición en `config.items` tal como lo escribió el
+autor (filtrado, sin ordenar) — nunca por la posición en el rosco pintado.
+Si se guardara por esta última, editar solo el TEXTO de una respuesta (sin
+tocar el id/tipo de la interacción, así que la huella no cambia y `decode()`
+toma la vía rápida, no el remapeo de `layouts`) podría reordenar el rosco
+entero y desplazar lo ya respondido de OTRAS preguntas al reanudar.
+`state_codec.js` (`azQuizItems`) usa el mismo orden de autor sin ordenar por
+letra, para que sus posiciones coincidan con `origIdx`.
+
 **Desglose por interacción** (`perInteraction`, ordenado de mayor a menor):
 `{ id, type, screenId, screenTitle, chars, motivo }` — exactamente lo que
 esa interacción aporta al total (sumarlo todo junto con
@@ -257,8 +268,10 @@ interacción):
   genera `interactions.js` y evaluado, no reimplementado) acepta ASCII
   dentro de presupuesto y rechaza tildes, `~` y lo que se pasa de tamaño.
 - `az_quiz`: una respuesta correcta no guarda texto, una incorrecta guarda su
-  forma normalizada, y un `suspend_data` del formato anterior (sin
-  normalizar) se sigue leyendo y reanudando bien.
+  forma normalizada, un `suspend_data` del formato anterior (sin normalizar)
+  se sigue leyendo y reanudando bien, y editar solo el texto de una
+  respuesta (mismo id/tipo, misma huella) no desplaza lo ya respondido de
+  otras preguntas aunque el rosco se repinte en otro orden.
 - Invariante por tipo: un estado real alcanzable nunca pesa más que la
   estimación de peor caso; para `html_embed` y `az_quiz` (los dos únicos con
   texto libre real) la estimación no se pasa de un 10% sobre el mayor estado

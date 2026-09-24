@@ -1974,11 +1974,27 @@
   // config.items: [{ clue, answer }] — la letra se deriva de la respuesta. El
   // alumno escribe la respuesta o pasa palabra (la letra vuelve en la siguiente
   // vuelta). Autovalidante: sin Comprobar ni attempts; 1 oportunidad por letra.
+  //
+  // `res` se guarda por `origIdx` (posición en `config.items` YA filtrado, sin
+  // ordenar) — NUNCA por la posición en `items` (orden alfabético de PINTADO,
+  // que se deriva de la respuesta). Si no fuera así, editar el texto de una
+  // respuesta y que le cambie la inicial reordenaría el rosco entero y
+  // desplazaría lo ya respondido de OTRAS preguntas al reanudar. `origIdx` es
+  // estable frente a ese caso (solo se ve afectado por añadir/quitar/reordenar
+  // entradas de `config.items`, el mismo límite que ya tienen accordion/tabs/
+  // flip_cards/case_practice/flashcards, indexados igual). state_codec.js
+  // (`azQuizItems`) usa el mismo orden de autor, sin ordenar por letra, para
+  // que las posiciones que guarda coincidan con `origIdx`.
   register('az_quiz', function (el, data, ctx) {
-    var items = ((data.config || {}).items || []).map(function (q) {
+    var itemsByAuthor = ((data.config || {}).items || []).map(function (q) {
       var answer = String(q.answer || '').trim();
       return { clue: String(q.clue || '').trim(), answer: answer, letter: normLetters(answer).charAt(0) };
     }).filter(function (q) { return q.clue && q.answer && q.letter; });
+    // `items`: mismo contenido, orden de PINTADO (alfabético); cada uno
+    // recuerda su `origIdx` (posición estable en itemsByAuthor) para guardar.
+    var items = itemsByAuthor.map(function (q, origIdx) {
+      return { origIdx: origIdx, clue: q.clue, answer: q.answer, letter: q.letter };
+    });
     items.sort(function (a, b) { return a.letter < b.letter ? -1 : a.letter > b.letter ? 1 : 0; });
 
     if (!items.length) {
@@ -1986,7 +2002,7 @@
       return { result: function () { return { completed: true, scored: false }; } };
     }
 
-    var res = (ctx.state && ctx.state.res) || {}; // idx -> {given, correct}
+    var res = (ctx.state && ctx.state.res) || {}; // origIdx -> {given, correct}
 
     var html = header(data) + '<div class="me-az">' +
       '<div class="me-az-letters" role="group" aria-label="Letras del rosco">';
@@ -1999,28 +2015,36 @@
     var playBox = el.querySelector('.me-az-play');
     function chip(i) { return el.querySelector('.me-az-letter[data-i="' + i + '"]'); }
     function refreshChips(currentI) {
-      items.forEach(function (_, i) {
+      items.forEach(function (q, i) {
         var cEl = chip(i);
+        var r = res[q.origIdx];
         cEl.className = 'me-az-letter' +
-          (res[i] ? (res[i].correct ? ' is-right' : ' is-wrong') : '') +
+          (r ? (r.correct ? ' is-right' : ' is-wrong') : '') +
           (i === currentI ? ' is-current' : '');
       });
     }
+    // `from`/el resultado son índices de PINTADO (posición en `items`), para
+    // poder recorrer el rosco en orden alfabético; solo la consulta a `res`
+    // pasa por `origIdx`.
     function nextPending(from) {
       for (var k = 1; k <= items.length; k++) {
         var i = (from + k) % items.length;
-        if (!res[i]) return i;
+        if (!res[items[i].origIdx]) return i;
       }
       return -1;
     }
-    var current = res.__last != null ? nextPending(res.__last) : (function () {
-      for (var i = 0; i < items.length; i++) if (!res[i]) return i;
+    function displayIndexOfOrigIdx(origIdx) {
+      for (var i = 0; i < items.length; i++) if (items[i].origIdx === origIdx) return i;
+      return -1; // la pregunta ya no existe (se quitó de config.items): se ignora
+    }
+    var current = res.__last != null ? nextPending(displayIndexOfOrigIdx(res.__last)) : (function () {
+      for (var i = 0; i < items.length; i++) if (!res[items[i].origIdx]) return i;
       return -1;
     })();
 
     function counts() {
       var done2 = 0, ok = 0;
-      items.forEach(function (_, i) { if (res[i]) { done2++; if (res[i].correct) ok++; } });
+      items.forEach(function (q) { var r = res[q.origIdx]; if (r) { done2++; if (r.correct) ok++; } });
       return { done: done2, ok: ok };
     }
     function renderPlay() {
@@ -2064,10 +2088,10 @@
         // `given` sin normalizar se sigue leyendo igual (la comparación de
         // más abajo, al restaurar, usa normLetters sobre lo que haya,
         // normalizado o no).
-        res[current] = ok
+        res[items[current].origIdx] = ok
           ? { correct: true }
           : { given: normLetters(given).split(String.fromCharCode(209)).join('N').slice(0, azMaxLen), correct: false };
-        res.__last = current;
+        res.__last = items[current].origIdx;
         ctx.save({ res: res });
         fb.hidden = false;
         fb.className = 'me-iv-fb ' + (ok ? 'is-ok' : 'is-error');
