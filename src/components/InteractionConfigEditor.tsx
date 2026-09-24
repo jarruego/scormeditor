@@ -756,9 +756,27 @@ export function InteractionConfigEditor({
               placeholder={"document.getElementById('demo').addEventListener('click', …)"}
               onChange={(e) => setConfig({ js: e.target.value })}
               onSelect={trackCursor('js')} onFocus={trackCursor('js')} /></label>
-          <label className="ed-field ed-field-narrow"><span>Alto fijo en px (vacío = automático)</span>
-            <input type="number" min={0} value={cfg.height ?? ''}
-              onChange={(e) => setConfig({ height: e.target.value === '' ? undefined : Number(e.target.value) })} /></label>
+          <label className="ed-check" title="El alumno no podrá pasar de pantalla (si esta pantalla es obligatoria y el curso exige completar las interacciones) hasta que el propio código llame a MeEmbed.complete()">
+            <input type="checkbox" checked={!!cfg.require_completion}
+              onChange={(e) => setConfig({ require_completion: e.target.checked || undefined })} />
+            <span>Exigir que el alumno la complete para avanzar</span>
+          </label>
+          <div className="ed-row">
+            <label className="ed-field ed-field-narrow"><span>Alto fijo en px (vacío = automático)</span>
+              <input type="number" min={0} value={cfg.height ?? ''}
+                onChange={(e) => setConfig({ height: e.target.value === '' ? undefined : Number(e.target.value) })} /></label>
+            <label className="ed-field ed-field-narrow"><span>Memoria para guardar su estado (caracteres)</span>
+              <input type="number" min={0} max={300} placeholder="100" value={cfg.state_max ?? ''}
+                onChange={(e) => setConfig({ state_max: e.target.value === '' ? undefined : Number(e.target.value) })} /></label>
+          </div>
+          <p className="ed-hint">
+            Dentro de tu JS tienes <code>window.MeEmbed</code>: llama a <code>MeEmbed.complete()</code> cuando el
+            alumno termine la actividad (comprueba antes <code>MeEmbed.completed</code> para no repetirlo), y
+            a <code>MeEmbed.saveState(obj)</code> para guardar un estado propio pequeño entre sesiones — se
+            restaura en <code>MeEmbed.state</code>, con un presupuesto de <code>MeEmbed.stateMax</code> caracteres
+            (el de arriba). Guarda índices y booleanos, nunca textos. El bloqueo de avance solo actúa si esta
+            pantalla es obligatoria y el curso exige completar las interacciones (⚙ Ajustes del curso).
+          </p>
         </div>
       )
     }

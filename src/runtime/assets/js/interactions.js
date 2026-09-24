@@ -1210,30 +1210,72 @@
     return { result: function () { return { completed: doneOnce, scored: false }; } };
   });
 
-  // --- 16. HTML a medida (iframe sandbox) ------------------------------------
+  // --- 16. HTML a medida (iframe sandbox) — contrato «MeEmbed v1» -------------
   // El autor pega HTML+CSS+JS propios (animaciones, interactivos ad hoc).
-  // config: { html, css, js, height? } (height en px; sin ella, alto automático).
-  // Corre en <iframe sandbox="allow-scripts"> SIN allow-same-origin: origen
-  // opaco, así el código NO puede tocar la API SCORM, el estado ni el DOM de la
-  // carcasa. La invariante anti-XSS se mantiene porque nada del autor se inyecta
-  // en nuestro DOM: viaja escapado dentro del atributo srcdoc.
+  // config: { html, css, js, height?, require_completion?, state_max? }
+  // (height en px; sin ella, alto automático). Corre en <iframe
+  // sandbox="allow-scripts"> SIN allow-same-origin: origen opaco, así el
+  // código NO puede tocar la API SCORM, el estado del curso ni el DOM de la
+  // carcasa. La invariante anti-XSS se mantiene porque nada del autor se
+  // inyecta en nuestro DOM: viaja escapado dentro del atributo srcdoc.
+  //
+  // Contrato MeEmbed v1 (window.MeEmbed dentro del iframe, ver
+  // docs/html-embed-contract.md para el detalle autor-facing):
+  //   version: 1 | id: string | completed: boolean | state: <JSON> | null
+  //   stateMax: number (presupuesto de caracteres de `state`)
+  //   complete(): marca la interacción como completada (una vez, idempotente
+  //     de cara al alumno: repetir la llamada no hace nada nuevo).
+  //   saveState(obj): intenta guardar `obj` como estado propio del
+  //     interactivo — silenciosamente rechazado (con console.warn) si no es
+  //     serializable o si supera `stateMax`; la carcasa vuelve a comprobar el
+  //     tamaño al recibir el mensaje, nunca se fía del propio iframe.
+  // Todo el canal es postMessage con `{meEmbed: id, ...}`, validado también
+  // por `e.source` (el mensaje debe venir del iframe de ESTA interacción,
+  // relevante porque con origen opaco no hay `e.origin` que comprobar).
   register('html_embed', function (el, data, ctx) {
     var c = data.config || {};
     var height = parseInt(c.height, 10) || 0;
+    var stateMax = (typeof c.state_max === 'number' && isFinite(c.state_max)) ? c.state_max : 100;
+    stateMax = Math.max(0, Math.min(300, stateMax));
+    var savedState = ctx.state || {};
+    var done = !!savedState.done;
+    var stateData = ('data' in savedState) ? savedState.data : null;
+    function persist() { ctx.save({ done: done, data: stateData }); }
     // El código del usuario no debe poder cerrar por accidente su propio
     // <script>/<style> dentro del documento interno.
     function noClose(s, tag) {
       return String(s || '').replace(new RegExp('</' + tag, 'gi'), '<\\/' + tag);
     }
+    var embedId = JSON.stringify(String(data.id));
+    // Estado inicial embebido como JS literal dentro del <script> del shim:
+    // escapar «<» como < evita que un cierre de "script" colado dentro
+    // del JSON (por ejemplo si `stateData` guardara texto libre) termine el
+    // <script> del documento interno antes de tiempo — más general que
+    // `noClose`, que solo cubre los cierres de tag literales. (Ojo al editar
+    // este comentario: no escribir aquí la secuencia de cierre de "script"
+    // sin partirla — este archivo se incrusta ENTERO, comentarios incluidos,
+    // dentro de un <script> real en la Vista previa del editor, ver
+    // buildPreview.ts.)
+    var initialStateJson = JSON.stringify(stateData === undefined ? null : stateData).replace(/</g, '\\u003c');
+    var meEmbedShim = '<script>window.MeEmbed={version:1,id:' + embedId +
+      ',completed:' + (done ? 'true' : 'false') +
+      ',state:' + initialStateJson + ',stateMax:' + stateMax + ',' +
+      'complete:function(){this.completed=true;parent.postMessage({meEmbed:' + embedId + ',completed:true},"*");},' +
+      'saveState:function(o){var s;try{s=JSON.stringify(o);}catch(e){' +
+      'console.warn("MeEmbed.saveState: el estado no se pudo convertir a JSON.");return;}' +
+      'if(s.length>this.stateMax){console.warn("MeEmbed.saveState: estado de "+s.length+' +
+      '" caracteres, supera el presupuesto de "+this.stateMax+".");return;}' +
+      'this.state=o;parent.postMessage({meEmbed:' + embedId + ',state:s},"*");}};<\/script>';
     // Sin alto fijo, el documento interno reporta su altura por postMessage
     // (único canal disponible con origen opaco).
     var resizer = '<script>(function(){var h=0;function post(){var n=document.documentElement.scrollHeight;' +
-      'if(n!==h){h=n;parent.postMessage({meEmbed:' + JSON.stringify(String(data.id)) + ',height:n},"*");}}' +
+      'if(n!==h){h=n;parent.postMessage({meEmbed:' + embedId + ',height:n},"*");}}' +
       'if(window.ResizeObserver){new ResizeObserver(post).observe(document.documentElement);}' +
       'else{setInterval(post,600);}window.addEventListener("load",post);post();})();<\/script>';
     var doc = '<!doctype html><html><head><meta charset="utf-8">' +
       '<meta name="viewport" content="width=device-width, initial-scale=1">' +
       '<style>html,body{margin:0}' + noClose(c.css, 'style') + '</style></head><body>' +
+      meEmbedShim +
       String(c.html || '') +
       (c.js ? '<script>' + noClose(c.js, 'script') + '<\/script>' : '') +
       (height ? '' : resizer) + '</body></html>';
@@ -1241,17 +1283,34 @@
       '<iframe class="me-embed" sandbox="allow-scripts" srcdoc="' + esc(doc) + '"' +
       ' title="' + esc(stripTags(data.prompt) || 'Contenido interactivo') + '"' +
       (height ? ' style="height:' + height + 'px"' : '') + '></iframe>';
-    if (!height) {
-      var frame = el.querySelector('.me-embed');
-      var onMsg = function (e) {
-        if (!frame.isConnected) { global.removeEventListener('message', onMsg); return; }
-        var d = e.data;
-        if (!d || d.meEmbed !== String(data.id)) return;
+    // Único listener, siempre activo (antes solo existía para el auto-resize):
+    // también recibe finalización y estado, ambos posibles con alto fijo.
+    var frame = el.querySelector('.me-embed');
+    var onMsg = function (e) {
+      if (!frame.isConnected) { global.removeEventListener('message', onMsg); return; }
+      if (e.source !== frame.contentWindow) return; // solo el iframe de ESTA interacción
+      var d = e.data;
+      if (!d || d.meEmbed !== String(data.id)) return;
+      if (!height && typeof d.height === 'number') {
         frame.style.height = Math.max(40, d.height | 0) + 'px';
-      };
-      global.addEventListener('message', onMsg);
-    }
-    return { result: function () { return { completed: true, scored: false }; } };
+      }
+      if (d.completed === true && !done) {
+        done = true;
+        persist();
+        if (c.require_completion) ctx.announce('Actividad completada. Ya puedes continuar.');
+      }
+      if (typeof d.state === 'string' && d.state.length <= stateMax) {
+        var parsed;
+        try { parsed = JSON.parse(d.state); } catch (e2) { parsed = undefined; }
+        if (parsed !== undefined) { stateData = parsed; persist(); }
+      }
+    };
+    global.addEventListener('message', onMsg);
+    return {
+      result: function () {
+        return { completed: c.require_completion ? done : true, scored: false };
+      },
+    };
   });
 
   // --- 17. Tarjetas de imagen (modal texto + imagen) ---------------------------

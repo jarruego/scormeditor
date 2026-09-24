@@ -87,6 +87,9 @@ editor.
 |---|:-:|---|---|:-:|
 | `EMBED_EMPTY` | ⛔ | `html_embed` sin código | Si lo emitiste tú: elimínalo y deja `editor_note` describiendo el interactivo deseado (escribir código no es tu tarea) | Editor |
 | `EMBED_SCORED` | ⚠ | `html_embed` con `scored:true` | Pon `scored:false`: corre aislado en sandbox y no puede puntuar | GPT |
+| `EMBED_NO_COMPLETE` | ⛔ | `html_embed` con `config.require_completion:true` pero su código no llama a `MeEmbed.complete()` | No es tu tarea escribir la llamada dentro del código: si tú activaste `require_completion` por error, quítalo (`false`/omite la clave); si no, avisa al humano de que falta añadir `MeEmbed.complete()` a su JS (contrato «MeEmbed v1», `docs/html-embed-contract.md`) | Editor |
+| `EMBED_STATE_MAX` | ⛔ | `html_embed` con `config.state_max` fuera de 0–300 | Ajusta `state_max` al rango 0–300 (0 = no guarda estado) | GPT |
+| `EMBED_STATE_UNUSED` | ⚠ | `html_embed` con presupuesto de estado (`state_max` > 0, por defecto 100) pero su código no llama a `MeEmbed.saveState()` | Si no vas a guardar estado, pon `state_max: 0` para no reservar memoria sin uso | GPT |
 | `BA_NO_IMAGES` | ⛔ | `before_after` sin las dos imágenes | Las imágenes las elige y sube el editor humano. No inventes rutas | Editor |
 | `BA_SCORED` | ⚠ | `before_after` con `scored:true` | Pon `scored:false`: es un comparador informativo | GPT |
 | `HI_NO_IMAGE` | ⛔ | `hidden_image` sin imagen | La imagen la sube el editor humano | Editor |

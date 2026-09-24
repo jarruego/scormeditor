@@ -1,0 +1,23 @@
+/* Pega esto en el campo «CSS» del editor de la interacción. */
+.me-embed-demo {
+  font-family: system-ui, sans-serif;
+  padding: 12px;
+}
+.item {
+  display: inline-block;
+  padding: 12px 18px;
+  margin: 4px;
+  border: 2px solid #888;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.item.visto {
+  border-color: #2a8f4a;
+  background: #eafbf0;
+}
+.me-embed-status {
+  margin-top: 10px;
+  font-weight: 600;
+  color: #2a8f4a;
+}

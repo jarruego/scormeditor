@@ -130,6 +130,22 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
         add('EMBED_EMPTY', 'error', 'HTML a medida sin código: pega al menos HTML o JavaScript.')
       if (it.scored)
         add('EMBED_SCORED', 'warning', 'El HTML a medida corre aislado en un sandbox y no puede puntuar (scored: false).')
+      // Contrato «MeEmbed v1» (ver interactions.js/docs/html-embed-contract.md):
+      // el código del autor solo puede bloquear el avance o guardar estado
+      // llamando a estas dos funciones — si pide bloquear pero nunca llama a
+      // complete(), el alumno se queda atascado sin remedio. Acepta tanto
+      // `MeEmbed.complete(` como `ME.complete(` — el propio contrato/plantilla
+      // recomienda `var ME = window.MeEmbed || {...}` como alias corto, así
+      // que exigir el nombre largo literal marcaría en falso el código que
+      // sigue la propia guía.
+      const embedCode = `${c.html || ''} ${c.js || ''}`
+      if (c.require_completion && !/(?:MeEmbed|ME)\s*\.\s*complete\s*\(/.test(embedCode))
+        add('EMBED_NO_COMPLETE', 'error', 'Exige completar la actividad para avanzar, pero el código no llama a MeEmbed.complete() (o a su alias ME.complete()): el alumno nunca podría continuar.')
+      if (c.state_max !== undefined && (typeof c.state_max !== 'number' || !isFinite(c.state_max) || c.state_max < 0 || c.state_max > 300))
+        add('EMBED_STATE_MAX', 'error', 'La memoria para guardar su estado debe ser un número entre 0 y 300 caracteres.')
+      const embedStateMax = typeof c.state_max === 'number' ? c.state_max : 100
+      if (embedStateMax > 0 && !/(?:MeEmbed|ME)\s*\.\s*saveState\s*\(/.test(embedCode))
+        add('EMBED_STATE_UNUSED', 'warning', 'Tiene reservado presupuesto para guardar estado, pero el código no llama a MeEmbed.saveState() (o a su alias ME.saveState()): no se está usando.')
     }
     if (it.type === 'image_cards') {
       const cards = (((it.config as any)?.cards || []) as { image?: string; alt?: string }[])

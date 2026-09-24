@@ -609,9 +609,12 @@
       // Captura el estado inicial. Las de exploración (accordion, tabs,
       // flip_cards, timeline, flashcards) devuelven completed solo cuando se ha
       // visto TODO su contenido; video SIN preguntas, case_practice y html_embed
-      // se consideran completadas al renderizarse. Las evaluables (y video con
-      // preguntas) devuelven completed:false hasta que el usuario las resuelve.
-      // No se sobrescribe un resultado ya guardado (reanudación de sesión).
+      // se consideran completadas al renderizarse — salvo html_embed con
+      // `require_completion`, que no completa hasta que el propio interactivo
+      // llama a MeEmbed.complete() (contrato «MeEmbed v1», ver interactions.js).
+      // Las evaluables (y video con preguntas) devuelven completed:false hasta
+      // que el usuario las resuelve. No se sobrescribe un resultado ya guardado
+      // (reanudación de sesión).
       if (activeController && sc.interaction && !STATE.results[sc.interaction.id]) {
         STATE.results[sc.interaction.id] = activeController.result();
       }
