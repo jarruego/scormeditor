@@ -412,6 +412,27 @@ function checkGlobal(ctx: Ctx) {
     } catch { /* state_codec.js no disponible: no bloquea el resto del informe */ }
   }
 
+  // Memoria de progreso SCORM (peor caso de cmi.suspend_data, ver
+  // docs/suspend-data.md y el medidor «Memoria» de la barra de herramientas):
+  // mismo estimateSuspendSize() que alimenta ese medidor, para que el número
+  // sea siempre el mismo se mire donde se mire.
+  try {
+    const estimate = getStateCodec().estimateSuspendSize(c)
+    const pct = (estimate.worstCase / estimate.limit) * 100
+    if (pct > 100)
+      ctx.push({
+        code: 'SUSPEND_OVER_LIMIT', severity: 'error',
+        message: `El peor caso del progreso guardado (${estimate.worstCase} de ${estimate.limit} caracteres, ${Math.round(pct)}%) supera el límite de cmi.suspend_data. El runtime degradará detalle automáticamente al guardar, pero conviene reducir el contenido con más detalle (crucigramas grandes, rosco con muchas definiciones, HTML a medida con mucho estado).`,
+        location: 'SCORM',
+      })
+    else if (pct >= 75)
+      ctx.push({
+        code: 'SUSPEND_NEAR_LIMIT', severity: 'warning',
+        message: `El peor caso del progreso guardado (${estimate.worstCase} de ${estimate.limit} caracteres, ${Math.round(pct)}%) se acerca al límite de cmi.suspend_data. Revisa el medidor «Memoria» de la barra de herramientas si el curso sigue creciendo.`,
+        location: 'SCORM',
+      })
+  } catch { /* state_codec.js no disponible: no bloquea el resto del informe */ }
+
   // Preguntas de los tests (final y por unidad): mismas exigencias que las
   // interacciones de pantalla (respuesta correcta y feedback).
   if (c.assessments.final_test)

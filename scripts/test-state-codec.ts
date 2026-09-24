@@ -49,7 +49,7 @@ function loadStateCodec(): AnyRec {
 }
 
 const StateCodec = loadStateCodec()
-const { packChunks, unpackChunks, flattenScreens, collectInteractions, finalQuestions, hasCodec } = StateCodec._internal
+const { packChunks, unpackChunks, flattenScreens, collectInteractions, finalQuestions, hasCodec, hasEstimator } = StateCodec._internal
 
 let failures = 0
 function fail(title: string, detail?: string) {
@@ -81,9 +81,10 @@ const screens = flattenScreens(course)
 const interactions: Array<{ id: string; type: string; interaction: AnyRec }> = collectInteractions(screens)
 const finalQs: AnyRec[] = finalQuestions(course)
 
-// --- 2) Cobertura: todo InteractionType tiene codec compacto propio --------
+// --- 2) Cobertura: todo InteractionType tiene codec compacto y estimador ---
 for (const t of InteractionType.options) {
   ok(hasCodec(t), `cobertura: el tipo '${t}' no tiene codec compacto en state_codec.js`)
+  ok(hasEstimator(t), `cobertura: el tipo '${t}' no tiene estimador de peor caso (worstCaseDetail) en state_codec.js`)
 }
 ok(interactions.length > 0, 'el curso demo no tiene interacciones (no se puede probar el round-trip)')
 // El curso demo dice cubrir los 23 tipos: lo comprobamos de verdad.
@@ -417,19 +418,17 @@ interactions.forEach((it, i) => {
 }
 
 // --- 7) Tamaño real: el curso demo completo, con progreso total, cabe ------
-{
-  const fullState: AnyRec = { visited: {}, interactions: {}, results: {}, attempts: 1, finalScore: 100, finalAnswers: {} }
-  screens.forEach((sc: AnyRec) => { fullState.visited[sc.id] = true })
-  interactions.forEach((it) => {
-    const detail = synthDetail(it.type, it.interaction)
-    if (detail) fullState.interactions[it.id] = detail
-    fullState.results[it.id] = synthResult(it.interaction)
-  })
-  finalQs.forEach((q) => { if ((q.options || []).length) fullState.finalAnswers[q.id] = q.options[0].id })
-  const fullEncoded = StateCodec.encode(fullState, course)
-  console.log(`Curso demo completo (${screens.length} pantallas, ${interactions.length} interacciones, ${finalQs.length} preguntas finales): ${fullEncoded.length} caracteres.`)
-  ok(fullEncoded.length <= 4096, `el curso demo con TODO el progreso guardado supera el límite de 4096 (${fullEncoded.length})`)
-}
+const fullState: AnyRec = { visited: {}, interactions: {}, results: {}, attempts: 1, finalScore: 100, finalAnswers: {} }
+screens.forEach((sc: AnyRec) => { fullState.visited[sc.id] = true })
+interactions.forEach((it) => {
+  const detail = synthDetail(it.type, it.interaction)
+  if (detail) fullState.interactions[it.id] = detail
+  fullState.results[it.id] = synthResult(it.interaction)
+})
+finalQs.forEach((q) => { if ((q.options || []).length) fullState.finalAnswers[q.id] = q.options[0].id })
+const fullEncoded = StateCodec.encode(fullState, course)
+console.log(`Curso demo completo (${screens.length} pantallas, ${interactions.length} interacciones, ${finalQs.length} preguntas finales): ${fullEncoded.length} caracteres.`)
+ok(fullEncoded.length <= 4096, `el curso demo con TODO el progreso guardado supera el límite de 4096 (${fullEncoded.length})`)
 
 // --- 8) Degradación por tamaño (Fase 3): nunca toca visited/results/attempts/
 //        finalScore, y actúa en el orden documentado hasta que quepa --------
@@ -510,8 +509,29 @@ interactions.forEach((it, i) => {
     'degradación: con un límite imposible debe reportar fits=false en el nivel 3 (el más pequeño posible)')
 }
 
+// --- 9) Medidor del editor (Fase 4): estimateSuspendSize --------------------
+{
+  const estimate = StateCodec.estimateSuspendSize(course)
+  console.log(`Peor caso estimado (curso demo): ${estimate.worstCase} / ${estimate.limit} caracteres.`)
+  ok(estimate.limit === 4096, 'estimateSuspendSize: el límite debería ser 4096')
+  ok(Array.isArray(estimate.missingEstimator) && estimate.missingEstimator.length === 0,
+    `estimateSuspendSize: el curso demo no debería tener tipos sin estimador (${JSON.stringify(estimate.missingEstimator)})`)
+  ok(typeof estimate.breakdown === 'object' && estimate.breakdown != null, 'estimateSuspendSize: debería devolver un desglose')
+  // El "peor caso" debe serlo de verdad: >= cualquier progreso real ya
+  // observado sin degradar (el curso demo completo de la sección 7).
+  ok(estimate.worstCase >= fullEncoded.length,
+    `estimateSuspendSize: el peor caso (${estimate.worstCase}) debería ser >= un progreso real completo (${fullEncoded.length})`)
+
+  // Curso vacío (sin interacciones): el peor caso debe seguir siendo un
+  // número pequeño y sensato, no un error ni NaN.
+  const emptyCourse: AnyRec = { modules: [], intro_screens: [], closing_screens: [], assessments: {}, scorm: {} }
+  const emptyEstimate = StateCodec.estimateSuspendSize(emptyCourse)
+  ok(emptyEstimate.worstCase > 0 && emptyEstimate.worstCase < 100,
+    `estimateSuspendSize: un curso vacío debería dar un peor caso pequeño y sensato (dio ${emptyEstimate.worstCase})`)
+}
+
 if (failures) {
   console.error(`\n${failures} fallo(s).`)
   process.exit(1)
 }
-console.log(`state_codec.js — Fases 1-3: OK. ${interactions.length} interacciones y ${finalQs.length} preguntas de test final comprobadas contra el curso demo, ${InteractionType.options.length} tipos con codec propio, remapeo por huella y degradación por tamaño verificados.`)
+console.log(`state_codec.js — Fases 1-4: OK. ${interactions.length} interacciones y ${finalQs.length} preguntas de test final comprobadas contra el curso demo, ${InteractionType.options.length} tipos con codec y estimador propios, remapeo por huella y degradación por tamaño verificados.`)

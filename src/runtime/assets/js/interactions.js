@@ -2017,10 +2017,15 @@
         return;
       }
       var q = items[current];
+      // Cota de longitud del texto tecleado: sin ella es texto libre sin
+      // límite y su peor caso pesaría lo que quisiera en suspend_data. Nunca
+      // por debajo de la propia respuesta (+margen para despistes/espacios).
+      // state_codec.js (estimateSuspendSize) usa la MISMA fórmula.
+      var azMaxLen = Math.min(120, Math.max(40, q.answer.length + 10));
       playBox.innerHTML =
         '<p class="me-az-clue"><span class="me-az-starts">Empieza por ' + esc(q.letter) + '</span> ' + rich(q.clue) + '</p>' +
         '<div class="me-az-controls">' +
-        '<input class="me-az-input" type="text" autocomplete="off" aria-label="Tu respuesta">' +
+        '<input class="me-az-input" type="text" autocomplete="off" maxlength="' + azMaxLen + '" aria-label="Tu respuesta">' +
         '<button type="button" class="me-btn me-primary me-az-send">Responder</button>' +
         '<button type="button" class="me-btn me-az-pass">Pasapalabra</button></div>' +
         '<div class="me-iv-fb" hidden></div>';

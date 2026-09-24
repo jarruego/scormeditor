@@ -146,6 +146,44 @@ Si `LMSSetValue` devuelve error (por cualquier motivo, no solo tamaño),
 `scorm_api.js` ya lo registra con `LMSGetLastError`/`LMSGetErrorString` en su
 `set()` genérico — no es específico de `suspend_data`.
 
+## Medidor del editor (`estimateSuspendSize`)
+
+`StateCodec.estimateSuspendSize(course)` simula el **peor caso plausible**
+(todas las pantallas vistas, toda interacción resuelta con el detalle más
+grande que su tipo permite, todas las preguntas del test final respondidas)
+y lo pasa por el mismo `encode()` (sin degradar: el medidor avisa del tamaño
+real del contenido, la degradación de arriba es la red de seguridad en
+tiempo de ejecución, no la referencia para diseñar el curso). Devuelve
+`{ worstCase, limit: 4096, breakdown, missingEstimator }`.
+
+La mayoría de tipos ya están acotados por su propio codec compacto (índices,
+permutaciones, máscaras de bits: el "peor caso" es básicamente su tamaño
+real, no depende de lo que escriba el alumno). Las excepciones, con su cota:
+
+- **`crossword`**: no se reproduce el algoritmo de colocación (Fase 1), así
+  que se usa una cota honesta — la suma de las longitudes de sus palabras es
+  un límite superior real del número de casillas (los cruces solo pueden
+  REDUCIR ese número).
+- **`az_quiz`**: el texto que teclea el alumno solo está acotado porque
+  `interactions.js` le pone un `maxlength` (`Math.min(120, Math.max(40,
+  respuesta.length + 10))`, nunca por debajo de la propia respuesta correcta,
+  para no bloquear jamás una respuesta válida) — el estimador usa la misma
+  fórmula.
+- **`html_embed`**: acotado por `state_max`, con el peor caso de escape ASCII
+  (todo el contenido no-ASCII, que se expande a 5 caracteres por carácter).
+
+Un tipo sin entrada en `worstCaseDetail` (futuro, sin estimador todavía) usa
+una cota conservadora fija y se lista en `missingEstimator`, para avisar en
+vez de subestimar en silencio.
+
+**UI** (`SuspendSizeIndicator`, siempre visible en la barra de herramientas):
+«Memoria: 1.180 / 4.096 (29%)», recalculado con debounce al cambiar el curso;
+verde por debajo del 75%, ámbar 75-100%, rojo por encima del 100%. Al abrirlo,
+muestra el desglose por segmento. **Validador** (mismo `estimateSuspendSize`,
+así que siempre coincide con el medidor): aviso `SUSPEND_NEAR_LIMIT` desde el
+75%, error `SUSPEND_OVER_LIMIT` por encima del 100%. Exportar con
+`SUSPEND_OVER_LIMIT` activo pide confirmación explícita (`Toolbar.tsx`).
+
 ## Migración desde el formato antiguo
 Antes de la v2, `scorm_api.js` guardaba `JSON.stringify(STATE)` tal cual
 (por ids). Si `decode()` recibe un string que no empieza por `"2|"`, intenta
@@ -163,5 +201,7 @@ el tipo de una interacción), la degradación por tamaño (un estado inflado a
 propósito hasta no caber ni de lejos en 4096 debe degradarse en el orden
 documentado hasta caber, sin tocar resultados) y que el curso demo con
 **todo** el progreso guardado cabe muy por debajo de 4096 caracteres sin
-degradar nada. También comprueba que todo `InteractionType` del esquema tiene
-codec propio en `TYPE_CODECS`.
+degradar nada, y que `estimateSuspendSize` del propio curso demo no señala
+ningún tipo sin estimador y da un peor caso mayor o igual que ese progreso
+real completo. También comprueba que todo `InteractionType` del esquema tiene
+codec y estimador propios en `TYPE_CODECS`/`worstCaseDetail`.

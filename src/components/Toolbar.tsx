@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { downloadScorm } from '../export/exportScorm'
 import { getStateCodec } from '../scorm/stateCodec'
+import { SuspendSizeIndicator } from './SuspendSizeIndicator'
+import { validateCourse } from '../validation/validators'
 import {
   isFsSupported,
   openProject,
@@ -130,6 +132,19 @@ export function Toolbar() {
   async function onExportScorm() {
     setBusy(true)
     try {
+      // Peor caso de memoria de suspend_data por encima del límite: se avisa
+      // y se pide confirmación explícita antes de generar el paquete (el
+      // runtime degradará detalle automáticamente al guardar, pero es mejor
+      // que el autor lo sepa y decida, ver docs/suspend-data.md).
+      if (validateCourse(course).issues.some((i) => i.code === 'SUSPEND_OVER_LIMIT')) {
+        const ok = await confirmDialog({
+          title: 'Progreso SCORM por encima del límite',
+          message: 'En el peor de los casos (el alumno ve y responde todo el curso), el progreso guardado superaría el límite de 4096 caracteres de cmi.suspend_data. El runtime lo degradará automáticamente al guardar para intentar que quepa, pero es mejor reducir el contenido con más detalle guardado. ¿Exportar de todas formas?',
+          confirmLabel: 'Exportar de todas formas',
+          danger: true,
+        })
+        if (!ok) return
+      }
       // Registra la estructura actual en el historial de layouts (para el
       // remapeo de suspend_data, ver docs/suspend-data.md) SOLO al exportar
       // el paquete real, nunca en Vista previa. Deduplica por huella.
@@ -284,6 +299,7 @@ export function Toolbar() {
       </div>
 
       <div className="ed-toolbar-actions">
+        <SuspendSizeIndicator />
         {isCloudConfigured() && (
           <button
             className={`ed-session-chip ${cloudSession ? 'is-connected' : ''}`}

@@ -718,6 +718,26 @@ button.ed-pill.info:hover:not(:disabled) { background: #e8f0fe; }
    que "hay sesión" se reconozca por color sin tener que leer el texto. */
 .ed-session-chip.is-connected { color: var(--c-cloud); font-weight: 600; border-color: color-mix(in srgb, var(--c-cloud) 35%, var(--c-border)); }
 
+/* Medidor de memoria de suspend_data (SuspendSizeIndicator): mismo lenguaje
+   de color que .ed-docstate (verde/ámbar/rojo), pero es un dato del CURSO
+   (peor caso posible), no del documento — por eso vive aparte. */
+.ed-suspend-meter { position: relative; }
+.ed-suspend-chip {
+  display: flex; align-items: center; gap: .35rem; font-size: .78rem; font-weight: 600;
+  padding: .2rem .6rem; border-radius: 99px; border: 1px solid transparent; cursor: pointer;
+}
+.ed-suspend-chip.is-ok { background: #e7f6ec; color: #0c5a26; }
+.ed-suspend-chip.is-near { background: #fff4e0; color: #7a4a00; }
+.ed-suspend-chip.is-over { background: #fdecea; color: #7a1a14; }
+.ed-suspend-popover {
+  position: absolute; top: calc(100% + .4rem); right: 0; z-index: 20; width: 20rem;
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 10px;
+  padding: .75rem .9rem; box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+.ed-suspend-breakdown { display: grid; gap: .25rem; font-size: .82rem; margin: 0 0 .5rem; padding: 0; list-style: none; }
+.ed-suspend-breakdown li { display: flex; justify-content: space-between; gap: .5rem; }
+.ed-suspend-breakdown li span:last-child { color: var(--c-muted); font-variant-numeric: tabular-nums; }
+
 /* Línea de modo al abrir el menú Archivo: coloreada y a todo lo ancho —
    qué sistema manda ahora mismo, lo primero que se lee al abrir el menú. */
 .ed-menu-modeline {

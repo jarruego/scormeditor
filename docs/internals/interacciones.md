@@ -292,8 +292,12 @@ para restaurar desde `suspend_data`). Inspirados en el catálogo de eXeLearning.
   chip `.ed-az-letter`). Chips del rosco con estados (actual con pulso / acierto verde /
   fallo rojo); respuesta escrita (Enter envía) comparada con `normLetters` y
   **Pasapalabra** deja la letra para la siguiente vuelta. Al fallar se muestra la
-  respuesta correcta. Estado `{res: {idx: {given, correct}, __last}}`. Validadores:
-  `AZ_EMPTY`, `AZ_INCOMPLETE`, `AZ_DUP_LETTER` (warning).
+  respuesta correcta. El campo de respuesta lleva `maxlength` (`Math.min(120,
+  Math.max(40, respuesta.length + 10))`, nunca por debajo de la propia respuesta
+  correcta): es la única interacción con texto libre real sin acotar por el propio
+  diseño de la interfaz, y `suspend_data` necesita una cota (ver
+  `../suspend-data.md`, medidor de memoria). Estado `{res: {idx: {given, correct},
+  __last}}`. Validadores: `AZ_EMPTY`, `AZ_INCOMPLETE`, `AZ_DUP_LETTER` (warning).
 - **`puzzle`** (completable; puntúa solo si el autor lo marca): `config {image, alt,
   cols?, rows?}` (2–5, def. 3×3). Piezas por `background-position`, barajadas
   deterministas (nunca nace resuelto); **tocar dos piezas las intercambia** (mismo

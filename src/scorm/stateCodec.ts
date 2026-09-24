@@ -18,10 +18,36 @@ export interface CourseLayoutEntry {
   final_questions: string[]
 }
 
+export interface SuspendSizeBudget {
+  raw: string
+  fits: boolean
+  degraded: number
+  size: number
+  breakdown: SuspendSizeBreakdown
+}
+
+export interface SuspendSizeBreakdown {
+  visited: number
+  results: number
+  interactions: number
+  finalAnswers: number
+  attempts: number
+  finalScore: number
+}
+
+export interface SuspendSizeEstimate {
+  worstCase: number
+  limit: number
+  breakdown: SuspendSizeBreakdown
+  missingEstimator: { id: string; type: InteractionType }[]
+}
+
 export interface StateCodecApi {
   VERSION: number
-  encode: (state: RuntimeState, course: Course) => string
+  encode: (state: RuntimeState, course: Course, level?: number) => string
   decode: (raw: string, course: Course, layouts: CourseLayoutEntry[]) => RuntimeState
+  encodeWithBudget: (state: RuntimeState, course: Course, limit?: number) => SuspendSizeBudget
+  estimateSuspendSize: (course: Course) => SuspendSizeEstimate
   buildLayoutEntry: (course: Course) => CourseLayoutEntry
 }
 

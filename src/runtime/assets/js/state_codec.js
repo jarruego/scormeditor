@@ -939,6 +939,178 @@
     return best;
   }
 
+  // ---- Medidor del editor (Fase 4) -----------------------------------------
+  // estimateSuspendSize(course) simula el PEOR CASO plausible (todo visto,
+  // toda interacción resuelta con el detalle más grande que su tipo permite)
+  // y lo pasa por el MISMO encode() (nivel 0, sin degradar: el medidor avisa
+  // del tamaño real del contenido, la degradación de la Fase 3 es la red de
+  // seguridad en tiempo de ejecución, no la referencia para diseñar el curso).
+  // Cada tipo con codec compacto tiene ya un tamaño acotado por su propia
+  // config (índices, permutaciones, máscaras de bits — el "peor caso" es
+  // básicamente su tamaño real, no depende del contenido del alumno) excepto:
+  //  - `crossword`: no se reproduce aquí el algoritmo de colocación (Fase 1),
+  //    así que se usa una cota honesta: la suma de las longitudes de sus
+  //    palabras es un límite superior real del número de casillas (los
+  //    cruces solo pueden REDUCIR ese número, nunca aumentarlo).
+  //  - `az_quiz`: el texto que teclea el alumno solo está acotado porque
+  //    interactions.js le pone un `maxlength` (misma fórmula aquí).
+  //  - `html_embed`: acotado por `state_max`, con el peor caso de escape
+  //    ASCII (todo el contenido no-ASCII, que se expande a 5 caracteres).
+  // Un tipo sin entrada aquí (futuro, sin estimador todavía) usa una cota
+  // conservadora fija y se lista en `missingEstimator` para avisar en la UI.
+  var UNKNOWN_TYPE_FALLBACK_CHARS = 500;
+
+  function allTrueObj(n) {
+    var o = {};
+    for (var i = 0; i < n; i++) o[i] = true;
+    return o;
+  }
+  function worstCaseDetail(type, it) {
+    var cfg = it.config || {};
+    var opts = it.options || [];
+    switch (type) {
+      case 'accordion': case 'tabs':
+        return { seen: allTrueObj((cfg.items || []).length) };
+      case 'flip_cards': case 'image_cards':
+        return { seen: allTrueObj((cfg.cards || []).length) };
+      case 'timeline':
+        return { seen: allTrueObj((cfg.milestones || []).length) };
+      case 'case_practice':
+        return { rubric: (cfg.rubric || []).map(function (_, i) { return i; }) };
+      case 'flashcards': {
+        var n = (cfg.cards || []).length;
+        var known = []; for (var i = 0; i < n; i++) known.push(true);
+        return { idx: n, known: known, done: true };
+      }
+      case 'single_choice': case 'true_false':
+        return opts.length ? { value: opts[0].id, attempts: 999 } : null;
+      case 'scenario_decision':
+        return opts.length ? { choice: opts[0].id } : null;
+      case 'hotspots': {
+        var spots = cfg.spots || [];
+        return spots.length ? { choice: spots[0].id } : null;
+      }
+      case 'sort_steps': {
+        var steps = cfg.steps || [];
+        return steps.length ? { order: steps.map(function (s) { return s.id; }), attempts: 999 } : null;
+      }
+      case 'match_pairs': case 'classification': {
+        var groups = cfg.groups || [];
+        if (!opts.length) return null;
+        var answers = {};
+        opts.forEach(function (o) { answers[o.id] = groups[0] ? groups[0].id : ''; });
+        return { answers: answers, attempts: 999 };
+      }
+      case 'fill_blanks': {
+        var meta = fillBlanksMeta(it);
+        return meta.answers.length ? { values: meta.answers.slice(), attempts: 999 } : null;
+      }
+      case 'video': case 'hidden_image': {
+        var qs = filteredQuestions(it);
+        if (!qs.length) return null;
+        var ans = {};
+        qs.forEach(function (q, i) { ans[i] = { choice: 0, correct: false }; });
+        var out = {};
+        out[type === 'video' ? 'answered' : 'answers'] = ans;
+        return out;
+      }
+      case 'html_embed': {
+        var stateMax = Math.max(0, Math.min(300, typeof cfg.state_max === 'number' ? cfg.state_max : 100));
+        if (!stateMax) return { done: true, data: null };
+        var s = '';
+        for (var k = 0; k < stateMax; k++) s += 'é'; // peor caso: todo no-ASCII
+        return { done: true, data: s };
+      }
+      case 'before_after':
+        return { moved: true, pos: 100 };
+      case 'word_search':
+        return { found: (cfg.words || []).slice() };
+      case 'crossword': {
+        var entries = (cfg.entries || []).map(function (en) { return normWord(en.word || ''); })
+          .filter(function (w) { return w.length >= 3 && w.length <= 12; });
+        var totalCells = entries.reduce(function (acc, w) { return acc + w.length; }, 0);
+        var values = {};
+        for (var c = 0; c < totalCells; c++) values[c + ',0'] = 'A';
+        return { values: values, correct: false, attempts: 999 };
+      }
+      case 'az_quiz': {
+        var items = azQuizItems(it);
+        if (!items.length) return null;
+        var res = {};
+        items.forEach(function (q, i) {
+          var len = Math.min(120, Math.max(40, (q.answer || '').length + 10)); // misma fórmula que interactions.js
+          var given = '';
+          for (var g = 0; g < len; g++) given += 'é'; // peor caso: todo no-ASCII, se escapa a x5
+          res[i] = { given: given, correct: false };
+        });
+        return { res: res };
+      }
+      case 'puzzle': {
+        var cols = Math.min(5, Math.max(2, +cfg.cols || 3));
+        var rows = Math.min(5, Math.max(2, +cfg.rows || 3));
+        var n2 = cols * rows;
+        var order = []; for (var p = 0; p < n2; p++) order.push(p);
+        return { order: order, solved: false };
+      }
+      default:
+        return undefined; // tipo sin estimador: lo distingue de null (sin detalle aplicable)
+    }
+  }
+
+  function estimateSuspendSize(course) {
+    var screens = flattenScreens(course);
+    var interactions = collectInteractions(screens);
+    var finalQs = finalQuestions(course);
+
+    var state = { visited: {}, interactions: {}, results: {}, attempts: 999, finalScore: 100, finalAnswers: {} };
+    var i;
+    for (i = 0; i < screens.length; i++) state.visited[screens[i].id] = true;
+
+    var missingEstimator = [];
+    for (i = 0; i < interactions.length; i++) {
+      var it = interactions[i];
+      var maxScore = it.interaction.points || 1;
+      // Peor caso de resultado: evaluable y NO perfecto ('f'), que es el único
+      // estado que necesita guardar la puntuación explícita (el más caro).
+      state.results[it.id] = it.interaction.scored
+        ? { completed: true, scored: true, correct: false, score: Math.max(0, maxScore - 0.33), maxScore: maxScore }
+        : { completed: true, scored: false };
+      var detail = worstCaseDetail(it.type, it.interaction);
+      if (detail === undefined) {
+        missingEstimator.push({ id: it.id, type: it.type });
+        var fallback = '';
+        for (var f = 0; f < UNKNOWN_TYPE_FALLBACK_CHARS; f++) fallback += 'x';
+        detail = { __sin_estimador__: fallback };
+      }
+      if (detail != null) state.interactions[it.id] = detail;
+    }
+    if (finalQs.length > 0) {
+      var maxFinal = 0;
+      for (i = 0; i < finalQs.length; i++) maxFinal += finalQs[i].points || 1;
+      state.results.__final__ = { completed: true, scored: true, correct: false, score: Math.max(0, maxFinal - 1), maxScore: maxFinal };
+    }
+    for (i = 0; i < finalQs.length; i++) {
+      var qOpts = finalQs[i].options || [];
+      if (qOpts.length) state.finalAnswers[finalQs[i].id] = qOpts[qOpts.length - 1].id;
+    }
+
+    var parts = encodeParts(state, course, 0);
+    var raw = joinParts(parts);
+    return {
+      worstCase: raw.length,
+      limit: 4096,
+      breakdown: {
+        visited: parts.visited.length,
+        results: parts.results.length + parts.scores.length,
+        interactions: parts.interactions.length,
+        finalAnswers: parts.finalAnswers.length,
+        attempts: parts.attempts.length,
+        finalScore: parts.finalScore.length,
+      },
+      missingEstimator: missingEstimator,
+    };
+  }
+
   function findLayout(layouts, fp) {
     if (!layouts) return null;
     for (var i = 0; i < layouts.length; i++) if (layouts[i] && layouts[i].fp === fp) return layouts[i];
@@ -1091,6 +1263,7 @@
     encode: encode,
     decode: decode,
     encodeWithBudget: encodeWithBudget,
+    estimateSuspendSize: estimateSuspendSize,
     buildLayoutEntry: buildLayoutEntry,
     // Expuesto solo para scripts/test-state-codec.ts (Fase 1: demostrar que
     // el estado se puede trocear en segmentos sin conocer tipo ni config).
@@ -1105,6 +1278,7 @@
       fingerprint: fingerprint,
       hasCodec: function (type) { return !!TYPE_CODECS[type]; },
       isExploratoryType: function (type) { return !!EXPLORATORY_TYPES[type]; },
+      hasEstimator: function (type) { return worstCaseDetail(type, { config: {}, options: [] }) !== undefined; },
     },
   };
 })(typeof window !== 'undefined' ? window : this);
