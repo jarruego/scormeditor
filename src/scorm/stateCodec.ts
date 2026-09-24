@@ -35,10 +35,20 @@ export interface SuspendSizeBreakdown {
   finalScore: number
 }
 
+export interface SuspendSizeInteraction {
+  id: string
+  type: InteractionType
+  screenId: string
+  screenTitle: string
+  chars: number
+  motivo: string
+}
+
 export interface SuspendSizeEstimate {
   worstCase: number
   limit: number
   breakdown: SuspendSizeBreakdown
+  perInteraction: SuspendSizeInteraction[]
   missingEstimator: { id: string; type: InteractionType }[]
 }
 

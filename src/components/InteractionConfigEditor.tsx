@@ -774,8 +774,11 @@ export function InteractionConfigEditor({
             alumno termine la actividad (comprueba antes <code>MeEmbed.completed</code> para no repetirlo), y
             a <code>MeEmbed.saveState(obj)</code> para guardar un estado propio pequeño entre sesiones — se
             restaura en <code>MeEmbed.state</code>, con un presupuesto de <code>MeEmbed.stateMax</code> caracteres
-            (el de arriba). Guarda índices y booleanos, nunca textos. El bloqueo de avance solo actúa si esta
-            pantalla es obligatoria y el curso exige completar las interacciones (⚙ Ajustes del curso).
+            (el de arriba). Guarda solo índices, booleanos y claves de una letra (p. ej. <code>{'{"s":[0,2]}'}</code>):
+            el estado debe ser ASCII imprimible, sin tildes ni emoji — <code>saveState()</code> rechaza (con
+            aviso en consola) cualquier estado con caracteres fuera de ese rango. El bloqueo de avance solo
+            actúa si esta pantalla es obligatoria y el curso exige completar las interacciones (⚙ Ajustes del
+            curso).
           </p>
         </div>
       )

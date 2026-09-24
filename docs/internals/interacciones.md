@@ -183,11 +183,29 @@ height?, embed_assets? }`.
 - **Alto**: fijo si `config.height` (px); si no, **auto-resize** — el doc interno reporta
   `scrollHeight` por `postMessage` (`{meEmbed: id, height}`, único canal con origen
   opaco) y la carcasa ajusta el iframe filtrando por id de interacción.
-- No puntúa ni guarda estado (`completed: true, scored: false`); el sandbox no tiene
-  acceso a `ctx`. El código debe ser **autocontenido** (sin CDN si el curso puede verse
-  offline).
-- Validadores: `EMBED_EMPTY` (error sin html ni js) y `EMBED_SCORED` (warning si
-  `scored`). No participa en TTS (`buildTranscript` no lo lista como informativa
+- **Contrato «MeEmbed v1»** (`config: { …, require_completion?, state_max? }`, ver
+  `docs/html-embed-contract.md` para el detalle autor-facing): se inyecta
+  `window.MeEmbed = {version, id, completed, state, stateMax, complete(), saveState(obj)}`
+  como primer `<script>` del documento interno, antes del código del autor. `complete()`
+  marca la interacción completada (idempotente); `saveState(obj)` guarda `obj` como
+  `state` propio entre sesiones, rechazándolo (con `console.warn`, nunca rompe el
+  interactivo) si no es serializable, si supera `stateMax` (0-300, 100 por defecto), **o
+  si el JSON contiene algún carácter fuera de ASCII imprimible (0x20-0x7E) o el carácter
+  `~`** — el estado debe caber en índices/booleanos/claves de una letra, nunca texto
+  libre. La carcasa vuelve a comprobar tamaño Y alfabeto al recibir el `postMessage`,
+  nunca se fía del propio iframe. Sin `require_completion`, `result()` es siempre
+  `{completed: true, scored: false}` (como antes); con él, no completa hasta que el
+  propio código llama a `MeEmbed.complete()`. Nunca puntúa (`scored` siempre `false`,
+  aunque el autor marque la interacción evaluable — `EMBED_SCORED` avisa de eso). El
+  presupuesto ASCII de `state_max` es lo que permite al medidor de memoria SCORM del
+  editor (`estimateSuspendSize`, ver `../suspend-data.md`) acotar el peor caso sin
+  factor de escape.
+- Validadores: `EMBED_EMPTY` (error sin html ni js), `EMBED_SCORED` (warning si
+  `scored`), `EMBED_NO_COMPLETE` (error: `require_completion` sin llamar a
+  `MeEmbed.complete()`/`ME.complete()`), `EMBED_STATE_MAX` (error: `state_max` fuera de
+  0-300), `EMBED_STATE_MAX_DEFAULT` (info: sin `state_max` explícito, usa el 100 por
+  defecto) y `EMBED_STATE_UNUSED` (warning: hay presupuesto pero no se llama a
+  `saveState()`/`ME.saveState()`). No participa en TTS (`buildTranscript` no lo lista como informativa
   narrable: es código).
 
 ### `image_cards` — tarjetas de imagen con modal
@@ -296,8 +314,18 @@ para restaurar desde `suspend_data`). Inspirados en el catálogo de eXeLearning.
   Math.max(40, respuesta.length + 10))`, nunca por debajo de la propia respuesta
   correcta): es la única interacción con texto libre real sin acotar por el propio
   diseño de la interfaz, y `suspend_data` necesita una cota (ver
-  `../suspend-data.md`, medidor de memoria). Estado `{res: {idx: {given, correct},
-  __last}}`. Validadores: `AZ_EMPTY`, `AZ_INCOMPLETE`, `AZ_DUP_LETTER` (warning).
+  `../suspend-data.md`, medidor de memoria). Lo que se **guarda** distingue acierto
+  de fallo: una respuesta CORRECTA no guarda texto en absoluto (`{correct: true}` —
+  nunca se reexpone al alumno, el feedback siempre usa la respuesta correcta del
+  propio contenido); una INCORRECTA guarda `normLetters(dado)` recortado a
+  `maxlength`, con la Ñ (lo único no-ASCII que `normLetters` puede dejar) sustituida
+  por N —nunca borrada, "NIÑO" queda "NINO", no "NIO"— para que sea ASCII puro
+  (`{given, correct: false}`) — así el peor caso real nunca necesita el factor de
+  escape de `state_codec.js`. Un
+  `suspend_data` guardado con el formato antiguo (texto tal cual, sin normalizar) se
+  sigue leyendo igual; se reescribe en el nuevo formato en el siguiente guardado.
+  Estado `{res: {idx: {given?, correct}, __last}}`. Validadores: `AZ_EMPTY`,
+  `AZ_INCOMPLETE`, `AZ_DUP_LETTER` (warning).
 - **`puzzle`** (completable; puntúa solo si el autor lo marca): `config {image, alt,
   cols?, rows?}` (2–5, def. 3×3). Piezas por `background-position`, barajadas
   deterministas (nunca nace resuelto); **tocar dos piezas las intercambia** (mismo

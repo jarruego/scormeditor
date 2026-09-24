@@ -144,6 +144,8 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
         add('EMBED_NO_COMPLETE', 'error', 'Exige completar la actividad para avanzar, pero el código no llama a MeEmbed.complete() (o a su alias ME.complete()): el alumno nunca podría continuar.')
       if (c.state_max !== undefined && (typeof c.state_max !== 'number' || !isFinite(c.state_max) || c.state_max < 0 || c.state_max > 300))
         add('EMBED_STATE_MAX', 'error', 'La memoria para guardar su estado debe ser un número entre 0 y 300 caracteres.')
+      if (c.state_max === undefined)
+        add('EMBED_STATE_MAX_DEFAULT', 'info', 'Reserva 100 caracteres por defecto. Si el interactivo no guarda estado, pon 0; si guarda índices de N elementos, basta con unos 5 + 2·N.')
       const embedStateMax = typeof c.state_max === 'number' ? c.state_max : 100
       if (embedStateMax > 0 && !/(?:MeEmbed|ME)\s*\.\s*saveState\s*\(/.test(embedCode))
         add('EMBED_STATE_UNUSED', 'warning', 'Tiene reservado presupuesto para guardar estado, pero el código no llama a MeEmbed.saveState() (o a su alias ME.saveState()): no se está usando.')

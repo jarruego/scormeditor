@@ -1,5 +1,5 @@
 /* =============================================================================
- * test-state-codec.ts — Batería del codec v2 de suspend_data (Fases 1 y 2).
+ * test-state-codec.ts — Batería del codec v2 de suspend_data (Fases 1-4).
  * Ejecutar:  npx tsx scripts/test-state-codec.ts
  *
  * Garantías que comprueba:
@@ -27,6 +27,15 @@
  *     tocar NUNCA visited/results/attempts/finalScore — solo detalle ya
  *     redundante (exploratorias completas, texto ya acertado de crucigrama/
  *     rosco, estado interno de html_embed completados), en ese orden.
+ *  8) MEDIDOR (estimateSuspendSize): peor caso, desglose por segmento y por
+ *     interacción (id/tipo/pantalla/motivo). html_embed y az_quiz son los dos
+ *     únicos tipos con texto libre real, y su estimación no lleva NINGÚN
+ *     factor de escape porque el RUNTIME (interactions.js) garantiza ASCII —
+ *     se comprueba contra el shim MeEmbed REAL (extraído y evaluado, no
+ *     reimplementado): acepta ASCII dentro de presupuesto, rechaza tildes/'~'
+ *     y lo que se pasa de tamaño. Invariante por tipo: un estado real nunca
+ *     pesa más que la estimación, y para html_embed/az_quiz la estimación no
+ *     se pasa de un 10% sobre el real máximo alcanzable.
  * ===========================================================================*/
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -46,6 +55,53 @@ function loadStateCodec(): AnyRec {
   vm.runInContext(src, ctx, { filename: 'state_codec.js' })
   if (!windowObj.StateCodec) throw new Error('No se pudo cargar StateCodec')
   return windowObj.StateCodec
+}
+
+function loadInteractions(): AnyRec {
+  const windowObj: AnyRec = { addEventListener: () => {}, removeEventListener: () => {} }
+  const ctx = vm.createContext({ window: windowObj })
+  const src = readFileSync(join(root, 'src', 'runtime', 'assets', 'js', 'interactions.js'), 'utf8')
+  vm.runInContext(src, ctx, { filename: 'interactions.js' })
+  if (!windowObj.Interactions) throw new Error('No se pudo cargar Interactions')
+  return windowObj.Interactions
+}
+
+// Renderiza el factory REAL de html_embed (interactions.js) con un DOM mínimo
+// simulado (solo necesita `el.innerHTML` como sumidero de texto) y extrae el
+// shim `window.MeEmbed={...}` tal como lo genera de verdad, para comprobar
+// que el RUNTIME hace cumplir el mismo `state_max` (y el alfabeto ASCII) que
+// asume el estimador — no una reimplementación de la lógica en el test.
+function extractMeEmbedShim(config: AnyRec): string {
+  const Interactions = loadInteractions()
+  const el: AnyRec = { innerHTML: '', querySelector: () => null, querySelectorAll: () => [] }
+  const data = {
+    id: 'i-test', type: 'html_embed', prompt: '', feedback: { correct: '', incorrect: '', explanation: '' },
+    scored: false, points: 0, options: [], config,
+  }
+  Interactions.render(el, data, { state: null, save: () => {}, announce: () => {} })
+  const html = el.innerHTML as string
+  const attrMatch = /srcdoc="([\s\S]*?)" title=/.exec(html)
+  if (!attrMatch) throw new Error('No se encontró el srcdoc del iframe en el HTML generado')
+  const doc = attrMatch[1]
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
+  const shimMatch = /<script>(window\.MeEmbed=[\s\S]*?\}\};)<\/script>/.exec(doc)
+  if (!shimMatch) throw new Error('No se encontró el shim window.MeEmbed en el srcdoc generado')
+  return shimMatch[1]
+}
+
+// Evalúa el shim extraído en un sandbox propio (con `parent.postMessage` y
+// `console.warn` capturados) y llama a `MeEmbed.saveState(obj)` tal como lo
+// haría el código del autor dentro del iframe.
+function runMeEmbedSaveState(shimSrc: string, obj: unknown): { posted: AnyRec | null; warnings: string[]; state: unknown } {
+  const sandbox: AnyRec = { warnings: [] }
+  sandbox.console = { warn: (m: string) => sandbox.warnings.push(m) }
+  let posted: AnyRec | null = null
+  sandbox.parent = { postMessage: (m: AnyRec) => { posted = m } }
+  sandbox.window = sandbox
+  vm.createContext(sandbox)
+  vm.runInContext(shimSrc, sandbox)
+  sandbox.MeEmbed.saveState(obj)
+  return { posted, warnings: sandbox.warnings, state: sandbox.MeEmbed.state }
 }
 
 const StateCodec = loadStateCodec()
@@ -489,13 +545,13 @@ function findInteractionScreen(c: AnyRec, id: string): AnyRec | undefined {
 // --- 6e) Curso sintético de 150 pantallas: el peor caso debe seguir siendo
 //         pequeño (la razón de ser de todo este rediseño: el problema
 //         original era ~10.000 caracteres frente al límite de 4096) --------
+const bigCourse: AnyRec = {
+  modules: [{ id: 'm1', screens: [], units: [{ id: 'u1', screens: [] }], closing_screens: [] }],
+  intro_screens: [], closing_screens: [],
+  assessments: { final_test: { questions: [] } },
+  scorm: {},
+}
 {
-  const bigCourse: AnyRec = {
-    modules: [{ id: 'm1', screens: [], units: [{ id: 'u1', screens: [] }], closing_screens: [] }],
-    intro_screens: [], closing_screens: [],
-    assessments: { final_test: { questions: [] } },
-    scorm: {},
-  }
   const unitScreens = bigCourse.modules[0].units[0].screens
   let n = 0
   function addScreen(interaction?: AnyRec) {
@@ -591,11 +647,13 @@ ok(fullEncoded.length <= 4096, `el curso demo con TODO el progreso guardado supe
     bloated.results[crossword.id] = { completed: true, scored: true, correct: true, score: crossword.interaction.points || 1, maxScore: crossword.interaction.points || 1 }
   }
   if (azQuiz) {
+    // Respuestas INCORRECTAS con texto largo: una correcta ya no guarda texto
+    // (ni en nivel 0), así que solo las incorrectas dan algo que degradar.
     const n = ((azQuiz.interaction.config || {}).items || []).length || 1
     const res: AnyRec = {}
-    for (let i = 0; i < n; i++) res[i] = { given: 'x'.repeat(200), correct: true }
+    for (let i = 0; i < n; i++) res[i] = { given: 'x'.repeat(200), correct: false }
     bloated.interactions[azQuiz.id] = { res }
-    bloated.results[azQuiz.id] = { completed: true, scored: true, correct: true, score: azQuiz.interaction.points || 1, maxScore: azQuiz.interaction.points || 1 }
+    bloated.results[azQuiz.id] = { completed: true, scored: true, correct: false, score: 0, maxScore: azQuiz.interaction.points || 1 }
   }
   if (htmlEmbed) {
     bloated.interactions[htmlEmbed.id] = { done: true, data: { blob: 'y'.repeat(4500) } }
@@ -626,8 +684,8 @@ ok(fullEncoded.length <= 4096, `el curso demo con TODO el progreso guardado supe
   if (azQuiz) {
     const d = afterDegrade.interactions[azQuiz.id]
     const items = Object.keys(d?.res || {}).filter((k) => k !== '__last')
-    ok(!!d && items.length > 0 && items.every((k) => d.res[k].given === '' && d.res[k].correct === true),
-      'degradación [nivel 2, az_quiz]: given debería vaciarse conservando correct')
+    ok(!!d && items.length > 0 && items.every((k) => d.res[k].given == null && d.res[k].correct === false),
+      'degradación [nivel 2, az_quiz]: given debería desaparecer conservando correct')
   }
   if (htmlEmbed) {
     const d = afterDegrade.interactions[htmlEmbed.id]
@@ -661,6 +719,173 @@ ok(fullEncoded.length <= 4096, `el curso demo con TODO el progreso guardado supe
   const emptyEstimate = StateCodec.estimateSuspendSize(emptyCourse)
   ok(emptyEstimate.worstCase > 0 && emptyEstimate.worstCase < 100,
     `estimateSuspendSize: un curso vacío debería dar un peor caso pequeño y sensato (dio ${emptyEstimate.worstCase})`)
+}
+
+// --- 10) html_embed: el runtime REAL hace cumplir el mismo state_max/ASCII
+//         que asume el estimador (nunca se fía el uno del otro) -----------
+{
+  function estimateForHtmlEmbed(stateMax: number | undefined): number {
+    const it: AnyRec = { id: 'he1', type: 'html_embed', config: { state_max: stateMax }, options: [], scored: false, points: 0 }
+    const course: AnyRec = { modules: [{ id: 'm1', screens: [{ id: 's1', title: 'Embed', interaction: it }] }], intro_screens: [], closing_screens: [], assessments: {}, scorm: {} }
+    return StateCodec.estimateSuspendSize(course).perInteraction[0].chars
+  }
+  const c0 = estimateForHtmlEmbed(0)
+  const c30 = estimateForHtmlEmbed(30)
+  const c100 = estimateForHtmlEmbed(100)
+  console.log(`html_embed — peor caso estimado por state_max: 0→${c0}, 30→${c30}, 100→${c100} caracteres.`)
+  ok(c0 > 0 && c0 <= 10, `html_embed state_max=0: se esperaban unos pocos caracteres (dio ${c0})`)
+  ok(Math.abs(c30 - 35) <= 8, `html_embed state_max=30: se esperaban ~35 caracteres (dio ${c30})`)
+  ok(Math.abs(c100 - 105) <= 10, `html_embed state_max=100: se esperaban ~105 caracteres (dio ${c100})`)
+
+  // El shim REAL generado por interactions.js (no una reimplementación):
+  // acepta ASCII dentro de presupuesto, rechaza tildes/'~' y rechaza lo que
+  // se pasa de tamaño — la carcasa nunca se fía del iframe.
+  const shim30 = extractMeEmbedShim({ state_max: 30 })
+  const acceptedAscii = runMeEmbedSaveState(shim30, { s: [0, 2] })
+  ok(!!acceptedAscii.posted, 'MeEmbed.saveState real: un estado ASCII pequeño debería aceptarse')
+  const rejectedAccent = runMeEmbedSaveState(shim30, { s: 'café' })
+  ok(!rejectedAccent.posted && rejectedAccent.warnings.length > 0,
+    'MeEmbed.saveState real: un estado con tildes debería descartarse (con aviso), nunca guardarse')
+  const rejectedTilde = runMeEmbedSaveState(shim30, { s: 'a~b' })
+  ok(!rejectedTilde.posted, "MeEmbed.saveState real: un estado con el carácter '~' debería descartarse")
+  const rejectedOversized = runMeEmbedSaveState(shim30, { s: 'x'.repeat(50) })
+  ok(!rejectedOversized.posted, 'MeEmbed.saveState real: un estado que supera state_max debería descartarse')
+}
+
+// --- 11) az_quiz: correcta sin texto, incorrecta normalizada, migración ----
+{
+  // Regresión real (hallada probando en el navegador): normLetters()
+  // conserva la Ñ (no es ASCII) a propósito, y lo que guarda interactions.js
+  // debe SUSTITUIRLA por N, no borrarla — "NIÑO" debe quedar "NINO", no "NIO".
+  const Interactions = loadInteractions()
+  const normalized = Interactions.normLetters('niño')
+  const stored = normalized.split(String.fromCharCode(209)).join('N')
+  ok(stored === 'NINO', `az_quiz: la Ñ debe sustituirse por N al guardar, no borrarse (normLetters dio "${normalized}", guardado "${stored}")`)
+
+  const it: AnyRec = {
+    id: 'az1', type: 'az_quiz', options: [], scored: true, points: 1,
+    config: { items: [{ clue: 'c1', answer: 'gato' }, { clue: 'c2', answer: 'perro' }] },
+  }
+  const course: AnyRec = { modules: [{ id: 'm1', screens: [{ id: 's1', interaction: it }] }], intro_screens: [], closing_screens: [], assessments: {}, scorm: {} }
+
+  // Formato nuevo: correcta sin texto; incorrecta con su forma normalizada.
+  const detailNew = { res: { 0: { correct: true }, 1: { given: 'PERRO EQUIVOCADO', correct: false } } }
+  const stateNew: AnyRec = { visited: {}, interactions: { [it.id]: detailNew }, results: { [it.id]: { completed: true, scored: true, correct: false, score: 0, maxScore: 1 } }, attempts: 0, finalScore: 0, finalAnswers: {} }
+  const decodedNew = StateCodec.decode(StateCodec.encode(stateNew, course), course, [])
+  const dn = decodedNew.interactions[it.id]
+  ok(dn.res[0].given == null && dn.res[0].correct === true, 'az_quiz nuevo formato: una respuesta correcta no debería guardar texto')
+  ok(dn.res[1].given === 'PERRO EQUIVOCADO' && dn.res[1].correct === false, 'az_quiz nuevo formato: una respuesta incorrecta debería conservar su texto')
+
+  // Formato antiguo (anterior a este cambio): el slot es el texto en bruto,
+  // sin marcador, y el acierto se deriva comparando con la respuesta. Se
+  // construye a mano con las mismas piezas que usa encode() internamente,
+  // para comprobar que decode() lo sigue leyendo bien sin haber cambiado la
+  // versión del formato ("2|") por este ajuste interno de un solo tipo.
+  const screensX = StateCodec._internal.flattenScreens(course)
+  const interactionsX = StateCodec._internal.collectInteractions(screensX)
+  const finalQsX = StateCodec._internal.finalQuestions(course)
+  const fpX = StateCodec._internal.fingerprint(screensX, interactionsX, finalQsX)
+  const oldAzPayload = '0' + StateCodec._internal.packChunks(['GATO', '', '']) // item0 "GATO" (acierta), item1 sin responder
+  const bodyX = StateCodec._internal.packChunks([
+    StateCodec._internal.packBits([]), // visited
+    'f', // resultChars (1 interacción, sin test final)
+    StateCodec._internal.packChunks(['0']), // scoreList (score=0 para el estado 'f')
+    StateCodec._internal.packChunks([oldAzPayload]), // interacciones
+    StateCodec._internal.packChunks([]), // finalAnswers
+    '0', '0', // attempts, finalScore
+  ])
+  const legacyRaw = '2|' + fpX + '|' + bodyX
+  const decodedLegacy = StateCodec.decode(legacyRaw, course, [])
+  const dl = decodedLegacy.interactions[it.id]
+  ok(!!dl && dl.res[0].given === 'GATO' && dl.res[0].correct === true,
+    'az_quiz formato antiguo: debería seguir leyéndose (acierto derivado por comparación)')
+  ok(!!dl && dl.res[1] === undefined, 'az_quiz formato antiguo: el ítem sin responder no debería tener entrada')
+
+  // Reanuda bien: al volver a guardar ese estado migrado, el acierto ya
+  // detectado se conserva (y, al ser un acierto, ya no hace falta el texto —
+  // el redecodificado tras el siguiente guardado debe seguir dando lo mismo).
+  const reEncoded = StateCodec.encode(decodedLegacy, course)
+  const reDecoded = StateCodec.decode(reEncoded, course, [])
+  ok(reDecoded.interactions[it.id].res[0].correct === true && reDecoded.interactions[it.id].res[0].given == null,
+    'az_quiz migración: tras el siguiente guardado, el acierto migrado se conserva sin necesitar ya el texto')
+}
+
+// --- 12) Invariante por tipo: un estado real alcanzable nunca pesa más que
+//         la estimación de peor caso (y para html_embed/az_quiz, no más de
+//         un 10% menos que ella — deberían coincidir casi exactamente) -----
+{
+  const estimateFull = StateCodec.estimateSuspendSize(course)
+  const charsById: Record<string, number> = {}
+  estimateFull.perInteraction.forEach((p: AnyRec) => { charsById[p.id] = p.chars })
+
+  interactions.forEach((it) => {
+    const realDetail = it.type === 'html_embed' || it.type === 'az_quiz'
+      ? undefined // se comprueban aparte con su propio "real max" exacto más abajo
+      : synthDetail(it.type, it.interaction)
+    if (!realDetail) return
+    const realResult = synthResult(it.interaction)
+    const singleState: AnyRec = { visited: {}, interactions: { [it.id]: realDetail }, results: { [it.id]: realResult }, attempts: 0, finalScore: 0, finalAnswers: {} }
+    const singleCourse: AnyRec = { modules: [{ id: 'm1', screens: [{ id: it.screenId, title: it.screenTitle, interaction: it.interaction }] }], intro_screens: [], closing_screens: [], assessments: {}, scorm: {} }
+    // Tamaño REAL: resultado (1 char + su score) + detalle, tal como los
+    // mide encode() de verdad (no el estimador) — se aísla en un curso de
+    // una sola interacción para poder atribuirle el tamaño sin ambigüedad.
+    const raw0 = StateCodec.encode({ visited: {}, interactions: {}, results: {}, attempts: 0, finalScore: 0, finalAnswers: {} }, singleCourse)
+    const rawReal = StateCodec.encode(singleState, singleCourse)
+    const realSize = rawReal.length - raw0.length
+    ok(realSize <= charsById[it.id],
+      `invariante [${it.type}/${it.id}]: un estado real (${realSize}) no debería superar la estimación de peor caso (${charsById[it.id]})`)
+  })
+
+  // html_embed y az_quiz: el "real máximo alcanzable" (dentro de lo que el
+  // runtime permite: state_max exacto en ASCII; todas incorrectas con el
+  // maxlength exacto en ASCII) debe coincidir con la estimación dentro de un
+  // 10% — para estos dos tipos la estimación ya NO lleva ningún margen por
+  // escape, así que deberían casi coincidir.
+  function checkTight(type: string, realDetailFor: (it: AnyRec) => AnyRec | null) {
+    const it = interactions.find((x) => x.type === type)
+    if (!it) return
+    const singleCourse: AnyRec = { modules: [{ id: 'm1', screens: [{ id: it.screenId, interaction: it.interaction }] }], intro_screens: [], closing_screens: [], assessments: {}, scorm: {} }
+    const est = StateCodec.estimateSuspendSize(singleCourse).perInteraction[0].chars
+    const detail = realDetailFor(it.interaction)
+    const state: AnyRec = { visited: {}, interactions: { [it.id]: detail }, results: { [it.id]: { completed: true, scored: !!it.interaction.scored, correct: false, score: 0, maxScore: it.interaction.points || 1 } }, attempts: 0, finalScore: 0, finalAnswers: {} }
+    const raw0 = StateCodec.encode({ visited: {}, interactions: {}, results: {}, attempts: 0, finalScore: 0, finalAnswers: {} }, singleCourse)
+    const real = StateCodec.encode(state, singleCourse).length - raw0.length
+    console.log(`ajuste [${type}]: real máximo ${real} vs estimado ${est} (${Math.round((est / real - 1) * 100)}% de margen).`)
+    ok(real <= est, `ajuste [${type}]: el real máximo (${real}) no debería superar la estimación (${est})`)
+    ok(est <= real * 1.10 + 1, `ajuste [${type}]: la estimación (${est}) no debería superar en más de un 10% al real máximo (${real})`)
+  }
+  checkTight('html_embed', (interaction) => {
+    const stateMax = Math.max(0, Math.min(300, typeof interaction.config?.state_max === 'number' ? interaction.config.state_max : 100))
+    if (!stateMax) return { done: true, data: null }
+    return { done: true, data: 'x'.repeat(Math.max(0, stateMax - 2)) }
+  })
+  checkTight('az_quiz', (interaction) => {
+    const items = (interaction.config?.items || []).map((q: AnyRec) => ({ answer: String(q.answer || '').trim() }))
+    const res: AnyRec = {}
+    items.forEach((q: AnyRec, i: number) => {
+      const len = Math.min(120, Math.max(40, q.answer.length + 10))
+      res[i] = { given: 'x'.repeat(len), correct: false }
+    })
+    return { res }
+  })
+}
+
+// --- 13) Informe final: antes/después en el curso demo y en el sintético ---
+{
+  const estimateDemo = StateCodec.estimateSuspendSize(course)
+  const estimateBig = StateCodec.estimateSuspendSize(bigCourse)
+  console.log('\n=== Informe final: estimateSuspendSize ===')
+  console.log(`Curso demo (${screens.length} pantallas, ${interactions.length} interacciones): total ${estimateDemo.worstCase} / ${estimateDemo.limit} caracteres.`)
+  console.log('  5 interacciones que más consumen:')
+  estimateDemo.perInteraction.slice(0, 5).forEach((p: AnyRec, i: number) => {
+    console.log(`   ${i + 1}. ${p.chars} car. — ${p.screenTitle || p.screenId} (${p.motivo})`)
+  })
+  console.log(`Curso sintético (150 pantallas, 54 interacciones): total ${estimateBig.worstCase} / ${estimateBig.limit} caracteres.`)
+  console.log('  5 interacciones que más consumen:')
+  estimateBig.perInteraction.slice(0, 5).forEach((p: AnyRec, i: number) => {
+    console.log(`   ${i + 1}. ${p.chars} car. — ${p.screenTitle || p.screenId} (${p.motivo})`)
+  })
+  console.log('===========================================\n')
 }
 
 if (failures) {

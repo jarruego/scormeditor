@@ -42,6 +42,7 @@ const ROWS: { key: keyof SuspendSizeEstimate['breakdown']; label: string }[] = [
  */
 export function SuspendSizeIndicator() {
   const course = useCourseStore((s) => s.course)
+  const goToScreen = useCourseStore((s) => s.goToScreen)
   const [estimate, setEstimate] = useState<SuspendSizeEstimate | null>(null)
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -81,6 +82,22 @@ export function SuspendSizeIndicator() {
               <li key={r.key}><span>{r.label}</span><span>{estimate.breakdown[r.key]}</span></li>
             ))}
           </ul>
+          {estimate.perInteraction.length > 0 && (
+            <>
+              <p className="ed-hint" style={{ margin: '.6rem 0 .3rem', fontWeight: 600 }}>Lo que más consume</p>
+              <ul className="ed-suspend-top">
+                {estimate.perInteraction.slice(0, 5).map((p) => (
+                  <li key={p.id}>
+                    <button type="button" className="ed-suspend-top-link" onClick={() => { goToScreen(p.screenId); setOpen(false) }}>
+                      <strong>{p.screenTitle || p.screenId}</strong>
+                      <span className="ed-hint">{p.motivo}</span>
+                    </button>
+                    <span className="ed-suspend-top-chars">{p.chars}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           {estimate.missingEstimator.length > 0 && (
             <p className="ed-hint-warn">
               <Icon name="alert-triangle" size={13} />{' '}

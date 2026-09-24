@@ -190,7 +190,7 @@
     for (var i = 0; i < screens.length; i++) {
       var sc = screens[i];
       if (!sc.__synthetic && sc.interaction) {
-        out.push({ id: sc.interaction.id, type: sc.interaction.type, interaction: sc.interaction });
+        out.push({ id: sc.interaction.id, type: sc.interaction.type, interaction: sc.interaction, screenId: sc.id, screenTitle: sc.title || '' });
       }
     }
     return out;
@@ -624,9 +624,14 @@
     },
   };
 
-  // az_quiz: detalle = { res: { índice: {given, correct}, __last } }. `given`
-  // es texto libre tecleado por el alumno — se guarda escapado; `correct` se
-  // deriva comparando con la respuesta (normLetters), no hace falta guardarlo.
+  // az_quiz: detalle = { res: { índice: {given?, correct}, __last } }. Desde
+  // que interactions.js normaliza lo que guarda: una respuesta CORRECTA no
+  // lleva `given` (nunca se reexpone al alumno); una INCORRECTA lleva la
+  // forma normalizada y ASCII de lo tecleado, recortada a su `maxlength` —
+  // ambas cotas ya conocidas por el runtime, sin necesitar el factor de
+  // escape de `asciiEscape` en el caso normal (solo entra en juego si algún
+  // día ese supuesto deja de cumplirse, o al leer suspend_data del formato
+  // antiguo).
   // Nota (Fase 2): el orden de `items` aquí es el de la config ACTUAL
   // (ordenado por letra inicial); si un republicado cambia la respuesta de un
   // ítem, su letra —y por tanto su posición— puede desplazarse. El remapeo
@@ -651,6 +656,18 @@
     items.sort(function (a, b) { return a.letter < b.letter ? -1 : a.letter > b.letter ? 1 : 0; });
     return items;
   }
+  // Marcador de formato nuevo: '~_' no lo produce nunca asciiEscape() sobre
+  // texto real (tras un '~' literal siempre escribe 4 digitos hex en
+  // minuscula, y '_' no es uno), asi que es distinguible sin ambiguedad del
+  // formato antiguo (texto en bruto escapado) -- necesario porque
+  // interactions.js ya NO guarda el texto de una respuesta CORRECTA (nunca
+  // se reexpone al alumno, el feedback siempre usa la respuesta correcta del
+  // propio contenido) y solo guarda la forma normalizada y ASCII de una
+  // INCORRECTA, recortada a su `maxlength` -- un curso ya publicado con
+  // suspend_data en el formato antiguo (texto en bruto, correct derivado por
+  // comparacion) se sigue leyendo igual; se reescribe en el nuevo formato en
+  // el siguiente guardado.
+  var AZ_NEW_MARK = '~_'; // '~_'
   TYPE_CODECS.az_quiz = {
     encode: function (detail, it) {
       if (!detail || !detail.res) return null;
@@ -658,7 +675,9 @@
       var slots = [];
       for (var i = 0; i < items.length; i++) {
         var r = detail.res[i];
-        slots.push(r && r.given != null ? asciiEscape(r.given) : '');
+        if (!r) { slots.push(''); continue; }
+        if (r.correct) { slots.push(AZ_NEW_MARK + '1'); continue; }
+        slots.push(AZ_NEW_MARK + '0' + asciiEscape(String(r.given || '')));
       }
       var last = detail.res.__last;
       slots.push(last == null ? '' : b36(last));
@@ -670,16 +689,18 @@
       if (!arr || arr.length !== items.length + 1) return null;
       var res = {};
       for (var i = 0; i < items.length; i++) {
-        if (!arr[i]) continue;
-        var given = asciiUnescape(arr[i]);
-        // Degradado por tamaño (Fase 3): "" + '1'/'0' sustituye el texto
-        // tecleado por el alumno, ya innecesario, por su acierto explícito
-        // (nunca se reexpone `given` al restaurar, ver interactions.js).
-        if (given.charAt(0) === '') {
-          res[i] = { given: '', correct: given.charAt(1) === '1' };
-        } else {
-          res[i] = { given: given, correct: normLettersLite(given) === normLettersLite(items[i].answer) };
+        var slot = arr[i];
+        if (!slot) continue;
+        if (slot.charAt(0) === '~' && slot.charAt(1) === '_') {
+          if (slot.charAt(2) === '1') { res[i] = { correct: true }; continue; }
+          var givenText = asciiUnescape(slot.slice(3));
+          // Degradado (Fase 3): sin texto, solo el acierto — misma forma que
+          // una respuesta correcta, sin `given` en absoluto.
+          res[i] = givenText ? { given: givenText, correct: false } : { correct: false };
+          continue;
         }
+        var given = asciiUnescape(slot);
+        res[i] = { given: given, correct: normLettersLite(given) === normLettersLite(items[i].answer) };
       }
       if (arr[items.length]) res.__last = fromB36(arr[items.length]);
       return { res: res };
@@ -817,11 +838,14 @@
       return { correct: true, attempts: detail.attempts || 0, values: {} };
     }
     if (level >= 2 && type === 'az_quiz' && detail.res) {
+      // Ya no hace falta un marcador especial: el codec de az_quiz nunca
+      // guarda texto para una respuesta correcta, y quitar el de una
+      // incorrecta (dejando solo su acierto) es una degradacion valida.
       var res2 = {};
       Object.keys(detail.res).forEach(function (k) {
         if (k === '__last') { res2.__last = detail.res.__last; return; }
         var r = detail.res[k];
-        if (r) res2[k] = { given: '' + (r.correct ? '1' : '0'), correct: r.correct };
+        if (r) res2[k] = { correct: r.correct };
       });
       return { res: res2 };
     }
@@ -1015,10 +1039,16 @@
         return out;
       }
       case 'html_embed': {
+        // El runtime garantiza que `data` (JSON.stringify de lo que guarda
+        // MeEmbed.saveState) sea ASCII imprimible y sin '~' — lo rechaza con
+        // console.warn si no (ver el propio register('html_embed', ...)) — así
+        // que el peor caso es exactamente `stateMax` caracteres ASCII, sin
+        // ningún factor de escape: asciiEscape() no expande ASCII.
         var stateMax = Math.max(0, Math.min(300, typeof cfg.state_max === 'number' ? cfg.state_max : 100));
         if (!stateMax) return { done: true, data: null };
+        var contentLen = Math.max(0, stateMax - 2); // JSON.stringify(cadena) añade las 2 comillas
         var s = '';
-        for (var k = 0; k < stateMax; k++) s += 'é'; // peor caso: todo no-ASCII
+        for (var k = 0; k < contentLen; k++) s += 'x';
         return { done: true, data: s };
       }
       case 'before_after':
@@ -1034,13 +1064,17 @@
         return { values: values, correct: false, attempts: 999 };
       }
       case 'az_quiz': {
+        // El runtime solo guarda texto para respuestas INCORRECTAS, y ya
+        // normalizado a ASCII (normLetters + filtro de no-ASCII) y recortado
+        // a `maxlength` — el peor caso es TODAS incorrectas, con el texto
+        // completo de ese límite, sin factor de escape (ya es ASCII).
         var items = azQuizItems(it);
         if (!items.length) return null;
         var res = {};
         items.forEach(function (q, i) {
           var len = Math.min(120, Math.max(40, (q.answer || '').length + 10)); // misma fórmula que interactions.js
           var given = '';
-          for (var g = 0; g < len; g++) given += 'é'; // peor caso: todo no-ASCII, se escapa a x5
+          for (var g = 0; g < len; g++) given += 'x';
           res[i] = { given: given, correct: false };
         });
         return { res: res };
@@ -1057,6 +1091,72 @@
     }
   }
 
+  // Cuánto pesa un contenido dentro de una lista empaquetada con packChunks:
+  // su propio prefijo de longitud + los dos puntos + el contenido.
+  function packedLen(s) {
+    return Math.max(1, s.length.toString(36).length) + 1 + s.length;
+  }
+
+  // Motivo legible del peor caso de una interacción, para el desglose del
+  // medidor («elementos que más consumen»). No pretende ser el desglose
+  // exacto carácter a carácter (eso ya lo da `chars`), solo explicar DE QUÉ
+  // depende: cuantos elementos tiene, o qué presupuesto de texto usa.
+  function motivoFor(it) {
+    var type = it.type;
+    var cfg = it.interaction.config || {};
+    switch (type) {
+      case 'html_embed':
+        return typeof cfg.state_max === 'number'
+          ? ('html_embed: state_max ' + cfg.state_max)
+          : 'html_embed: state_max no definido (100 por defecto)';
+      case 'az_quiz': {
+        var items = azQuizItems(it.interaction);
+        var maxLen = 0;
+        items.forEach(function (q) { maxLen = Math.max(maxLen, Math.min(120, Math.max(40, (q.answer || '').length + 10))); });
+        return 'az_quiz: ' + items.length + ' preguntas × hasta ' + maxLen + ' caracteres';
+      }
+      case 'crossword': {
+        var entries = (cfg.entries || []).map(function (en) { return normWord(en.word || ''); })
+          .filter(function (w) { return w.length >= 3 && w.length <= 12; });
+        var totalCells = entries.reduce(function (acc, w) { return acc + w.length; }, 0);
+        return 'crossword: ' + totalCells + ' casillas (cota superior)';
+      }
+      case 'accordion': case 'tabs':
+        return type + ': ' + ((cfg.items || []).length) + ' elementos';
+      case 'flip_cards': case 'image_cards':
+        return type + ': ' + ((cfg.cards || []).length) + ' tarjetas';
+      case 'timeline':
+        return 'timeline: ' + ((cfg.milestones || []).length) + ' hitos';
+      case 'case_practice':
+        return 'case_practice: ' + ((cfg.rubric || []).length) + ' criterios';
+      case 'flashcards':
+        return 'flashcards: ' + ((cfg.cards || []).length) + ' tarjetas';
+      case 'single_choice': case 'true_false': case 'scenario_decision':
+        return type + ': una opción elegida';
+      case 'hotspots':
+        return 'hotspots: una zona elegida';
+      case 'sort_steps':
+        return 'sort_steps: ' + ((cfg.steps || []).length) + ' pasos';
+      case 'match_pairs': case 'classification':
+        return type + ': ' + ((it.interaction.options || []).length) + ' elementos';
+      case 'fill_blanks':
+        return 'fill_blanks: ' + fillBlanksMeta(it.interaction).answers.length + ' huecos';
+      case 'video': case 'hidden_image':
+        return type + ': ' + filteredQuestions(it.interaction).length + ' preguntas';
+      case 'before_after':
+        return 'before_after: posición del control';
+      case 'word_search':
+        return 'word_search: ' + ((cfg.words || []).length) + ' palabras';
+      case 'puzzle': {
+        var cols = Math.min(5, Math.max(2, +cfg.cols || 3));
+        var rows = Math.min(5, Math.max(2, +cfg.rows || 3));
+        return 'puzzle: ' + (cols * rows) + ' piezas';
+      }
+      default:
+        return type + ': tipo sin estimador preciso (cota conservadora)';
+    }
+  }
+
   function estimateSuspendSize(course) {
     var screens = flattenScreens(course);
     var interactions = collectInteractions(screens);
@@ -1067,14 +1167,17 @@
     for (i = 0; i < screens.length; i++) state.visited[screens[i].id] = true;
 
     var missingEstimator = [];
+    var detailsByInteraction = {}; // id -> segmento de detalle ya codificado, para el desglose
+    var scoresByInteraction = {}; // id -> segmento de puntuación ya codificado
     for (i = 0; i < interactions.length; i++) {
       var it = interactions[i];
       var maxScore = it.interaction.points || 1;
       // Peor caso de resultado: evaluable y NO perfecto ('f'), que es el único
       // estado que necesita guardar la puntuación explícita (el más caro).
-      state.results[it.id] = it.interaction.scored
+      var r = it.interaction.scored
         ? { completed: true, scored: true, correct: false, score: Math.max(0, maxScore - 0.33), maxScore: maxScore }
         : { completed: true, scored: false };
+      state.results[it.id] = r;
       var detail = worstCaseDetail(it.type, it.interaction);
       if (detail === undefined) {
         missingEstimator.push({ id: it.id, type: it.type });
@@ -1083,6 +1186,9 @@
         detail = { __sin_estimador__: fallback };
       }
       if (detail != null) state.interactions[it.id] = detail;
+      var ch = classify(r);
+      detailsByInteraction[it.id] = encodeDetail(it.type, detail, it.interaction);
+      scoresByInteraction[it.id] = encodeScore(r, ch, false);
     }
     if (finalQs.length > 0) {
       var maxFinal = 0;
@@ -1096,6 +1202,21 @@
 
     var parts = encodeParts(state, course, 0);
     var raw = joinParts(parts);
+
+    // Desglose por interacción: 1 carácter fijo de resultado + lo que pese su
+    // puntuación y su detalle YA empaquetados (packChunks añade su propio
+    // prefijo de longitud a cada uno dentro de la lista de resultados y de
+    // detalles). No es una fracción del total con redondeos: es exactamente
+    // lo que ese interacción aporta al total — sumarlo todo más
+    // visited/finalAnswers/attempts/finalScore da el mismo `worstCase`.
+    var perInteraction = interactions.map(function (it2) {
+      var chars = 1 + packedLen(scoresByInteraction[it2.id]) + packedLen(detailsByInteraction[it2.id]);
+      return {
+        id: it2.id, type: it2.type, screenId: it2.screenId, screenTitle: it2.screenTitle,
+        chars: chars, motivo: motivoFor(it2),
+      };
+    }).sort(function (a, b) { return b.chars - a.chars; });
+
     return {
       worstCase: raw.length,
       limit: 4096,
@@ -1107,6 +1228,7 @@
         attempts: parts.attempts.length,
         finalScore: parts.finalScore.length,
       },
+      perInteraction: perInteraction,
       missingEstimator: missingEstimator,
     };
   }

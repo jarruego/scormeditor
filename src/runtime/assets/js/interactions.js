@@ -1227,8 +1227,15 @@
   //     de cara al alumno: repetir la llamada no hace nada nuevo).
   //   saveState(obj): intenta guardar `obj` como estado propio del
   //     interactivo — silenciosamente rechazado (con console.warn) si no es
-  //     serializable o si supera `stateMax`; la carcasa vuelve a comprobar el
-  //     tamaño al recibir el mensaje, nunca se fía del propio iframe.
+  //     serializable, si supera `stateMax` o si su JSON contiene algún
+  //     carácter fuera de ASCII imprimible (0x20-0x7E) o el carácter `~`.
+  //     Esta última regla es deliberada: el estado debe caber en índices,
+  //     booleanos y claves de una letra (p. ej. `{"s":[0,2]}`), nunca texto
+  //     libre con tildes/emoji — así el medidor de memoria del editor
+  //     (estimateSuspendSize) puede acotar el peor caso SIN un factor de
+  //     escape, porque sabe que el contenido real nunca lo necesitará. La
+  //     carcasa vuelve a comprobar tamaño Y alfabeto al recibir el mensaje,
+  //     nunca se fía del propio iframe.
   // Todo el canal es postMessage con `{meEmbed: id, ...}`, validado también
   // por `e.source` (el mensaje debe venir del iframe de ESTA interacción,
   // relevante porque con origen opaco no hay `e.origin` que comprobar).
@@ -1263,6 +1270,9 @@
       'complete:function(){this.completed=true;parent.postMessage({meEmbed:' + embedId + ',completed:true},"*");},' +
       'saveState:function(o){var s;try{s=JSON.stringify(o);}catch(e){' +
       'console.warn("MeEmbed.saveState: el estado no se pudo convertir a JSON.");return;}' +
+      'if(/[^\\x20-\\x7e]|~/.test(s)){console.warn("MeEmbed.saveState: el estado debe ser ' +
+      'ASCII imprimible (sin tildes/emoji ni el caracter ~): usa indices, booleanos y claves ' +
+      'de una letra.");return;}' +
       'if(s.length>this.stateMax){console.warn("MeEmbed.saveState: estado de "+s.length+' +
       '" caracteres, supera el presupuesto de "+this.stateMax+".");return;}' +
       'this.state=o;parent.postMessage({meEmbed:' + embedId + ',state:s},"*");}};<\/script>';
@@ -1299,7 +1309,11 @@
         persist();
         if (c.require_completion) ctx.announce('Actividad completada. Ya puedes continuar.');
       }
-      if (typeof d.state === 'string' && d.state.length <= stateMax) {
+      // Re-validación en la carcasa, nunca se fía del iframe: tamaño Y
+      // alfabeto (ASCII imprimible, sin '~') — el mismo criterio del shim,
+      // repetido aquí porque un iframe modificado (o un mensaje falsificado
+      // desde otro origen del propio sandbox) podría saltárselo.
+      if (typeof d.state === 'string' && d.state.length <= stateMax && !(/[^\x20-\x7e]|~/.test(d.state))) {
         var parsed;
         try { parsed = JSON.parse(d.state); } catch (e2) { parsed = undefined; }
         if (parsed !== undefined) { stateData = parsed; persist(); }
@@ -2040,7 +2054,19 @@
         var given = input.value.trim();
         if (!given) { ctx.announce('Escribe una respuesta o pulsa Pasapalabra.'); return; }
         var ok = normLetters(given) === normLetters(items[current].answer);
-        res[current] = { given: given, correct: ok };
+        // Solo se guarda texto para las respuestas INCORRECTAS, y solo su
+        // forma normalizada y ASCII, recortada a `azMaxLen` — el feedback
+        // SIEMPRE muestra la respuesta correcta del propio contenido, nunca
+        // lo que escribió el alumno, así que no hace falta conservarlo tal
+        // cual. `normLetters` ya quita tildes pero conserva la Ñ (no es
+        // ASCII): se sustituye por N en vez de borrarla (perderla del todo
+        // convertiría "NIÑO" en "NIO", no en "NINO"). Un estado antiguo con
+        // `given` sin normalizar se sigue leyendo igual (la comparación de
+        // más abajo, al restaurar, usa normLetters sobre lo que haya,
+        // normalizado o no).
+        res[current] = ok
+          ? { correct: true }
+          : { given: normLetters(given).split(String.fromCharCode(209)).join('N').slice(0, azMaxLen), correct: false };
         res.__last = current;
         ctx.save({ res: res });
         fb.hidden = false;
@@ -2179,5 +2205,5 @@
     var f = registry[data.type];
     if (!f) { el.innerHTML = '<p class="me-warn">Tipo de interacción no soportado: ' + esc(data.type) + '</p>'; return { result: function () { return { completed: true, scored: false }; } }; }
     return f(el, data, ctx);
-  }, esc: esc, rich: rich, stripTags: stripTags, asset: assetUrl, shuffle: shuffle, stopItemAudio: stopItemAudio, setItemAudioRate: setItemAudioRate, setItemAudioVolume: setItemAudioVolume };
+  }, esc: esc, rich: rich, stripTags: stripTags, asset: assetUrl, shuffle: shuffle, stopItemAudio: stopItemAudio, setItemAudioRate: setItemAudioRate, setItemAudioVolume: setItemAudioVolume, normLetters: normLetters };
 })(window);

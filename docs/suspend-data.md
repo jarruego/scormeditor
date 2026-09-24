@@ -154,35 +154,68 @@ grande que su tipo permite, todas las preguntas del test final respondidas)
 y lo pasa por el mismo `encode()` (sin degradar: el medidor avisa del tamaño
 real del contenido, la degradación de arriba es la red de seguridad en
 tiempo de ejecución, no la referencia para diseñar el curso). Devuelve
-`{ worstCase, limit: 4096, breakdown, missingEstimator }`.
+`{ worstCase, limit: 4096, breakdown, perInteraction, missingEstimator }`.
 
 La mayoría de tipos ya están acotados por su propio codec compacto (índices,
 permutaciones, máscaras de bits: el "peor caso" es básicamente su tamaño
-real, no depende de lo que escriba el alumno). Las excepciones, con su cota:
+real, no depende de lo que escriba el alumno). Las excepciones son las dos
+únicas interacciones con texto libre real — `html_embed` y `az_quiz` — y para
+ambas **el runtime garantiza ASCII**, así que su estimación no lleva NINGÚN
+factor de escape (antes lo llevaba, asumiendo el peor caso de contenido no
+ASCII; sobrestimaba el peor caso real varias veces):
 
-- **`crossword`**: no se reproduce el algoritmo de colocación (Fase 1), así
-  que se usa una cota honesta — la suma de las longitudes de sus palabras es
-  un límite superior real del número de casillas (los cruces solo pueden
-  REDUCIR ese número).
-- **`az_quiz`**: el texto que teclea el alumno solo está acotado porque
-  `interactions.js` le pone un `maxlength` (`Math.min(120, Math.max(40,
-  respuesta.length + 10))`, nunca por debajo de la propia respuesta correcta,
-  para no bloquear jamás una respuesta válida) — el estimador usa la misma
-  fórmula.
-- **`html_embed`**: acotado por `state_max`, con el peor caso de escape ASCII
-  (todo el contenido no-ASCII, que se expande a 5 caracteres por carácter).
+- **`html_embed`**: `MeEmbed.saveState()` (`interactions.js`) rechaza, con
+  `console.warn`, cualquier JSON con caracteres fuera de ASCII imprimible
+  (0x20-0x7E) o con el carácter `~` — la carcasa vuelve a comprobarlo al
+  recibir el `postMessage`, nunca se fía del iframe. El peor caso es
+  exactamente `state_max` caracteres ASCII.
+- **`az_quiz`**: desde que se normaliza lo que se guarda (ver abajo), una
+  respuesta correcta no guarda texto y una incorrecta guarda
+  `normLetters(dado)` recortado a su `maxlength`, con la Ñ (lo único no-ASCII
+  que deja `normLetters`) sustituida por N — el peor caso es todas
+  incorrectas al límite de su `maxlength` (`Math.min(120, Math.max(40,
+  respuesta.length + 10))`, nunca por debajo de la propia respuesta
+  correcta).
+- **`crossword`**: sigue siendo la excepción con cota aproximada, no exacta —
+  no se reproduce el algoritmo de colocación (Fase 1), así que se usa una
+  cota honesta: la suma de las longitudes de sus palabras es un límite
+  superior real del número de casillas (los cruces solo pueden REDUCIR ese
+  número).
 
 Un tipo sin entrada en `worstCaseDetail` (futuro, sin estimador todavía) usa
 una cota conservadora fija y se lista en `missingEstimator`, para avisar en
 vez de subestimar en silencio.
 
+**`az_quiz`, lo que cambia al guardar** (`interactions.js`): una respuesta
+correcta ya no se guarda en absoluto (`{correct: true}` — nunca se reexpone
+al alumno, el feedback siempre usa la respuesta correcta del propio
+contenido); una incorrecta guarda su forma normalizada y ASCII, recortada a
+`maxlength` (`{given, correct: false}`). Un `suspend_data` del formato
+anterior (texto en bruto, acierto derivado por comparación) se sigue leyendo
+igual — se reescribe en el nuevo formato en el siguiente guardado. La
+distinción usa un marcador (`'~_'`) que `asciiEscape()` nunca produce sobre
+texto real (tras un `~` literal siempre escribe 4 dígitos hex en minúscula),
+así que es indistinguible del formato antiguo sin ambigüedad.
+
+**Desglose por interacción** (`perInteraction`, ordenado de mayor a menor):
+`{ id, type, screenId, screenTitle, chars, motivo }` — exactamente lo que
+esa interacción aporta al total (sumarlo todo junto con
+visited/finalAnswers/attempts/finalScore da el mismo `worstCase`), con un
+motivo legible («html_embed: state_max 30», «az_quiz: 5 preguntas × hasta 40
+caracteres», «crossword: 58 casillas»…). Alimenta la lista «Lo que más
+consume» del medidor (con enlace a la pantalla) y el badge «Actual: N» que
+`CourseTree` pinta junto a cada interacción en el árbol.
+
 **UI** (`SuspendSizeIndicator`, siempre visible en la barra de herramientas):
 «Memoria: 1.180 / 4.096 (29%)», recalculado con debounce al cambiar el curso;
-verde por debajo del 75%, ámbar 75-100%, rojo por encima del 100%. Al abrirlo,
-muestra el desglose por segmento. **Validador** (mismo `estimateSuspendSize`,
-así que siempre coincide con el medidor): aviso `SUSPEND_NEAR_LIMIT` desde el
-75%, error `SUSPEND_OVER_LIMIT` por encima del 100%. Exportar con
-`SUSPEND_OVER_LIMIT` activo pide confirmación explícita (`Toolbar.tsx`).
+verde por debajo del 75%, ámbar 75-100%, rojo por encima del 100%. Al
+desplegarlo, muestra el desglose por segmento y las 5 interacciones que más
+consumen. **Validador** (mismo `estimateSuspendSize`, así que siempre
+coincide con el medidor): aviso `SUSPEND_NEAR_LIMIT` desde el 75%, error
+`SUSPEND_OVER_LIMIT` por encima del 100%, e informativo
+`EMBED_STATE_MAX_DEFAULT` si un `html_embed` no fija `state_max` explícito
+(usa 100 por defecto). Exportar con `SUSPEND_OVER_LIMIT` activo pide
+confirmación explícita (`Toolbar.tsx`).
 
 ## Migración desde el formato antiguo
 Antes de la v2, `scorm_api.js` guardaba `JSON.stringify(STATE)` tal cual
@@ -219,3 +252,15 @@ interacción):
   da un peor caso mayor o igual que su progreso real completo sin degradar.
 - Todo `InteractionType` del esquema tiene codec y estimador propios en
   `TYPE_CODECS`/`worstCaseDetail`.
+- `html_embed` con `state_max` 0/30/100 da un peor caso de unos pocos
+  caracteres / ~35 / ~105; el shim `MeEmbed` REAL (extraído del HTML que
+  genera `interactions.js` y evaluado, no reimplementado) acepta ASCII
+  dentro de presupuesto y rechaza tildes, `~` y lo que se pasa de tamaño.
+- `az_quiz`: una respuesta correcta no guarda texto, una incorrecta guarda su
+  forma normalizada, y un `suspend_data` del formato anterior (sin
+  normalizar) se sigue leyendo y reanudando bien.
+- Invariante por tipo: un estado real alcanzable nunca pesa más que la
+  estimación de peor caso; para `html_embed` y `az_quiz` (los dos únicos con
+  texto libre real) la estimación no se pasa de un 10% sobre el mayor estado
+  real alcanzable — de hecho coincide con un 2-4% de margen, porque ya no
+  lleva ningún factor de escape.

@@ -27,6 +27,7 @@ import { screenTypeLabel, screenTypeIcon, screenTypeColor, interactionTypeLabel,
 import { interactionRecipe, interactionColor } from '../schema/interactionRecipes'
 import { INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId } from '../schema/traverse'
 import { validateCourse, type Issue } from '../validation/validators'
+import { getStateCodec } from '../scorm/stateCodec'
 import { confirmDialog } from '../store/confirm'
 import { InlineRename } from './InlineRename'
 import { AddScreenModal } from './AddScreenModal'
@@ -156,8 +157,9 @@ function IssueBadge({ info }: { info?: ScreenIssues }) {
  *  derivarlo de `containerId` aquí. `moduleId`/`unitId`: contenedores plegables
  *  a abrir si la pantalla se selecciona estando cerrados (ver
  *  `useScrollWhenSelected`); ausentes en pantallas de introducción. */
-function ScreenItem({ screen, containerId, issues, index, count, level, moduleId, unitId }: {
-  screen: Screen; containerId: string; issues?: ScreenIssues; index?: number; count?: number; level: CoverLevel
+function ScreenItem({ screen, containerId, issues, size, index, count, level, moduleId, unitId }: {
+  screen: Screen; containerId: string; issues?: ScreenIssues; size?: { chars: number; motivo: string }
+  index?: number; count?: number; level: CoverLevel
   moduleId?: string; unitId?: string
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
@@ -201,6 +203,11 @@ function ScreenItem({ screen, containerId, issues, index, count, level, moduleId
               {screen.interaction.scored && (
                 <span className="ed-eval" title="Actividad evaluable: puntúa para la nota">
                   {' '}<Icon name="star" size={11} /> evaluable
+                </span>
+              )}
+              {size && (
+                <span className="ed-suspend-size" title={`Peor caso en cmi.suspend_data: ${size.motivo}`}>
+                  {' · '}Actual: {size.chars}
                 </span>
               )}
             </span>
@@ -447,6 +454,19 @@ export function CourseTree() {
     return map
   }, [course])
 
+  // Peor caso de memoria SCORM por pantalla (badge «Actual: N» junto a la
+  // interacción), del mismo estimateSuspendSize() que el medidor de la
+  // barra de herramientas — mismo número, se mire desde donde se mire.
+  const sizeByScreen = useMemo(() => {
+    const map = new Map<string, { chars: number; motivo: string }>()
+    try {
+      getStateCodec().estimateSuspendSize(course).perInteraction.forEach((p) => {
+        map.set(p.screenId, { chars: p.chars, motivo: p.motivo })
+      })
+    } catch { /* state_codec.js no disponible: sin badges, no bloquea el árbol */ }
+    return map
+  }, [course])
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -569,7 +589,7 @@ export function CourseTree() {
                   {visible.map((s, i) => (
                     <Fragment key={s.id}>
                       {!q && <InsertPoint containerId={INTRO_CONTAINER_ID} index={i} />}
-                      <ScreenItem screen={s} containerId={INTRO_CONTAINER_ID} issues={issuesByScreen.get(s.id)} level="course"
+                      <ScreenItem screen={s} containerId={INTRO_CONTAINER_ID} issues={issuesByScreen.get(s.id)} size={sizeByScreen.get(s.id)} level="course"
                         index={q ? undefined : i} count={q ? undefined : course.intro_screens.length} />
                     </Fragment>
                   ))}
@@ -625,7 +645,7 @@ export function CourseTree() {
                     {visible.map((s, i) => (
                       <Fragment key={s.id}>
                         {!q && <InsertPoint containerId={m.id} index={i} />}
-                        <ScreenItem screen={s} containerId={m.id} issues={issuesByScreen.get(s.id)} level="module"
+                        <ScreenItem screen={s} containerId={m.id} issues={issuesByScreen.get(s.id)} size={sizeByScreen.get(s.id)} level="module"
                           moduleId={m.id}
                           index={q ? undefined : i} count={q ? undefined : m.screens.length} />
                       </Fragment>
@@ -656,7 +676,7 @@ export function CourseTree() {
                           {visible.map((s, i) => (
                             <Fragment key={s.id}>
                               {!q && <InsertPoint containerId={u.id} index={i} />}
-                              <ScreenItem screen={s} containerId={u.id} issues={issuesByScreen.get(s.id)} level="module"
+                              <ScreenItem screen={s} containerId={u.id} issues={issuesByScreen.get(s.id)} size={sizeByScreen.get(s.id)} level="module"
                                 moduleId={m.id}
                                 index={q ? undefined : i} count={q ? undefined : u.screens.length} />
                             </Fragment>
@@ -727,7 +747,7 @@ export function CourseTree() {
                         <Fragment key={s.id}>
                           {/* Con filtro activo los índices no se corresponden con la unidad → sin puntos de inserción */}
                           {!q && <InsertPoint containerId={u.id} index={i} />}
-                          <ScreenItem screen={s} containerId={u.id} issues={issuesByScreen.get(s.id)} level="unit"
+                          <ScreenItem screen={s} containerId={u.id} issues={issuesByScreen.get(s.id)} size={sizeByScreen.get(s.id)} level="unit"
                             moduleId={m.id} unitId={u.id}
                             index={q ? undefined : i} count={q ? undefined : u.screens.length} />
                         </Fragment>
@@ -762,7 +782,7 @@ export function CourseTree() {
                       {visible.map((s, i) => (
                         <Fragment key={s.id}>
                           {!q && <InsertPoint containerId={closingContainerId} index={i} />}
-                          <ScreenItem screen={s} containerId={closingContainerId} issues={issuesByScreen.get(s.id)} level="module"
+                          <ScreenItem screen={s} containerId={closingContainerId} issues={issuesByScreen.get(s.id)} size={sizeByScreen.get(s.id)} level="module"
                             moduleId={m.id}
                             index={q ? undefined : i} count={q ? undefined : m.closing_screens.length} />
                         </Fragment>
@@ -803,7 +823,7 @@ export function CourseTree() {
                   {visible.map((s, i) => (
                     <Fragment key={s.id}>
                       {!q && <InsertPoint containerId={OUTRO_CONTAINER_ID} index={i} />}
-                      <ScreenItem screen={s} containerId={OUTRO_CONTAINER_ID} issues={issuesByScreen.get(s.id)} level="course"
+                      <ScreenItem screen={s} containerId={OUTRO_CONTAINER_ID} issues={issuesByScreen.get(s.id)} size={sizeByScreen.get(s.id)} level="course"
                         index={q ? undefined : i} count={q ? undefined : course.closing_screens.length} />
                     </Fragment>
                   ))}

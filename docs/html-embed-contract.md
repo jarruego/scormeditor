@@ -51,8 +51,8 @@ mensaje de «¡enhorabuena!» si el alumno ya la había completado antes.
 ### `MeEmbed.saveState(obj)`
 
 Guarda `obj` (cualquier valor serializable en JSON: números, booleanos,
-cadenas cortas, arrays, objetos planos) para poder restaurarlo si el alumno
-recarga la página o vuelve más tarde:
+índices, arrays, objetos planos) para poder restaurarlo si el alumno recarga
+la página o vuelve más tarde:
 
 ```js
 MeEmbed.saveState({ s: [0, 2] }); // guardado
@@ -60,12 +60,16 @@ MeEmbed.saveState({ s: [0, 2] }); // guardado
 if (MeEmbed.state) { /* MeEmbed.state ya es {s:[0,2]}, no texto */ }
 ```
 
-Si `obj` no se puede convertir a JSON, o el JSON resultante pesa más
-caracteres que `MeEmbed.stateMax`, la llamada se ignora silenciosamente (con
-un aviso en la consola del navegador — nunca rompe tu interactivo) y
-`MeEmbed.state` no cambia. La carcasa vuelve a comprobar el tamaño al recibir
-el dato: aunque manipules `MeEmbed` a mano para saltarte el límite, el estado
-por encima del presupuesto no se guarda.
+**El estado debe ser ASCII imprimible** (sin tildes, eñes, emoji ni el
+carácter `~`): usa índices, booleanos y claves de una letra, nunca texto
+libre («compró» → guarda el índice de la opción, no la palabra). Si `obj` no
+se puede convertir a JSON, si el JSON resultante pesa más caracteres que
+`MeEmbed.stateMax`, o si contiene algún carácter fuera de ese rango, la
+llamada se ignora silenciosamente (con un aviso en la consola del navegador —
+nunca rompe tu interactivo) y `MeEmbed.state` no cambia. La carcasa vuelve a
+comprobar tamaño y alfabeto al recibir el dato: aunque manipules `MeEmbed` a
+mano para saltarte el límite, un estado por encima del presupuesto o con
+texto libre no se guarda.
 
 ## Cuándo bloquea el avance
 
@@ -112,10 +116,12 @@ bájalo a 0 si tu interactivo no necesita recordar nada entre sesiones.
   ```js
   var ME = window.MeEmbed || { completed: false, state: null, stateMax: 0, complete: function () {}, saveState: function () {} };
   ```
-- **Estado compacto, no descriptivo.** Con un presupuesto de 100 caracteres
-  por defecto, cuenta cada carácter: `{"s":[0,2]}` (índices vistos) cabe
-  muchísimas veces mejor que `{"secciones_vistas":["intro","ejemplo"]}`. Guarda
-  índices/booleanos, nunca texto libre.
+- **Estado compacto, ASCII, no descriptivo.** Con un presupuesto de 100
+  caracteres por defecto, cuenta cada carácter: `{"s":[0,2]}` (índices vistos)
+  cabe muchísimas veces mejor que `{"secciones_vistas":["intro","ejemplo"]}`.
+  Guarda índices/booleanos, nunca texto libre — y si necesitas alguna letra
+  suelta, que sea ASCII (sin tildes/eñes/emoji): `saveState()` rechaza
+  cualquier estado que no lo sea.
 
 ## Ejemplo mínimo
 

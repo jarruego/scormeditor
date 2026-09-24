@@ -737,6 +737,13 @@ button.ed-pill.info:hover:not(:disabled) { background: #e8f0fe; }
 .ed-suspend-breakdown { display: grid; gap: .25rem; font-size: .82rem; margin: 0 0 .5rem; padding: 0; list-style: none; }
 .ed-suspend-breakdown li { display: flex; justify-content: space-between; gap: .5rem; }
 .ed-suspend-breakdown li span:last-child { color: var(--c-muted); font-variant-numeric: tabular-nums; }
+.ed-suspend-top { display: grid; gap: .2rem; font-size: .82rem; margin: 0 0 .5rem; padding: 0; list-style: none; max-height: 12rem; overflow-y: auto; }
+.ed-suspend-top li { display: flex; align-items: center; gap: .5rem; }
+.ed-suspend-top-link { flex: 1; min-width: 0; display: grid; text-align: left; background: none; border: none; padding: .15rem 0; cursor: pointer; color: inherit; }
+.ed-suspend-top-link strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed-suspend-top-link:hover strong { text-decoration: underline; }
+.ed-suspend-top-chars { flex: none; color: var(--c-muted); font-variant-numeric: tabular-nums; }
+.ed-suspend-size { color: var(--c-muted); font-variant-numeric: tabular-nums; }
 
 /* Línea de modo al abrir el menú Archivo: coloreada y a todo lo ancho —
    qué sistema manda ahora mismo, lo primero que se lee al abrir el menú. */
