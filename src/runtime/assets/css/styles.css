@@ -445,6 +445,7 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 /* Botón Comprobar: destacado en color primario y centrado, con aire respecto a la actividad */
 .me-check { display: block; margin: 1.1rem auto .2rem; padding: .55rem 1.8rem; background: var(--me-primary); color: #fff; border-color: var(--me-primary); font-weight: 600; }
 .me-check:hover:not(:disabled) { background: color-mix(in srgb, var(--me-primary) 88%, black); }
+.me-attempts { display: block; text-align: center; color: var(--me-muted); font-size: .82rem; min-height: 1.2em; }
 .me-ghost { background: transparent; }
 .me-icon-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: .25rem .5rem; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
 .me-icon-btn:hover { background: var(--me-bg); }

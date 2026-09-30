@@ -190,6 +190,23 @@
     };
   }
 
+  // Indicador textual de intentos junto al botón Comprobar (`.me-attempts`),
+  // para evaluables con `attempts` finitos (attemptsOf > 0). Con intentos
+  // ilimitados no hay nada que agotar, así que no se muestra nada. Se llama
+  // al pintar (fresca o restaurada) y tras cada check(), con los intentos ya
+  // consumidos y si el intento actual fue correcto.
+  function attemptsHint(el, maxAtt) {
+    var node = el.querySelector('.me-attempts');
+    if (!node || maxAtt <= 0) return function () {};
+    return function (used, correct) {
+      if (correct) { node.textContent = ''; return; }
+      var remaining = Math.max(0, maxAtt - used);
+      node.textContent = used === 0 ? ('Intentos disponibles: ' + maxAtt + '.')
+        : remaining === 0 ? 'Sin más intentos.'
+        : 'Te ' + (remaining === 1 ? 'queda 1 intento' : 'quedan ' + remaining + ' intentos') + '.';
+    };
+  }
+
   // --- 1. Accordion ----------------------------------------------------------
   register('accordion', function (el, data, ctx) {
     var items = (data.config.items || []);
@@ -337,9 +354,10 @@
     opts.forEach(function (o) {
       html += '<label class="me-choice"><input type="radio" name="' + name + '" value="' + esc(o.id) + '"> <span>' + rich(o.text) + '</span></label>';
     });
-    html += '</fieldset><button class="me-btn me-check">Comprobar</button>' + feedbackBox(data);
+    html += '</fieldset><button class="me-btn me-check">Comprobar</button><span class="me-attempts" aria-live="polite"></span>' + feedbackBox(data);
     el.innerHTML = html;
     var attempts = 0, done = false, correct = false;
+    var updateAttempts = attemptsHint(el, maxAtt);
     var refreshCheck = wireCheck(el, hasAnswer);
     el.querySelector('.me-choices').addEventListener('change', function () { if (!done) refreshCheck(true); });
 
@@ -366,6 +384,7 @@
         if (correct || (maxAtt > 0 && attempts >= maxAtt)) { done = true; lock(); }
       }
     }
+    updateAttempts(attempts, correct);
     if (!done) refreshCheck(false); // respuesta restaurada sin resolver: activo sin pulso
 
     function hasAnswer() { return !!el.querySelector('input[name="' + name + '"]:checked'); }
@@ -380,6 +399,7 @@
       markChoice(sel, correct);
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
       if (done) lock();
+      updateAttempts(attempts, correct);
       ctx.save({ value: sel.value, correct: correct, attempts: attempts });
       ctx.announce(correct ? 'Respuesta correcta.' : (done ? 'Respuesta incorrecta. Sin más intentos.' : 'Respuesta incorrecta. Inténtalo de nuevo.'));
       return { resolved: done, correct: correct };
@@ -422,10 +442,11 @@
         '<span class="me-sort-grip" aria-hidden="true">⋮⋮</span> <span class="me-sort-text">' + rich(s.text) + '</span>' +
         ' <span class="me-sort-ctrl"><button type="button" class="me-up" aria-label="Subir">▲</button><button type="button" class="me-down" aria-label="Bajar">▼</button></span></li>';
     });
-    el.innerHTML = html + '</ol><button class="me-btn me-check">Comprobar</button>' + feedbackBox(data);
+    el.innerHTML = html + '</ol><button class="me-btn me-check">Comprobar</button><span class="me-attempts" aria-live="polite"></span>' + feedbackBox(data);
     var list = el.querySelector('.me-sort');
     var attempts = (ctx.state && ctx.state.attempts) || 0;
     var maxAtt = attemptsOf(data);
+    var updateAttempts = attemptsHint(el, maxAtt);
     // Aquí «responder» es reordenar: el botón se activa al primer movimiento
     var refreshCheck = wireCheck(el, function () { return true; });
 
@@ -488,8 +509,11 @@
       var cb = el.querySelector('.me-check'); if (cb) cb.disabled = true;
     }
     if (ctx.state && typeof ctx.state.correct === 'boolean') {
-      correct = ctx.state.correct; done = true; showFeedback(el, correct, data); lockSort();
+      correct = ctx.state.correct; showFeedback(el, correct, data);
+      if (correct || (maxAtt > 0 && attempts >= maxAtt)) { done = true; lockSort(); }
     }
+    updateAttempts(attempts, correct);
+    if (!done) refreshCheck(false); // orden restaurado sin resolver: activo sin pulso
     function check() {
       if (done) return { resolved: true, correct: correct };
       var order = [].slice.call(list.children).map(function (li) { return li.getAttribute('data-id'); });
@@ -498,6 +522,7 @@
       attempts++;
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
       showFeedback(el, correct, data);
+      updateAttempts(attempts, correct);
       ctx.save({ order: order, correct: correct, attempts: attempts });
       if (done) lockSort();
       ctx.announce(correct ? 'Orden correcto.' : (done ? 'Orden incorrecto. Sin más intentos.' : 'Orden incorrecto. Inténtalo de nuevo.'));
@@ -534,10 +559,11 @@
         '<p class="me-dnd-title">' + rich(g.label) + '</p>' +
         '<div class="me-dnd-list" data-zone-list="' + esc(g.id) + '"></div></div>';
     });
-    html += '</div></div><button class="me-btn me-check">Comprobar</button>' + feedbackBox(data);
+    html += '</div></div><button class="me-btn me-check">Comprobar</button><span class="me-attempts" aria-live="polite"></span>' + feedbackBox(data);
     el.innerHTML = html;
     var attempts = (ctx.state && ctx.state.attempts) || 0;
     var maxAtt = attemptsOf(data);
+    var updateAttempts = attemptsHint(el, maxAtt);
     var refreshCheck = wireCheck(el, allAssigned);
 
     // Construye los chips y los coloca en su zona inicial
@@ -626,8 +652,11 @@
       var cb = el.querySelector('.me-check'); if (cb) cb.disabled = true;
     }
     if (ctx.state && typeof ctx.state.correct === 'boolean') {
-      correct = ctx.state.correct; done = true; showFeedback(el, correct, data); lockAssign();
+      correct = ctx.state.correct; showFeedback(el, correct, data);
+      if (correct || (maxAtt > 0 && attempts >= maxAtt)) { done = true; lockAssign(); }
     }
+    updateAttempts(attempts, correct);
+    if (!done) refreshCheck(false); // asignación restaurada sin resolver: activo sin pulso
     function allAssigned() { return opts.every(function (o) { return !!assign[o.id]; }); }
     function check() {
       if (done) return { resolved: true, correct: correct };
@@ -636,6 +665,7 @@
       correct = all; attempts++;
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
       showFeedback(el, correct, data);
+      updateAttempts(attempts, correct);
       ctx.save({ answers: assign, correct: correct, attempts: attempts });
       if (done) lockAssign();
       ctx.announce(correct ? 'Clasificación correcta.' : (done ? 'Incorrecto. Sin más intentos.' : 'Hay asignaciones incorrectas. Inténtalo de nuevo.'));
@@ -1010,10 +1040,11 @@
 
     var maxAtt = attemptsOf(data);
     el.innerHTML = header(data) + '<p class="me-blanks">' + body + '</p>' +
-      '<button class="me-btn me-check">Comprobar</button>' + feedbackBox(data);
+      '<button class="me-btn me-check">Comprobar</button><span class="me-attempts" aria-live="polite"></span>' + feedbackBox(data);
 
     var selects = [].slice.call(el.querySelectorAll('.me-blank'));
     var attempts = 0, done = false, correct = false;
+    var updateAttempts = attemptsHint(el, maxAtt);
     var refreshCheck = wireCheck(el, function () {
       return selects.every(function (s) { return !!s.value; });
     });
@@ -1048,6 +1079,7 @@
       markBlanks();
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
       if (done) lock();
+      updateAttempts(attempts, correct);
       ctx.save({ values: selects.map(function (s) { return s.value; }), correct: correct, attempts: attempts });
       ctx.announce(correct ? 'Todos los huecos correctos.' : (done ? 'Hay huecos incorrectos. Sin más intentos.' : 'Hay huecos incorrectos. Inténtalo de nuevo.'));
       return { resolved: done, correct: correct };
@@ -1064,6 +1096,7 @@
         if (correct || (maxAtt > 0 && attempts >= maxAtt)) { done = true; lock(); }
       }
     }
+    updateAttempts(attempts, correct);
     if (!done) refreshCheck(false); // valores restaurados sin resolver: activo sin pulso
 
     return {
@@ -1795,11 +1828,12 @@
       });
       html += '</ol>';
     });
-    html += '</div></div><button class="me-btn me-check">Comprobar</button>' + feedbackBox(data);
+    html += '</div></div><button class="me-btn me-check">Comprobar</button><span class="me-attempts" aria-live="polite"></span>' + feedbackBox(data);
     el.innerHTML = html;
 
     var inputs = [].slice.call(el.querySelectorAll('.me-cw-cell'));
     var attempts = 0, done = false, correct = false;
+    var updateAttempts = attemptsHint(el, maxAtt);
     var refreshCheck = wireCheck(el, function () {
       return inputs.every(function (inp) { return normLetters(inp.value).length === 1; });
     });
@@ -1852,6 +1886,7 @@
       showFeedback(el, correct, data);
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
       if (done) lock();
+      updateAttempts(attempts, correct);
       saveState();
       ctx.announce(correct ? 'Crucigrama correcto.' : okCount() + ' de ' + placed.length + ' palabras correctas.' + (done ? ' Sin más intentos.' : ''));
       return { resolved: done, correct: correct };
@@ -1865,6 +1900,7 @@
       showFeedback(el, correct, data);
       if (correct || (maxAtt > 0 && attempts >= maxAtt)) { done = true; lock(); }
     }
+    updateAttempts(attempts, correct);
     if (!done) refreshCheck(false);
 
     return {

@@ -19,12 +19,26 @@ ese contrato; no conoce el tipo concreto.
   pulso-glow** (en sort, «responder» = primer movimiento). El pulso se apaga al clicar y
   vuelve si se cambia la respuesta; al restaurar respuesta sin resolver se activa sin
   pulso. `move()` de sort ignora el teclado cuando la interacción está resuelta.
+  **Las 5 factories con `attempts`** (`choiceFactory`, `sort_steps`, `dragAssignFactory`,
+  `fill_blanks`, `crossword`) restauran igual: `done = correct || (maxAtt > 0 && attempts
+  >= maxAtt)`, y si no está `done`, `refreshCheck(false)` reactiva Comprobar. `sort_steps`
+  y `dragAssignFactory` daban por resuelta CUALQUIER interacción con un `correct` guardado
+  (aunque quedaran intentos): un fallo, salir de la pantalla y volver la dejaba bloqueada
+  de por vida. Corregido para que restaurar respete `maxAtt` igual que las otras 3.
 - **Intentos**: campo `attempts` por interacción (`attemptsOf(data)`: `null`/ausente ⇒ 1;
   `0` ⇒ ilimitados; `n` ⇒ n). `retries` quedó **DEPRECATED**, no usar. Editor: el input
   de intentos de `ScreenEditor.tsx` se muestra según `supportsAttempts` del catálogo
   `src/schema/interactionRecipes.ts` (los tipos cuyo factory pasa por `attemptsOf`:
   single_choice, true_false, sort_steps, match_pairs, classification, fill_blanks,
-  crossword). Por defecto **1 intento**.
+  crossword). Por defecto **1 intento**; `CourseSettingsEditor` tiene una herramienta de
+  lote para ponerlo en todas a la vez (`setAllAttempts`, ver `editor-ui.md`).
+- **Indicador de intentos** (`.me-attempts`, junto al botón Comprobar): con `attempts`
+  finitos, `attemptsHint(el, maxAtt)` (helper compartido, junto a `wireCheck`) devuelve una
+  función que las 5 factories con intentos llaman al pintar (fresca o restaurada) y tras
+  cada `check()`: «Intentos disponibles: N.» antes del primer intento, «Te queda(n) N
+  intento(s).» tras fallar con intentos de sobra, «Sin más intentos.» al agotarlos, vacío
+  si acierta. Con intentos ilimitados no se muestra nada (nada que agotar). Todo el estado
+  vive en el propio `.me-attempts`, sin depender de `result()`.
 - `result()` de una evaluable → `{ completed, scored, correct, score: acierto?points:0,
   maxScore: points }`. `completed` (done) = **resuelta**: acierto **o** intentos agotados
   (con 1 intento, se completa al responder aunque falles; con ilimitados, solo al
