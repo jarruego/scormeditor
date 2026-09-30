@@ -59,6 +59,8 @@ informe de revisión.
 | `NARR_NO_TRANSCRIPT` | ⚠ | Curso narrado y pantalla sin `transcript` | Duplica el contenido de la pantalla en `transcript` (es la entrada del TTS) | GPT |
 | `NARR_NO_AUDIO` | ℹ | Hay transcripción pero falta el audio de locución | Pendiente del TTS: lo genera el editor humano en SCORMEditor. **No tocar** | Editor |
 | `NARR_ITEM_NO_AUDIO` | ℹ | Curso narrado: un ítem de accordion/tabs/flip_cards/timeline/image_cards/flashcards tiene texto pero no audio propio | Estos tipos ocultan su contenido tras el revelado y se narran por ítem (no en el audio de pantalla): pendiente del TTS por ítem, lo genera el editor humano en SCORMEditor. **No tocar** | Editor |
+| `NARR_TRANSCRIPT_STALE` | ℹ | Curso narrado: el contenido de la pantalla cambió después de escribir/regenerar `transcript` (huella interna del editor desincronizada) | No aplica al GPT: la huella (`transcript_content_hash`) no se redacta a mano, la gestiona SCORMEditor solo. **No tocar** | Editor |
+| `NARR_AUDIO_STALE` | ℹ | Curso narrado: `transcript` cambió después de generar `audio_src` (huella interna del editor desincronizada) | No aplica al GPT: la huella (`audio_transcript_hash`) no se redacta a mano, la gestiona SCORMEditor solo. **No tocar** | Editor |
 
 ## Interacciones y preguntas
 

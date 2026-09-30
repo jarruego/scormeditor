@@ -7,7 +7,7 @@ import { allScreens, INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContai
 import { sampleCourse } from '../schema/sample-course'
 import { isAssetReferenced, orphanAssetPaths } from '../schema/assetRefs'
 import { normalizeObjective } from '../validation/objectives'
-import { buildTranscript } from '../tts/buildTranscript'
+import { buildTranscript, contentHash } from '../tts/buildTranscript'
 import type { AssetMap } from '../export/exportScorm'
 
 function clone<T>(x: T): T {
@@ -217,9 +217,12 @@ interface CourseState {
   updateShell: (patch: Partial<ShellConfig>) => void
   /** Actualiza la config de narración del curso (curso narrado auto/sí/no). */
   updateNarration: (patch: Partial<Course['narration']>) => void
-  /** Rellena la transcripción de las pantallas narrables que la tienen VACÍA
-   *  (nunca sobrescribe una existente). Devuelve cuántas rellenó. */
-  fillMissingTranscripts: () => number
+  /** Rellena la transcripción de las pantallas narrables que la tienen VACÍA, y
+   *  REGENERA las que están desactualizadas (huella de contenido no coincide,
+   *  ver `updateScreen`) — nunca toca una transcripción al día ni una editada a
+   *  mano sin huella sellada (no hay con qué comparar). Devuelve cuántas de
+   *  cada. */
+  fillMissingTranscripts: () => { filled: number; refreshed: number }
   /** Pone el mismo tiempo mínimo (s) en TODAS las pantallas del curso. */
   setAllMinTime: (seconds: number) => void
   /** Pone el mismo nº de intentos en TODAS las interacciones cuyo tipo lo respeta
@@ -605,7 +608,13 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot(`update:${id}`)
     const course = clone(get().course)
     const screens = screensAt(course, loc.mi, loc.ui, loc.part)
-    screens[loc.si] = { ...screens[loc.si], ...patch }
+    const next: Screen = { ...screens[loc.si], ...patch }
+    // Huella de contenido: se re-sella cada vez que transcript o audio_src
+    // cambian, para poder avisar si el contenido/la transcripción se editó
+    // DESPUÉS sin volver a tocarlos (ver «Transcripción» en tts-narracion.md).
+    if (patch.transcript !== undefined) next.transcript_content_hash = contentHash(buildTranscript(next))
+    if (patch.audio_src !== undefined) next.audio_transcript_hash = patch.audio_src ? contentHash(next.transcript) : undefined
+    screens[loc.si] = next
     set({ course })
   },
 
@@ -675,20 +684,35 @@ export const useCourseStore = create<CourseState>((set, get) => {
   fillMissingTranscripts: () => {
     // Solo pantallas con contenido narrable y sin esqueleto (mismo criterio que
     // el aviso NARR_NO_TRANSCRIPT de validators.ts). Un único snapshot: el
-    // relleno masivo se deshace de una vez.
+    // relleno/refresco masivo se deshace de una vez.
     snapshot()
     const course = clone(get().course)
     let filled = 0
+    let refreshed = 0
     for (const s of allScreens(course)) {
-      if (s.transcript.trim()) continue
       if (s.type === 'content_placeholder' || s.status === 'esqueleto_pendiente_desarrollo') continue
+      if (s.transcript.trim()) {
+        // Ya tiene texto: solo se toca si está PROBADAMENTE desactualizada
+        // (huella sellada que ya no coincide con el contenido actual). Sin
+        // huella (transcripción de antes de este mecanismo, o nunca tocada
+        // desde el editor) no hay con qué comparar: se deja intacta.
+        if (!s.transcript_content_hash) continue
+        const live = buildTranscript(s)
+        if (s.transcript_content_hash === contentHash(live)) continue
+        if (!live.trim()) continue
+        s.transcript = live
+        s.transcript_content_hash = contentHash(live)
+        refreshed++
+        continue
+      }
       const t = buildTranscript(s).trim()
       if (!t) continue
       s.transcript = t
+      s.transcript_content_hash = contentHash(t)
       filled++
     }
-    if (filled) set({ course })
-    return filled
+    if (filled || refreshed) set({ course })
+    return { filled, refreshed }
   },
 
   setAllMinTime: (seconds) => {

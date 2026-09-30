@@ -214,6 +214,14 @@ export const Screen = z.object({
     .string()
     .default('')
     .describe('Transcripción de la diapositiva: se muestra SOLO en el botón «Transcripción» y sirve de alternativa textual del audio/vídeo'),
+  transcript_content_hash: z
+    .string()
+    .optional()
+    .describe('Metadato interno del editor (no autorado): huella del contenido hablable cuando se escribió/regeneró transcript por última vez. Si no coincide con el contenido actual, avisa de que la transcripción puede estar desactualizada. Omitir al redactar course.json a mano.'),
+  audio_transcript_hash: z
+    .string()
+    .optional()
+    .describe('Metadato interno del editor (no autorado): huella de transcript cuando se generó audio_src por última vez. Si no coincide con transcript actual, avisa de que el audio puede estar desactualizado. Omitir al redactar course.json a mano.'),
   accessibility: Accessibility.default({}),
   scorm: z
     .object({

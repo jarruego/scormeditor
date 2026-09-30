@@ -193,3 +193,19 @@ export function buildTranscript(screen: Screen): string {
   }
   return parts.join('\n\n')
 }
+
+/** Huella corta y determinista (FNV-1a 32 bits, hex) de un texto — no
+ *  criptográfica, solo para detectar «¿cambió este contenido desde la
+ *  última vez?» sin tener que guardar una copia entera. La usan
+ *  `transcript_content_hash`/`audio_transcript_hash` (ver `course.schema.ts`
+ *  y `courseStore.ts::updateScreen`) para avisar cuando el contenido cambia
+ *  después de escribir la transcripción, o la transcripción cambia después
+ *  de generar el audio. */
+export function contentHash(s: string): string {
+  let h = 0x811c9dc5
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return (h >>> 0).toString(16)
+}

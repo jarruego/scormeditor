@@ -1,7 +1,7 @@
 import type { Course, QuizQuestion, Screen, Unit, UnitTest } from '../schema/course.schema'
 import { allScreens, screenContainers, containerLabel } from '../schema/traverse'
 import { normalizeObjective } from './objectives'
-import { buildTranscript, itemsOf } from '../tts/buildTranscript'
+import { buildTranscript, contentHash, itemsOf } from '../tts/buildTranscript'
 import { countFlaggedForReview } from '../schema/review'
 import { getStateCodec } from '../scorm/stateCodec'
 
@@ -87,6 +87,19 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
     } else {
       add('NARR_NO_AUDIO', 'info', 'Pendiente de narrar: hay transcripción pero no audio de locución.')
     }
+  }
+
+  // Desactualizado: el contenido cambió después de escribir/regenerar la
+  // transcripción, o la transcripción cambió después de generar el audio —
+  // la huella (`contentHash`) ya no coincide con la que se selló al tocarlos
+  // por última vez (ver `updateScreen` en courseStore.ts). Sin huella sellada
+  // (proyecto/pantalla de antes de esta función, o nunca tocados desde el
+  // editor) no se avisa: no hay con qué comparar.
+  if (ctx.narrated && !skeleton && s.transcript.trim()) {
+    if (s.transcript_content_hash && s.transcript_content_hash !== contentHash(buildTranscript(s)))
+      add('NARR_TRANSCRIPT_STALE', 'info', 'El contenido cambió desde que se escribió/regeneró esta transcripción: revísala y regenérala si hace falta.')
+    if (s.audio_src.trim() && s.audio_transcript_hash && s.audio_transcript_hash !== contentHash(s.transcript))
+      add('NARR_AUDIO_STALE', 'info', 'La transcripción cambió después de generar este audio de locución: regenéralo para que vuelvan a corresponderse.')
   }
 
   // Interacción

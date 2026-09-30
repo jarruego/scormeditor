@@ -58,6 +58,8 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
       withTranscript: withTranscript.length,
       missingAudio: withTranscript.filter((s) => !s.hasAudio).length,
       missingTranscript: list.filter((s) => s.hasContent && !s.hasTranscript && !s.skeleton).length,
+      staleTranscript: list.filter((s) => s.staleTranscript).length,
+      staleAudio: list.filter((s) => s.staleAudio).length,
       itemsTotal: items.length,
       itemsMissingAudio: items.filter((it) => !it.hasAudio).length,
     }
@@ -71,10 +73,12 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
   const narrationOff = course.narration.mode === 'off'
 
   function onFillTranscripts() {
-    const n = fillMissingTranscripts()
-    setTrMsg(n
-      ? `✓ ${n} transcripción${n === 1 ? '' : 'es'} generada${n === 1 ? '' : 's'} desde el contenido (revísalas antes de locutar).`
-      : 'No había pantallas narrables con la transcripción vacía.')
+    const { filled, refreshed } = fillMissingTranscripts()
+    if (!filled && !refreshed) { setTrMsg('No había transcripciones vacías ni desactualizadas.'); return }
+    const parts: string[] = []
+    if (filled) parts.push(`${filled} generada${filled === 1 ? '' : 's'}`)
+    if (refreshed) parts.push(`${refreshed} actualizada${refreshed === 1 ? '' : 's'}`)
+    setTrMsg(`✓ ${parts.join(' · ')} desde el contenido (revísalas antes de locutar).`)
   }
 
   // Informa al modal contenedor de si hay una generación en curso (bloquea cierre).
@@ -253,6 +257,12 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
               {stats.missingTranscript > 0 && <>
                 {' '}<strong>{stats.missingTranscript} con contenido narrable aún sin transcripción.</strong>
               </>}
+              {stats.staleTranscript > 0 && <>
+                {' '}<strong>{stats.staleTranscript} transcripción{stats.staleTranscript === 1 ? '' : 'es'} desactualizada{stats.staleTranscript === 1 ? '' : 's'}</strong> (el contenido cambió después).
+              </>}
+              {stats.staleAudio > 0 && <>
+                {' '}<strong>{stats.staleAudio} audio{stats.staleAudio === 1 ? '' : 's'} desactualizado{stats.staleAudio === 1 ? '' : 's'}</strong> (la transcripción cambió después).
+              </>}
               {stats.itemsTotal > 0 && <>
                 {' '}Además, {stats.itemsTotal} ítem{stats.itemsTotal === 1 ? '' : 's'} de interacciones revelables
                 (accordion/tabs/flip_cards/timeline/image_cards/flashcards)
@@ -260,14 +270,21 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
               </>}
             </p>
 
-            {/* Paso previo: transcripciones en bloque. Solo rellena las VACÍAS
-                (nunca sobrescribe una editada a mano, por eso no pide confirmación). */}
+            {/* Paso previo: transcripciones en bloque. Rellena las VACÍAS y
+                REGENERA las desactualizadas (huella no coincide); nunca toca
+                una editada a mano que siga al día o sin huella con qué
+                comparar, por eso no pide confirmación. */}
             <div className="ed-row">
-              <button type="button" disabled={busy || narrationOff || stats.missingTranscript === 0}
+              <button type="button"
+                disabled={busy || narrationOff || (stats.missingTranscript === 0 && stats.staleTranscript === 0)}
                 onClick={onFillTranscripts}
-                title="Genera la transcripción desde el texto y las interacciones informativas; solo rellena las que están vacías">
-                <Icon name="refresh" size={14} /> Generar transcripciones desde el contenido
-                {stats.missingTranscript > 0 && ` (${stats.missingTranscript} vacía${stats.missingTranscript === 1 ? '' : 's'})`}
+                title="Genera la transcripción de las pantallas sin ella y regenera las desactualizadas, a partir del texto y las interacciones informativas">
+                <Icon name="refresh" size={14} /> Generar/actualizar transcripciones desde el contenido
+                {(stats.missingTranscript > 0 || stats.staleTranscript > 0) && ' ('}
+                {stats.missingTranscript > 0 && `${stats.missingTranscript} vacía${stats.missingTranscript === 1 ? '' : 's'}`}
+                {stats.missingTranscript > 0 && stats.staleTranscript > 0 && ' · '}
+                {stats.staleTranscript > 0 && `${stats.staleTranscript} desactualizada${stats.staleTranscript === 1 ? '' : 's'}`}
+                {(stats.missingTranscript > 0 || stats.staleTranscript > 0) && ')'}
               </button>
               {trMsg && <span className="ed-tts-msg">{trMsg}</span>}
             </div>
@@ -275,7 +292,8 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
             <label className="ed-check">
               <input type="checkbox" checked={onlyMissing} disabled={busy || narrationOff}
                 onChange={(e) => setOnlyMissing(e.target.checked)} />
-              <span>Generar solo las que aún no tienen audio (desmarca para regenerar todas)</span>
+              <span>Generar solo las que aún no tienen audio (desmarca para regenerar todas —
+                {' '}incluye las {stats.staleAudio} desactualizadas)</span>
             </label>
 
             {busy && progress ? (

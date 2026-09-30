@@ -12,7 +12,7 @@ import { InteractionConfigEditor } from './InteractionConfigEditor'
 import { ObjectiveInput } from './ObjectiveSelect'
 import { FileButton } from './FileButton'
 import { generateForScreen, hasApiKey } from '../tts/tts'
-import { buildTranscript, INFORMATIVE } from '../tts/buildTranscript'
+import { buildTranscript, contentHash, INFORMATIVE } from '../tts/buildTranscript'
 import { confirmDialog } from '../store/confirm'
 import type { AssetMap } from '../export/exportScorm'
 import { Icon } from './Icon'
@@ -185,6 +185,12 @@ export function ScreenEditor() {
   const patch = (p: Parameters<typeof update>[1]) => update(id, p)
   const vr = screen.visual_resource
   const it = screen.interaction
+  // Desactualizado: el contenido/la transcripción cambió después de tocarlos
+  // por última vez (huella sellada en updateScreen ya no coincide). Sin
+  // huella (transcripción de antes de este mecanismo) no se marca — no hay
+  // con qué comparar. Mismo criterio que NARR_TRANSCRIPT_STALE/NARR_AUDIO_STALE.
+  const transcriptStale = !!screen.transcript_content_hash && screen.transcript_content_hash !== contentHash(buildTranscript(screen))
+  const audioStale = !!screen.audio_src.trim() && !!screen.audio_transcript_hash && screen.audio_transcript_hash !== contentHash(screen.transcript)
   // Receta del tipo de interacción actual (gradable/attempts/seed del catálogo).
   const itRecipe = it ? interactionRecipe(it.type) : null
   // Énfasis por tipo de pantalla (capa de UI: reordena y sugiere, no restringe).
@@ -496,6 +502,12 @@ export function ScreenEditor() {
               patch({ transcript: e.target.value })
             }} />
         </label>
+        {transcriptStale && (
+          <p className="ed-hint-warn">
+            <Icon name="alert-triangle" size={13} /> El contenido de la pantalla cambió desde que se escribió/regeneró
+            esta transcripción: revísala y pulsa «Regenerar» si hace falta.
+          </p>
+        )}
         <div className="ed-row">
           <button type="button" disabled={ttsBusy}
             onClick={() => void onRebuildTranscript()}
@@ -509,6 +521,12 @@ export function ScreenEditor() {
           </button>
           {ttsMsg && <span className="ed-tts-msg">{ttsMsg}</span>}
         </div>
+        {audioStale && (
+          <p className="ed-hint-warn">
+            <Icon name="alert-triangle" size={13} /> La transcripción cambió desde que se generó este audio de locución:
+            regenéralo para que vuelvan a corresponderse.
+          </p>
+        )}
     </Fold>
   )
 

@@ -34,8 +34,10 @@ estudiante, una interacción informativa — `INFORMATIVE` exportado por
 `buildTranscript.ts` — o la propia transcripción a mano), salta un aviso informativo
 (modal `hideCancel`) de que los cambios no se aplican al audio hasta regenerar
 transcripción y audio (al editar la transcripción, solo el audio). Es **único por
-pantalla y sesión** (`audioStaleWarned`, `Set` a nivel de módulo en `ScreenEditor`) y se
-re-arma al regenerar el audio con TTS.
+pantalla y sesión** (`audioStaleWarned`, `Set` a nivel de módulo en `ScreenEditor`, se
+pierde al recargar) y se re-arma al regenerar el audio con TTS — es un aviso puntual en
+el momento de editar, no un estado que quede marcado en ningún sitio: ver «Desactualizado»
+más abajo para el indicador persistente.
 
 En cursos **narrados**, la validación señala el trabajo pendiente por pantalla:
 `NARR_NO_TRANSCRIPT` (aviso), `NARR_NO_AUDIO` (info, lista de «pendientes de narrar») y
@@ -44,6 +46,43 @@ En cursos **narrados**, la validación señala el trabajo pendiente por pantalla
 (`course.narration.mode`: `auto` = si alguna pantalla tiene `audio_src` | `on` | `off`;
 se guarda en el proyecto, no en localStorage; helper compartido `isNarrated()` en
 `validators.ts`, que solo mira `audio_src` de pantalla). Detalle en `informes-validacion.md`.
+
+### Desactualizado (`transcript_content_hash`/`audio_transcript_hash`)
+El aviso puntual de arriba se pierde al recargar y no deja rastro. Para que quede algo
+persistente que sobreviva a cerrar el editor, cada `Screen` guarda dos huellas
+**internas del editor** (metadato de caché, no autorado — el GPT nunca las redacta,
+quedan `undefined` si faltan y eso es normal en proyectos/pantallas de antes de este
+mecanismo):
+- `transcript_content_hash`: huella (`contentHash`, FNV-1a 32 bits — no criptográfica,
+  solo para detectar cambios) de `buildTranscript(screen)` en el momento de escribir o
+  regenerar `transcript` por última vez.
+- `audio_transcript_hash`: huella de `transcript` en el momento de generar `audio_src`
+  por última vez (TTS o subida manual).
+
+`updateScreen()` (`courseStore.ts`) las resella automáticamente cada vez que `transcript`
+o `audio_src` cambian — es el único punto de escritura de Screen, así que no hace falta
+tocar nada más al añadir una vía nueva de editarlos. Si el contenido (`student_text`,
+interacción) cambia SIN tocar `transcript`, o `transcript` cambia SIN regenerar
+`audio_src`, la huella guardada deja de coincidir con la que se recalcularía ahora:
+**desactualizado**. Sin huella sellada (nunca se guardó desde el editor) nunca se marca
+como desactualizado — no hay con qué comparar, así que se asume al día por defecto en vez
+de avisar en falso sobre contenido de fuera del editor (GPT, proyectos antiguos).
+
+- **Validadores** (solo en cursos narrados, igual que el resto de la familia `NARR_*`):
+  `NARR_TRANSCRIPT_STALE` (info) y `NARR_AUDIO_STALE` (info).
+- **`ScreenEditor`**: aviso `.ed-hint-warn` junto a la transcripción/al audio cuando esa
+  pantalla concreta está desactualizada, señalando el botón «Regenerar» que ya existía.
+- **`listNarratable()`** (`tts.ts`) expone `staleTranscript`/`staleAudio` por pantalla;
+  `TtsPanel` los cuenta junto al resto de estadísticas.
+- **Regenerar en bloque**: `fillMissingTranscripts()` (store) ahora hace dos cosas bajo un
+  único snapshot/deshacer — rellena las transcripciones **vacías** (como antes) Y
+  **regenera** las que están desactualizadas (nunca una transcripción al día, ni una sin
+  huella sellada: no hay con qué comparar, así que no se toca). Devuelve `{filled,
+  refreshed}`. El audio no tiene un botón «solo desactualizados» propio: la casilla
+  existente «Generar solo las que aún no tienen audio» ya cubre el caso al desmarcarla
+  (regenera todas, desactualizadas incluidas) — un botón dedicado sería forzar sin
+  necesidad una regeneración completa (coste de API) cuando el objetivo es solo arreglar
+  unas pocas; para eso está el botón por pantalla en `ScreenEditor`.
 
 ## Narración por diapositiva (`screen.audio_src`)
 Audio propio de la pantalla (ruta en `assets/media`), **separado del media visual**. El
