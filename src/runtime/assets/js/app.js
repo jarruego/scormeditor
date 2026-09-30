@@ -823,6 +823,21 @@
     var pctSeen = req.length ? (seenReq / req.length) * 100 : 100;
     var screensOk = pctSeen >= (rules.min_required_screens_pct || 100);
 
+    // La nota se calcula y persiste SIEMPRE (Resultados/LMS la necesitan para
+    // mostrar el APTO/NO APTO informativo, sea cual sea el modo de finalización).
+    var score = computeScore();
+    STATE.finalScore = score;
+    SCORM.setScore(score, 0, 100);
+
+    // Modo «screens»: completa con solo llegar al final. Ignora a propósito
+    // interacciones obligatorias y nota mínima para el lesson_status — pero
+    // ambas se siguen calificando (arriba y en el desglose de Resultados).
+    if ((rules.completion_mode || 'evaluation') === 'screens') {
+      var screensStatus = screensOk ? 'completed' : 'incomplete';
+      SCORM.setStatus(screensStatus);
+      return screensStatus;
+    }
+
     var interactionsOk = true;
     if (rules.require_interactions) {
       SCREENS.forEach(function (e, i) {
@@ -833,15 +848,11 @@
       });
     }
 
-    var score = computeScore();
-    STATE.finalScore = score;
     var hasScoredContent = (function () {
       if ((rules.score_source) === 'final_test') return !!(COURSE.assessments && COURSE.assessments.final_test && COURSE.assessments.final_test.questions.length);
       return SCREENS.some(function (e) { return e.screen.interaction && e.screen.interaction.scored; });
     })();
     var scoreOk = !hasScoredContent || score >= (rules.min_score || 0);
-
-    SCORM.setScore(score, 0, 100);
 
     var status;
     if (!screensOk || !interactionsOk) status = 'incomplete';
@@ -1358,6 +1369,9 @@
     // Aviso antes de avanzar de diapositiva con el test corregido pero mejorable
     // (hay fallos) y margen para reintentar; lo consulta goRelative.
     finalLeave = function (proceed) {
+      // Modo «screens»: la finalización no depende de la nota, así que el test
+      // final tampoco retiene al alumno al salir (ver evaluateCompletion).
+      if ((rules.completion_mode || 'evaluation') === 'screens') return false;
       var r = STATE.results.__final__;
       if (!r || !r.scored || !r.maxScore) return false;
       var pct = Math.round((r.score / r.maxScore) * 100);
@@ -1500,10 +1514,31 @@
   function renderResults(content) {
     var rules = COURSE.scorm.rules || {};
     var status = evaluateCompletion();      // actualiza SCORM + STATE.finalScore
+    var incomplete = status === 'incomplete';
+
+    // Modo «screens»: la nota no decide nada, así que no tiene sentido mostrarla
+    // como resumen — solo si el alumno ha terminado (o le falta) y Salir.
+    if ((rules.completion_mode || 'evaluation') === 'screens') {
+      var sHtml = '<article class="me-screen me-screen-results"><h1>Resultados</h1>';
+      if (incomplete) {
+        sHtml += '<div class="me-result-hero is-warn"><div class="me-result-state">⚠ Curso incompleto</div></div>' +
+          '<p class="me-instructions">Completa todas las pantallas requeridas para terminar el curso.</p>';
+      } else {
+        sHtml += '<div class="me-result-hero is-ok"><div class="me-result-state">✔ ¡Enhorabuena, has completado el curso!</div></div>';
+      }
+      sHtml += '<div class="me-result-actions"><button type="button" class="me-btn" id="me-btn-exit">Salir del curso</button></div></article>';
+      content.innerHTML = sHtml;
+      var sExitBtn = content.querySelector('#me-btn-exit');
+      if (sExitBtn) sExitBtn.addEventListener('click', requestExit);
+      if (!incomplete) celebrate();
+      return;
+    }
+
     var score = STATE.finalScore;
     var min = rules.min_score || 0;
-    var incomplete = status === 'incomplete';
-    var pass = status === 'passed';
+    // APTO/NO APTO informativo: siempre nota vs. mínima, aunque en modo
+    // «screens» el lesson_status ya no sea 'passed'/'failed' (ver evaluateCompletion).
+    var pass = !incomplete && score >= min;
     var p = progressSnapshot();
 
     var cls = incomplete ? 'is-warn' : (pass ? 'is-ok' : 'is-error');
@@ -1515,9 +1550,13 @@
       '<div class="me-result-min">Nota mínima para aprobar: ' + min + '%</div></div>';
     var evalItems = p.items.filter(function (it) { return it.scored; });
     if (evalItems.length || p.finalRow) {
-      html += foldHtml('me-fold-results', 'Desglose de calificaciones', resultsBreakdownHtml(p, evalItems), incomplete);
+      // Plegado por defecto siempre: el veredicto ya está en la cabecera, el
+      // desglose es para quien quiera el detalle, no un paso obligatorio.
+      html += foldHtml('me-fold-results', 'Desglose de calificaciones', resultsBreakdownHtml(p, evalItems), false);
     }
     if (incomplete) html += '<p class="me-instructions">Completa todas las pantallas y actividades requeridas para obtener la calificación final.</p>';
+    else if (!pass) html += '<p class="me-instructions">No has alcanzado la nota mínima del ' + min + '% necesaria para aprobar' +
+      (evalItems.length || p.finalRow ? ' (mira el desglose para ver qué actividades te han restado más)' : '') + '.</p>';
 
     // Acciones finales: Reintentar (solo NO APTO y si quedan intentos) y Salir.
     // attempts_allowed: 0 = ilimitados; STATE.attempts cuenta los ya consumidos.

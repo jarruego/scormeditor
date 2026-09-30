@@ -57,11 +57,15 @@ herramientas de la **edición del curso abierto**, no chrome general de la app �
 (`settingsModal: SettingsModalKind`):
 - **Curso (Finalización)** → `CourseSettingsModal` con `CourseSettingsSection`:
   `scorm.rules` + `mastery_score` (nota mínima, `score_source`, `mixed_final_weight`,
-  % pantallas, `require_interactions`, intentos, navegación) vía `updateScorm`. Incluye
-  la herramienta **«Tiempo mínimo por pantalla»**: input 0–30 s + «Aplicar a todas las
-  pantallas» → `setAllMinTime` del store (un solo paso de deshacer). El valor del input
-  NO se persiste (es una herramienta de lote, no un campo de `course.json`); sobrescribe
-  el `min_time_seconds` de cada pantalla tras `confirmDialog`.
+  `completion_mode`, % pantallas, `require_interactions`, intentos, navegación) vía
+  `updateScorm`. Incluye dos herramientas de lote (mismo patrón: input + botón «Aplicar
+  a todas…» → acción del store, un solo paso de deshacer, valor del input NO persistido
+  porque no es un campo de `course.json`, sobrescribe tras `confirmDialog`):
+  - **«Tiempo mínimo por pantalla»**: 0–30 s → `setAllMinTime`, sobrescribe
+    `min_time_seconds` de cada pantalla.
+  - **«Intentos por defecto (actividades evaluables)»**: 0 (∞) o más → `setAllAttempts`,
+    sobrescribe `interaction.attempts` de toda interacción cuyo tipo respete este ajuste
+    (`interactionRecipe(...).supportsAttempts`; ver `interacciones.md`).
 - **Objetivos de aprendizaje** → `ObjectivesModal`, el gestor transversal de objetivos
   (ver `editor-pantallas.md`).
 - **Interfaz (Apariencia)** → `AppearanceModal` con `AppearanceSection`: preferencias de

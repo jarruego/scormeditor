@@ -19,12 +19,23 @@ Depende de `scorm.rules.score_source`:
   defecto la práctica dominaba la nota).
 
 ## Finalización (completado)
-`evaluateCompletion()`: completado si se ve el `min_required_screens_pct` de pantallas
-requeridas Y (si `require_interactions`) se han **completado** las interacciones
-evaluables. Una evaluable se marca `completed` al **resolverse** (acertar o agotar
-intentos): cuenta para la finalización **responderla**, no acertarla (salvo intentos
-ilimitados, donde hay que acertar). `SCORM.setStatus`: `incomplete` / `passed` /
-`failed` / `completed` (sin contenido calificable).
+`evaluateCompletion()` calcula y persiste la nota SIEMPRE (`computeScore`, `SCORM.setScore`)
+y luego decide el `lesson_status` según `rules.completion_mode`:
+- **`evaluation`** (por defecto, comportamiento clásico): completado si se ve el
+  `min_required_screens_pct` de pantallas requeridas Y (si `require_interactions`) se han
+  **completado** las interacciones evaluables. Una evaluable se marca `completed` al
+  **resolverse** (acertar o agotar intentos): cuenta para la finalización **responderla**,
+  no acertarla (salvo intentos ilimitados, donde hay que acertar). `SCORM.setStatus`:
+  `incomplete` / `passed` / `failed` / `completed` (sin contenido calificable).
+- **`screens`**: completado con solo llegar al final (`min_required_screens_pct`),
+  **ignora** a propósito `require_interactions` y `rules.min_score` para el `lesson_status`
+  (`incomplete` / `completed`, nunca `passed`/`failed`). Pensado para cursos con
+  actividades evaluables donde no interesa que una mala nota bloquee la finalización SCORM.
+  La nota se sigue calculando y enviando al LMS (`SCORM.setScore`, por si quiere usarla),
+  pero **no se muestra**: `renderResults` la sustituye por un mensaje mínimo (⚠ incompleto
+  / ✔ enhorabuena) sin desglose ni Reintentar — ver «Salir y Reintentar en Resultados» más
+  abajo. `finalLeave` (más abajo) tampoco retiene al alumno en el test final aunque
+  suspenda con intentos restantes.
 
 - `mastery_score`/`masteryscore` van al manifiesto (`src/scorm/manifest.ts`);
   `rules.min_score` es el umbral APTO en el runtime.
@@ -49,6 +60,11 @@ ilimitados, donde hay que acertar). `SCORM.setStatus`: `incomplete` / `passed` /
   el wrapper a propósito: ninguna llamada de `app.js` puede saltársela.
 
 ## Salir y Reintentar en Resultados
+Con `completion_mode: 'screens'`, `renderResults()` **no** pinta nada de lo de abajo: la
+nota no decide nada, así que muestra solo un mensaje (⚠ incompleto / ✔ enhorabuena, sin
+puntuación) y el botón Salir — confeti si está completo, nada de desglose ni Reintentar
+(ver «Finalización» arriba). El resto de esta sección es el modo `evaluation`.
+
 `renderResults()` añade acciones al pie:
 - **Salir del curso** (siempre visible; botón centrado con el color de acento):
   `finishSession()` (nota/tiempo/exit registrados) + intento de `window.close()`; si el
@@ -61,8 +77,12 @@ ilimitados, donde hay que acertar). `SCORM.setStatus`: `incomplete` / `passed` /
   `allow_resume: false`).
 - El **desglose de calificaciones** va plegado en un accordion (`foldHtml`/`wireFolds`,
   app.js — mismas clases `.me-acc-*` que las interacciones, así `setupPrint` lo expande
-  al imprimir); abierto por defecto si el curso está **incompleto** (para que las
-  actividades pendientes se vean sin un clic extra), plegado si ya tiene veredicto.
+  al imprimir), **siempre plegado por defecto**: el veredicto ya está en la cabecera
+  (nota + APTO/NO APTO/incompleto), el desglose es detalle opcional, no un paso obligatorio.
+- Con **NO APTO** (no incompleto, nota por debajo de `min_score`), un párrafo
+  `.me-instructions` explica por qué antes de las acciones: «No has alcanzado la nota
+  mínima del X% para aprobar» (+ referencia al desglose si lo hay). Con el curso
+  **incompleto** el párrafo es el ya existente («Completa todas las pantallas…»).
 - **Reintentar el curso** (solo **NO APTO** y si quedan intentos): `retryCourse()` limpia
   `STATE.interactions`/`results`/`finalScore` (práctica Y test final) pero **conserva
   `visited`** (el contenido ya se estudió; lo que se repite es la evaluación), vuelve a
@@ -115,7 +135,9 @@ Resultados (ver `arquitectura-runtime.md`). Añade:
   un botón **«Comprobar test»** (misma `comprobar()` que el submit del formulario).
   En modo clásico el banner inline incluye los intentos.
   Además, `finalLeave` (puente consultado por `goRelative`, limpiado en `goTo` como
-  `finalNav`) intercepta «Siguiente» al salir del test según el resultado vigente:
+  `finalNav`) intercepta «Siguiente» al salir del test según el resultado vigente — salvo
+  con `completion_mode: 'screens'`, donde nunca retiene (primera comprobación de la
+  función, ver «Finalización» arriba):
   con **100% o sin intentos restantes**, sale libre; **NO APTO con intentos** (solo
   `score_source: 'final_test'`), **bloquea** — modal sin «Continuar», acciones
   «Repetir el test» (a la primera fallada) / «Seguir revisando»; en modo autor el

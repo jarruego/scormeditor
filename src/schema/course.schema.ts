@@ -364,6 +364,8 @@ export const ScormConfig = z.object({
   title: z.string().default(''),
   mastery_score: z.number().min(0).max(100).default(60),
   rules: z.object({
+    completion_mode: z.enum(['evaluation', 'screens']).default('evaluation')
+      .describe('evaluation: completado clásico (pantallas + interacciones obligatorias si aplica + nota mínima). screens: completado con solo llegar al final (min_required_screens_pct); la nota y el APTO/NO APTO se siguen calculando y mostrando, pero no bloquean ni cambian el lesson_status'),
     min_required_screens_pct: z.number().min(0).max(100).default(100),
     require_interactions: z.boolean().default(true),
     min_score: z.number().min(0).max(100).default(60),

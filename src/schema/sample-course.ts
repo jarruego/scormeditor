@@ -27,6 +27,7 @@ export const sampleCourse: Course = {
     "title": "Demostración SCORMEditor",
     "mastery_score": 60,
     "rules": {
+      "completion_mode": "evaluation",
       "min_required_screens_pct": 100,
       "require_interactions": true,
       "min_score": 60,

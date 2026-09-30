@@ -222,6 +222,9 @@ interface CourseState {
   fillMissingTranscripts: () => number
   /** Pone el mismo tiempo mínimo (s) en TODAS las pantallas del curso. */
   setAllMinTime: (seconds: number) => void
+  /** Pone el mismo nº de intentos en TODAS las interacciones cuyo tipo lo respeta
+   *  (`interactionRecipe(...).supportsAttempts`). 0 = ilimitados. */
+  setAllAttempts: (attempts: number) => void
   /** Actualiza los metadatos del curso (título principal, subtítulo, entidad…). */
   updateCourseInfo: (patch: Partial<Course['course']>) => void
   /** Renombra un módulo (título estructural del menú lateral). */
@@ -692,6 +695,17 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot()
     const course = clone(get().course)
     for (const s of allScreens(course)) s.min_time_seconds = seconds
+    set({ course })
+  },
+
+  setAllAttempts: (attempts) => {
+    snapshot()
+    const course = clone(get().course)
+    for (const s of allScreens(course)) {
+      if (s.interaction && interactionRecipe(s.interaction.type).supportsAttempts) {
+        s.interaction.attempts = attempts
+      }
+    }
     set({ course })
   },
 

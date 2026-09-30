@@ -115,6 +115,13 @@ Reglas que NO se pueden romper:
   propio total (no por suma de puntos). También editable en «Ajustes del curso».
 - `navigation`: `"free"` | `"sequential"` | `"mixed"` (usa el nombre en inglés).
 - `attempts_allowed`: `0` = ilimitados.
+- `completion_mode` (opcional, def. `"evaluation"`): `"evaluation"` = completado clásico
+  (pantallas + interacciones obligatorias si `require_interactions` + nota mínima).
+  `"screens"` = completa con solo llegar al final (`min_required_screens_pct`), ignorando
+  interacciones obligatorias y nota mínima para el estado SCORM — la nota y el APTO/NO APTO
+  se siguen calculando y mostrando en Resultados, pero de forma informativa. Usar `"screens"`
+  solo si el documento fuente pide explícitamente que el curso se dé por completado con solo
+  recorrerlo, aunque tenga actividades evaluables.
 
 ```json
 "shell": {

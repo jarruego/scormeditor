@@ -172,8 +172,10 @@ export function CourseSettingsSection() {
   const hasFinal = useCourseStore((s) => !!s.course.assessments.final_test)
   const screenCount = useCourseStore((s) => allScreens(s.course).length)
   const setAllMinTime = useCourseStore((s) => s.setAllMinTime)
-  // Tiempo a aplicar en lote (no se persiste: es una herramienta, no un ajuste).
+  const setAllAttempts = useCourseStore((s) => s.setAllAttempts)
+  // Tiempo/intentos a aplicar en lote (no se persisten: son una herramienta, no un ajuste).
   const [bulkTime, setBulkTime] = useState(0)
+  const [bulkAttempts, setBulkAttempts] = useState(0)
 
   const setRule = (p: Partial<ScormConfig['rules']>) => updateScorm({ rules: { ...scorm.rules, ...p } })
   const r = scorm.rules
@@ -199,6 +201,17 @@ export function CourseSettingsSection() {
       confirmLabel: 'Aplicar a todas',
     })
     if (ok) setAllMinTime(secs)
+  }
+
+  async function onApplyAttempts() {
+    const n = Math.max(0, Math.round(bulkAttempts))
+    setBulkAttempts(n)
+    const ok = await confirmDialog({
+      title: 'Aplicar intentos a todas',
+      message: `Se pondrán ${n === 0 ? 'intentos ilimitados' : `${n} intento${n === 1 ? '' : 's'}`} en todas las interacciones evaluables del curso que respetan este ajuste, sustituyendo el valor que tenga cada una. Puedes deshacerlo con Ctrl+Z.`,
+      confirmLabel: 'Aplicar a todas',
+    })
+    if (ok) setAllAttempts(n)
   }
 
   return (
@@ -253,13 +266,20 @@ export function CourseSettingsSection() {
       <fieldset className="ed-group">
         <legend>Finalización (completado)</legend>
         <div className="ed-row">
+          <label className="ed-field">
+            <span>Modo de finalización</span>
+            <select value={r.completion_mode} onChange={(e) => setRule({ completion_mode: e.target.value as any })}>
+              <option value="evaluation">Por evaluación (nota e interacciones)</option>
+              <option value="screens">Por llegar al final</option>
+            </select>
+          </label>
           <label className="ed-field ed-field-narrow">
             <span>% de pantallas que hay que ver</span>
             <input type="number" min={0} max={100} value={r.min_required_screens_pct}
               onChange={(e) => setRule({ min_required_screens_pct: Number(e.target.value) })} />
           </label>
-          <label className="ed-check">
-            <input type="checkbox" checked={r.require_interactions}
+          <label className="ed-check" title={r.completion_mode === 'screens' ? 'No aplica: en modo «Por llegar al final» las interacciones no son obligatorias para completar' : undefined}>
+            <input type="checkbox" checked={r.require_interactions} disabled={r.completion_mode === 'screens'}
               onChange={(e) => setRule({ require_interactions: e.target.checked })} />
             <span>Exigir completar las interacciones</span>
           </label>
@@ -269,6 +289,14 @@ export function CourseSettingsSection() {
             <span>Permitir reanudar donde lo dejó</span>
           </label>
         </div>
+        {r.completion_mode === 'screens' && (
+          <p className="ed-hint">
+            El curso se completa en cuanto el alumno llega al final (según el % de pantallas de
+            arriba), sin importar si acierta las actividades ni la nota del test. La nota y el
+            APTO/NO APTO se siguen calculando y mostrando en Resultados (informativos), y el test
+            final ya no retiene al alumno si suspende con intentos restantes.
+          </p>
+        )}
       </fieldset>
 
       <fieldset className="ed-group">
@@ -287,6 +315,26 @@ export function CourseSettingsSection() {
           Pone el mismo «Tiempo mín. (s)» en las {screenCount} pantallas del curso (el alumno no
           puede avanzar hasta agotarlo). Sustituye el valor individual de cada pantalla; después
           puedes afinar pantallas concretas en su editor.
+        </p>
+      </fieldset>
+
+      <fieldset className="ed-group">
+        <legend>Intentos por defecto (actividades evaluables)</legend>
+        <div className="ed-row">
+          <label className="ed-field ed-field-narrow">
+            <span>Intentos (0 = ∞)</span>
+            <input type="number" min={0} value={bulkAttempts}
+              onChange={(e) => setBulkAttempts(Number(e.target.value))} />
+          </label>
+          <button type="button" style={{ alignSelf: 'flex-end' }} onClick={() => void onApplyAttempts()}>
+            Aplicar a todas las pantallas evaluables
+          </button>
+        </div>
+        <p className="ed-hint">
+          Pone el mismo nº de «Intentos» en todas las interacciones del curso cuyo tipo respeta
+          este ajuste (opción única, V/F, huecos, ordenar pasos, emparejar, clasificar,
+          crucigrama), sustituyendo el valor individual de cada una. Después puedes afinar
+          actividades concretas en su editor.
         </p>
       </fieldset>
 
