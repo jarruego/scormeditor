@@ -12,6 +12,7 @@ import {
   setProviderKey,
   setTtsConfig,
   synthesize,
+  voiceLabel,
   voicesFor,
   type BulkResult,
   type TtsConfig,
@@ -204,14 +205,20 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
             <div className="ed-row">
               <label className="ed-field">
                 <span>Modelo</span>
-                <select value={cfg.model} onChange={(e) => update({ model: e.target.value })}>
+                <select value={cfg.model} onChange={(e) => {
+                  const model = e.target.value
+                  // tts-1/tts-1-hd soportan menos voces que gpt-4o-mini-tts: si la
+                  // voz actual deja de ser válida con el modelo nuevo, se ajusta sola.
+                  const voices = voicesFor(cfg.provider, model)
+                  update({ model, voice: voices.includes(cfg.voice) ? cfg.voice : voices[0] })
+                }}>
                   {modelsFor(cfg.provider).map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </label>
               <label className="ed-field">
                 <span>Voz</span>
                 <select value={cfg.voice} onChange={(e) => update({ voice: e.target.value })}>
-                  {voicesFor(cfg.provider).map((v) => <option key={v} value={v}>{v}</option>)}
+                  {voicesFor(cfg.provider, cfg.model).map((v) => <option key={v} value={v}>{voiceLabel(cfg.provider, v)}</option>)}
                 </select>
               </label>
               {!isGemini && (
@@ -230,11 +237,24 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
                 </>
               )}
             </div>
+            {!isGemini && (
+              <p className="ed-hint">
+                El género entre paréntesis es orientativo (percepción más repetida en la comunidad, no un dato
+                oficial de OpenAI: varias voces están pensadas como neutras y para las más nuevas
+                (ballad, verse, marin, cedar) aún no hay consenso documentado, por eso no llevan etiqueta).
+                Pruébalas en <strong>openai.fm</strong> antes de decidir.
+              </p>
+            )}
             {showInstructions && (
               <label className="ed-field">
-                <span>Indicaciones de tono/estilo (opcional)</span>
+                <span>Indicaciones de tono/estilo — «Vibe» (opcional)</span>
                 <input value={cfg.instructions} placeholder="p. ej. Tono cercano y didáctico, ritmo pausado."
                   onChange={(e) => update({ instructions: e.target.value })} />
+                <span className="ed-hint">
+                  Mismo campo que el «Vibe» de openai.fm: instrucciones en lenguaje natural sobre tono, ritmo,
+                  emoción o acento. Se envían junto al texto en cada generación (no se guardan «vibes» predefinidos,
+                  escribe las tuyas libremente).
+                </span>
               </label>
             )}
             <div className="ed-row">

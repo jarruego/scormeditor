@@ -48,9 +48,34 @@ export const PROVIDERS: { value: TtsProvider; label: string }[] = [
 ]
 
 export const OPENAI_MODELS = ['gpt-4o-mini-tts', 'tts-1', 'tts-1-hd'] as const
+// Las 13 voces del modelo más nuevo (gpt-4o-mini-tts; OpenAI recomienda
+// marin/cedar para la mejor calidad). Los modelos heredados tts-1/tts-1-hd
+// solo soportan las 9 de OPENAI_VOICES_LEGACY (sin ballad/verse/marin/cedar):
+// voicesFor() ya filtra según el modelo.
+// Fuente: https://platform.openai.com/docs/guides/text-to-speech (sep. 2026).
 export const OPENAI_VOICES = [
-  'alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer',
+  'alloy', 'ash', 'ballad', 'cedar', 'coral', 'echo', 'fable', 'marin', 'nova', 'onyx', 'sage', 'shimmer', 'verse',
 ] as const
+const OPENAI_VOICES_LEGACY = new Set<string>(['alloy', 'ash', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer'])
+
+// Percepción de género MÁS REPETIDA en foros/artículos de la comunidad — NO
+// es un dato oficial de OpenAI (que deliberadamente no lo publica: varias
+// voces están pensadas como neutras) y para varias voces la percepción se
+// contradice entre fuentes. Se muestra en el editor con un aviso de que es
+// orientativa (ver TtsPanel.tsx). Las 4 voces más nuevas (ballad, verse,
+// marin, cedar) no tienen aún consenso documentado: se omiten a propósito en
+// vez de arriesgar una etiqueta sin base.
+export const OPENAI_VOICE_GENDER: Partial<Record<(typeof OPENAI_VOICES)[number], 'm' | 'f' | 'n'>> = {
+  alloy: 'n',
+  ash: 'm',
+  coral: 'f',
+  echo: 'm',
+  fable: 'm',
+  nova: 'f',
+  onyx: 'm',
+  sage: 'f',
+  shimmer: 'f',
+}
 
 export const GEMINI_MODELS = ['gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'] as const
 // Subconjunto curado de voces preconstruidas de Gemini (hay ~30 disponibles).
@@ -61,12 +86,24 @@ export const GEMINI_VOICES = [
 export function modelsFor(provider: TtsProvider): readonly string[] {
   return provider === 'gemini' ? GEMINI_MODELS : OPENAI_MODELS
 }
-export function voicesFor(provider: TtsProvider): readonly string[] {
-  return provider === 'gemini' ? GEMINI_VOICES : OPENAI_VOICES
+/** Voces disponibles; en OpenAI depende también del modelo (tts-1/tts-1-hd
+ *  soportan menos que gpt-4o-mini-tts). */
+export function voicesFor(provider: TtsProvider, model?: string): readonly string[] {
+  if (provider === 'gemini') return GEMINI_VOICES
+  if (model === 'tts-1' || model === 'tts-1-hd') return OPENAI_VOICES.filter((v) => OPENAI_VOICES_LEGACY.has(v))
+  return OPENAI_VOICES
+}
+/** Etiqueta de una voz para el desplegable: nombre + género orientativo entre
+ *  paréntesis cuando hay consenso de comunidad suficiente (ver OPENAI_VOICE_GENDER). */
+export function voiceLabel(provider: TtsProvider, voice: string): string {
+  if (provider !== 'openai') return voice
+  const g = OPENAI_VOICE_GENDER[voice as (typeof OPENAI_VOICES)[number]]
+  return g ? `${voice} (${g === 'm' ? 'hombre' : g === 'f' ? 'mujer' : 'neutra'})` : voice
 }
 /** Valores que deben restablecerse al cambiar de proveedor (modelo y voz válidos). */
 export function providerDefaults(provider: TtsProvider): Partial<TtsConfig> {
-  return { provider, model: modelsFor(provider)[0], voice: voicesFor(provider)[0] }
+  const model = modelsFor(provider)[0]
+  return { provider, model, voice: voicesFor(provider, model)[0] }
 }
 
 /** Límite de caracteres por petición; margen bajo el máximo de OpenAI (4096). */

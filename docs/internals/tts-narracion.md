@@ -188,18 +188,44 @@ informa de `busy` para que la ventana no se cierre mientras genera.
   «Narración por ítem»). `TtsPanel.tsx` (`onGenerate`) encadena ambas bajo un único botón
   «Generar N audios» y una única barra de progreso (índice combinado: primero pantallas,
   luego ítems).
+- **Coste**: la API de OpenAI cobra por tokens de texto de entrada + tokens de audio de
+  salida (sin cargo fijo por petición), así que generar el audio pantalla a pantalla no
+  cuesta más en total que uno combinado y cortado luego — y evita el problema de cortar
+  con precisión y desincronizar `audio_src` por pantalla. `MAX_CHARS` (3800, margen bajo
+  el límite de 4096 de OpenAI) ya trocea internamente una transcripción larga en varias
+  peticiones dentro de `synthesize()`.
+- **Voces de OpenAI** (`OPENAI_VOICES`, `voicesFor(provider, model)`): las 13 voces del
+  modelo más nuevo (`gpt-4o-mini-tts`; OpenAI recomienda `marin`/`cedar` para la mejor
+  calidad). Los modelos heredados `tts-1`/`tts-1-hd` solo soportan 9
+  (`OPENAI_VOICES_LEGACY`, sin `ballad`/`verse`/`marin`/`cedar`) — `voicesFor` ya filtra
+  según el modelo, y el `<select>` de modelo en `TtsPanel` reajusta la voz sola si la
+  elegida deja de ser válida al cambiar de modelo.
+  `voiceLabel()` añade entre paréntesis el género **percibido**, orientativo — OpenAI
+  **no** publica el género de estas voces a propósito (varias están pensadas como
+  neutras) y la percepción se contradice entre fuentes de comunidad para varias de ellas;
+  `OPENAI_VOICE_GENDER` solo etiqueta las que tienen consenso razonable y deja sin
+  etiqueta las 4 más nuevas (`ballad`/`verse`/`marin`/`cedar`, aún sin documentación de
+  comunidad suficiente) en vez de arriesgar una etiqueta sin base. El panel lo explica con
+  un aviso junto al desplegable.
+- **Tono/estilo** (`cfg.instructions`, campo «Vibe» en `TtsPanel`): instrucciones en
+  lenguaje natural sobre tono/ritmo/emoción/acento, el mismo concepto que el «Vibe» de
+  **openai.fm** (demo oficial de OpenAI para probar voces) — se envían tal cual junto al
+  texto en cada síntesis (`openaiChunk`), sin «vibes» predefinidos que mantener; las
+  admite `gpt-4o-mini-tts` (no `tts-1`/`tts-1-hd`) y, con otro uso, todos los modelos de
+  Gemini (`showInstructions` en `TtsPanel.tsx`).
 
 El panel de generación masiva **respeta el ajuste «Curso narrado»**: con `off` la
 generación (audios y transcripciones) queda deshabilitada con una nota — probable
 despiste y coste de API. Los contadores incluyen las pantallas **con contenido narrable
 sin transcripción** (mismo criterio que `NARR_NO_TRANSCRIPT`: `hasContent`/`skeleton` en
 `listNarratable`) y los **ítems narrables sin audio propio** (`listNarratableItems`,
-mismo criterio que `NARR_ITEM_NO_AUDIO`), y hay un paso previo masivo «↻ Generar
-transcripciones desde el contenido» (`fillMissingTranscripts` en el store, solo a nivel
-de pantalla): **solo rellena las vacías** — nunca sobrescribe una editada a mano, por eso
-no pide confirmación — y hace un único snapshot (un solo deshacer). El flujo completo
-queda: marcar curso narrado → transcripciones en bloque → revisarlas → audios en bloque
-(pantallas + ítems), con los números cuadrando con la pestaña Validación.
+mismo criterio que `NARR_ITEM_NO_AUDIO`), y hay un paso previo masivo «↻ Generar/actualizar
+transcripciones desde el contenido» (`fillMissingTranscripts` en el store, solo a nivel de
+pantalla): rellena las vacías y regenera las desactualizadas — nunca una editada a mano
+que siga al día, por eso no pide confirmación (detalle en «Desactualizado» más abajo) — y
+hace un único snapshot (un solo deshacer). El flujo completo queda: marcar curso narrado →
+transcripciones en bloque → revisarlas → audios en bloque (pantallas + ítems), con los
+números cuadrando con la pestaña Validación.
 
 Consecuencia: un `transcript` completo (texto del estudiante + enunciado e índice
 hablado de títulos de la interacción) más el audio de cada ítem revelable generado ⇒ una
