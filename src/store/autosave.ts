@@ -273,6 +273,15 @@ export async function saveProjectAs(): Promise<void> {
   await saveProject()
 }
 
+/** Descarga una copia de seguridad del .scormproj sin vincular ni tocar el
+ *  archivo/handle actual: el proyecto se queda exactamente como estaba (p.ej.
+ *  sigue «solo en este navegador» si así estaba). A diferencia de `saveProject`,
+ *  nunca usa `showSaveFilePicker`. */
+export async function downloadProjectCopy(): Promise<void> {
+  const blob = await buildProjectBlob()
+  downloadBlob(blob, `${courseId()}${PROJECT_EXT}`)
+}
+
 function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')

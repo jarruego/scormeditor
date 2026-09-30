@@ -9,6 +9,7 @@ import {
   openProject,
   openProjectFromFile,
   saveProjectAs,
+  downloadProjectCopy,
   clearLocalLink,
   closeCurrentProject,
 } from '../store/autosave'
@@ -356,6 +357,11 @@ export function Toolbar() {
                       <Icon name="copy" size={13} /> Guardar copia local…
                     </button>
                   )}
+                  {fsOk && (
+                    <button role="menuitem" onClick={() => runMenu(() => void downloadProjectCopy())} title="Descarga una copia de seguridad sin desvincular este curso de la nube">
+                      <Icon name="download" size={13} /> Descargar copia (.scormproj)
+                    </button>
+                  )}
                   <hr className="ed-menu-sep" />
                 </>
               ) : (
@@ -387,6 +393,11 @@ export function Toolbar() {
                   {fsOk && (
                     <button role="menuitem" onClick={() => runMenu(() => void saveProjectAs())} title="Guardar una copia en un archivo nuevo">
                       <Icon name="copy" size={13} /> Guardar como…
+                    </button>
+                  )}
+                  {fsOk && (
+                    <button role="menuitem" onClick={() => runMenu(() => void downloadProjectCopy())} title={isBrowserOnly ? 'Descarga una copia de seguridad; el proyecto sigue solo en este navegador' : 'Descarga una copia de seguridad sin tocar el archivo vinculado'}>
+                      <Icon name="download" size={13} /> Descargar copia (.scormproj)
                     </button>
                   )}
                   <hr className="ed-menu-sep" />

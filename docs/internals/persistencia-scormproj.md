@@ -34,6 +34,11 @@ guardado: confundía.)
   hay `projectHandle`, reescribe el mismo archivo; si no, abre `showSaveFilePicker`
   (sugerido `<courseId>.scormproj`) y lo vincula. `saveProjectAs()` fuerza destino nuevo
   (`projectHandle = null`).
+- **Descargar copia** (`downloadProjectCopy`, menú Archivo): construye el mismo blob
+  pero lo descarga con un `<a download>` normal, sin pasar por `showSaveFilePicker`. A
+  diferencia de Guardar/Guardar como…, **no vincula** el proyecto a ningún archivo ni
+  cambia su modo — sirve para sacar una copia de seguridad puntual de un proyecto «solo
+  en este navegador» (o de uno ya vinculado/en la nube) sin alterar dónde vive.
 - **Guardado manual, no automático al disco.** El archivo solo se escribe cuando el
   usuario guarda. Diálogos rotulados «Proyecto SCORMEditor».
 
