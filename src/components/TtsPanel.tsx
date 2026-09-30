@@ -248,10 +248,11 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
             {showInstructions && (
               <label className="ed-field">
                 <span>Indicaciones de tono/estilo — «Vibe» (opcional)</span>
-                <input value={cfg.instructions} placeholder="p. ej. Tono cercano y didáctico, ritmo pausado."
+                <textarea rows={5} maxLength={800} value={cfg.instructions}
+                  placeholder="p. ej. Tono cercano y didáctico, ritmo pausado."
                   onChange={(e) => update({ instructions: e.target.value })} />
                 <span className="ed-hint">
-                  Mismo campo que el «Vibe» de openai.fm: instrucciones en lenguaje natural sobre tono, ritmo,
+                  {cfg.instructions.length}/800 caracteres. Mismo campo que el «Vibe» de openai.fm: instrucciones en lenguaje natural sobre tono, ritmo,
                   emoción o acento. Se envían junto al texto en cada generación (no se guardan «vibes» predefinidos,
                   escribe las tuyas libremente).
                 </span>
