@@ -1527,6 +1527,27 @@
       if (incomplete) {
         sHtml += '<div class="me-result-hero is-warn"><div class="me-result-state">⚠ Aún no has terminado</div></div>' +
           '<p class="me-instructions">Completa todas las pantallas requeridas para terminarlo.</p>';
+        // Lista de las pantallas requeridas que aún faltan por visitar, con
+        // acceso directo — en Vista alumno normalmente no se llega aquí sin
+        // haberlas visto (screenSatisfied lo exige), pero puede pasar en modo
+        // autor/libre o si el alumno saltó pantallas con navegación libre.
+        var pending = [];
+        SCREENS.forEach(function (e, i) {
+          if (e.isResults || !isRequired(i)) return;
+          if (e.screen.scorm && e.screen.scorm.counts_for_completion === false) return;
+          if (STATE.visited[e.screen.id]) return;
+          pending.push({ idx: i, title: menuScreenLabel(e.screen), unit: e.unit ? (e.unit.title || '') : '' });
+        });
+        if (pending.length) {
+          sHtml += '<table class="me-pr-table"><thead><tr><th scope="col">Pantalla</th>' +
+            '<th scope="col"><span class="sr-only">Ir a la pantalla</span></th></tr></thead><tbody>';
+          pending.forEach(function (it) {
+            sHtml += '<tr><th scope="row">' + esc(it.title) +
+              (it.unit ? ' <span class="me-pr-unit">' + esc(it.unit) + '</span>' : '') + '</th>' +
+              '<td><button type="button" class="me-btn me-pr-goto" data-idx="' + it.idx + '">Ir a la pantalla →</button></td></tr>';
+          });
+          sHtml += '</tbody></table>';
+        }
       } else {
         sHtml += '<div class="me-result-hero is-ok"><div class="me-result-state">✔ ¡Enhorabuena' +
           (cTitle ? ', has completado «' + esc(cTitle) + '»' : ', lo has completado') + '!</div></div>';
@@ -1535,6 +1556,7 @@
       content.innerHTML = sHtml;
       var sExitBtn = content.querySelector('#me-btn-exit');
       if (sExitBtn) sExitBtn.addEventListener('click', requestExit);
+      wireGotoButtons(content);
       if (!incomplete) celebrate();
       return;
     }
@@ -1588,17 +1610,7 @@
     if (retryBtn) retryBtn.addEventListener('click', retryCourse);
     var exitBtn = content.querySelector('#me-btn-exit');
     if (exitBtn) exitBtn.addEventListener('click', requestExit);
-    // Saltar a una actividad pendiente sin cerrar el intento: navegar hacia
-    // atrás en SCREENS siempre está permitido (canNavigateTo), sea cual sea el
-    // modo de navegación del curso.
-    content.querySelectorAll('.me-pr-goto').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var idx = parseInt(btn.getAttribute('data-idx'), 10);
-        if (isNaN(idx) || idx < 0) return;
-        if (canNavigateTo(idx)) goTo(idx, false, true);
-        else A11Y.announce('Esa pantalla aún no está disponible.');
-      });
-    });
+    wireGotoButtons(content);
 
     // Refuerzo del logro: la nota sube animada y, si está APTO, confeti (una
     // vez por sesión). Con prefers-reduced-motion no se anima nada.
@@ -1657,6 +1669,20 @@
       '<button class="me-acc-head" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="' + id + '">' +
       '<span class="me-acc-title">' + esc(title) + '</span></button>' +
       '<div class="me-acc-body" id="' + id + '" role="region"' + (open ? '' : ' hidden') + '>' + inner + '</div></div>';
+  }
+  // Saltar a una pantalla/actividad pendiente sin cerrar el intento: navegar
+  // hacia atrás en SCREENS siempre está permitido (canNavigateTo), sea cual
+  // sea el modo de navegación del curso. Compartido por el desglose de
+  // calificaciones (evaluation) y la lista de pantallas pendientes (screens).
+  function wireGotoButtons(root) {
+    root.querySelectorAll('.me-pr-goto').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = parseInt(btn.getAttribute('data-idx'), 10);
+        if (isNaN(idx) || idx < 0) return;
+        if (canNavigateTo(idx)) goTo(idx, false, true);
+        else A11Y.announce('Esa pantalla aún no está disponible.');
+      });
+    });
   }
   function wireFolds(root) {
     root.querySelectorAll('.me-fold > .me-acc-head').forEach(function (head) {

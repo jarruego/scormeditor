@@ -34,7 +34,11 @@ y luego decide el `lesson_status` según `rules.completion_mode`:
   La nota se sigue calculando y enviando al LMS (`SCORM.setScore`, por si quiere usarla),
   pero **no se muestra**: `renderResults` la sustituye por un mensaje mínimo (⚠ incompleto
   / ✔ enhorabuena) sin desglose ni Reintentar — ver «Salir y Reintentar en Resultados» más
-  abajo. El mensaje de enhorabuena usa `COURSE.course.title` («has completado «Título»»)
+  abajo. Si está incompleto, en vez de desglose se lista qué **pantallas requeridas** faltan
+  por visitar (`STATE.visited`), con acceso directo (`wireGotoButtons`, el mismo helper que
+  usan los «Ir a la actividad →» del modo `evaluation`) — normalmente no se llega aquí sin
+  haberlas visto (`screenSatisfied` lo exige en Vista alumno), pero puede pasar en modo autor
+  o con navegación libre. El mensaje de enhorabuena usa `COURSE.course.title` («has completado «Título»»)
   en vez de la palabra «curso»: un SCORM puede representar un curso completo, un módulo, una
   unidad o un tema (invariante de `CLAUDE.md`), y el título es lo único universal que lo
   nombra; sin título cae a «lo has completado». `finalLeave` (más abajo) tampoco retiene al
