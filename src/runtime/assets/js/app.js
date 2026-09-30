@@ -1517,16 +1517,21 @@
     var incomplete = status === 'incomplete';
 
     // Modo «screens»: la nota no decide nada, así que no tiene sentido mostrarla
-    // como resumen — solo si el alumno ha terminado (o le falta) y Salir.
+    // como resumen — solo si el alumno ha terminado (o le falta) y Salir. El
+    // mensaje usa el título del propio paquete en vez de «el curso»: un SCORM
+    // puede ser un curso completo, un módulo suelto, una unidad o un tema (ver
+    // invariante en CLAUDE.md), y el título es lo único universal que lo nombra.
     if ((rules.completion_mode || 'evaluation') === 'screens') {
+      var cTitle = ((COURSE.course && COURSE.course.title) || '').trim();
       var sHtml = '<article class="me-screen me-screen-results"><h1>Resultados</h1>';
       if (incomplete) {
-        sHtml += '<div class="me-result-hero is-warn"><div class="me-result-state">⚠ Curso incompleto</div></div>' +
-          '<p class="me-instructions">Completa todas las pantallas requeridas para terminar el curso.</p>';
+        sHtml += '<div class="me-result-hero is-warn"><div class="me-result-state">⚠ Aún no has terminado</div></div>' +
+          '<p class="me-instructions">Completa todas las pantallas requeridas para terminarlo.</p>';
       } else {
-        sHtml += '<div class="me-result-hero is-ok"><div class="me-result-state">✔ ¡Enhorabuena, has completado el curso!</div></div>';
+        sHtml += '<div class="me-result-hero is-ok"><div class="me-result-state">✔ ¡Enhorabuena' +
+          (cTitle ? ', has completado «' + esc(cTitle) + '»' : ', lo has completado') + '!</div></div>';
       }
-      sHtml += '<div class="me-result-actions"><button type="button" class="me-btn" id="me-btn-exit">Salir del curso</button></div></article>';
+      sHtml += '<div class="me-result-actions"><button type="button" class="me-btn" id="me-btn-exit">Salir</button></div></article>';
       content.innerHTML = sHtml;
       var sExitBtn = content.querySelector('#me-btn-exit');
       if (sExitBtn) sExitBtn.addEventListener('click', requestExit);

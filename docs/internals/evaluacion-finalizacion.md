@@ -34,8 +34,11 @@ y luego decide el `lesson_status` según `rules.completion_mode`:
   La nota se sigue calculando y enviando al LMS (`SCORM.setScore`, por si quiere usarla),
   pero **no se muestra**: `renderResults` la sustituye por un mensaje mínimo (⚠ incompleto
   / ✔ enhorabuena) sin desglose ni Reintentar — ver «Salir y Reintentar en Resultados» más
-  abajo. `finalLeave` (más abajo) tampoco retiene al alumno en el test final aunque
-  suspenda con intentos restantes.
+  abajo. El mensaje de enhorabuena usa `COURSE.course.title` («has completado «Título»»)
+  en vez de la palabra «curso»: un SCORM puede representar un curso completo, un módulo, una
+  unidad o un tema (invariante de `CLAUDE.md`), y el título es lo único universal que lo
+  nombra; sin título cae a «lo has completado». `finalLeave` (más abajo) tampoco retiene al
+  alumno en el test final aunque suspenda con intentos restantes.
 
 - `mastery_score`/`masteryscore` van al manifiesto (`src/scorm/manifest.ts`);
   `rules.min_score` es el umbral APTO en el runtime.

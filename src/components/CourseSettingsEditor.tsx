@@ -292,8 +292,9 @@ export function CourseSettingsSection() {
         {r.completion_mode === 'screens' && (
           <p className="ed-hint">
             El curso se completa en cuanto el alumno llega al final (según el % de pantallas de
-            arriba), sin importar si acierta las actividades ni la nota del test. La nota y el
-            APTO/NO APTO se siguen calculando y mostrando en Resultados (informativos), y el test
+            arriba), sin importar si acierta las actividades ni la nota del test. La pantalla de
+            Resultados no muestra nota ni APTO/NO APTO: solo un mensaje de enhorabuena (o de que
+            falta terminar) y salir — la nota se sigue calculando y enviando al LMS, y el test
             final ya no retiene al alumno si suspende con intentos restantes.
           </p>
         )}
