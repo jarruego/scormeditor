@@ -18,12 +18,17 @@ const urlCache = new Map<string, string>() // path:size:kbps -> blob url
  *
  * Mientras una ruta se comprime por primera vez, se omite del resultado: el
  * llamante debe usar la URL del asset ORIGINAL como alternativa mientras
- * tanto (nunca se bloquea la reproducción esperando). Se publican los
- * resultados de uno en uno conforme van terminando (no espera a que TODOS
- * los audios del curso estén listos) — puede causar que la vista previa se
- * recargue más de una vez justo después de generar/cambiar varios audios de
- * golpe; una vez cada archivo está en caché, las siguientes veces es
- * instantáneo.
+ * tanto (nunca se bloquea la reproducción esperando).
+ *
+ * **Publica en UN SOLO bloque al terminar con TODAS las rutas, nunca una por
+ * una** (bug ya corregido: publicar de una en una generaba un nuevo objeto
+ * de resultado por archivo, y el llamante lo usa para reconstruir el `srcDoc`
+ * del iframe de Vista estudiante — cada publicación recargaba el iframe
+ * entero, así que un curso con N audios narrados producía N recargas
+ * seguidas, percibido como «no para de refrescarse»). Mientras se comprime
+ * un curso entero, Vista estudiante sigue mostrando el audio original (sin
+ * recargar) hasta que TODO está listo; a partir de ahí, con todo en caché,
+ * sucesivas aperturas son instantáneas y sin recargas de más.
  */
 export function useCompressedAudioUrls(
   assets: AssetMap,
@@ -56,13 +61,15 @@ export function useCompressedAudioUrls(
           }
         }
         next[path] = url
-        if (seq !== seqRef.current) return
-        setUrls((prev) => ({ ...prev, [path]: url! }))
         // Cede el hilo entre archivo y archivo para no congelar la UI mientras
         // se comprime un curso entero (la codificación en sí, dentro de un
-        // mismo archivo, sí es un bloque síncrono).
+        // mismo archivo, sí es un bloque síncrono) — pero SIN publicar a
+        // React todavía: eso es lo que antes recargaba el iframe una vez por
+        // archivo (ver comentario de la función).
         await new Promise((r) => setTimeout(r, 0))
       }
+      if (seq !== seqRef.current) return
+      setUrls(next)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathsKey, assets, enabled, kbps])
