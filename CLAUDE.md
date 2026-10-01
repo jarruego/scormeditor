@@ -63,7 +63,8 @@ Lee el que corresponda al tocar esa área:
   (Realtime + respaldo por sondeo) y bloqueo de edición (blando de servidor + estricto de
   cliente, «tomar el control»). Migraciones SQL (aplicación manual, sin CLI enlazado).
 - `tts-narracion.md` — transcripción, `audio_src`, generación TTS (panel y por pantalla).
-- `informes-validacion.md` — `validators.ts` (errores/avisos) y el informe (`report.ts`).
+- `informes-validacion.md` — `validators.ts` (errores/avisos), el informe (`report.ts`) y
+  la duración estimada del curso (`estimateDuration.ts`, chip de Toolbar).
 - `ingesta-gpt.md` — el GPT generador y los **9 docs de conocimiento** de `docs/gpt/` (los
   que se suben a ChatGPT), la invariante de ingesta, los criterios de contenido acordados,
   las **marcas de autoría** (`{{alias}}…{{/alias}}`) con las que el propio documento
@@ -77,8 +78,9 @@ Lee el que corresponda al tocar esa área:
 ### Flujos típicos (qué leer según la tarea)
 - **Añadir/cambiar un tipo de interacción** → `interacciones.md` +
   `editor-pantallas.md` (catálogo `interactionRecipes`) + `informes-validacion.md`
-  (validadores) + `../suspend-data.md` (codec compacto del tipo en `state_codec.js`,
-  `TYPE_CODECS`) + `ingesta-gpt.md` si cambia el contrato + actualizar el proyecto demo.
+  (validadores + estimador en `EVALUABLE` de `estimateDuration.ts`) + `../suspend-data.md`
+  (codec compacto del tipo en `state_codec.js`, `TYPE_CODECS`) + `ingesta-gpt.md` si cambia
+  el contrato + actualizar el proyecto demo.
 - **Progreso, reanudación o tamaño de `suspend_data`** → `../suspend-data.md`
   (+ `evaluacion-finalizacion.md` si toca nota/gating, porque leen el mismo `STATE`).
 - **UX del editor** (árbol, formularios, modales) → `editor-pantallas.md`; añade

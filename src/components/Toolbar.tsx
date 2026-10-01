@@ -3,7 +3,7 @@ import { useCourseStore } from '../store/courseStore'
 import { downloadScorm } from '../export/exportScorm'
 import { getStateCodec } from '../scorm/stateCodec'
 import { SuspendSizeIndicator } from './SuspendSizeIndicator'
-import { NarrationDurationIndicator } from './NarrationDurationIndicator'
+import { CourseTimeIndicator } from './CourseTimeIndicator'
 import { validateCourse } from '../validation/validators'
 import {
   isFsSupported,
@@ -302,7 +302,7 @@ export function Toolbar() {
 
       <div className="ed-toolbar-actions">
         <SuspendSizeIndicator />
-        <NarrationDurationIndicator />
+        <CourseTimeIndicator />
         {isCloudConfigured() && (
           <button
             className={`ed-session-chip ${cloudSession ? 'is-connected' : ''}`}

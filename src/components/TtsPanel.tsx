@@ -7,6 +7,7 @@ import {
   getTtsConfig,
   listNarratable,
   listNarratableItems,
+  listNarrationAudioPaths,
   modelsFor,
   providerDefaults,
   PROVIDERS,
@@ -19,6 +20,8 @@ import {
   type TtsConfig,
   type TtsProvider,
 } from '../tts/tts'
+import { useDurationSum } from '../media/useDurationSum'
+import { formatEstimatedDuration } from '../report/estimateDuration'
 import { Icon } from './Icon'
 
 /**
@@ -74,6 +77,13 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
       itemsMissingAudio: items.filter((it) => !it.hasAudio).length,
     }
   }, [course])
+
+  // Duración total de TODO el audio de narración ya generado (pantalla +
+  // ítems/zonas), orientativa para hacerse una idea del tiempo de escucha —
+  // mide solo metadatos (nunca reproduce nada), ver `useDurationSum`.
+  const audioPaths = useMemo(() => listNarrationAudioPaths(), [course])
+  const audioDuration = useDurationSum(audioPaths, 'audio')
+  const audioDurationTotal = Object.values(audioDuration.durations).reduce((a, b) => a + b, 0)
 
   const willGenerate = onlyMissing
     ? stats.missingAudio + stats.itemsMissingAudio
@@ -325,6 +335,10 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
                 {' '}Además, {stats.itemsTotal} ítem{stats.itemsTotal === 1 ? '' : 's'} de interacciones revelables
                 (accordion/tabs/flip_cards/timeline/image_cards/flashcards)
                 {' '}— {stats.itemsMissingAudio} sin audio propio todavía.
+              </>}
+              {audioPaths.length > 0 && <>
+                {' '}Duración total del audio generado: {audioDuration.busy ? 'calculando…' : `~${formatEstimatedDuration(audioDurationTotal)}`}
+                {audioDuration.unreadable > 0 && ` (${audioDuration.unreadable} archivo(s) no se pudieron medir)`}.
               </>}
             </p>
 

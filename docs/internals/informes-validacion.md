@@ -108,3 +108,48 @@ Ese modelo alimenta **dos renderizadores** (única fuente):
 - `generateReportMarkdown` / `generateReportHtml`: exportaciones (descarga MD/HTML e
   Imprimir/PDF), sin enlaces. Las celdas pasan por `mdCell()` (sustituye `|` por `¦` y
   aplana saltos de línea) porque el conversor MD→HTML propio parte las filas por `|`.
+
+## Duración estimada del curso (`src/report/estimateDuration.ts`, chip de Toolbar)
+`CourseTimeIndicator` (chip «Duración estimada: ~X» junto a `SuspendSizeIndicator` en la
+Toolbar, visible siempre y creciendo solo al añadir pantallas) da una cifra ORIENTATIVA de
+lo que le llevaría a un alumno completar el curso ENTERO: lectura de texto + hacer cada
+actividad (según su tipo y tamaño) + vídeos + audio de locución. No es una medición real
+(no hay telemetría de alumnos) ni confundir con «Duración total del audio generado» del
+panel de Narración (esa es solo el audio; esta es todo el curso) — son heurísticas de
+diseño instruccional pensadas para hacerse una idea mientras se monta el curso, no una
+cifra exacta a prometer al cliente.
+
+- **Lectura**: `READING_WPM = 130` palabras/minuto (más lenta que la lectura de ocio
+  ~200-250 ppm: heurística habitual en diseño instruccional para contenido que hay que
+  retener, no solo pasar la vista). Se aplica al título, `student_text`, y al enunciado +
+  instrucciones de la interacción (`inlinePlain`/`plainText`, reutilizados de
+  `buildTranscript.ts` — mismo criterio de «texto legible» que la narración).
+- **Por tipo de interacción** (`EVALUABLE` en `estimateDuration.ts`): tabla BASE + POR
+  UNIDAD (opción/paso/palabra/zona/pregunta…) por tipo evaluable — cubre orientarse en la
+  actividad más leer y manipular cada unidad (p. ej. `single_choice`: 5 s + 6 s por
+  opción; `crossword`: 15 s + 16 s por palabra). Los tipos **informativos** no revelables
+  (`before_after`/`case_practice`/`scenario_decision`) reutilizan `interactionPlain()` (el
+  mismo texto que se narra) más un margen por tipo — `case_practice` lleva el margen más
+  alto (90 s): el alumno piensa/escribe en papel antes de autoevaluarse (ver
+  `interacciones.md`). Los **revelables** (accordion/tabs/flip_cards/timeline/image_cards/
+  flashcards) usan `itemsOf()` para sumar el texto REAL de cada ítem (label + cuerpo, que
+  `interactionPlain` deja fuera a propósito) más un pequeño margen de revelado por ítem.
+  `html_embed` no es estimable (contenido a medida): tiempo fijo (`HTML_EMBED_SECONDS`).
+- **Vídeo**: de archivo (`visual_resource` o `config.src`/`config.youtube` de la
+  interacción `video`), duración REAL vía sondeo de metadatos (ver más abajo); de YouTube,
+  duración FIJA asumida (`YOUTUBE_DEFAULT_SECONDS`, 4 min) — el editor es una SPA sin
+  backend (ver `CLAUDE.md`) y no hay forma de conocer la real sin una llamada a una API
+  externa con clave. La interacción `video` suma además sus preguntas de pausa.
+- **Audio de locución**: si la pantalla tiene `audio_src`, su duración REAL **sustituye**
+  (no se suma a) el tiempo de lectura de esa pantalla — se escuchan a la vez que se mira,
+  no una cosa detrás de otra (`Math.max(textSeconds, audioSeconds)` en `CourseTimeIndicator`,
+  no al revés: si el audio es más corto que el texto, manda el texto, no se acorta la
+  estimación).
+- **Partido en síncrono + async**, igual patrón que el resto de agregados con archivos:
+  `estimateScreensSync()` es puro (texto + heurística por tipo + YouTube fijo, sin leer
+  ningún archivo); la duración real de audio/vídeo de archivo la miden `CourseTimeIndicator`
+  y `TtsPanel` con el hook compartido `useDurationSum()` (`src/media/useDurationSum.ts`,
+  sobre `probeDuration()` en `src/media/probeDuration.ts` — mide solo metadatos, nunca
+  reproduce, con caché por ruta+tamaño y tope de 8 s por archivo). Un archivo que no se
+  pueda medir se descarta de la suma (no bloquea el resto) y el tooltip del chip avisa de
+  cuántos quedaron fuera.

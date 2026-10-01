@@ -80,8 +80,12 @@ const CALLOUT_LABELS: Record<string, string> = {
   case: 'Caso práctico',
 }
 
-/** Quita las marcas inline del markdown ligero (negrita, cursiva, enlaces). */
-function inlinePlain(s: string): string {
+/** Quita las marcas inline del markdown ligero (negrita, cursiva, enlaces).
+ *  Exportada además de para uso interno: la reutiliza `estimateDuration.ts`
+ *  para contar palabras de `title`/`prompt`/`instructions` (texto siempre
+ *  corto, en una sola línea — a diferencia de `plainText`, no hace falta
+ *  tratar callouts ni saltos de línea). */
+export function inlinePlain(s: string): string {
   return String(s || '')
     // Imágenes ![alt](ruta): no se narran (el alt describe, no cuenta).
     .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
@@ -127,8 +131,14 @@ export function plainText(md: string): string {
   return out.join('\n')
 }
 
-/** Contenido hablable de una interacción informativa. */
-function interactionPlain(it: Interaction): string {
+/** Contenido hablable de una interacción informativa. Exportada además de para
+ *  `buildTranscript()`: la reutiliza `estimateDuration.ts` como «texto legible»
+ *  de los tipos informativos NO revelables (mismo criterio: para esos tipos no
+ *  hay nada oculto tras un gesto, así que el tiempo de lectura es el mismo
+ *  texto que se narra). Los revelables NO la usan para estimar tiempo —esta
+ *  función solo da el índice de etiquetas, no el cuerpo oculto de cada ítem—,
+ *  usan `itemsOf()` para contar también lo que el alumno lee al revelar. */
+export function interactionPlain(it: Interaction): string {
   const parts: string[] = []
   const push = (s?: string) => {
     const t = inlinePlain(s || '')
