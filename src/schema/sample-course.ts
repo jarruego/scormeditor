@@ -1801,7 +1801,7 @@ export const sampleCourse: Course = {
                 "id": "s501_i",
                 "type": "word_search",
                 "prompt": "Encuentra estas palabras del editor",
-                "instructions": "",
+                "instructions": "Toca la primera letra de una palabra de la lista y luego su última letra. Pueden estar en horizontal, vertical o diagonal, y leerse del derecho o del revés.",
                 "options": [],
                 "config": {
                   "words": [
@@ -1865,7 +1865,7 @@ export const sampleCourse: Course = {
                 "id": "s502_i",
                 "type": "crossword",
                 "prompt": "",
-                "instructions": "",
+                "instructions": "Cada casilla numerada es el inicio de una palabra: busca su número en las pistas (Horizontales o Verticales) y escribe la palabra letra a letra — al escribir, el cursor avanza solo a la siguiente casilla. Cuando hayas rellenado todo el crucigrama, pulsa Comprobar.",
                 "options": [],
                 "config": {
                   "entries": [
@@ -1937,7 +1937,7 @@ export const sampleCourse: Course = {
                 "id": "s503_i",
                 "type": "az_quiz",
                 "prompt": "",
-                "instructions": "",
+                "instructions": "Vas a responder una pregunta por cada letra, en orden: la pista indica por qué letra debe empezar tu respuesta. Escribe tu respuesta y pulsa Enter (o «Responder»); si no la sabes, pulsa «Pasapalabra» y volverá a preguntarse al final.",
                 "options": [],
                 "config": {
                   "items": [

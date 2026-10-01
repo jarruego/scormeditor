@@ -318,6 +318,14 @@ para restaurar desde `suspend_data`). Inspirados en el catálogo de eXeLearning.
   `.is-right`/`.is-wrong` (una casilla de cruce solo va en verde si TODAS sus palabras
   están bien). Estado `{values: {'r,c': letra}, attempts, correct}`. Validadores:
   `CW_EMPTY`, `CW_FEW` (1 palabra), `CW_INCOMPLETE`.
+  **Autoavance**: al escribir una letra, el foco salta solo a la siguiente casilla de la
+  palabra activa (y Retroceso en una casilla vacía vuelve a la anterior, borrándola) — sin
+  esto había que clicar cada casilla una a una. `cellDir` (por casilla, calculado tras la
+  numeración) dice qué dirección(es) pasan por ella; `curDir` es la dirección activa
+  (`across`/`down`, módulo del factory): por teclado (Tab) o por el propio autoavance se
+  mantiene mientras la casilla la admita; en una casilla de **cruce** (admite las dos),
+  clicarla dos veces seguidas (mismo `data-k` que el click anterior) alterna la dirección,
+  igual que en un crucigrama de periódico.
 - **`hidden_image`** (evaluable, autovalidante): `config {image, alt, questions}` (mismas
   preguntas que `video`). La imagen se cubre con 12 losetas; cada **acierto** destapa su
   parte (orden de revelado aleatorio determinista) y al responder todas se desvela

@@ -304,7 +304,8 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: true,
     supportsAttempts: false,
     defaultPrompt: 'Encuentra las palabras ocultas.',
-    defaultInstructions: 'Marca la primera y la última letra de cada palabra.',
+    defaultInstructions: 'Toca la primera letra de una palabra de la lista y luego su última letra. '
+      + 'Pueden estar en horizontal, vertical o diagonal, y leerse del derecho o del revés.',
   },
   {
     type: 'crossword',
@@ -314,7 +315,9 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: true,
     supportsAttempts: true,
     defaultPrompt: 'Completa el crucigrama a partir de las pistas.',
-    defaultInstructions: 'Escribe una letra en cada casilla y pulsa Comprobar.',
+    defaultInstructions: 'Cada casilla numerada es el inicio de una palabra: busca su número en las pistas '
+      + '(Horizontales o Verticales) y escribe la palabra letra a letra — al escribir, el cursor avanza solo a '
+      + 'la siguiente casilla. Cuando hayas rellenado todo el crucigrama, pulsa Comprobar.',
   },
   {
     type: 'az_quiz',
@@ -324,7 +327,9 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: true,
     supportsAttempts: false,
     defaultPrompt: 'Responde una definición por cada letra.',
-    defaultInstructions: 'Escribe tu respuesta y pulsa Enter; si no la sabes, pasa a la siguiente.',
+    defaultInstructions: 'Vas a responder una pregunta por cada letra, en orden: la pista indica por qué letra '
+      + 'debe empezar tu respuesta. Escribe tu respuesta y pulsa Enter (o «Responder»); si no la sabes, pulsa '
+      + '«Pasapalabra» y volverá a preguntarse al final.',
   },
   {
     type: 'hidden_image',

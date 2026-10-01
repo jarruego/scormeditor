@@ -1732,7 +1732,11 @@
   // --- 20. Crucigrama (crossword) ----------------------------------------------
   // config.entries: [{ word, clue }]. Evaluable con Comprobar + intentos (como
   // fill_blanks). El layout se autocalcula con cruces, determinista por id; las
-  // palabras sin encaje se descartan (nunca una pista sin casillas).
+  // palabras sin encaje se descartan (nunca una pista sin casillas). Autoavance:
+  // escribir una letra salta solo a la siguiente casilla de la palabra activa
+  // (Retroceso en una casilla vacía vuelve a la anterior); en una casilla de
+  // cruce, clicarla dos veces seguidas cambia de dirección (across/down) — ver
+  // `cellDir`/`curDir` más abajo.
   register('crossword', function (el, data, ctx) {
     var entries = ((data.config || {}).entries || []).map(function (en) {
       // Solo letras: normLetters conserva dígitos y espacios, aquí sobran.
@@ -1813,6 +1817,17 @@
       p.num = numAt[key];
     });
 
+    // Qué dirección(es) pasan por cada casilla (una casilla de cruce admite
+    // las dos) — para saber hacia dónde saltar sola al escribir una letra.
+    var cellDir = {};
+    placed.forEach(function (p) {
+      cellsOf(p.word, p.r, p.c, p.dr, p.dc).forEach(function (rc) {
+        var k = rc[0] + ',' + rc[1];
+        if (!cellDir[k]) cellDir[k] = { across: false, down: false };
+        if (p.dc === 1) cellDir[k].across = true; else cellDir[k].down = true;
+      });
+    });
+
     var values = (ctx.state && ctx.state.values) || {}; // 'r,c' -> letra
     var maxAtt = attemptsOf(data);
 
@@ -1845,12 +1860,60 @@
     var refreshCheck = wireCheck(el, function () {
       return inputs.every(function (inp) { return normLetters(inp.value).length === 1; });
     });
+
+    // Autoavance: al escribir una letra, el foco salta solo a la siguiente
+    // casilla de la palabra que se está rellenando (y Retroceso en una casilla
+    // ya vacía vuelve a la anterior) — así no hay que clicar cada casilla una
+    // a una. `curDir` es la dirección activa («across»/«down»); una casilla de
+    // cruce (pasan las dos palabras) la cambia al clicarla dos veces seguidas,
+    // igual que en un crucigrama de periódico. Por teclado (Tab, o el salto
+    // automático) se mantiene la dirección mientras la casilla la admita.
+    var curDir = 'across';
+    var lastClickedKey = null;
+    function dirsOf(k) { return cellDir[k] || { across: false, down: false }; }
+    function neighborKey(k, dir, delta) {
+      var rc = k.split(',').map(Number);
+      if (dir === 'across') rc[1] += delta; else rc[0] += delta;
+      return rc[0] + ',' + rc[1];
+    }
+    function cellAt(k) { return el.querySelector('.me-cw-cell[data-k="' + k + '"]'); }
+    el.addEventListener('focusin', function (e) {
+      var inp = e.target.closest('.me-cw-cell');
+      if (!inp) return;
+      var d = dirsOf(inp.getAttribute('data-k'));
+      if (!d[curDir]) curDir = d.across ? 'across' : 'down';
+    });
+    el.addEventListener('click', function (e) {
+      var inp = e.target.closest('.me-cw-cell');
+      if (!inp) return;
+      var k = inp.getAttribute('data-k');
+      var d = dirsOf(k);
+      if (k === lastClickedKey && d.across && d.down) curDir = curDir === 'across' ? 'down' : 'across';
+      lastClickedKey = k;
+    });
     el.addEventListener('input', function (e) {
       var inp = e.target.closest('.me-cw-cell');
       if (!inp || done) return;
       var ch = normLetters(inp.value).slice(-1);
       inp.value = ch;
       refreshCheck(true);
+      if (ch) {
+        var next = cellAt(neighborKey(inp.getAttribute('data-k'), curDir, 1));
+        if (next) { next.focus(); next.select(); }
+      }
+    });
+    el.addEventListener('keydown', function (e) {
+      if (e.key !== 'Backspace' || done) return;
+      var inp = e.target.closest('.me-cw-cell');
+      if (!inp || inp.value) return; // solo si la casilla ya estaba vacía
+      var prev = cellAt(neighborKey(inp.getAttribute('data-k'), curDir, -1));
+      if (prev) {
+        e.preventDefault();
+        prev.value = '';
+        prev.focus();
+        prev.select();
+        refreshCheck(true);
+      }
     });
 
     function wordOk(p) {
