@@ -182,9 +182,14 @@ export function itemsOf(it: Interaction): NarratableItem[] {
   })
 }
 
-/** Transcripción completa de la pantalla (título + texto + interacción informativa). */
+/** Transcripción completa de la pantalla (título + texto + interacción informativa).
+ *  El título va siempre primero, como haría un narrador real anunciando la
+ *  pantalla — es lo único que garantiza que una portada de módulo/unidad (solo
+ *  título, sin `student_text`) tenga algo que narrar en vez de quedar muda. */
 export function buildTranscript(screen: Screen): string {
   const parts: string[] = []
+  const title = inlinePlain(screen.title)
+  if (title) parts.push(/[.!?…]$/.test(title) ? title : title + '.')
   const body = plainText(screen.student_text)
   if (body) parts.push(body)
   if (screen.interaction && INFORMATIVE.has(screen.interaction.type)) {

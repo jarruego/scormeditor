@@ -9,11 +9,16 @@ la **base de la narración**. En el runtime se muestra como **botón fuera del c
 lo que no esté en `transcript` no aparece ahí (regla de contenido del GPT).
 
 ### Regenerar desde el contenido
-`buildTranscript(screen)` (`src/tts/buildTranscript.ts`) reconstruye la transcripción a
-partir de `student_text` (markdown ligero → texto plano: quita `**`/`*`/enlaces, aplana
-listas, y sustituye los fences `:::` por la **etiqueta hablada** del callout — mismas
-etiquetas que `renderer.js`, mantener en sync) **más el enunciado (`prompt`) de la
-interacción si es informativa**. Las evaluables se excluyen: no se leen
+`buildTranscript(screen)` (`src/tts/buildTranscript.ts`) reconstruye la transcripción
+anteponiendo SIEMPRE el **título de la pantalla** (primera frase, como anunciaría un
+narrador real) y a partir de `student_text` (markdown ligero → texto plano: quita
+`**`/`*`/enlaces, aplana listas, y sustituye los fences `:::` por la **etiqueta hablada**
+del callout — mismas etiquetas que `renderer.js`, mantener en sync) **más el enunciado
+(`prompt`) de la interacción si es informativa**. El título es lo único que garantiza que
+una portada de módulo/unidad (solo título, sin `student_text`) tenga algo que narrar en
+vez de quedar muda — antes se omitía del todo y `buildTranscript` podía devolver vacío
+para esas pantallas, sin que ni siquiera apareciesen como «pendientes» en Validación.
+Las evaluables se excluyen: no se leen
 opciones/respuestas. `accordion`/`tabs`/`flip_cards`/`timeline`/`image_cards`/
 `flashcards` OCULTAN el CUERPO de cada ítem tras un gesto de revelado
 (desplegar/pestañear/girar/abrir): ese cuerpo NO entra en la transcripción general
