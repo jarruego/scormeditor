@@ -495,6 +495,40 @@ export function listNarrationAudioPaths(): string[] {
   return [...paths]
 }
 
+/** Prefijo del generador de ids por clave de `config` — mismo criterio que
+ *  `rid()` en `InteractionConfigEditor.tsx` (no se reutiliza literalmente esa
+ *  función porque vive en un componente de UI; el formato del id es lo único
+ *  que importa, nunca se parsea). */
+const ID_PREFIX: Record<string, string> = { items: 'it', cards: 'cd', milestones: 'ms', spots: 'sp' }
+
+/** Asegura que TODOS los ítems narrables de una interacción tienen un `id`
+ *  propio persistido, asignándoselo ya mismo si falta. Necesario antes de
+ *  generar en bloque: `itemsOf()` (buildTranscript.ts) da, a un ítem SIN
+ *  `id`, uno de usar y tirar (su posición en el array) solo para poder
+ *  listarlo/leer su texto — si se generase el audio con ese id efímero,
+ *  `applyItemAudio` nunca encontraría con qué ítem emparejarlo (compara por
+ *  `id` real) y el audio se perdería en silencio: se sintetiza (gasta la
+ *  llamada a la API) pero no se guarda, y la pantalla sigue «sin audio» para
+ *  siempre por mucho que se regenere. Los botones de audio por ítem del
+ *  editor (`InteractionConfigEditor.tsx`) ya se cubren solos con su propio
+ *  `ensureId`/`ensureIds`; esta es la misma protección para la generación
+ *  masiva de `generateAllItems`, que parte de `listNarratableItems()` y no
+ *  pasa por esos componentes. */
+function ensureItemIds(screenId: string, interactionId: string): void {
+  const st = useCourseStore.getState()
+  const screen = st.getScreen(screenId)
+  const it = screen?.interaction
+  if (!it || it.id !== interactionId) return
+  const key = itemsKeyOf(it.type)
+  if (!key) return
+  const cfgObj = (it.config || {}) as Record<string, any>
+  const list: any[] = Array.isArray(cfgObj[key]) ? cfgObj[key] : []
+  if (!list.length || list.every((raw) => typeof raw?.id === 'string' && raw.id)) return
+  const prefix = ID_PREFIX[key] || 'it'
+  const nextList = list.map((raw) => (raw?.id ? raw : { ...raw, id: `${prefix}-${Math.random().toString(36).slice(2, 7)}` }))
+  st.updateScreen(screenId, { interaction: { ...it, config: { ...cfgObj, [key]: nextList } } })
+}
+
 /** Guarda el audio de un ítem como asset y lo enlaza en `config.items[].audio_src`
  *  (o `cards`/`milestones` según el tipo). */
 function applyItemAudio(screenId: string, interactionId: string, itemId: string, blob: Blob, cfg: TtsConfig) {
@@ -587,11 +621,20 @@ export async function generateAll(opts: BulkOptions): Promise<BulkResult> {
 }
 
 /** Genera el audio de todos los ítems narrables (accordion/tabs/flip_cards/
- *  timeline/image_cards/flashcards) con texto, de todo el curso (secuencial).
- *  Mismo patrón que `generateAll` pero por ítem, no por pantalla. */
+ *  timeline/image_cards/flashcards, y zonas de hotspots) con texto, de todo
+ *  el curso (secuencial). Mismo patrón que `generateAll` pero por ítem, no
+ *  por pantalla. */
 export async function generateAllItems(opts: BulkOptions): Promise<BulkResult> {
   const cfg = getTtsConfig()
   if (!keyFor(cfg)) throw new Error('Falta la clave de API. Configúrala en «Narración por voz».')
+
+  // Primero, sanear ids que falten (ver `ensureItemIds`): si no, el audio de
+  // esos ítems se generaría y se perdería en silencio, sin quedar nunca
+  // guardado por mucho que se regenere — el síntoma es «siempre faltan los
+  // mismos N, aunque los genere».
+  for (const s of eachScreen()) {
+    if (s.interaction && itemsKeyOf(s.interaction.type)) ensureItemIds(s.id, s.interaction.id)
+  }
 
   const targets = listNarratableItems().filter((it) => it.hasText)
   const result: BulkResult = { done: 0, skipped: 0, errors: [] }

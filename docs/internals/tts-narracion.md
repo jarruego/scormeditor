@@ -152,14 +152,27 @@ un `single_choice`).
   (`items`/`cards`/`milestones`/`spots`) — única fuente de esa correspondencia, la
   reutilizan `tts.ts` y los validadores.
 - **Generación** (`src/tts/tts.ts`): `generateForItem(screenId, interactionId, itemId)`
-  sintetiza el texto del ítem y lo guarda en su `audio_src`; `listNarratableItems()` lista
-  todos los ítems narrables del curso con su estado (para contadores/validación);
-  `generateAllItems(opts)` los genera todos en bloque (mismo patrón que `generateAll` pero
-  por ítem). Botones en `InteractionConfigEditor.tsx`: uno por ítem («🔊 Generar/
-  Regenerar audio») y uno por interacción («🔊 Generar audios de ítem pendientes»); si el
-  ítem aún no tiene `id` se lo asigna en el momento. El panel masivo de Ajustes →
-  Narración (`TtsPanel.tsx`) encadena `generateAll` + `generateAllItems` sobre la misma
-  barra de progreso y el mismo botón — sí incluye los ítems (ver más abajo).
+  sintetiza el texto del ítem y lo guarda en su `audio_src` — `applyItemAudio()` lo
+  localiza buscando, en `config[key]`, el elemento cuyo `id` coincide con `itemId`.
+  `listNarratableItems()` lista todos los ítems narrables del curso con su estado (para
+  contadores/validación); `generateAllItems(opts)` los genera todos en bloque (mismo
+  patrón que `generateAll` pero por ítem). Botones en `InteractionConfigEditor.tsx`: uno
+  por ítem («🔊 Generar/Regenerar audio») y uno por interacción («🔊 Generar audios de
+  ítem pendientes»); si el ítem aún no tiene `id` se lo asigna en el momento (`ensureId`/
+  `ensureIds`, antes de generar). El panel masivo de Ajustes → Narración (`TtsPanel.tsx`)
+  encadena `generateAll` + `generateAllItems` sobre la misma barra de progreso y el mismo
+  botón — sí incluye los ítems (ver más abajo).
+  **Trampa ya corregida**: `itemsOf()` da, a un ítem SIN `id` propio (proyectos
+  importados del GPT o antiguos — el `id` nunca lo asigna el GPT), uno de usar y tirar
+  (su posición en el array) solo para poder listarlo/leer su texto. `generateAllItems()`
+  partía de ahí sin pasar por `ensureId`/`ensureIds` (eso solo lo hacían los botones del
+  editor): el audio se sintetizaba (gastando la llamada a la API) pero `applyItemAudio`
+  nunca encontraba un `id` real con el que emparejarlo, así que `audio_src` NUNCA se
+  guardaba — la pantalla seguía «sin audio» para siempre por mucho que se regenerase en
+  bloque. Por eso `generateAllItems()` ahora empieza con un paso `ensureItemIds()` sobre
+  todas las interacciones con ítems, que les asigna un `id` real y lo persiste ANTES de
+  listar los objetivos — mismo criterio que ya usaban los botones del editor, aplicado
+  también a la generación masiva.
 - **Runtime** (`interactions.js`): el audio (oculto, `<audio class="me-item-narration">`)
   vive dentro del cuerpo/cara que ya está oculta hasta el revelado. Suena **cada vez**
   que el ítem se abre/gira/activa (no solo la primera vez; sin control de «escuchar de
