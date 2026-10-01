@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { buildPreviewHtml } from '../preview/buildPreview'
 import type { AssetMap } from '../export/exportScorm'
+import { listNarrationAudioPaths } from '../tts/tts'
+import { useCompressedAudioUrls } from '../media/useCompressedAudioUrls'
 
 // Caché de blob URLs a nivel de MÓDULO (no ligada al ciclo de montaje del
 // componente): en desarrollo, React.StrictMode monta cada componente, ejecuta
@@ -44,7 +46,18 @@ export function StudentPreview() {
   const selectedScreenId = useCourseStore((s) => s.selectedScreenId)
   const selectScreen = useCourseStore((s) => s.selectScreen)
 
-  const assetUrls = useMemo(() => resolveAssetUrls(assets), [assets])
+  const baseAssetUrls = useMemo(() => resolveAssetUrls(assets), [assets])
+  // Audio de locución recomprimido (si `narration.compressAudio` está activo):
+  // misma caché que el export ZIP, así «lo que se oye en Vista estudiante es
+  // lo que se exporta» también vale para el audio comprimido. Se fusiona SOBRE
+  // las URLs originales (misma ruta de asset, sin renombrar — a diferencia del
+  // ZIP, aquí no hay extensión/Content-Type de por medio: es un blob URL con
+  // su propio `type`); mientras un archivo se comprime por primera vez, se oye
+  // el original, nunca se bloquea la reproducción.
+  const compressCfg = course.narration.compressAudio
+  const narrationPaths = useMemo(() => listNarrationAudioPaths(course), [course])
+  const compressedUrls = useCompressedAudioUrls(assets, narrationPaths, compressCfg.enabled, compressCfg.kbps)
+  const assetUrls = useMemo(() => ({ ...baseAssetUrls, ...compressedUrls }), [baseAssetUrls, compressedUrls])
 
   // Reconstruye la previsualización al cambiar el curso o las URLs de assets
   // La vista informa por postMessage de la diapositiva en la que se navega; así

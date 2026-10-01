@@ -471,6 +471,16 @@ export const Course = z.object({
       speed: z.number().default(1),
       instructions: z.string().default(''),
     }).default({}),
+    /** Recompresión del audio de locución en Vista estudiante y en el ZIP
+     *  exportado (nunca en el `.scormproj`: el audio fuente generado por TTS
+     *  se conserva siempre a su calidad original — ver `tts-narracion.md`,
+     *  «Compresión de audio de locución»). Pensada para voz hablada, no para
+     *  audio de contenido general. */
+    compressAudio: z.object({
+      enabled: z.boolean().default(true),
+      /** Bitrate de salida en kbps, mono. 64 = equilibrado (recomendado). */
+      kbps: z.number().default(64),
+    }).default({}),
   }).default({}),
   /** Rótulo por el que la UI del editor llama a `modules` (árbol, formularios…):
    *  un paquete SCORM puede representar un curso completo, un módulo, una unidad

@@ -21,6 +21,7 @@ import {
   type TtsProvider,
 } from '../tts/tts'
 import { useDurationSum } from '../media/useDurationSum'
+import { getCompressedAudio } from '../media/compressedAudioCache'
 import { formatEstimatedDuration } from '../report/estimateDuration'
 import { Icon } from './Icon'
 
@@ -84,6 +85,39 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
   const audioPaths = useMemo(() => listNarrationAudioPaths(), [course])
   const audioDuration = useDurationSum(audioPaths, 'audio')
   const audioDurationTotal = Object.values(audioDuration.durations).reduce((a, b) => a + b, 0)
+
+  // Compresión del audio de locución en Vista estudiante y en el ZIP exportado
+  // (el `.scormproj` conserva siempre el original — ver `estimateDuration.ts`
+  // y «Compresión de audio de locución» en tts-narracion.md).
+  const compressCfg = course.narration.compressAudio
+  const [compressBusy, setCompressBusy] = useState(false)
+  const [compressMsg, setCompressMsg] = useState<string | null>(null)
+  async function onCompressNow() {
+    setCompressMsg(null)
+    setCompressBusy(true)
+    try {
+      const assets = useCourseStore.getState().assets
+      let before = 0, after = 0, done = 0
+      for (const path of audioPaths) {
+        const val = assets[path]
+        if (val == null) continue
+        before += val instanceof Blob ? val.size : String(val).length
+        const compressed = await getCompressedAudio(path, val, compressCfg.kbps)
+        after += compressed.size
+        done++
+        // Cede el hilo entre archivo y archivo (ver useCompressedAudioUrls).
+        await new Promise((r) => setTimeout(r, 0))
+      }
+      if (!done) { setCompressMsg('No hay audio de locución que comprimir todavía.'); return }
+      const pct = before ? Math.round((1 - after / before) * 100) : 0
+      const fmtMb = (n: number) => (n / (1024 * 1024)).toFixed(1).replace('.', ',')
+      setCompressMsg(`✓ ${done} archivo(s): ${fmtMb(before)} MB → ${fmtMb(after)} MB (-${pct}%). Ya está en caché para Vista estudiante y el export.`)
+    } catch (e) {
+      setCompressMsg(`Error: ${(e as Error).message}`)
+    } finally {
+      setCompressBusy(false)
+    }
+  }
 
   const willGenerate = onlyMissing
     ? stats.missingAudio + stats.itemsMissingAudio
@@ -310,6 +344,47 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
               {testMsg && <span className="ed-tts-msg">{testMsg}</span>}
             </div>
           </fieldset>
+
+          {/* Oculto (no solo deshabilitado) si el curso no es narrado: a
+              diferencia de «Generar todos los audios» (ahí SÍ interesa
+              explicar por qué está deshabilitado, porque es como se empieza
+              a narrar un curso), comprimir solo tiene sentido una vez la
+              narración es cosa asentada del curso, no antes. */}
+          {audioPaths.length > 0 && !narrationOff && (
+            <fieldset className="ed-group">
+              <legend>Compresión del audio de locución</legend>
+              <label className="ed-check">
+                <input type="checkbox" checked={compressCfg.enabled}
+                  onChange={(e) => updateNarration({ compressAudio: { ...compressCfg, enabled: e.target.checked } })} />
+                <span>Comprimir el audio al exportar y en Vista estudiante (el proyecto conserva siempre el original a su calidad de generación)</span>
+              </label>
+              {compressCfg.enabled && (
+                <>
+                  <label className="ed-field">
+                    <span>Nivel de compresión</span>
+                    <select value={compressCfg.kbps}
+                      onChange={(e) => updateNarration({ compressAudio: { ...compressCfg, kbps: Number(e.target.value) } })}>
+                      <option value={64}>Equilibrado (64 kbps) — indistinguible del original para voz</option>
+                      <option value={48}>Agresivo (48 kbps) — clara, algo más áspera en consonantes</option>
+                      <option value={32}>Máximo (32 kbps) — inteligible, se nota la compresión</option>
+                    </select>
+                  </label>
+                  <p className="ed-hint">
+                    Se aplica a TODO el audio de locución, se haya generado hoy o hace meses — no hace falta
+                    regenerar nada al cambiar de nivel. «Comprimir ahora» solo adelanta el trabajo (y te dice
+                    cuánto se ahorra); si no lo pulsas, se comprime igualmente la primera vez que abras Vista
+                    estudiante o exportes.
+                  </p>
+                  <div className="ed-row">
+                    <button type="button" onClick={() => void onCompressNow()} disabled={compressBusy}>
+                      <Icon name="refresh" size={14} /> {compressBusy ? 'Comprimiendo…' : 'Comprimir ahora'}
+                    </button>
+                    {compressMsg && <span className="ed-tts-msg">{compressMsg}</span>}
+                  </div>
+                </>
+              )}
+            </fieldset>
+          )}
 
           <fieldset className="ed-group">
             <legend>Generar todos los audios</legend>

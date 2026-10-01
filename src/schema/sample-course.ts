@@ -59,6 +59,10 @@ export const sampleCourse: Course = {
       "format": "mp3",
       "speed": 1,
       "instructions": ""
+    },
+    "compressAudio": {
+      "enabled": true,
+      "kbps": 64
     }
   },
   "intro_screens": [

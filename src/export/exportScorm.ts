@@ -4,6 +4,10 @@ import { generateManifest, generateLomMetadata } from '../scorm/manifest'
 import { getRuntimeFiles } from '../scorm/runtimeAssets'
 import { collectAssetPaths } from '../schema/assetRefs'
 import { stripFlaggedForReview } from '../schema/review'
+import { allScreens } from '../schema/traverse'
+import { itemsKeyOf } from '../tts/buildTranscript'
+import { listNarrationAudioPaths } from '../tts/tts'
+import { getCompressedAudio } from '../media/compressedAudioCache'
 
 // `collectAssetPaths` vive en `../schema/assetRefs` (compartido con el store para
 // el borrado seguro de assets); se reexporta aquí por compatibilidad.
@@ -27,24 +31,69 @@ export async function buildScormZip({ course: courseWithDrafts, assets = {} }: E
   // 0) Pantallas marcadas «pendiente de revisión»: fuera del paquete real (la
   //    Vista estudiante sí las muestra, con borde rojo — excepción deliberada
   //    a la invariante «Vista estudiante = export», ver arquitectura-runtime.md
-  //    y CLAUDE.md). A partir de aquí, `course` es ya la versión sin ellas.
+  //    y CLAUDE.md). A partir de aquí, `course` es ya la versión sin ellas
+  //    (clon propio, independiente del store: se puede mutar sin más abajo).
   const course = stripFlaggedForReview(courseWithDrafts)
+
+  // 0.5) Audio de NARRACIÓN: se recomprime aquí si `narration.compressAudio`
+  //    está activo — el `.scormproj` conserva siempre el original a su
+  //    calidad de generación; lo que viaja en el ZIP es la copia comprimida
+  //    (ver «Compresión de audio de locución» en tts-narracion.md). El
+  //    resultado SIEMPRE es mp3 (el codificador solo sabe producir eso), así
+  //    que la ruta cambia de extensión — y con ella, toda referencia a ese
+  //    audio en `course` (pantalla o ítem), ANTES de serializar `course.json`
+  //    más abajo. Un fallo de compresión de un archivo concreto no aborta el
+  //    export: ese archivo viaja con su ruta y contenido originales.
+  const compressCfg = course.narration.compressAudio
+  const compressedAssets: Record<string, Blob> = {}
+  if (compressCfg.enabled) {
+    const pathRemap = new Map<string, string>()
+    for (const path of listNarrationAudioPaths(course)) {
+      const val = assets[path]
+      if (val == null) continue
+      try {
+        const compressed = await getCompressedAudio(path, val, compressCfg.kbps)
+        const newPath = path.replace(/\.[^./]+$/, '.mp3')
+        compressedAssets[newPath] = compressed
+        if (newPath !== path) pathRemap.set(path, newPath)
+      } catch {
+        // se exporta el original para este archivo en vez de romper el export
+      }
+    }
+    if (pathRemap.size) {
+      for (const s of allScreens(course)) {
+        const remapped = pathRemap.get(s.audio_src)
+        if (remapped) s.audio_src = remapped
+        const key = s.interaction ? itemsKeyOf(s.interaction.type) : undefined
+        if (key) {
+          const cfg = s.interaction!.config as Record<string, unknown>
+          const list = Array.isArray(cfg[key]) ? (cfg[key] as Record<string, unknown>[]) : null
+          list?.forEach((raw) => {
+            const r = pathRemap.get(raw.audio_src as string)
+            if (r) raw.audio_src = r
+          })
+        }
+      }
+    }
+  }
 
   // 1) Carcasa (HTML/CSS/JS plano, idéntica a la vista estudiante)
   for (const f of getRuntimeFiles()) {
     zip.file(f.path, f.content)
   }
 
-  // 2) Datos del curso
+  // 2) Datos del curso (con las rutas de audio ya reescritas, si procede)
   zip.file('data/course.json', JSON.stringify(course, null, 2))
 
   // 3) Assets de media (imágenes, vídeos, audios, VTT...). Solo los REFERENCIADOS
   //    por el curso: así los huérfanos (versiones antiguas, pantallas borradas…)
   //    no engordan el ZIP. Al filtrar antes de aquí, los assets exclusivos de una
-  //    pantalla en revisión tampoco viajan.
+  //    pantalla en revisión tampoco viajan. Los audios recomprimidos sustituyen
+  //    al original bajo su NUEVA ruta (`compressedAssets`); el original, bajo su
+  //    ruta vieja, ya no está referenciado por `course` y se descarta solo.
   const referenced = collectAssetPaths(course)
   const assetPaths: string[] = []
-  for (const [path, content] of Object.entries(assets)) {
+  for (const [path, content] of Object.entries({ ...assets, ...compressedAssets })) {
     if (!referenced.has(path)) continue
     zip.file(path, content as any)
     assetPaths.push(path)

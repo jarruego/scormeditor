@@ -109,7 +109,10 @@ Lee el que corresponda al tocar esa área:
 
 ## Convenciones del repo
 - Idioma de UI, comentarios y commits: **español** (con acentos correctos).
-- Sin dependencias nuevas salvo necesidad real (hoy: React, zustand, zod, JSZip, dnd-kit).
+- Sin dependencias nuevas salvo necesidad real (hoy: React, zustand, zod, JSZip, dnd-kit,
+  `@breezystack/lamejs` — codificador MP3 en JS puro, sin dependencias propias; necesario
+  porque el navegador sabe REPRODUCIR mp3 pero no CODIFICARLO, ver «Compresión de audio de
+  locución» en `tts-narracion.md`).
   Preferir soluciones ligeras y propias.
 - Verificar con `npm run build` (`tsc -b` + `vite build`) antes de dar por hecho un cambio.
 - Clases CSS de la carcasa con prefijo `me-`; clases del editor con prefijo `ed-`.

@@ -1,5 +1,5 @@
 import { useCourseStore } from '../store/courseStore'
-import type { Screen } from '../schema/course.schema'
+import type { Course, Screen } from '../schema/course.schema'
 import { allScreens } from '../schema/traverse'
 import { buildTranscript, contentHash, itemsOf, itemsKeyOf } from './buildTranscript'
 
@@ -479,12 +479,16 @@ export function listNarratableItems(): NarratableItemEntry[] {
 }
 
 /** Rutas de TODOS los audios de narración ya generados (de pantalla y de
- *  ítem/zona), sin duplicados — la usa `NarrationDurationIndicator` para sumar
- *  su duración total. No incluye audio visual (vídeo, `visual_resource` de
- *  tipo audio): solo narración. */
-export function listNarrationAudioPaths(): string[] {
+ *  ítem/zona), sin duplicados — la usan `TtsPanel` (suma de duración) y la
+ *  compresión de audio (`exportScorm.ts`/`StudentPreview.tsx`, ver
+ *  «Compresión de audio de locución» en `tts-narracion.md`). No incluye
+ *  audio visual (vídeo, `visual_resource` de tipo audio): solo narración.
+ *  Por defecto lee el curso en vivo del store; `exportScorm.ts` pasa su
+ *  propio `course` (tras `stripFlaggedForReview`) para no acoplarse al
+ *  store. */
+export function listNarrationAudioPaths(course?: Course): string[] {
   const paths = new Set<string>()
-  for (const s of eachScreen()) {
+  for (const s of (course ? allScreens(course) : eachScreen())) {
     if (s.audio_src.trim()) paths.add(s.audio_src.trim())
     if (s.interaction) {
       for (const item of itemsOf(s.interaction)) {

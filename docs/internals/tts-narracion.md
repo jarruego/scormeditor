@@ -251,6 +251,56 @@ estimada del curso para la parte de audio/vídeo de archivo real:
 - La frase solo aparece si hay algún audio de narración generado (nada que medir, nada que
   mostrar).
 
+## Compresión de audio de locución
+45 min de locución en `mp3` (el formato por defecto, el más compatible) pesan fácilmente
+40 MB — mucho para un paquete SCORM, cuando la voz hablada apenas pierde calidad perceptible
+muy por debajo del bitrate que usan los proveedores de TTS. `course.narration.compressAudio`
+(`{enabled, kbps}`, por defecto `{true, 64}`) recomprime el audio de locución a MP3 mono a
+un bitrate bajo — **64 kbps es prácticamente indistinguible del original para voz**; 48/32
+comprimen más a cambio de algo de aspereza (presets en `TtsPanel`, fieldset «Compresión del
+audio de locución» — oculto si el curso no es narrado o no tiene audio todavía).
+
+- **El `.scormproj` conserva SIEMPRE el audio original** a su calidad de generación —la
+  compresión nunca toca `assets` ni se guarda en el proyecto. Es una transformación que se
+  aplica SOLO al construir lo que de verdad consume el alumno: Vista estudiante y el ZIP
+  exportado, las dos igual (si una comprimiera y la otra no, dejaría de cumplirse «lo que se
+  ve en Vista estudiante es lo que se exporta», la invariante de `CLAUDE.md`). Cambiar el
+  nivel de compresión no exige regenerar nada: se aplica a TODO el audio existente, se haya
+  generado hoy o hace meses.
+- **Por qué hace falta una dependencia nueva**: el navegador sabe REPRODUCIR mp3 de serie
+  pero no CODIFICARLO — no hay `MediaRecorder` ni Web Audio nativo que produzca mp3. De ahí
+  `@breezystack/lamejs` (JS puro, cero dependencias propias): `compressToMp3()`
+  (`src/media/compressAudio.ts`) decodifica cualquier audio que el navegador entienda
+  (`AudioContext.decodeAudioData`), lo mezcla a mono (la locución no se beneficia de
+  estéreo) y lo codifica con `Mp3Encoder` al bitrate pedido.
+  - **Por qué no `opus`/`aac` recomprimidos en vez de mp3**: la salida tendría que seguir
+    siendo `mp3` para no reabrir el problema de compatibilidad de Safari/iOS con `opus`
+    (ver «TTS: generación del audio» más abajo) — comprimir manteniendo el formato más
+    compatible es justamente la ventaja frente a cambiar el formato de generación.
+- **Caché compartida** (`src/media/compressedAudioCache.ts`, `getCompressedAudio(path, val,
+  kbps)`): un `Promise<Blob>` por `ruta+tamaño+kbps`, para que el export ZIP y Vista
+  estudiante NUNCA compriman el mismo archivo dos veces — comprimir 45 min de locución no es
+  instantáneo. No cachea fallos (un archivo que no se pudo comprimir se reintenta la próxima
+  vez en vez de quedar atascado).
+- **Export ZIP** (`exportScorm.ts`): el resultado SIEMPRE es mp3, así que la ruta del asset
+  cambia de extensión (p. ej. `..._narracion.wav` → `..._narracion.mp3`) — y con ella, TODA
+  referencia a ese audio dentro de `course` (pantalla o ítem/zona), reescrita ANTES de
+  serializar `data/course.json` (si no, el `course.json` exportado apuntaría a una ruta que
+  ya no existe en el ZIP). Un fallo de compresión de un archivo concreto no aborta el
+  export: ese archivo viaja con su ruta y contenido originales, sin recomprimir.
+- **Vista estudiante** (`StudentPreview.tsx`, `useCompressedAudioUrls` en
+  `src/media/useCompressedAudioUrls.ts`): aquí NO hace falta renombrar nada — es un blob URL
+  con su propio `type` (`audio/mpeg`), no un archivo servido por extensión — así que la URL
+  comprimida sustituye a la del original bajo la MISMA clave (`screen.audio_src` tal cual).
+  Mientras un audio se comprime por primera vez se oye el original (nunca se bloquea la
+  reproducción); los resultados se publican de uno en uno conforme terminan, lo que puede
+  recargar la vista previa más de una vez justo después de generar/cambiar varios audios de
+  golpe — una vez en caché, instantáneo.
+- **Pensado para VOZ, no para audio de contenido general**: solo se aplica al audio de
+  *narración* (`listNarrationAudioPaths()`), nunca a un audio subido a mano como recurso
+  visual (`visual_resource` de tipo `audio`) ni a vídeo — ahí la pérdida de un bitrate tan
+  bajo sí se notaría.
+
 ## TTS (texto→voz): generación del audio
 Módulo `src/tts/tts.ts` + sección `NarrationSection` (`src/components/TtsPanel.tsx`),
 mostrada en su propia ventana `NarrationModal`, que abre la opción **Narración** del menú
