@@ -92,20 +92,24 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
   const compressCfg = course.narration.compressAudio
   const [compressBusy, setCompressBusy] = useState(false)
   const [compressMsg, setCompressMsg] = useState<string | null>(null)
+  const [compressProgress, setCompressProgress] = useState<{ index: number; total: number } | null>(null)
   async function onCompressNow() {
     setCompressMsg(null)
     setCompressBusy(true)
+    setCompressProgress({ index: 0, total: audioPaths.length })
     try {
       const assets = useCourseStore.getState().assets
       let before = 0, after = 0, done = 0
-      for (const path of audioPaths) {
-        const val = assets[path]
+      for (let i = 0; i < audioPaths.length; i++) {
+        const val = assets[audioPaths[i]]
+        setCompressProgress({ index: i + 1, total: audioPaths.length })
         if (val == null) continue
         before += val instanceof Blob ? val.size : String(val).length
-        const compressed = await getCompressedAudio(path, val, compressCfg.kbps)
+        const compressed = await getCompressedAudio(audioPaths[i], val, compressCfg.kbps)
         after += compressed.size
         done++
-        // Cede el hilo entre archivo y archivo (ver useCompressedAudioUrls).
+        // Cede el hilo entre archivo y archivo (ver useCompressedAudioUrls) —
+        // también es lo que deja pintar la barra de progreso entre uno y otro.
         await new Promise((r) => setTimeout(r, 0))
       }
       if (!done) { setCompressMsg('No hay audio de locución que comprimir todavía.'); return }
@@ -116,6 +120,7 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
       setCompressMsg(`Error: ${(e as Error).message}`)
     } finally {
       setCompressBusy(false)
+      setCompressProgress(null)
     }
   }
 
@@ -375,12 +380,22 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
                     cuánto se ahorra); si no lo pulsas, se comprime igualmente la primera vez que abras Vista
                     estudiante o exportes.
                   </p>
-                  <div className="ed-row">
-                    <button type="button" onClick={() => void onCompressNow()} disabled={compressBusy}>
-                      <Icon name="refresh" size={14} /> {compressBusy ? 'Comprimiendo…' : 'Comprimir ahora'}
-                    </button>
-                    {compressMsg && <span className="ed-tts-msg">{compressMsg}</span>}
-                  </div>
+                  {compressBusy && compressProgress ? (
+                    <div className="ed-tts-progress">
+                      <div className="ed-tts-bar">
+                        <div className="ed-tts-bar-fill"
+                          style={{ width: `${compressProgress.total ? (compressProgress.index / compressProgress.total) * 100 : 0}%` }} />
+                      </div>
+                      <p>Comprimiendo {compressProgress.index}/{compressProgress.total}…</p>
+                    </div>
+                  ) : (
+                    <div className="ed-row">
+                      <button type="button" onClick={() => void onCompressNow()} disabled={compressBusy}>
+                        <Icon name="refresh" size={14} /> Comprimir ahora
+                      </button>
+                      {compressMsg && <span className="ed-tts-msg">{compressMsg}</span>}
+                    </div>
+                  )}
                 </>
               )}
             </fieldset>
