@@ -288,6 +288,14 @@ audio de locución» — oculto si el curso no es narrado o no tiene audio todav
   serializar `data/course.json` (si no, el `course.json` exportado apuntaría a una ruta que
   ya no existe en el ZIP). Un fallo de compresión de un archivo concreto no aborta el
   export: ese archivo viaja con su ruta y contenido originales, sin recomprimir.
+  **Progreso** (`ExportProgress {label, percent}`, parámetro `onProgress` de
+  `buildScormZip`/`downloadScorm`): un curso grande sin nada en caché todavía puede tardar
+  un buen rato entre recomprimir audio y generar el ZIP, así que `Toolbar.tsx` muestra una
+  modal con barra de progreso (reutiliza `.ed-confirm-backdrop`/`.ed-tts-progress`) en vez
+  de solo «Generando…» en el botón. `percent` es relativo a la FASE actual (0-100), no
+  acumulado entre fases: primero «Comprimiendo audio de locución (N/M)…» (uno por archivo),
+  luego «Generando el ZIP…» con el `onUpdate` nativo de `JSZip.generateAsync()`. Si no hay
+  audio que comprimir (o la compresión está desactivada) se salta directo a la fase del ZIP.
 - **Vista estudiante** (`StudentPreview.tsx`, `useCompressedAudioUrls` en
   `src/media/useCompressedAudioUrls.ts`): aquí NO hace falta renombrar nada — es un blob URL
   con su propio `type` (`audio/mpeg`), no un archivo servido por extensión — así que la URL

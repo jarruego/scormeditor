@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
-import { downloadScorm } from '../export/exportScorm'
+import { downloadScorm, type ExportProgress } from '../export/exportScorm'
 import { getStateCodec } from '../scorm/stateCodec'
 import { SuspendSizeIndicator } from './SuspendSizeIndicator'
 import { CourseTimeIndicator } from './CourseTimeIndicator'
@@ -79,6 +79,7 @@ export function Toolbar() {
   const pruneOrphanAssets = useCourseStore((s) => s.pruneOrphanAssets)
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null)
   const [saving, setSaving] = useState(false)
   const cloudSession = useCloudSessionStore((s) => s.session)
   // Qué ventana de ajustes está abierta. Vive en el store para que Validación
@@ -157,9 +158,10 @@ export function Toolbar() {
         useCourseStore.getState().updateScorm({ layouts: [...layouts, { ...entry, exported_at: new Date().toISOString() }] })
         exportCourse = useCourseStore.getState().course
       }
-      await downloadScorm({ course: exportCourse, assets })
+      await downloadScorm({ course: exportCourse, assets }, undefined, setExportProgress)
     } finally {
       setBusy(false)
+      setExportProgress(null)
     }
   }
 
@@ -479,6 +481,22 @@ export function Toolbar() {
 
       {importError && <div className="ed-import-error"><Icon name="alert-octagon" size={14} /> {importError}</div>}
     </header>
+    {exportProgress && (
+      <div className="ed-confirm-backdrop">
+        <div className="ed-confirm" role="alertdialog" aria-modal="true" aria-labelledby="ed-export-progress-title">
+          <div className="ed-confirm-head">
+            <span className="ed-confirm-icon is-info" aria-hidden="true"><Icon name="download" size={24} /></span>
+            <h2 className="ed-confirm-title" id="ed-export-progress-title">Exportando SCORM…</h2>
+          </div>
+          <div className="ed-tts-progress">
+            <div className="ed-tts-bar">
+              <div className="ed-tts-bar-fill" style={{ width: `${Math.round(exportProgress.percent)}%` }} />
+            </div>
+            <p>{exportProgress.label}</p>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   )
 }

@@ -21,11 +21,23 @@ export interface ExportOptions {
   assets?: AssetMap
 }
 
+/** Progreso de `buildScormZip`/`downloadScorm`: `percent` es relativo a la
+ *  FASE actual (0-100), no acumulado entre fases — un curso grande sin
+ *  comprimir puede tardar un buen rato (recomprimir audio de locución +
+ *  generar el ZIP), así que conviene mostrarlo en vez de solo "Generando…". */
+export interface ExportProgress {
+  label: string
+  percent: number
+}
+
 /**
  * Construye el ZIP SCORM 1.2 en memoria y devuelve un Blob.
  * Estructura: imsmanifest.xml + index.html + assets/** + data/course.json
  */
-export async function buildScormZip({ course: courseWithDrafts, assets = {} }: ExportOptions): Promise<Blob> {
+export async function buildScormZip(
+  { course: courseWithDrafts, assets = {} }: ExportOptions,
+  onProgress?: (p: ExportProgress) => void,
+): Promise<Blob> {
   const zip = new JSZip()
 
   // 0) Pantallas marcadas «pendiente de revisión»: fuera del paquete real (la
@@ -47,8 +59,14 @@ export async function buildScormZip({ course: courseWithDrafts, assets = {} }: E
   const compressCfg = course.narration.compressAudio
   const compressedAssets: Record<string, Blob> = {}
   if (compressCfg.enabled) {
+    const narrationPaths = listNarrationAudioPaths(course)
     const pathRemap = new Map<string, string>()
-    for (const path of listNarrationAudioPaths(course)) {
+    for (let i = 0; i < narrationPaths.length; i++) {
+      const path = narrationPaths[i]
+      onProgress?.({
+        label: `Comprimiendo audio de locución (${i + 1}/${narrationPaths.length})…`,
+        percent: ((i + 1) / narrationPaths.length) * 100,
+      })
       const val = assets[path]
       if (val == null) continue
       try {
@@ -103,12 +121,18 @@ export async function buildScormZip({ course: courseWithDrafts, assets = {} }: E
   zip.file('imslrm.xml', generateLomMetadata(course))
   zip.file('imsmanifest.xml', generateManifest(course, assetPaths))
 
-  return zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
+  onProgress?.({ label: 'Generando el ZIP…', percent: 0 })
+  return zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }, (meta) => {
+    onProgress?.({
+      label: `Generando el ZIP…${meta.currentFile ? ` ${meta.currentFile}` : ''}`,
+      percent: meta.percent,
+    })
+  })
 }
 
 /** Dispara la descarga del ZIP en el navegador. */
-export async function downloadScorm(opts: ExportOptions, filename?: string): Promise<void> {
-  const blob = await buildScormZip(opts)
+export async function downloadScorm(opts: ExportOptions, filename?: string, onProgress?: (p: ExportProgress) => void): Promise<void> {
+  const blob = await buildScormZip(opts, onProgress)
   const name = filename || `${opts.course.scorm.identifier || 'scorm'}.zip`
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
