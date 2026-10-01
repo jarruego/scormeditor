@@ -33,7 +33,11 @@ guardado: confundía.)
 - **Guardar** (`saveProject` / Ctrl+S / clic en el indicador): construye el blob y, si
   hay `projectHandle`, reescribe el mismo archivo; si no, abre `showSaveFilePicker`
   (sugerido `<courseId>.scormproj`) y lo vincula. `saveProjectAs()` fuerza destino nuevo
-  (`projectHandle = null`).
+  (`projectHandle = null`) — en modo nube, esto DESVINCULA el curso de la nube (pasa a
+  modo local desde ese momento); el botón del menú Archivo en ese modo se llama «Guardar
+  copia local…» y pasa antes por un `confirmDialog` (`Toolbar.tsx::onSaveLocalCopy`) que
+  avisa del cambio — fácil de confundir con «Descargar copia» (las dos dicen «copia»),
+  así que el aviso explícito evita desvincularse sin querer.
 - **Descargar copia** (`downloadProjectCopy`, menú Archivo): construye el mismo blob
   pero lo descarga con un `<a download>` normal, sin pasar por `showSaveFilePicker`. A
   diferencia de Guardar/Guardar como…, **no vincula** el proyecto a ningún archivo ni

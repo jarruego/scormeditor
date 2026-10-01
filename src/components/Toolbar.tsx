@@ -253,6 +253,21 @@ export function Toolbar() {
     if (ok) pruneOrphanAssets()
   }
 
+  // "Guardar copia local…" en modo nube desvincula el curso de la nube (pasa
+  // a trabajarse en local desde ese momento) — distinto de "Descargar copia
+  // (.scormproj)", que no toca el vínculo. Fácil de confundir (las dos dicen
+  // "copia"), así que se avisa antes de hacer el cambio irreversible desde
+  // aquí (se puede volver a enganchar luego con «Abrir desde la nube…», pero
+  // trae la versión que haya en la nube en ESE momento, no esta copia local).
+  async function onSaveLocalCopy() {
+    const ok = await confirmDialog({
+      title: 'Desvincular de la nube',
+      message: 'Vas a crear una copia local (.scormproj) y a partir de ahora trabajarás en ese archivo, no en la nube: los cambios dejarán de subirse automáticamente. Para volver a la nube más tarde, usa «Abrir desde la nube…» (trae la versión que haya en ese momento, no esta copia local). ¿Continuar?',
+      confirmLabel: 'Crear copia y desvincular',
+    })
+    if (ok) await saveProjectAs()
+  }
+
   return (
     <>
     <header className="ed-toolbar">
@@ -355,7 +370,7 @@ export function Toolbar() {
                     <Icon name="book" size={13} /> Nuevo (demo)
                   </button>
                   {fsOk && (
-                    <button role="menuitem" onClick={() => runMenu(() => void saveProjectAs())} title="Crea una copia en un archivo local y desvincula este curso de la nube">
+                    <button role="menuitem" onClick={() => runMenu(() => void onSaveLocalCopy())} title="Crea una copia en un archivo local y desvincula este curso de la nube">
                       <Icon name="copy" size={13} /> Guardar copia local…
                     </button>
                   )}
