@@ -359,11 +359,6 @@ export function Toolbar() {
                       <Icon name="copy" size={13} /> Guardar copia local…
                     </button>
                   )}
-                  {fsOk && (
-                    <button role="menuitem" onClick={() => runMenu(() => void downloadProjectCopy())} title="Descarga una copia de seguridad sin desvincular este curso de la nube">
-                      <Icon name="download" size={13} /> Descargar copia (.scormproj)
-                    </button>
-                  )}
                   <hr className="ed-menu-sep" />
                 </>
               ) : (
@@ -397,11 +392,6 @@ export function Toolbar() {
                       <Icon name="copy" size={13} /> Guardar como…
                     </button>
                   )}
-                  {fsOk && (
-                    <button role="menuitem" onClick={() => runMenu(() => void downloadProjectCopy())} title={isBrowserOnly ? 'Descarga una copia de seguridad; el proyecto sigue solo en este navegador' : 'Descarga una copia de seguridad sin tocar el archivo vinculado'}>
-                      <Icon name="download" size={13} /> Descargar copia (.scormproj)
-                    </button>
-                  )}
                   <hr className="ed-menu-sep" />
                 </>
               )}
@@ -423,6 +413,16 @@ export function Toolbar() {
                 title="Exportar el curso a un paquete .elpx para seguir editándolo en eXeLearning 4.0.1 o posterior">
                 <Icon name="code" size={13} /> {busy ? 'Generando…' : 'Exportar a eXeLearning (.elpx)'}
               </button>
+              {fsOk && (
+                <button role="menuitem" onClick={() => runMenu(() => void downloadProjectCopy())}
+                  title={isCloudMode
+                    ? 'Descarga una copia de seguridad sin desvincular este curso de la nube'
+                    : isBrowserOnly
+                    ? 'Descarga una copia de seguridad; el proyecto sigue solo en este navegador'
+                    : 'Descarga una copia de seguridad sin tocar el archivo vinculado'}>
+                  <Icon name="download" size={13} /> Descargar copia (.scormproj)
+                </button>
+              )}
               <hr className="ed-menu-sep" />
               <button role="menuitem" className="ed-menu-danger" onClick={() => runMenu(() => void onCloseProject())}
                 title="Deja el editor sin ningún proyecto abierto">
