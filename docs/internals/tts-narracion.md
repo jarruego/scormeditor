@@ -98,7 +98,7 @@ de avisar en falso sobre contenido de fuera del editor (GPT, proyectos antiguos)
   pantalla concreta está desactualizada, señalando el botón «Regenerar» que ya existía.
 - **`listNarratable()`** (`tts.ts`) expone `staleTranscript`/`staleAudio` por pantalla;
   `TtsPanel` los cuenta junto al resto de estadísticas.
-- **Regenerar en bloque**: `fillMissingTranscripts()` (store) ahora hace dos cosas bajo un
+- **Regenerar en bloque**: `fillMissingTranscripts(force?)` (store) hace dos cosas bajo un
   único snapshot/deshacer — rellena las transcripciones **vacías** (como antes) Y
   **regenera** las que están desactualizadas (nunca una transcripción al día, ni una sin
   huella sellada: no hay con qué comparar, así que no se toca). Devuelve `{filled,
@@ -107,6 +107,16 @@ de avisar en falso sobre contenido de fuera del editor (GPT, proyectos antiguos)
   (regenera todas, desactualizadas incluidas) — un botón dedicado sería forzar sin
   necesidad una regeneración completa (coste de API) cuando el objetivo es solo arreglar
   unas pocas; para eso está el botón por pantalla en `ScreenEditor`.
+  - **`force: true`** («Forzar regeneración de TODAS las transcripciones» en `TtsPanel`,
+    con confirmación — sobrescribe texto, sea cual sea su origen): regenera TODAS las
+    narrables desde el contenido actual, también las que están al día o SIN huella. Es la
+    vía de escape para lo que el sistema de huellas no puede detectar solo: una
+    transcripción sin huella sellada (editada a mano, importada del GPT, o de antes de
+    este mecanismo) nunca se marca sola como desactualizada aunque **cambie el propio
+    código** de `buildTranscript` (p. ej. un cambio de política de narración) — necesita
+    este botón para alcanzarla. No toca el audio ya generado (queda desactualizado si el
+    texto cambió; para refrescarlo, el flujo sigue siendo desmarcar «solo sin audio» y
+    pulsar «Generar N audios», como cualquier otro caso de audio desactualizado).
 
 ## Narración por diapositiva (`screen.audio_src`)
 Audio propio de la pantalla (ruta en `assets/media`), **separado del media visual**. El

@@ -223,9 +223,14 @@ interface CourseState {
   /** Rellena la transcripción de las pantallas narrables que la tienen VACÍA, y
    *  REGENERA las que están desactualizadas (huella de contenido no coincide,
    *  ver `updateScreen`) — nunca toca una transcripción al día ni una editada a
-   *  mano sin huella sellada (no hay con qué comparar). Devuelve cuántas de
-   *  cada. */
-  fillMissingTranscripts: () => { filled: number; refreshed: number }
+   *  mano SIN huella sellada (no hay con qué comparar: transcripciones de
+   *  antes de este mecanismo o importadas del GPT), salvo que `force` sea
+   *  `true`: entonces regenera TODAS las narrables desde el contenido, también
+   *  las que están al día o sin huella — necesario, por ejemplo, tras un
+   *  cambio de política de narración (qué se incluye en `buildTranscript`):
+   *  una transcripción sin huella no se detecta sola como desactualizada por
+   *  mucho que el código haya cambiado. Devuelve cuántas de cada. */
+  fillMissingTranscripts: (force?: boolean) => { filled: number; refreshed: number }
   /** Pone el mismo tiempo mínimo (s) en TODAS las pantallas del curso. */
   setAllMinTime: (seconds: number) => void
   /** Pone el mismo nº de intentos en TODAS las interacciones cuyo tipo lo respeta
@@ -684,7 +689,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     set({ course })
   },
 
-  fillMissingTranscripts: () => {
+  fillMissingTranscripts: (force) => {
     // Solo pantallas con contenido narrable y sin esqueleto (mismo criterio que
     // el aviso NARR_NO_TRANSCRIPT de validators.ts). Un único snapshot: el
     // relleno/refresco masivo se deshace de una vez.
@@ -695,13 +700,25 @@ export const useCourseStore = create<CourseState>((set, get) => {
     for (const s of allScreens(course)) {
       if (s.type === 'content_placeholder' || s.status === 'esqueleto_pendiente_desarrollo') continue
       if (s.transcript.trim()) {
-        // Ya tiene texto: solo se toca si está PROBADAMENTE desactualizada
-        // (huella sellada que ya no coincide con el contenido actual). Sin
-        // huella (transcripción de antes de este mecanismo, o nunca tocada
-        // desde el editor) no hay con qué comparar: se deja intacta.
-        if (!s.transcript_content_hash) continue
+        if (!force) {
+          // Ya tiene texto: solo se toca si está PROBADAMENTE desactualizada
+          // (huella sellada que ya no coincide con el contenido actual). Sin
+          // huella (transcripción de antes de este mecanismo, o nunca tocada
+          // desde el editor) no hay con qué comparar: se deja intacta.
+          if (!s.transcript_content_hash) continue
+          const live = buildTranscript(s)
+          if (s.transcript_content_hash === contentHash(live)) continue
+          if (!live.trim()) continue
+          s.transcript = live
+          s.transcript_content_hash = contentHash(live)
+          refreshed++
+          continue
+        }
+        // force: se sobrescribe aunque esté al día o sin huella — es la vía
+        // para que un cambio de política de narración (qué entra en
+        // buildTranscript) alcance también a las transcripciones que el
+        // sistema de huellas no puede marcar solo como desactualizadas.
         const live = buildTranscript(s)
-        if (s.transcript_content_hash === contentHash(live)) continue
         if (!live.trim()) continue
         s.transcript = live
         s.transcript_content_hash = contentHash(live)

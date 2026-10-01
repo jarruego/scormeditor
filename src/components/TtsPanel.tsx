@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
+import { confirmDialog } from '../store/confirm'
 import {
   generateAll,
   generateAllItems,
@@ -87,6 +88,29 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
     const parts: string[] = []
     if (filled) parts.push(`${filled} generada${filled === 1 ? '' : 's'}`)
     if (refreshed) parts.push(`${refreshed} actualizada${refreshed === 1 ? '' : 's'}`)
+    setTrMsg(`✓ ${parts.join(' · ')} desde el contenido (revísalas antes de locutar).`)
+  }
+
+  // Fuerza la regeneración de TODAS las transcripciones narrables, incluidas
+  // las que están al día o no tienen huella (editadas a mano, importadas del
+  // GPT…) — el camino para que un cambio de política de narración (qué entra
+  // en `buildTranscript`) alcance también a transcripciones que el sistema de
+  // huellas no detecta solo como desactualizadas. Pide confirmación porque
+  // sobrescribe texto que puede llevar retoques manuales.
+  async function onForceRebuildTranscripts() {
+    const ok = await confirmDialog({
+      title: 'Regenerar TODAS las transcripciones',
+      message: 'Se sustituirá la transcripción de cada pantalla narrable por una generada desde su contenido actual, '
+        + 'aunque ya estuviera al día o editada a mano (p. ej. retoques de redacción se perderían). '
+        + 'Los audios ya generados no se tocan, pero quedarán desactualizados si el texto cambia.',
+      confirmLabel: 'Regenerar todas',
+    })
+    if (!ok) return
+    const { filled, refreshed } = fillMissingTranscripts(true)
+    if (!filled && !refreshed) { setTrMsg('No había ninguna transcripción que regenerar (sin contenido narrable).'); return }
+    const parts: string[] = []
+    if (filled) parts.push(`${filled} generada${filled === 1 ? '' : 's'}`)
+    if (refreshed) parts.push(`${refreshed} regenerada${refreshed === 1 ? '' : 's'}`)
     setTrMsg(`✓ ${parts.join(' · ')} desde el contenido (revísalas antes de locutar).`)
   }
 
@@ -321,6 +345,20 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
                 {(stats.missingTranscript > 0 || stats.staleTranscript > 0) && ')'}
               </button>
               {trMsg && <span className="ed-tts-msg">{trMsg}</span>}
+            </div>
+
+            {/* Vía de escape para cuando el sistema de huellas no basta: una
+                transcripción sin huella (editada a mano, importada del GPT, o
+                de antes de este mecanismo) nunca se marca sola como
+                desactualizada, así que un cambio de política de narración no
+                la alcanza con el botón de arriba. Pide confirmación porque
+                sobrescribe texto, sea cual sea su origen. */}
+            <div className="ed-row">
+              <button type="button" disabled={busy || narrationOff || stats.total === 0}
+                onClick={() => void onForceRebuildTranscripts()}
+                title="Regenera TODAS las transcripciones narrables desde el contenido actual, también las que ya están al día o no tienen huella (sobrescribe ediciones manuales)">
+                <Icon name="refresh" size={14} /> Forzar regeneración de TODAS las transcripciones
+              </button>
             </div>
 
             <label className="ed-check">
