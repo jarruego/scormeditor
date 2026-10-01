@@ -333,6 +333,17 @@ informa de `busy` para que la ventana no se cierre mientras genera.
   «Narración por ítem»). `TtsPanel.tsx` (`onGenerate`) encadena ambas bajo un único botón
   «Generar N audios» y una única barra de progreso (índice combinado: primero pantallas,
   luego ítems).
+- **Tope de tiempo por petición** (`FETCH_TIMEOUT_MS`, 60 s, `withTimeout()` en `tts.ts`):
+  sin esto, una petición a la API que se quedase colgada sin responder NI fallar (red
+  inestable, servidor que no contesta) dejaba la generación en bloque parada en esa
+  pantalla para siempre — sin avisar ni pasar a la siguiente, indistinguible de estar
+  generando algo largo. `withTimeout()` combina el `signal` del llamante (botón
+  «Cancelar») con un `AbortController` propio: lo que dispare primero aborta el `fetch`.
+  Se distingue un aborto por tiempo de uno por cancelación explícita por el `name` del
+  error (`TimeoutError` vs `AbortError`) — `generateAll`/`generateAllItems` solo cortan el
+  bucle ENTERO con `AbortError` (cancelación real del usuario); un `TimeoutError` se trata
+  como un error más de ESE archivo (se apunta en `result.errors`) y el bucle sigue con el
+  siguiente, igual que un 429 o una clave rechazada.
 - **Coste**: la API de OpenAI cobra por tokens de texto de entrada + tokens de audio de
   salida (sin cargo fijo por petición), así que generar el audio pantalla a pantalla no
   cuesta más en total que uno combinado y cortado luego — y evita el problema de cortar

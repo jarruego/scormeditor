@@ -271,6 +271,37 @@ async function errorFromResponse(res: Response): Promise<Error> {
 
 // ---- OpenAI -----------------------------------------------------------------
 
+/** Tope de tiempo por petición a la API de TTS. Sin esto, una petición que se
+ *  quede colgada sin responder NI fallar (red inestable, servidor que no
+ *  contesta) deja la generación en bloque parada en esa pantalla para
+ *  siempre — el síntoma es «se queda en una diapositiva y no avanza», y no
+ *  hay forma de distinguirlo de verdad estar generando algo largo sin esto. */
+const FETCH_TIMEOUT_MS = 60000
+
+/** Combina el `signal` del llamante (botón «Cancelar») con un tope de tiempo
+ *  propio: lo que dispare primero aborta el `fetch`. Un aborto por tiempo se
+ *  distingue de uno por cancelación explícita en el `name` del error
+ *  resultante (`TimeoutError` vs `AbortError`) — `generateAll`/
+ *  `generateAllItems` solo cortan el bucle entero con `AbortError`
+ *  (cancelación del usuario); un `TimeoutError` se trata como un error más de
+ *  ESE archivo, se apunta en el resultado y el bucle sigue con el siguiente. */
+function withTimeout(signal: AbortSignal | undefined, ms: number): { signal: AbortSignal; cleanup: () => void } {
+  const ctrl = new AbortController()
+  const onAbort = () => ctrl.abort(signal!.reason)
+  if (signal) {
+    if (signal.aborted) ctrl.abort(signal.reason)
+    else signal.addEventListener('abort', onAbort)
+  }
+  const timer = setTimeout(
+    () => ctrl.abort(new DOMException(`Sin respuesta del servidor tras ${Math.round(ms / 1000)} s.`, 'TimeoutError')),
+    ms,
+  )
+  return {
+    signal: ctrl.signal,
+    cleanup: () => { clearTimeout(timer); if (signal) signal.removeEventListener('abort', onAbort) },
+  }
+}
+
 /** Sintetiza un fragmento con OpenAI y devuelve el audio ya codificado. */
 async function openaiChunk(text: string, cfg: TtsConfig, signal?: AbortSignal): Promise<Blob> {
   const body: Record<string, unknown> = {
@@ -284,14 +315,19 @@ async function openaiChunk(text: string, cfg: TtsConfig, signal?: AbortSignal): 
     body.instructions = cfg.instructions.trim()
   }
   const url = `${cfg.baseUrl.replace(/\/+$/, '')}/audio/speech`
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${keyFor(cfg)}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-    signal,
-  })
-  if (!res.ok) throw await errorFromResponse(res)
-  return res.blob()
+  const { signal: fetchSignal, cleanup } = withTimeout(signal, FETCH_TIMEOUT_MS)
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${keyFor(cfg)}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: fetchSignal,
+    })
+    if (!res.ok) throw await errorFromResponse(res)
+    return await res.blob()
+  } finally {
+    cleanup()
+  }
 }
 
 // ---- Gemini -----------------------------------------------------------------
@@ -347,18 +383,24 @@ function pcmToWavBlob(pcm: Uint8Array, sampleRate: number): Blob {
 async function geminiChunk(text: string, cfg: TtsConfig, signal?: AbortSignal): Promise<{ pcm: Uint8Array; rate: number }> {
   const prompt = cfg.instructions.trim() ? `${cfg.instructions.trim()}: ${text}` : text
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cfg.model)}:generateContent`
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'x-goog-api-key': keyFor(cfg), 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseModalities: ['AUDIO'],
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: cfg.voice } } },
-      },
-    }),
-    signal,
-  })
+  const { signal: fetchSignal, cleanup } = withTimeout(signal, FETCH_TIMEOUT_MS)
+  let res: Response
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'x-goog-api-key': keyFor(cfg), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: cfg.voice } } },
+        },
+      }),
+      signal: fetchSignal,
+    })
+  } finally {
+    cleanup()
+  }
   if (!res.ok) throw await errorFromResponse(res)
   const json = await res.json()
   const part = json?.candidates?.[0]?.content?.parts?.[0]
