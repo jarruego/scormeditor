@@ -920,6 +920,16 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
   .me-content { padding: .9rem .8rem; }
   .me-screen { padding: 1rem; min-height: clamp(260px, 50vh, 440px); }
   .me-screen h1 { font-size: 1.25rem; }
+  /* .me-screen h1 (arriba) y .me-cover h1/.me-module-cover h1/.me-course-cover h1
+     (fuera de este media query) tienen la MISMA especificidad (clase + elemento):
+     sin repetirlas aquí, la regla genérica de arriba gana por orden de cascada y
+     deja el título de cualquier portada tan pequeño como el de una pantalla
+     normal. Se repiten los mismos clamp() de escritorio (no overrides nuevos):
+     con el viewport estrecho real de un móvil, el propio clamp ya cae en su
+     mínimo (1.9rem/2.2rem) — sigue siendo responsive, solo que ya no lo pisa la
+     regla genérica. */
+  .me-cover h1 { font-size: clamp(1.9rem, 4.5vw, 2.6rem); }
+  .me-module-cover h1, .me-course-cover h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); }
   /* El sangrado de la portada de módulo/SCORM debe igualar el padding móvil de arriba. */
   .me-module-cover, .me-course-cover { margin: -1rem -1rem 1.25rem; padding: clamp(1.75rem, 8vw, 3rem) 1.25rem; }
 

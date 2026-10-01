@@ -275,6 +275,15 @@ que lo etiquete).
   `type === 'cover'` a secas, ya no hace falta enumerar tres tipos.
   `SCHEMA_VERSION` `1.1.0` migra `module_cover`/`scorm_cover` a `cover`
   (`src/schema/migrations.ts`) para proyectos guardados antes de la unificación.
+  **Título responsive**: `.me-cover h1`/`.me-module-cover h1, .me-course-cover h1` usan
+  `clamp()` propio (más grande que el de una pantalla normal) para que el peso visual de
+  la portada se note en cualquier tamaño. Trampa de especificidad a vigilar: dentro de
+  `@media (max-width: 1024px)` (`styles.css`), la regla genérica `.me-screen h1 {
+  font-size: 1.25rem }` tiene la MISMA especificidad (clase + elemento) que las tres de
+  arriba — cualquier override de tamaño de título en ese media query que no repita
+  también las tres reglas de portada las pisa por orden de cascada, dejando el título de
+  cualquier portada tan pequeño como el de una pantalla normal en móvil (bug real,
+  corregido repitiendo los mismos `clamp()` después de la regla genérica).
 - **Accordion/tabs animados**: chevron `▸` rotatorio en `.me-acc-head::before`; cuerpos y
   paneles aparecen con `me-reveal` (corre al pasar de `display:none` a visible).
 - **Feedback de interacciones**: la opción elegida se marca en el propio elemento
