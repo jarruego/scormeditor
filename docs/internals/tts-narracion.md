@@ -360,7 +360,8 @@ informa de `busy` para que la ventana no se cierre mientras genera.
   peticiones dentro de `synthesize()`.
 - **Voces de OpenAI** (`OPENAI_VOICES`, `voicesFor(provider, model)`): las 13 voces del
   modelo más nuevo (`gpt-4o-mini-tts`; OpenAI recomienda `marin`/`cedar` para la mejor
-  calidad). Los modelos heredados `tts-1`/`tts-1-hd` solo soportan 9
+  calidad — `marin` es la voz **por defecto** de proyectos nuevos, ver más abajo). Los
+  modelos heredados `tts-1`/`tts-1-hd` solo soportan 9
   (`OPENAI_VOICES_LEGACY`, sin `ballad`/`verse`/`marin`/`cedar`) — `voicesFor` ya filtra
   según el modelo, y el `<select>` de modelo en `TtsPanel` reajusta la voz sola si la
   elegida deja de ser válida al cambiar de modelo.
@@ -377,6 +378,17 @@ informa de `busy` para que la ventana no se cierre mientras genera.
   texto en cada síntesis (`openaiChunk`), sin «vibes» predefinidos que mantener; las
   admite `gpt-4o-mini-tts` (no `tts-1`/`tts-1-hd`) y, con otro uso, todos los modelos de
   Gemini (`showInstructions` en `TtsPanel.tsx`).
+- **Voz y Vibe por defecto** (`DEFAULT_VIBE` en `tts.ts`, duplicado a propósito en el
+  `.default()` de `narration.tts.instructions` en `course.schema.ts` — zod no puede
+  importar de `tts.ts` sin acoplar el esquema a él, mantener los dos en sync): proyectos
+  nuevos arrancan con voz `marin` y un Vibe pensado para narración educativa (afecto claro
+  y cercano, ritmo pausado en definiciones, pausas tras preguntas…), pedido explícitamente
+  por el cliente. El texto del Vibe se queda en **inglés** a propósito — es el contenido
+  que de verdad lee el modelo como instrucciones de estilo, no texto de interfaz, así que
+  traducirlo cambiaría lo que el modelo interpreta. Proyectos de antes de este cambio NO se
+  migran solos (la voz/Vibe ya guardados en `course.narration.tts` no se tocan): hay que
+  cambiarlos a mano una vez desde Ajustes → Narración si se quiere lo mismo en un proyecto
+  existente.
 
 El panel de generación masiva **respeta el ajuste «Curso narrado»**: con `off` la
 generación (audios y transcripciones) queda deshabilitada con una nota — probable

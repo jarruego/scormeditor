@@ -466,10 +466,23 @@ export const Course = z.object({
       provider: z.enum(['openai', 'gemini']).default('openai'),
       baseUrl: z.string().default('https://api.openai.com/v1'),
       model: z.string().default('gpt-4o-mini-tts'),
-      voice: z.string().default('nova'),
+      voice: z.string().default('marin'),
       format: z.enum(['mp3', 'wav', 'opus', 'aac', 'flac']).default('mp3'),
       speed: z.number().default(1),
-      instructions: z.string().default(''),
+      // Vibe por defecto (narración educativa) — mismo texto que
+      // `DEFAULT_VIBE` en `src/tts/tts.ts`; duplicado a propósito (zod no
+      // puede importar de ese módulo sin acoplar el esquema a él), mantener
+      // los dos en sync. En inglés deliberadamente: es el propio contenido
+      // que se envía tal cual a la API como instrucciones de estilo, no
+      // texto de interfaz.
+      instructions: z.string().default(
+        'Voice Affect: Educative, clear, engaging. Articulate and structured, instilling focus and curiosity.\n\n'
+        + 'Tone: Pedagogical, friendly, and professional. Conversational and approachable, avoiding monotonous delivery.\n\n'
+        + 'Pacing: Moderate to measured. Balanced rhythm for taking notes and processing complex concepts. Slower for new definitions; normal for everyday examples.\n\n'
+        + 'Emotions: Enthusiasm for learning, patience, and encouraging clarity.\n\n'
+        + 'Pronunciation: Flawless, precise, neutral Spanish accent. Perfect articulation of consonants so diverse audiences understand. Emphasis on key technical words.\n\n'
+        + 'Pauses: Short, natural pauses at sentences and commas. Longer, deliberate pauses after a question or definition, giving the student a moment to process the information.',
+      ),
     }).default({}),
     /** Recompresión del audio de locución en Vista estudiante y en el ZIP
      *  exportado (nunca en el `.scormproj`: el audio fuente generado por TTS

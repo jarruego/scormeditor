@@ -114,15 +114,33 @@ export function providerDefaults(provider: TtsProvider): Partial<TtsConfig> {
 /** Límite de caracteres por petición; margen bajo el máximo de OpenAI (4096). */
 const MAX_CHARS = 3800
 
+// Vibe por defecto (tono/estilo para narración educativa) — mismo texto que
+// el default de `course.schema.ts` (`narration.tts.instructions`); duplicado
+// a propósito (zod no puede importar de aquí sin acoplar el esquema a este
+// módulo), mantener los dos en sync. En inglés deliberadamente: es el propio
+// contenido que se envía tal cual a la API como instrucciones de estilo, no
+// texto de interfaz — traducirlo cambiaría lo que de verdad lee el modelo.
+export const DEFAULT_VIBE = `Voice Affect: Educative, clear, engaging. Articulate and structured, instilling focus and curiosity.
+
+Tone: Pedagogical, friendly, and professional. Conversational and approachable, avoiding monotonous delivery.
+
+Pacing: Moderate to measured. Balanced rhythm for taking notes and processing complex concepts. Slower for new definitions; normal for everyday examples.
+
+Emotions: Enthusiasm for learning, patience, and encouraging clarity.
+
+Pronunciation: Flawless, precise, neutral Spanish accent. Perfect articulation of consonants so diverse audiences understand. Emphasis on key technical words.
+
+Pauses: Short, natural pauses at sentences and commas. Longer, deliberate pauses after a question or definition, giving the student a moment to process the information.`
+
 const DEFAULTS: TtsConfig = {
   provider: 'openai',
   keys: { openai: '', gemini: '' },
   baseUrl: 'https://api.openai.com/v1',
   model: 'gpt-4o-mini-tts',
-  voice: 'nova',
+  voice: 'marin',
   format: 'mp3',
   speed: 1,
-  instructions: '',
+  instructions: DEFAULT_VIBE,
 }
 // DEFAULTS sin `keys`: base de la config de PROYECTO — nunca debe llevar
 // claves, ni siquiera vacías (se filtran aquí una sola vez para que ningún

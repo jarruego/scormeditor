@@ -55,10 +55,10 @@ export const sampleCourse: Course = {
       "provider": "openai",
       "baseUrl": "https://api.openai.com/v1",
       "model": "gpt-4o-mini-tts",
-      "voice": "nova",
+      "voice": "marin",
       "format": "mp3",
       "speed": 1,
-      "instructions": ""
+      "instructions": "Voice Affect: Educative, clear, engaging. Articulate and structured, instilling focus and curiosity.\n\nTone: Pedagogical, friendly, and professional. Conversational and approachable, avoiding monotonous delivery.\n\nPacing: Moderate to measured. Balanced rhythm for taking notes and processing complex concepts. Slower for new definitions; normal for everyday examples.\n\nEmotions: Enthusiasm for learning, patience, and encouraging clarity.\n\nPronunciation: Flawless, precise, neutral Spanish accent. Perfect articulation of consonants so diverse audiences understand. Emphasis on key technical words.\n\nPauses: Short, natural pauses at sentences and commas. Longer, deliberate pauses after a question or definition, giving the student a moment to process the information."
     },
     "compressAudio": {
       "enabled": true,
