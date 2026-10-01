@@ -354,6 +354,12 @@ const PATHS = {
   chart: (
     <path d="M3.5 20.5h17M6.5 20v-6M12 20V5.5M17.5 20v-9.5" />
   ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3.2 2" />
+    </>
+  ),
 } as const
 
 export type IconName = keyof typeof PATHS

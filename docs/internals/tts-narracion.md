@@ -215,6 +215,31 @@ Velocidad y volumen afectan a **ambas** narraciones (pantalla e ítem):
   llama a `Interactions.setItemAudioRate(rate)`/`setItemAudioVolume(vol)` para aplicarlos
   al vuelo sin cortar la reproducción.
 
+## Duración total del audio (indicador en la Toolbar)
+`NarrationDurationIndicator` (`src/components/NarrationDurationIndicator.tsx`), chip
+siempre visible en la Toolbar junto a `SuspendSizeIndicator` (memoria de
+`suspend_data`): suma la duración de TODO el audio de narración ya generado — de
+pantalla (`screen.audio_src`) y de ítem/zona (accordion/tabs/flip_cards/timeline/
+image_cards/flashcards/hotspots, vía `listNarrationAudioPaths()` en `tts.ts`) — para
+hacerse una idea orientativa del tiempo de escucha del curso. Es un dato **informativo
+sin umbral bueno/malo** (a diferencia del medidor de memoria): chip neutro
+(`.ed-duration-chip`), sin popover de desglose.
+
+- **Mide solo metadatos**: crea un `<audio>` oculto por archivo (`URL.createObjectURL`
+  sobre el `Blob` del asset) y lee `.duration` en `loadedmetadata`, sin reproducir nada.
+  Con tope de 8 s por archivo (`probeDuration`): si el navegador no puede decodificarlo
+  (o no dispara ni `loadedmetadata` ni `error` — pasa con un archivo roto, o con pestañas
+  en segundo plano, que algunos navegadores difieren adrede) se cuenta como «no medible»
+  en vez de dejar el chip calculando para siempre; el tooltip dice cuántos quedaron sin
+  medir.
+- **Caché por ruta** (`durationsRef`, en memoria del componente, se pierde al recargar):
+  la clave combina la ruta con el tamaño del asset, así que regenerar un audio (nuevo
+  `Blob` en `assets`) invalida sola la entrada vieja sin tener que compararla a mano.
+  Recalcula con el mismo debounce (400 ms) que `SuspendSizeIndicator` al cambiar
+  `course`/`assets`.
+- Se oculta por completo si el curso no tiene ningún audio de narración generado todavía
+  (no un chip en «0 s» sin más, que no aportaría nada).
+
 ## TTS (texto→voz): generación del audio
 Módulo `src/tts/tts.ts` + sección `NarrationSection` (`src/components/TtsPanel.tsx`),
 mostrada en su propia ventana `NarrationModal`, que abre la opción **Narración** del menú

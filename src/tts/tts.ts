@@ -478,6 +478,23 @@ export function listNarratableItems(): NarratableItemEntry[] {
   return out
 }
 
+/** Rutas de TODOS los audios de narración ya generados (de pantalla y de
+ *  ítem/zona), sin duplicados — la usa `NarrationDurationIndicator` para sumar
+ *  su duración total. No incluye audio visual (vídeo, `visual_resource` de
+ *  tipo audio): solo narración. */
+export function listNarrationAudioPaths(): string[] {
+  const paths = new Set<string>()
+  for (const s of eachScreen()) {
+    if (s.audio_src.trim()) paths.add(s.audio_src.trim())
+    if (s.interaction) {
+      for (const item of itemsOf(s.interaction)) {
+        if (item.audioSrc.trim()) paths.add(item.audioSrc.trim())
+      }
+    }
+  }
+  return [...paths]
+}
+
 /** Guarda el audio de un ítem como asset y lo enlaza en `config.items[].audio_src`
  *  (o `cards`/`milestones` según el tipo). */
 function applyItemAudio(screenId: string, interactionId: string, itemId: string, blob: Blob, cfg: TtsConfig) {
