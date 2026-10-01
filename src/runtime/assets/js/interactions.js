@@ -774,12 +774,18 @@
 
   // --- 11. Hotspots accesibles ----------------------------------------------
   register('hotspots', function (el, data, ctx) {
-    // config: { image, alt, spots:[{id,x,y,w,h,label,correct,feedback}] }
+    // config: { image, alt, spots:[{id,x,y,w,h,label,correct,feedback,audio_src}] }
     var c = data.config || {};
     var html = header(data) + '<div class="me-hotspot-wrap"><img src="' + esc(assetUrl(c.image)) + '" alt="' + esc(c.alt || '') + '" class="me-hotspot-img">';
     (c.spots || []).forEach(function (s) {
+      // El audio de la zona (si se generó) va DENTRO del botón, oculto —
+      // wireItemAudio() lo localiza igual que en accordion/tabs. Suena solo al
+      // clicar (abajo), nunca antes: aquí NO hay un «índice hablado» general
+      // como en accordion — sería leer las opciones de la pregunta en voz alta
+      // (ver buildTranscript.ts, hotspots no está en REVEALABLE_TYPES).
       html += '<button class="me-hotspot" data-id="' + esc(s.id) + '" aria-label="' + esc(s.label) + '" ' +
-        'style="left:' + s.x + '%;top:' + s.y + '%;width:' + (s.w || 8) + '%;height:' + (s.h || 8) + '%"></button>';
+        'style="left:' + s.x + '%;top:' + s.y + '%;width:' + (s.w || 8) + '%;height:' + (s.h || 8) + '%">' +
+        itemAudioMarkup(s.audio_src) + '</button>';
     });
     // Solo la imagen con sus zonas: cada zona ya es un <button> con aria-label
     // (focusable con teclado y anunciado por lector), así que no hace falta una
@@ -801,7 +807,9 @@
       ctx.announce(correct ? 'Zona correcta.' : 'Zona incorrecta.');
     }
     el.querySelectorAll('.me-hotspot').forEach(function (b) {
-      b.addEventListener('click', function () { pick(b.dataset.id); });
+      // El audio de zona suena al clicar, nunca al restaurar estado (abajo):
+      // es una pista que acompaña el gesto, no una narración automática.
+      b.addEventListener('click', function () { pick(b.dataset.id); revealItemAudio(ctx, wireItemAudio(b)); });
     });
     if (ctx.state && ctx.state.choice) {
       var hs = (c.spots || []).filter(function (x) { return x.id === ctx.state.choice; })[0];

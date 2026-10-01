@@ -366,6 +366,37 @@ export function InteractionConfigEditor({
               {spots.some((s) => s.correct) ? ` · correcta: «${spots.find((s) => s.correct)?.label || 'sin etiqueta'}»` : ' · ninguna marcada como correcta'}
             </p>
           )}
+          {spots.length > 0 && (
+            <div className="ed-stack">
+              <p className="ed-hint">Audio por zona (suena al pulsarla en Vista estudiante, no antes):</p>
+              {spots.map((s, i) => (
+                <div key={s.id || i} className="ed-row">
+                  <span>{s.label || `Zona ${i + 1}`}</span>
+                  <ItemAudioButton
+                    screenId={screenId}
+                    interactionId={it.id}
+                    audioSrc={s.audio_src}
+                    ensureId={() => {
+                      if (s.id) return s.id
+                      const id = rid('sp')
+                      setConfig({ spots: spots.map((x, j) => (j === i ? { ...x, id } : x)) })
+                      return id
+                    }}
+                  />
+                </div>
+              ))}
+              <BulkItemAudioButton
+                screenId={screenId}
+                interactionId={it.id}
+                items={spots}
+                ensureIds={() => {
+                  const withIds = spots.map((x) => (x.id ? x : { ...x, id: rid('sp') }))
+                  if (withIds.some((x, i) => x.id !== spots[i]?.id)) setConfig({ spots: withIds })
+                  return withIds as { id: string; audio_src?: string }[]
+                }}
+              />
+            </div>
+          )}
         </>
       )
     }

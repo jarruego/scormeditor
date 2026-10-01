@@ -2,9 +2,16 @@ import type { Screen, Interaction, InteractionType } from '../schema/course.sche
 
 /**
  * Genera la transcripción de una pantalla a partir de su contenido: el texto
- * del estudiante (markdown ligero → texto plano legible) más el enunciado de
- * la interacción si es informativa. Las interacciones evaluables se excluyen:
- * leer las opciones/respuestas en voz alta no tiene sentido.
+ * del estudiante (markdown ligero → texto plano legible) más el contenido de
+ * la interacción, tratado de forma distinta según el tipo:
+ * - **Informativa** (`INFORMATIVE`): entra su contenido completo (ver más abajo
+ *   el caso particular de los tipos revelables).
+ * - **Evaluable** (cualquier otro tipo: single_choice, fill_blanks, hotspots,
+ *   crucigrama…): solo entra el **enunciado** (`prompt`), nunca opciones,
+ *   pasos a ordenar, zonas, respuestas ni feedback — leer eso en voz alta sería
+ *   «caos auditivo» (listas largas, sin la pausa/interacción real del alumno)
+ *   y en varios casos literalmente desvelaría la respuesta. El enunciado por
+ *   sí solo evita que la pantalla quede muda sin presuponer más.
  *
  * `accordion`/`tabs`/`flip_cards`/`timeline`/`image_cards`/`flashcards`
  * OCULTAN el CUERPO de cada ítem tras un gesto de revelado (desplegar/
@@ -17,12 +24,22 @@ import type { Screen, Interaction, InteractionType } from '../schema/course.sche
  * general junto al `prompt` — funciona como un «índice hablado» de lo que hay
  * para explorar, sin desvelar el contenido.
  *
+ * `case_practice` y `scenario_decision` son informativas pero NO revelables:
+ * nada de lo que narran da la respuesta (la rúbrica de autoevaluación no
+ * tiene «correcta», la situación de un escenario es contexto, no una opción
+ * a adivinar), así que su contenido entra entero, sin esperar a ningún gesto.
+ *
  * El resultado es texto plano pensado para el botón «Transcripción» de la
  * carcasa y como entrada del TTS (sin marcas ** * [], sin fences :::).
  */
 
-/** Tipos de interacción cuyo contenido forma parte de la transcripción/narración. */
-export const INFORMATIVE = new Set(['accordion', 'tabs', 'flip_cards', 'timeline', 'flashcards', 'image_cards', 'before_after'])
+/** Tipos de interacción cuyo contenido (más allá del enunciado) forma parte
+ *  de la transcripción/narración. El resto (evaluables) solo aporta `prompt`
+ *  — ver `buildTranscript()`. */
+export const INFORMATIVE = new Set([
+  'accordion', 'tabs', 'flip_cards', 'timeline', 'flashcards', 'image_cards', 'before_after',
+  'case_practice', 'scenario_decision',
+])
 
 /** Tipos cuyo contenido se oculta tras un gesto de revelado y por eso se narra
  *  por ítem (audio propio) en vez de en la transcripción general. */
@@ -30,19 +47,25 @@ export const REVEALABLE_TYPES = new Set<InteractionType>([
   'accordion', 'tabs', 'flip_cards', 'timeline', 'image_cards', 'flashcards',
 ])
 
-/** Clave de `config` donde vive la lista de ítems de un tipo revelable
- *  (`undefined` si el tipo no lo es). Única fuente de esta correspondencia:
- *  la reutilizan `itemsOf()` y `tts.ts` para localizar/parchear un ítem. */
-const ITEM_KEY: Partial<Record<InteractionType, 'items' | 'cards' | 'milestones'>> = {
+/** Clave de `config` donde vive la lista de ítems narrables por separado
+ *  (`undefined` si el tipo no tiene). Única fuente de esta correspondencia:
+ *  la reutilizan `itemsOf()` y `tts.ts` para localizar/parchear un ítem.
+ *  `hotspots` vive aquí (audio por zona) pero OJO: NO está en
+ *  `REVEALABLE_TYPES` — sus zonas no entran en el «índice hablado» de
+ *  `interactionPlain()` (desvelaría las zonas antes de clicarlas, como leer
+ *  las opciones de un single_choice); el audio de cada zona solo suena al
+ *  clicarla (ver `interactions.js::register('hotspots', …)`). */
+const ITEM_KEY: Partial<Record<InteractionType, 'items' | 'cards' | 'milestones' | 'spots'>> = {
   accordion: 'items',
   tabs: 'items',
   flip_cards: 'cards',
   flashcards: 'cards',
   image_cards: 'cards',
   timeline: 'milestones',
+  hotspots: 'spots',
 }
 
-export function itemsKeyOf(type: InteractionType): 'items' | 'cards' | 'milestones' | undefined {
+export function itemsKeyOf(type: InteractionType): 'items' | 'cards' | 'milestones' | 'spots' | undefined {
   return ITEM_KEY[type]
 }
 
@@ -128,6 +151,18 @@ function interactionPlain(it: Interaction): string {
     }
     face(cfg.before_label, 'Antes', cfg.before_alt)
     face(cfg.after_label, 'Después', cfg.after_alt)
+  } else if (it.type === 'case_practice') {
+    // Rúbrica de autoevaluación: no tiene «criterio correcto», así que narrar
+    // los criterios no desvela ninguna respuesta — entran todos.
+    for (const r of (cfg.rubric || []) as any[]) {
+      const t = inlinePlain(r?.label || '')
+      if (t) parts.push(t)
+    }
+  } else if (it.type === 'scenario_decision') {
+    // La situación es el contexto de la decisión, no una opción a adivinar.
+    // Las opciones y su feedback (eso sí daría la respuesta) quedan fuera.
+    const scenario = inlinePlain(cfg.scenario || '')
+    if (scenario) parts.push(scenario)
   }
   return parts.join('\n')
 }
@@ -170,6 +205,13 @@ export function itemsOf(it: Interaction): NarratableItem[] {
         label = raw?.title || ''
         body = raw?.text || ''
         break
+      case 'hotspots':
+        // Solo el nombre de la zona — nunca su feedback (correcto/incorrecto):
+        // es una evaluable, igual que no se narran las opciones de un
+        // single_choice. El audio suena al clicar, no antes (ver interactions.js).
+        label = raw?.label || ''
+        body = ''
+        break
       default: // accordion, tabs
         label = raw?.title || ''
         body = raw?.body || ''
@@ -182,7 +224,7 @@ export function itemsOf(it: Interaction): NarratableItem[] {
   })
 }
 
-/** Transcripción completa de la pantalla (título + texto + interacción informativa).
+/** Transcripción completa de la pantalla (título + texto + interacción).
  *  El título va siempre primero, como haría un narrador real anunciando la
  *  pantalla — es lo único que garantiza que una portada de módulo/unidad (solo
  *  título, sin `student_text`) tenga algo que narrar en vez de quedar muda. */
@@ -192,9 +234,16 @@ export function buildTranscript(screen: Screen): string {
   if (title) parts.push(/[.!?…]$/.test(title) ? title : title + '.')
   const body = plainText(screen.student_text)
   if (body) parts.push(body)
-  if (screen.interaction && INFORMATIVE.has(screen.interaction.type)) {
-    const it = interactionPlain(screen.interaction)
-    if (it) parts.push(it)
+  if (screen.interaction) {
+    if (INFORMATIVE.has(screen.interaction.type)) {
+      const it = interactionPlain(screen.interaction)
+      if (it) parts.push(it)
+    } else {
+      // Evaluable: solo el enunciado (ver cabecera del fichero) — nunca
+      // opciones/pasos/zonas/respuestas/feedback.
+      const prompt = inlinePlain(screen.interaction.prompt)
+      if (prompt) parts.push(prompt)
+    }
   }
   return parts.join('\n\n')
 }

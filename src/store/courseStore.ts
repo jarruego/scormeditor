@@ -215,8 +215,11 @@ interface CourseState {
   updateScorm: (patch: Partial<ScormConfig>) => void
   /** Actualiza la config de la carcasa (marca, color, animaciones…). */
   updateShell: (patch: Partial<ShellConfig>) => void
-  /** Actualiza la config de narración del curso (curso narrado auto/sí/no). */
-  updateNarration: (patch: Partial<Course['narration']>) => void
+  /** Actualiza la config de narración del curso (curso narrado auto/sí/no, y la
+   *  config de voz TTS del proyecto — ver `updateNarration` más abajo).
+   *  `coalesceKey` agrupa ediciones seguidas (p. ej. tecleando el «Vibe») en un
+   *  solo paso de deshacer, igual que `updateScreen`. */
+  updateNarration: (patch: Partial<Course['narration']>, coalesceKey?: string) => void
   /** Rellena la transcripción de las pantallas narrables que la tienen VACÍA, y
    *  REGENERA las que están desactualizadas (huella de contenido no coincide,
    *  ver `updateScreen`) — nunca toca una transcripción al día ni una editada a
@@ -674,8 +677,8 @@ export const useCourseStore = create<CourseState>((set, get) => {
     set({ course })
   },
 
-  updateNarration: (patch) => {
-    snapshot()
+  updateNarration: (patch, coalesceKey) => {
+    snapshot(coalesceKey)
     const course = clone(get().course)
     course.narration = { ...course.narration, ...patch }
     set({ course })

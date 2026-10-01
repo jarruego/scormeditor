@@ -50,7 +50,16 @@ export const sampleCourse: Course = {
     "motion_speed": "normal"
   },
   "narration": {
-    "mode": "auto"
+    "mode": "auto",
+    "tts": {
+      "provider": "openai",
+      "baseUrl": "https://api.openai.com/v1",
+      "model": "gpt-4o-mini-tts",
+      "voice": "nova",
+      "format": "mp3",
+      "speed": 1,
+      "instructions": ""
+    }
   },
   "intro_screens": [
     {

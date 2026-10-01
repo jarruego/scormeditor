@@ -7,9 +7,14 @@ import { buildTranscript, contentHash, itemsOf, itemsKeyOf } from './buildTransc
  * Narración por voz (TTS) integrada en el editor.
  *
  * SCORMEditor es una SPA sin backend: las llamadas van DIRECTAS desde el
- * navegador al proveedor de TTS, con la clave que el usuario guarda en su propio
- * navegador (localStorage). La clave nunca sale del equipo ni se guarda en el
- * `.scormproj`. Sin dependencias: usamos `fetch` contra la API REST.
+ * navegador al proveedor de TTS. La CLAVE de API se guarda solo en el
+ * `localStorage` del navegador del autor y nunca sale del equipo ni viaja en
+ * el `.scormproj` (ver `keys`/`LS_KEY` más abajo) — pero el resto de la config
+ * (proveedor, modelo, voz, formato, velocidad, tono/«Vibe») sí viaja en el
+ * proyecto (`course.narration.tts`, ver `course.schema.ts`): no es secreta, y
+ * así todo el equipo locuta con la misma voz al abrir el mismo `.scormproj`,
+ * sin tener que reconfigurarla cada uno en su navegador. Sin dependencias:
+ * usamos `fetch` contra la API REST.
  *
  * Dos proveedores soportados:
  *  - `openai`: endpoint `/audio/speech`, devuelve audio ya codificado (mp3/…).
@@ -119,30 +124,82 @@ const DEFAULTS: TtsConfig = {
   speed: 1,
   instructions: '',
 }
+// DEFAULTS sin `keys`: base de la config de PROYECTO — nunca debe llevar
+// claves, ni siquiera vacías (se filtran aquí una sola vez para que ningún
+// `{ ...PROJECT_DEFAULTS, ... }` pueda colar `keys` en `course.narration.tts`).
+const { keys: _defaultKeys, ...PROJECT_DEFAULTS } = DEFAULTS
 
-export function getTtsConfig(): TtsConfig {
+/** Lee SOLO las claves de API guardadas en este navegador (nunca en el
+ *  proyecto). Conserva el formato histórico de `LS_KEY` por compatibilidad,
+ *  aunque desde que el resto de la config vive en el proyecto este
+ *  `localStorage` ya solo guarda `keys`. */
+function readLocalKeys(): Record<TtsProvider, string> {
   try {
     const raw = localStorage.getItem(LS_KEY)
     if (raw) {
       const saved = JSON.parse(raw)
-      const cfg: TtsConfig = { ...DEFAULTS, ...saved, keys: { ...DEFAULTS.keys, ...(saved.keys || {}) } }
+      const keys = { ...DEFAULTS.keys, ...(saved.keys || {}) }
       // Migración: versiones antiguas guardaban una única `apiKey` compartida.
-      if (typeof saved.apiKey === 'string' && saved.apiKey && !cfg.keys[cfg.provider]) {
-        cfg.keys[cfg.provider] = saved.apiKey
+      if (typeof saved.apiKey === 'string' && saved.apiKey && !keys[saved.provider as TtsProvider]) {
+        keys[saved.provider as TtsProvider] = saved.apiKey
       }
-      return cfg
+      return keys
     }
   } catch {
     /* localStorage no disponible o JSON corrupto: usamos defaults */
   }
-  return { ...DEFAULTS, keys: { ...DEFAULTS.keys } }
+  return { ...DEFAULTS.keys }
 }
 
+/** Config de voz del proyecto actual (todo salvo `keys`) — vive en
+ *  `course.narration.tts`, así que viaja en el `.scormproj`/ZIP y la comparte
+ *  todo el equipo. Proyectos de antes de este campo reciben los valores por
+ *  defecto de `course.schema.ts` (los mismos que `DEFAULTS` aquí) al cargar. */
+function readProjectTts(): Omit<TtsConfig, 'keys'> {
+  try {
+    const tts = useCourseStore.getState().course?.narration?.tts as Partial<TtsConfig> | undefined
+    // Se copian los campos UNO A UNO (nunca `{ ...tts }`) a propósito: así, si
+    // algún proyecto llegase a tener un `keys` colado en `narration.tts` (p.
+    // ej. un `.scormproj` de una build con un bug ya corregido), se descarta
+    // aquí en vez de propagarse al guardar — `keys` JAMÁS debe salir de este
+    // módulo hacia el proyecto.
+    if (tts) {
+      return {
+        provider: tts.provider ?? PROJECT_DEFAULTS.provider,
+        baseUrl: tts.baseUrl ?? PROJECT_DEFAULTS.baseUrl,
+        model: tts.model ?? PROJECT_DEFAULTS.model,
+        voice: tts.voice ?? PROJECT_DEFAULTS.voice,
+        format: tts.format ?? PROJECT_DEFAULTS.format,
+        speed: tts.speed ?? PROJECT_DEFAULTS.speed,
+        instructions: tts.instructions ?? PROJECT_DEFAULTS.instructions,
+      }
+    }
+  } catch {
+    /* fuera de un store montado (tests, etc.): usamos defaults */
+  }
+  return { ...PROJECT_DEFAULTS }
+}
+
+export function getTtsConfig(): TtsConfig {
+  return { ...readProjectTts(), keys: readLocalKeys() }
+}
+
+/** Actualiza la config de voz. Las claves de API (`patch.keys`) se guardan
+ *  SOLO en `localStorage`, nunca en el proyecto; el resto (proveedor, modelo,
+ *  voz, formato, velocidad, instrucciones) se guarda en
+ *  `course.narration.tts` con un paso de deshacer que agrupa ediciones
+ *  seguidas (p. ej. tecleando el «Vibe»), igual que un campo de texto normal. */
 export function setTtsConfig(patch: Partial<TtsConfig>): TtsConfig {
-  const cur = getTtsConfig()
-  const next: TtsConfig = { ...cur, ...patch, keys: { ...cur.keys, ...(patch.keys || {}) } }
-  localStorage.setItem(LS_KEY, JSON.stringify(next))
-  return next
+  const { keys: keyPatch, ...rest } = patch
+  if (keyPatch) {
+    const keys = { ...readLocalKeys(), ...keyPatch }
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ keys })) } catch { /* ignorar */ }
+  }
+  if (Object.keys(rest).length) {
+    const next = { ...readProjectTts(), ...rest }
+    useCourseStore.getState().updateNarration({ tts: next }, 'tts-config')
+  }
+  return getTtsConfig()
 }
 
 /** Clave activa según el proveedor seleccionado (sin espacios). */
@@ -399,9 +456,10 @@ export interface NarratableItemEntry {
   hasText: boolean
 }
 
-/** Lista los ítems narrables (accordion/tabs/flip_cards/timeline/image_cards/
- *  flashcards) de todo el curso, con su estado de audio — para el contador de
- *  narración masiva y la pestaña Validación. */
+/** Lista los ítems narrables por separado (accordion/tabs/flip_cards/timeline/
+ *  image_cards/flashcards, y las zonas de hotspots) de todo el curso, con su
+ *  estado de audio — para el contador de narración masiva y la pestaña
+ *  Validación. */
 export function listNarratableItems(): NarratableItemEntry[] {
   const out: NarratableItemEntry[] = []
   for (const s of eachScreen()) {
@@ -439,10 +497,10 @@ function applyItemAudio(screenId: string, interactionId: string, itemId: string,
 }
 
 /**
- * Genera (o regenera) el audio de un ítem de una interacción revelable
- * (accordion/tabs/flip_cards/timeline/image_cards/flashcards) a partir de su
- * propio texto visible — no hay transcripción de ítem aparte (ver `itemsOf`
- * en `buildTranscript.ts`). Devuelve la ruta del asset creado.
+ * Genera (o regenera) el audio de un ítem narrable por separado (accordion/
+ * tabs/flip_cards/timeline/image_cards/flashcards, y las zonas de hotspots) a
+ * partir de su propio texto visible — no hay transcripción de ítem aparte
+ * (ver `itemsOf` en `buildTranscript.ts`). Devuelve la ruta del asset creado.
  */
 export async function generateForItem(
   screenId: string,

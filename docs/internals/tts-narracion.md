@@ -13,22 +13,41 @@ lo que no esté en `transcript` no aparece ahí (regla de contenido del GPT).
 anteponiendo SIEMPRE el **título de la pantalla** (primera frase, como anunciaría un
 narrador real) y a partir de `student_text` (markdown ligero → texto plano: quita
 `**`/`*`/enlaces, aplana listas, y sustituye los fences `:::` por la **etiqueta hablada**
-del callout — mismas etiquetas que `renderer.js`, mantener en sync) **más el enunciado
-(`prompt`) de la interacción si es informativa**. El título es lo único que garantiza que
-una portada de módulo/unidad (solo título, sin `student_text`) tenga algo que narrar en
-vez de quedar muda — antes se omitía del todo y `buildTranscript` podía devolver vacío
-para esas pantallas, sin que ni siquiera apareciesen como «pendientes» en Validación.
-Las evaluables se excluyen: no se leen
-opciones/respuestas. `accordion`/`tabs`/`flip_cards`/`timeline`/`image_cards`/
-`flashcards` OCULTAN el CUERPO de cada ítem tras un gesto de revelado
-(desplegar/pestañear/girar/abrir): ese cuerpo NO entra en la transcripción general
-—leerlo antes de que el alumno lo despliegue chafaría el propio mecanismo de
-descubrimiento— y se narra por ítem con audio propio (ver «Narración por ítem» más
-abajo). El TÍTULO/etiqueta de cada ítem, en cambio, es visible SIN clicar (cabecera,
-pestaña, anverso de la tarjeta…), así que **sí** entra en la transcripción general junto
-al `prompt`: funciona como un índice hablado de lo que hay para explorar, sin desvelar el
-contenido. `before_after` no oculta nada (las dos caras se ven a la vez) y sigue
-narrándose entera aquí (etiqueta + alt de cada cara).
+del callout — mismas etiquetas que `renderer.js`, mantener en sync). El título es lo único
+que garantiza que una portada de módulo/unidad (solo título, sin `student_text`) tenga
+algo que narrar en vez de quedar muda — antes se omitía del todo y `buildTranscript` podía
+devolver vacío para esas pantallas, sin que ni siquiera apareciesen como «pendientes» en
+Validación.
+
+El resto depende de si la interacción es **informativa** (`INFORMATIVE`, exportado por
+`buildTranscript.ts`: `accordion`/`tabs`/`flip_cards`/`timeline`/`image_cards`/
+`flashcards`/`before_after`/`case_practice`/`scenario_decision`) o **evaluable** (cualquier
+otro tipo — `single_choice`, `fill_blanks`, `hotspots`, crucigrama…):
+- **Evaluable**: solo entra el **enunciado** (`prompt`), nunca opciones, pasos a ordenar,
+  zonas, respuestas ni feedback — narrar eso en voz alta sería «caos auditivo» (listas
+  largas sin la pausa/interacción real del alumno) y en varios casos desvelaría
+  literalmente la respuesta. El enunciado por sí solo evita que la pantalla quede muda.
+- **Informativa**: entra su contenido completo, con dos sub-familias:
+  - *Revelable* (`REVEALABLE_TYPES`: `accordion`/`tabs`/`flip_cards`/`timeline`/
+    `image_cards`/`flashcards`) OCULTA el CUERPO de cada ítem tras un gesto de revelado
+    (desplegar/pestañear/girar/abrir): ese cuerpo NO entra en la transcripción general
+    —leerlo antes de que el alumno lo despliegue chafaría el propio mecanismo de
+    descubrimiento— y se narra por ítem con audio propio (ver «Narración por ítem» más
+    abajo). El TÍTULO/etiqueta de cada ítem, en cambio, es visible SIN clicar (cabecera,
+    pestaña, anverso de la tarjeta…), así que **sí** entra en la transcripción general
+    junto al `prompt`: funciona como un índice hablado de lo que hay para explorar, sin
+    desvelar el contenido.
+  - *No revelable* no oculta nada tras un gesto, así que entra entera sin esperar: 
+    `before_after` (etiqueta + alt de cada cara), `case_practice` (los criterios de la
+    rúbrica de autoevaluación — no tiene «correcta», así que narrarlos no desvela nada) y
+    `scenario_decision` (la situación inicial, que es contexto, no una opción a adivinar;
+    las opciones y su feedback sí quedan fuera, como cualquier evaluable).
+
+`hotspots` es evaluable (solo su `prompt` entra en la transcripción general) pero tiene
+además su **propio** mecanismo de audio por zona — ver «Narración por ítem» — sin estar en
+`REVEALABLE_TYPES`: sus zonas no deben aparecer en el índice hablado (sería leer las
+opciones de la pregunta antes de que el alumno las pulse).
+
 Botón «↻ Regenerar transcripción desde el contenido» en `ScreenEditor`
 (`onRebuildTranscript`): si hay transcripción distinta pide confirmación de sobrescritura;
 si la pantalla tiene `audio_src`, tras regenerar avisa de que **el audio ya no se
@@ -96,23 +115,32 @@ runtime lo inyecta con `narrationBlock()` (renderer.js) como `<audio class=
 la reproducción automática al entrar en la pantalla (persistida en `localStorage`
 `me-audio-enabled`). El navegador puede bloquear el autoplay hasta la primera interacción.
 
-## Narración por ítem (accordion/tabs/flip_cards/timeline/image_cards/flashcards)
-Estos 6 tipos ocultan el cuerpo de cada ítem tras un gesto de revelado; en vez de
+## Narración por ítem (accordion/tabs/flip_cards/timeline/image_cards/flashcards/hotspots)
+Los 6 tipos revelables ocultan el cuerpo de cada ítem tras un gesto de revelado; en vez de
 narrarlo por adelantado en el audio de pantalla (spoiler + desincronía), cada ítem tiene
 su **propio** audio corto que suena **solo la primera vez que se revela**. El guion **es
 el propio texto visible del ítem** (título/cara/hito + cuerpo) — no hay campo de
 locución aparte que mantener sincronizado.
 
-- **Schema**: cada entrada de `items`/`cards`/`milestones` admite `id?: string` (ancla
-  estable — no la asigna el GPT; el editor la genera al vuelo la primera vez que hace
-  falta, vía el mismo generador `rid()` que ya usan opciones/pasos/grupos) y
+`hotspots` reutiliza el mismo mecanismo (clave `spots` en `ITEM_KEY`, mismos botones de
+audio por ítem) pero con una semántica distinta: no es un gesto de exploración libre, es
+una zona de una pregunta de un único intento. Por eso **solo** entra en `ITEM_KEY` (audio
+por zona, suena al clicarla) y **no** en `REVEALABLE_TYPES` (nunca aparece en el índice
+hablado de la transcripción general — ver arriba) y **no** se narra en la restauración de
+estado al recargar (solo en el clic en vivo): el guion es únicamente el `label` de la
+zona (nunca su `feedback` de correcto/incorrecto, igual que no se narran las opciones de
+un `single_choice`).
+
+- **Schema**: cada entrada de `items`/`cards`/`milestones`/`spots` admite `id?: string`
+  (ancla estable — no la asigna el GPT; el editor la genera al vuelo la primera vez que
+  hace falta, vía el mismo generador `rid()` que ya usan opciones/pasos/grupos) y
   `audio_src?: string` (ruta `assets/media/...`, igual que el audio de pantalla).
 - **`itemsOf(interaction)`** (`src/tts/buildTranscript.ts`) da, por cada ítem de un tipo
-  revelable (`[]` para el resto): `label` (título/cara/hito, visible sin revelar — lo usa
-  la transcripción general), `text` (guion completo del audio de ítem: label + cuerpo),
-  `id` y `audioSrc`. `itemsKeyOf(type)` da la clave de `config` correspondiente
-  (`items`/`cards`/`milestones`) — única fuente de esa correspondencia, la reutilizan
-  `tts.ts` y los validadores.
+  con `ITEM_KEY` (`[]` para el resto): `label` (título/cara/hito/zona), `text` (guion del
+  audio de ítem — en `hotspots`, solo el `label`; en el resto, label + cuerpo), `id` y
+  `audioSrc`. `itemsKeyOf(type)` da la clave de `config` correspondiente
+  (`items`/`cards`/`milestones`/`spots`) — única fuente de esa correspondencia, la
+  reutilizan `tts.ts` y los validadores.
 - **Generación** (`src/tts/tts.ts`): `generateForItem(screenId, interactionId, itemId)`
   sintetiza el texto del ítem y lo guarda en su `audio_src`; `listNarratableItems()` lista
   todos los ítems narrables del curso con su estado (para contadores/validación);
@@ -182,9 +210,25 @@ Módulo `src/tts/tts.ts` + sección `NarrationSection` (`src/components/TtsPanel
 mostrada en su propia ventana `NarrationModal`, que abre la opción **Narración** del menú
 **⚙ Ajustes** de la `Toolbar` (no hay botón de narración suelto en la barra). La sección
 informa de `busy` para que la ventana no se cierre mientras genera.
-- **Config compartida** (`getTtsConfig`/`setTtsConfig`, claves de API vía
-  `setProviderKey`) en `localStorage`; varios `PROVIDERS` con sus `voicesFor`/`modelsFor`/
-  `providerDefaults`.
+- **Config partida entre proyecto y navegador** (`getTtsConfig`/`setTtsConfig` en
+  `tts.ts`, tipo `TtsConfig`): proveedor, `baseUrl`, modelo, voz, formato, velocidad e
+  instrucciones/«Vibe» viajan en el proyecto (`course.narration.tts`, ver
+  `course.schema.ts`) — así todo el equipo locuta con la misma voz al abrir el mismo
+  `.scormproj`/documento-nube, sin reconfigurarla cada uno. La **clave de API** (`keys`,
+  una por proveedor vía `setProviderKey`) es la única excepción: vive SOLO en
+  `localStorage` de cada navegador y nunca se escribe en el proyecto ni en el ZIP —
+  `readProjectTts()`/`readLocalKeys()` leen cada mitad de su sitio y `getTtsConfig()` las
+  junta; `readProjectTts()` copia los campos **uno a uno** (nunca con un `{ ...tts }` a
+  ciegas) precisamente para que un `keys` que pudiera colarse en `narration.tts` (p. ej.
+  un proyecto tocado por una build con este bug ya corregido) se descarte al leer en vez
+  de propagarse al siguiente guardado. `setTtsConfig(patch)` separa `patch.keys` (→
+  `localStorage`) del resto (→ `updateNarration({tts}, 'tts-config')`, con una clave de
+  agrupación para que teclear el «Vibe» o tocar varios selectores seguidos sea **un solo**
+  paso de deshacer, igual que un campo de texto). Proyectos de antes de este campo reciben
+  los valores por defecto de `course.schema.ts` al cargar — la voz guardada en el
+  navegador de quien lo creó NO se migra automáticamente a esos proyectos ya existentes
+  (hay que re-elegirla una vez; desde entonces queda en el proyecto). `PROVIDERS` con sus
+  `voicesFor`/`modelsFor`/`providerDefaults`.
 - **Por pantalla**: `generateForScreen(id)` sintetiza el audio **desde la `transcript`**
   y lo guarda en `audio_src`. Disparador en `ScreenEditor` (botón «Generar audio»);
   requiere clave de API configurada.

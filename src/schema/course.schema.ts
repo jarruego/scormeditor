@@ -457,6 +457,20 @@ export const Course = z.object({
       .enum(['auto', 'on', 'off'])
       .default('auto')
       .describe('Curso narrado: activa los avisos de transcripción/audio pendientes. auto = según haya locución en alguna pantalla'),
+    /** Config de voz TTS compartida por el proyecto (proveedor, modelo, voz,
+     *  formato, velocidad, tono/«Vibe») — así todo el equipo locuta con la
+     *  misma voz al abrir el `.scormproj`. La CLAVE de API queda fuera a
+     *  propósito: nunca se guarda aquí ni en el ZIP, solo en el `localStorage`
+     *  del navegador de cada autor (ver `src/tts/tts.ts`). */
+    tts: z.object({
+      provider: z.enum(['openai', 'gemini']).default('openai'),
+      baseUrl: z.string().default('https://api.openai.com/v1'),
+      model: z.string().default('gpt-4o-mini-tts'),
+      voice: z.string().default('nova'),
+      format: z.enum(['mp3', 'wav', 'opus', 'aac', 'flac']).default('mp3'),
+      speed: z.number().default(1),
+      instructions: z.string().default(''),
+    }).default({}),
   }).default({}),
   /** Rótulo por el que la UI del editor llama a `modules` (árbol, formularios…):
    *  un paquete SCORM puede representar un curso completo, un módulo, una unidad

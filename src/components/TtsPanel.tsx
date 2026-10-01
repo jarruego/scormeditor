@@ -35,6 +35,14 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
   const fillMissingTranscripts = useCourseStore((s) => s.fillMissingTranscripts)
   const [trMsg, setTrMsg] = useState<string | null>(null)
   const [cfg, setCfg] = useState<TtsConfig>(() => getTtsConfig())
+  // Proveedor/modelo/voz/Vibe viven en el proyecto (course.narration.tts):
+  // si cambian por fuera de este panel (deshacer/rehacer, cambio de proyecto),
+  // este estado local se resincroniza. Las claves de API no están aquí (viven
+  // solo en localStorage, nunca en el proyecto), así que no hace falta
+  // resincronizarlas por este camino.
+  useEffect(() => {
+    setCfg(getTtsConfig())
+  }, [course.narration.tts])
   const [busy, setBusy] = useState(false)
   const [onlyMissing, setOnlyMissing] = useState(true)
   const [progress, setProgress] = useState<{ index: number; total: number; title: string } | null>(null)
@@ -88,7 +96,7 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
   }, [busy, onBusyChange])
 
   function update(patch: Partial<TtsConfig>) {
-    setCfg(setTtsConfig(patch)) // persiste al instante en localStorage
+    setCfg(setTtsConfig(patch)) // persiste al instante (proyecto, salvo `keys`: solo localStorage)
   }
 
   async function onTest() {
@@ -202,6 +210,11 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
 
           <fieldset className="ed-group">
             <legend>Voz y calidad</legend>
+            <p className="ed-hint">
+              Se guarda en el proyecto (no en este navegador): todo el equipo locuta con la
+              misma voz al abrir el <code>.scormproj</code>. La clave de API es la única
+              excepción (arriba), por quedarse solo en este navegador.
+            </p>
             <div className="ed-row">
               <label className="ed-field">
                 <span>Modelo</span>

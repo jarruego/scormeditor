@@ -22,6 +22,9 @@ export interface HotspotSpot {
   h: number
   correct?: boolean
   feedback?: string
+  /** Audio de narración de la zona (suena al clicarla); se genera y gestiona
+   *  desde InteractionConfigEditor, no desde este modal. */
+  audio_src?: string
 }
 
 const rid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 7)}`

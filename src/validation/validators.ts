@@ -106,9 +106,10 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
   const it = s.interaction
   if (it) {
     // Narración por ítem (accordion/tabs/flip_cards/timeline/image_cards/
-    // flashcards): cada ítem con texto se narra con SU PROPIO audio — no el
-    // de pantalla, que ya no lo incluye (ver docs/internals/tts-narracion.md).
-    // Mismo criterio que NARR_NO_AUDIO pero a nivel de ítem; no hace falta un
+    // flashcards, y las zonas de hotspots): cada ítem/zona con texto se narra
+    // con SU PROPIO audio — no el de pantalla, que para estos tipos no lo
+    // incluye (ver docs/internals/tts-narracion.md). Mismo criterio que
+    // NARR_NO_AUDIO pero a nivel de ítem; no hace falta un
     // «NARR_ITEM_NO_TRANSCRIPT» porque el guion es el propio texto visible
     // (siempre "existe" si el ítem no está vacío — ya cubierto por TL_EMPTY,
     // FC_EMPTY, etc.).
