@@ -19,6 +19,10 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
+/* Tamaño del texto elegido por el alumno (A− / A+, setupTextSize en app.js):
+   toda la carcasa va en rem/em, así que escalar el rem del <html> la escala
+   entera. Respeta además el tamaño de letra del navegador/SO (100% base). */
+html { font-size: calc(100% * var(--me-text-scale, 1)); }
 body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--me-text); background: var(--me-bg); line-height: 1.6;
@@ -449,6 +453,13 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-ghost { background: transparent; }
 .me-icon-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: .25rem .5rem; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
 .me-icon-btn:hover { background: var(--me-bg); }
+/* A− / A+ de la topbar: una «A» (pequeña o grande) + signo, en px para que el
+   propio control no crezca con el tamaño de texto que gobierna. */
+.me-textsize-btn { gap: 1px; font-weight: 700; font-size: 13px; line-height: 1; }
+.me-textsize-a { font-size: 17px; }
+.me-textsize-a-s { font-size: 12px; }
+.me-textsize-btn:disabled { opacity: .35; cursor: default; }
+.me-textsize-btn:disabled:hover { background: none; }
 .me-btn:focus-visible, .me-icon-btn:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--me-primary); outline-offset: 2px; }
 
 /* Interacciones */

@@ -21,6 +21,10 @@
         <span id="me-course-title" class="me-course-title"></span>
       </div>
       <div class="me-topbar-right">
+        <!-- Tamaño del texto (A− / A+): escala el rem de toda la carcasa en
+             pasos fijos y se recuerda entre sesiones (ver setupTextSize en app.js). -->
+        <button id="me-btn-text-smaller" class="me-icon-btn me-textsize-btn" title="Reducir el tamaño del texto" aria-label="Reducir el tamaño del texto"><span class="me-textsize-a me-textsize-a-s" aria-hidden="true">A</span><span aria-hidden="true">−</span></button>
+        <button id="me-btn-text-larger" class="me-icon-btn me-textsize-btn" title="Aumentar el tamaño del texto" aria-label="Aumentar el tamaño del texto"><span class="me-textsize-a" aria-hidden="true">A</span><span aria-hidden="true">+</span></button>
         <button id="me-btn-print" class="me-icon-btn" title="Imprimir" aria-label="Imprimir"><span data-icon="printer" aria-hidden="true"></span></button>
         <button id="me-btn-help" class="me-icon-btn" title="Ayuda" aria-label="Ayuda"><span data-icon="help-circle" aria-hidden="true"></span></button>
         <!-- Cierra el curso: si está incompleto pide confirmación (progreso

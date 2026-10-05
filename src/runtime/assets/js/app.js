@@ -37,6 +37,16 @@
     var savedVol = parseFloat(global.localStorage && localStorage.getItem('me-audio-volume'));
     if (savedVol >= 0 && savedVol <= 1) audioVolume = savedVol;
   } catch (e) {}
+  // Tamaño del texto (A− / A+): factor sobre el rem de <html> en pasos fijos,
+  // recordado entre sesiones igual que el audio. Es una preferencia del
+  // dispositivo, no del intento: va en localStorage y no en suspend_data.
+  var TEXT_SCALES = [1, 1.25, 1.5, 2];
+  var textScaleIdx = 0;
+  try {
+    var savedScale = parseFloat(global.localStorage && localStorage.getItem('me-text-scale'));
+    if (TEXT_SCALES.indexOf(savedScale) >= 0) textScaleIdx = TEXT_SCALES.indexOf(savedScale);
+  } catch (e) {}
+  document.documentElement.style.setProperty('--me-text-scale', String(TEXT_SCALES[textScaleIdx]));
   // El alumno arrastra el seek del reproductor: mientras dura el arrastre no se
   // pisa el valor desde 'timeupdate' (si no, el pulgar «salta» bajo el dedo).
   var seekDragging = false;
@@ -387,6 +397,7 @@
       rateSel.value = String(audioRate);
       rateSel.addEventListener('change', function () { setAudioRate(parseFloat(rateSel.value)); });
     }
+    setupTextSize();
     document.getElementById('me-btn-print').addEventListener('click', function () { window.print(); });
     document.getElementById('me-btn-help').addEventListener('click', function () { openModal('help'); });
     document.getElementById('me-btn-close').addEventListener('click', requestExit);
@@ -889,6 +900,23 @@
   function fullscreenElement() {
     return document.fullscreenElement || document.webkitFullscreenElement || null;
   }
+  // A− / A+ de la topbar: sube/baja un paso de TEXT_SCALES, desactiva el botón
+  // en el extremo y persiste la elección (try/catch: localStorage puede fallar).
+  function setupTextSize() {
+    var smaller = document.getElementById('me-btn-text-smaller');
+    var larger = document.getElementById('me-btn-text-larger');
+    function apply(idx) {
+      textScaleIdx = Math.max(0, Math.min(TEXT_SCALES.length - 1, idx));
+      document.documentElement.style.setProperty('--me-text-scale', String(TEXT_SCALES[textScaleIdx]));
+      smaller.disabled = textScaleIdx === 0;
+      larger.disabled = textScaleIdx === TEXT_SCALES.length - 1;
+      try { if (global.localStorage) localStorage.setItem('me-text-scale', String(TEXT_SCALES[textScaleIdx])); } catch (e) {}
+    }
+    smaller.addEventListener('click', function () { apply(textScaleIdx - 1); });
+    larger.addEventListener('click', function () { apply(textScaleIdx + 1); });
+    apply(textScaleIdx);
+  }
+
   function setupFullscreen() {
     var btn = document.getElementById('me-btn-fullscreen');
     var root = document.documentElement;
@@ -1064,7 +1092,7 @@
       }).join('');
       openModalHtml(bibliographyTitle(), b ? '<ul>' + b + '</ul>' : '<p>Sin recursos.</p>');
     } else if (which === 'help') {
-      openModalHtml('Ayuda', '<ul><li><strong>Alt + →</strong> Siguiente</li><li><strong>Alt + ←</strong> Anterior</li><li><strong>Alt + M</strong> Menú</li><li><strong>Alt + T</strong> Transcripción</li></ul><p>Usa Tab para navegar por los controles.</p>');
+      openModalHtml('Ayuda', '<ul><li><strong>Alt + →</strong> Siguiente</li><li><strong>Alt + ←</strong> Anterior</li><li><strong>Alt + M</strong> Menú</li><li><strong>Alt + T</strong> Transcripción</li></ul><p>Usa Tab para navegar por los controles.</p><p>Con los botones <strong>A−</strong> y <strong>A+</strong> de la barra superior puedes cambiar el tamaño del texto; se recuerda en este dispositivo.</p>');
     }
   }
   function openModalHtml(title, bodyHtml) {

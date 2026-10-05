@@ -7,11 +7,24 @@
 ## Cabecera (topbar)
 - **Cabecera minimal**: la topbar solo lleva tres zonas: `#me-toggle-menu` (☰) a la
   izquierda, `.me-topbar-title` (marca opcional + título del curso) centrada
-  (`flex:1 1 auto; text-align:center`, con ellipsis), y `.me-topbar-right` (Imprimir,
-  Ayuda, Cerrar) a la derecha. El resto de herramientas que antes vivían en la topbar
+  (`flex:1 1 auto; text-align:center`, con ellipsis), y `.me-topbar-right` (A−, A+,
+  Imprimir, Ayuda, Cerrar) a la derecha. El resto de herramientas que antes vivían en la topbar
   se repartió: Glosario/Recursos al final del menú lateral, y Transcripción + el
   reproductor de audio + Pantalla completa a la barra inferior (ver más abajo). Iconos
   vía `icons.js`: `printer` Imprimir, `help-circle` Ayuda, `log-out` Cerrar, `menu` ☰.
+- **Tamaño del texto (A− / A+)**: `#me-btn-text-smaller/-larger` (`setupTextSize`, app.js)
+  recorren `TEXT_SCALES` = 100/125/150/200 % y fijan `--me-text-scale` en `<html>`, que
+  `styles.css` aplica como `html { font-size: calc(100% * var(--me-text-scale, 1)) }`.
+  Toda la carcasa va en `rem`/`em`, así que escala entera sin tocar nada más; **no usar
+  `px` para tipografía nueva** o quedará fuera del escalado (los botones A−/A+ sí van en
+  `px` a propósito, para no crecer con lo que gobiernan). Existe porque el pellizco del
+  móvil es poco fiable en un app shell de altura fija (`#me-app` = `100dvh`, contenido en
+  scroll interno) y el zoom del navegador no es una opción para quien ve peor. La
+  elección se guarda en `localStorage` (`me-text-scale`, con try/catch como el audio):
+  es una preferencia del dispositivo, no del intento, por eso **no** va en
+  `suspend_data` (el LMS la guardaría por alumno/intento y engordaría el campo). Cada
+  botón se desactiva en su extremo. Con 200 % en móvil el título del curso de la topbar
+  puede quedar sin sitio (ellipsis); es un compromiso aceptado.
 - **Cerrar el curso**: `#me-btn-close` (topbar, icono `log-out`) llama a `requestExit()`
   (app.js) — la misma lógica que el botón «Salir del curso» de la pantalla de
   Resultados: si `evaluateCompletion()` da `incomplete`, pide confirmación
