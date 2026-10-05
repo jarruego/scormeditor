@@ -55,6 +55,43 @@ def interaction_text(it):
     return '\n'.join(str(p) for p in parts)
 
 
+# Pantallas con contenido CREADO (no sale tal cual del original) → «pendiente de revisión».
+_CREADAS = {
+    'single_choice': 'preguntas y opciones redactadas a partir del tema',
+    'true_false': 'afirmación y feedback redactados a partir del tema',
+    'fill_blanks': 'frase con huecos y distractores redactados',
+    'match_pairs': 'emparejamiento redactado a partir del tema',
+    'classification': 'clasificación redactada a partir del tema',
+    'sort_steps': 'orden de pasos redactado a partir del tema',
+    'scenario_decision': 'caso, opciones y feedback redactados',
+    'case_practice': 'criterios de autoevaluación (rúbrica) redactados',
+    'flashcards': 'tarjetas de repaso redactadas',
+    'word_search': 'palabras del pasatiempo elegidas',
+    'crossword': 'palabras y pistas del crucigrama redactadas',
+    'az_quiz': 'definiciones y respuestas del rosco redactadas',
+    'image_cards': 'texto de las tarjetas transcrito a mano de las imágenes',
+}
+
+
+def flag_review(course):
+    n = 0
+    for scope in [course['modules'][0]['screens']] + [u['screens'] for u in course['modules'][0]['units']]:
+        for s in scope:
+            why = []
+            it = s['interaction']['type'] if s['interaction'] else ''
+            if it in _CREADAS:
+                why.append(_CREADAS[it])
+            if s['type'] == 'objectives':
+                why.append('objetivos redactados a partir del contenido')
+            if s['type'] == 'summary' and s['student_text'].strip():
+                why.append('resumen redactado con frases del tema')
+            why += [x.rstrip('.') for x in s['editor_notes']]
+            if why:
+                s['review'] = {'flagged': True, 'note': 'Revisar: ' + '; '.join(dict.fromkeys(why)) + '.'}
+                n += 1
+    return n
+
+
 def main():
     out_path = OUT_DEFAULT
     if '--out' in sys.argv:
@@ -111,6 +148,8 @@ def main():
                 continue
             seen.add(term.lower())
             course['glossary'].append({'term': term, 'definition': d, 'source_refs': [{'doc': lib.DOC}]})
+    nflag = flag_review(course)
+    print(f'{nflag} pantallas marcadas «pendiente de revisión»')
     # lint
     for unit in mod['units']:
         prev_plain = 0
