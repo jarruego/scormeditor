@@ -1,6 +1,6 @@
 # Curso 3 · «Correo, mensajes y fraudes» — Dossier de fuentes y contenidos
 
-Destinatarios: personal de residencias y centros sociosanitarios (gerocultores/as, auxiliares, enfermería, administración, dirección, supervisión, mantenimiento), sin conocimientos digitales, en móvil. Duración objetivo: ~1 h 40 min.
+Destinatarios: personal de centros sociosanitarios (gerocultores/as, auxiliares, enfermería, administración, dirección, supervisión, mantenimiento), sin conocimientos digitales, en móvil. Duración objetivo: ~1 h 40 min.
 
 Fecha de elaboración: 5 oct 2026. Convención de este dossier:
 - **[LEÍDO]** = leído por mí en la página/fichero citado.
@@ -28,13 +28,13 @@ Fecha de elaboración: 5 oct 2026. Convención de este dossier:
 Lenguaje llano, frases cortas, pensado para móvil. Cada bloque = 1-3 pantallas. Tiempos orientativos sumando ~100 min con actividades.
 
 ### Bloque 0 · Por qué esto va conmigo (5 min)
-- «En una residencia hay cosas que interesan a un estafador: **dinero** (facturas, proveedores, nóminas), **datos de salud** de residentes y **familias** que se preocupan y responden rápido.»
+- «En un centro sociosanitario hay cosas que interesan a un estafador: **dinero** (facturas, proveedores, nóminas), **datos de salud** de residentes y **familias** que se preocupan y responden rápido.»
 - «No hace falta saber de ordenadores. Hace falta **desconfiar con método**.»
 - Idea fuerza: *Te engañan a ti, no al aparato.* Se llama **ingeniería social**: manipular a las personas para que hagan algo que no deberían (INCIBE) [LEÍDO].
 
 ### Bloque 1 · Los 6 trucos con los que te engañan (8 min)
 Resumen de las palancas descritas por INCIBE (5-sep-2019) [LEÍDO] con ejemplos del centro:
-| Truco | Cómo suena en la residencia |
+| Truco | Cómo suena en el centro |
 |---|---|
 | **Autoridad** | «Soy la directora / Policía / la Seguridad Social, haz esto ya.» |
 | **Ayudar** | «Soy de informática, dame tu clave para arreglarlo.» «Soy tu compañera, ¿me cubres el turno?» |
@@ -111,7 +111,7 @@ Recomendaciones INCIBE [LEÍDO / SOLO BÚSQUEDA según indicado]: no escanear QR
 - AEAT: INCIBE avisó de correos y SMS que suplantan a la Agencia Tributaria («Comprobante fiscal digital…», «Tu factura está disponible», descarga de `.zip`) (25-mar-2022) [LEÍDO].
 - DGT / Seguridad Social: la Policía Nacional ha difundido avisos sobre SMS falsos de la DGT (vídeo en TikTok de @policia) [SOLO BÚSQUEDA; no leído]. **No he leído ningún aviso oficial concreto sobre Seguridad Social**; si se quiere incluir, buscar el aviso actual en INCIBE o en la propia Seguridad Social. Regla general: la Administración no pide datos bancarios por SMS; se entra por su **sede electrónica** escribiendo la dirección.
 - **Sextorsión**: correo con «tengo tus vídeos, paga en bitcoin en 48 h». No tienen nada. Si no pagaste: bloquear y borrar. Si pagaste: guardar pruebas, denunciar y llamar al 017 (INCIBE, act. 27-mar-2025) [LEÍDO]. No responder: confirmas que tu cuenta está activa.
-- **Estafas a familiares de residentes**: *no he encontrado una fuente oficial específica sobre estafas dirigidas a familiares de residentes de residencias* [NO CONFIRMADO]. Lo que sí está documentado por INCIBE es la estafa del «familiar en apuros» y el vishing a personas mayores con pretexto de herencia (caso real 017, listado, sin leer el caso completo). Para el curso conviene plantearlo como **escenario hipotético** (ej. 6 y 9) y recomendar que el centro avise a las familias de que **nunca** pedirá pagos ni datos por SMS/WhatsApp.
+- **Estafas a familiares de residentes**: *no he encontrado una fuente oficial específica sobre estafas dirigidas a familiares de residentes de centros sociosanitarios* [NO CONFIRMADO]. Lo que sí está documentado por INCIBE es la estafa del «familiar en apuros» y el vishing a personas mayores con pretexto de herencia (caso real 017, listado, sin leer el caso completo). Para el curso conviene plantearlo como **escenario hipotético** (ej. 6 y 9) y recomendar que el centro avise a las familias de que **nunca** pedirá pagos ni datos por SMS/WhatsApp.
 
 ### Bloque 12 · «He picado»: qué hacer (10 min)
 Pasos según INCIBE («Conoce a fondo el phishing» y avisos) [LEÍDO / síntesis de búsqueda]:
@@ -197,7 +197,7 @@ Señales: 🚩 dominio distinto (`.co` vs `.es`) · 🚩 **cambio de IBAN por co
 Correcto: llamar al proveedor a su teléfono **conocido** y que un segundo responsable valide el cambio (INCIBE: verificación por otro canal + doble control).
 
 ### Ejemplo 3 — Correo «de la directora» (fraude del CEO) (FRAUDE)
-**De:** Directora Elena Ruiz <direccion.residencia@gmail.com>
+**De:** Directora Elena Ruiz <direccion.centro@gmail.com>
 **Asunto:** (sin asunto)
 > Marta, estoy en una reunión y no puedo hablar. Necesito que hagas una transferencia de 4.800 € ahora mismo a un proveedor. Es confidencial, no lo comentes con nadie. Te paso el IBAN por aquí. Te lo agradezco, confío en tu discreción. Enviado desde mi iPhone
 
@@ -248,7 +248,7 @@ Señales: 🚩 la AEAT no pide datos por enlace de SMS · 🚩 dominio `.top` ·
 **L1 — Aviso interno del centro (legítimo).** De: `coordinacion@[dominio-del-centro]` (el real, conocido). «Recordatorio: mañana a las 10:00 formación en la sala 2. Sin enlaces ni adjuntos. Si tienes dudas, llama a coordinación.» → Canal habitual, dominio correcto, nada que pulsar, no pide datos.
 **L2 — Banco/mutua que NO pide datos (legítimo).** SMS de tu banco con un aviso de operación: «Compra 45 € en [comercio]. Si no la reconoces, llama al teléfono de la tarjeta (el de la parte de atrás)». → Llega por el hilo habitual, **no trae enlace**, no pide claves, invita a llamar a un número que ya tienes.
 **L3 — Proveedor real con cambio verificado.** El proveedor llama por teléfono a administración y avisa de que enviará un cambio de datos; administración **devuelve la llamada al número del contrato**; después llega el correo desde el dominio habitual y un segundo responsable valida. → Verificación por doble canal.
-**L4 — Llamada de la familia que sí es real.** Una hija llama al **teléfono de la residencia**, pregunta por la dirección y es el centro quien, tras identificarla según protocolo, le explica lo que está permitido. → El centro controla el canal y la identidad.
+**L4 — Llamada de la familia que sí es real.** Una hija llama al **teléfono del centro**, pregunta por la dirección y es el centro quien, tras identificarla según protocolo, le explica lo que está permitido. → El centro controla el canal y la identidad.
 **Idea para la actividad «¿legítimo o fraude?»**: mezclar 4 legítimos y 6-8 fraudes; añadir **un legítimo con apariencia sospechosa** (p. ej., correo interno con enlace corto) para enseñar que la decisión se toma **verificando**, no «a ojo».
 
 ---

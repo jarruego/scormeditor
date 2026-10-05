@@ -1,6 +1,6 @@
 # Curso 2 · Contraseñas, cuentas y accesos — Dossier de fuentes y contenido
 
-Público: personal de residencias y centros sociosanitarios (gerocultores/as, auxiliares, enfermería, administración, dirección, supervisión, mantenimiento), sin conocimientos digitales, formación en móvil. Duración objetivo: ~1 h 40 min.
+Público: personal de centros sociosanitarios (gerocultores/as, auxiliares, enfermería, administración, dirección, supervisión, mantenimiento), sin conocimientos digitales, formación en móvil. Duración objetivo: ~1 h 40 min.
 
 Fecha de elaboración: 5-oct-2026. Todo lo citado ha sido leído por mí en la fuente indicada; lo que no he podido confirmar se marca como **[NO VERIFICADO]**.
 
@@ -10,7 +10,7 @@ Fecha de elaboración: 5-oct-2026. Todo lo citado ha sido leído por mí en la f
 
 1. **Lo que cambió.** Las fuentes oficiales actuales ya no piden «8 caracteres con mayúscula, número y símbolo». El **CCN-CERT BP/35 «Uso y gestión de contraseñas» (mayo 2026)** recomienda *passphrases* (frases de paso) de **al menos 20 caracteres**, una distinta por servicio, 2FA siempre que se pueda y gestor de contraseñas, y afirma que «la longitud es el principal factor de seguridad, incluso más importante que el uso excesivo de símbolos o la rotación constante». **NIST SP 800-63B-4 (26-ago-2025)** exige 15 caracteres mínimo si la contraseña es el único factor, prohíbe imponer reglas de composición y prohíbe forzar cambios periódicos.
 2. **Aviso de coherencia entre fuentes.** Los materiales más antiguos de INCIBE/OSI (kit de concienciación, ficha «Crea tu contraseña segura») siguen diciendo 8-10 caracteres y «cámbiala cada 3 meses»; la AEPD (guía sanitaria) dice «como mínimo una vez al año». El curso debe **seguir CCN-CERT BP/35 y NIST** (frase larga, única, sin rotación obligatoria salvo sospecha) y decir a la plantilla: «si tu centro te pide cambiarla, hazlo; si no, no hace falta cambiarla cada mes». Ver §3.2.
-3. **Mensaje central para una residencia:** *tu contraseña es tuya, como el cepillo de dientes* (cartel INCIBE). Compartirla en turnos rompe la **trazabilidad** (quién vio o tocó qué historial) y puede hacerte responsable de lo que otra persona haga con tu usuario (kit INCIBE, p. 5).
+3. **Mensaje central para un centro sociosanitario:** *tu contraseña es tuya, como el cepillo de dientes* (cartel INCIBE). Compartirla en turnos rompe la **trazabilidad** (quién vio o tocó qué historial) y puede hacerte responsable de lo que otra persona haga con tu usuario (kit INCIBE, p. 5).
 4. **Puestos compartidos** (tablet de planta, PC de sala común): la solución no es una clave común, sino **usuario individual + cierre/bloqueo de sesión + 2FA + perfiles mínimos**. La AEPD cita expresamente como conducta a evitar «no apagar el ordenador» (dejarlo accesible) y «compartir claves y contraseñas» (Guía AEPD sector sanitario, p. 17).
 5. **2FA/verificación en dos pasos** explicable en llano: «la contraseña es la llave; el 2FA es el segundo cerrojo». Preferir app autenticadora, aviso en el móvil o llave física antes que SMS (CCN-CERT BP/35, §10.1).
 6. **Passkeys** (llaves de acceso): se mencionan como futuro cercano, no como obligación; Google avisa de **no crearlas en dispositivos compartidos**.
@@ -25,10 +25,10 @@ Distribución sugerida de tiempo (100 min): ver §2 (cada bloque lleva su duraci
 
 ## 2. Contenido didáctico estructurado (bloques → pantallas)
 
-Convenciones: lenguaje llano, frases cortas, ejemplos de residencia. «Pantalla» = pantalla sugerida del SCORM. Tiempos orientativos incluyen actividad.
+Convenciones: lenguaje llano, frases cortas, ejemplos de centro sociosanitario. «Pantalla» = pantalla sugerida del SCORM. Tiempos orientativos incluyen actividad.
 
 ### Bloque 0 · Bienvenida y por qué importa (6 min)
-- **P0.1 Gancho.** «En la residencia, una contraseña abre la puerta a datos de salud de residentes y familias». Los datos de salud son categoría especial y la AEPD pide acceso limitado a quien lo necesita (Guía AEPD, p. 10).
+- **P0.1 Gancho.** «En el centro, una contraseña abre la puerta a datos de salud de residentes y familias». Los datos de salud son categoría especial y la AEPD pide acceso limitado a quien lo necesita (Guía AEPD, p. 10).
 - **P0.2 Idea clave INCIBE:** en el control de accesos «el nombre de usuario nos identifica y la contraseña nos autentica» (kit INCIBE, p. 3). Explicar con un ejemplo: *el nombre del usuario es tu nombre en la puerta; la contraseña es la llave*.
 - **P0.3 Tres tipos de «prueba» de identidad** (kit INCIBE p. 3 / pptx d5; CCN-CERT BP/35 §10): algo que **sabes** (contraseña, PIN), algo que **tienes** (móvil, llave), algo que **eres** (huella, cara). Mini-quiz de clasificar: PIN de la tablet (sabes), huella (eres), código del móvil (tienes).
 - **Objetivos del curso** (4-5 viñetas).
@@ -48,10 +48,10 @@ Convenciones: lenguaje llano, frases cortas, ejemplos de residencia. «Pantalla�
 - **P1.7 PIN del puesto/tablet.** El PIN corto es una excepción: se usa junto con el dispositivo físico, bloqueo tras intentos, etc. (CCN BP/35 usa el ejemplo del PIN de 4 dígitos del cajero: seguro por el contexto: tarjeta + límite de intentos + vigilancia). No lo extrapoles a una cuenta en internet.
 
 ### Bloque 2 · Errores comunes, reutilización y credential stuffing (9 min)
-- **P2.1 Los 6 errores típicos** (OSI «Típicos errores que cometemos al usar nuestras contraseñas», 20-feb-2019): reciclar la misma con pequeñas variaciones; patrones de teclado (`123456`, `qwerty`); frases predecibles (`teamo`, `iloveyou`); intereses personales (equipo, grupo, marca); anotarlas en cuadernos o post-it visibles; seguir una fórmula previsible (Mayúscula + minúsculas + números + signo). Para residencia: el post-it bajo el teclado del control de enfermería; el nombre de la residencia + año.
+- **P2.1 Los 6 errores típicos** (OSI «Típicos errores que cometemos al usar nuestras contraseñas», 20-feb-2019): reciclar la misma con pequeñas variaciones; patrones de teclado (`123456`, `qwerty`); frases predecibles (`teamo`, `iloveyou`); intereses personales (equipo, grupo, marca); anotarlas en cuadernos o post-it visibles; seguir una fórmula previsible (Mayúscula + minúsculas + números + signo). Para un centro sociosanitario: el post-it bajo el teclado del control de enfermería; el nombre del centro + año.
 - **P2.2 Reutilizar = «llave maestra».** Kit INCIBE p. 5: reutilizar es «uno de los errores más comunes»; si se filtra una, «todos los servicios que utilizan la misma contraseña se verían comprometidos».
 - **P2.3 Credential stuffing en llano.** INCIBE («Con estos ataques nos roban las contraseñas…», 5-may-2022): los atacantes prueban de forma automática pares usuario/contraseña robados en filtraciones en muchos servicios. CCN BP/35: «uso automatizado de credenciales filtradas para acceder a otros servicios». Ejemplo: la contraseña de tu tienda online se filtra → la prueban en el correo y en el software del centro.
-- **P2.4 Cómo te roban una contraseña** (resumen INCIBE 2022): ataque de fuerza bruta, de diccionario, credential stuffing, *phishing* (correo falso), *smishing* (SMS), *vishing* (llamada), *shoulder surfing* (mirarte teclear en sitios públicos; en residencia, delante de otros trabajadores o familiares), *keylogger*. Que el alumno reconozca 3: phishing, shoulder surfing, reutilización.
+- **P2.4 Cómo te roban una contraseña** (resumen INCIBE 2022): ataque de fuerza bruta, de diccionario, credential stuffing, *phishing* (correo falso), *smishing* (SMS), *vishing* (llamada), *shoulder surfing* (mirarte teclear en sitios públicos; en centro sociosanitario, delante de otros trabajadores o familiares), *keylogger*. Que el alumno reconozca 3: phishing, shoulder surfing, reutilización.
 
 ### Bloque 3 · Contraseñas compartidas en turnos (14 min)
 - **P3.1 Por qué no se comparte** (fuentes):
@@ -69,7 +69,7 @@ Convenciones: lenguaje llano, frases cortas, ejemplos de residencia. «Pantalla�
 - **P4.1 Qué es:** una caja fuerte digital protegida por **una sola contraseña maestra** (kit INCIBE p. 6; OSI «Gestores de contraseñas: ¿cómo funcionan?», 27-ene-2021). Genera claves aleatorias, guarda y autorrellena, puede avisar de claves débiles o filtradas, y funciona en varios dispositivos.
 - **P4.2 Riesgo clave:** la contraseña maestra: «si esta no es lo suficientemente segura el resto de servicios tampoco lo serán» (kit p. 6). CCN BP/35 (§9): pasos para cambiarla; usar una passphrase mnemotécnica.
 - **P4.3 Tipos:** en la nube (cómodos, dependen de la seguridad del proveedor) frente a locales (más seguros, menos cómodos) — OSI 2021. OSI ofrece herramientas gratuitas (KeePass y KeeWeb figuran en su sección de «herramientas gratuitas»: https://osi.es/es/herramientas-gratuitas/keepass).
-- **P4.4 Qué decir a la plantilla de residencia:** «el gestor de contraseñas lo decide la empresa; no instales el tuyo en el PC del centro sin permiso». Un gestor corporativo permite además compartir credenciales de equipo y revocarlas al irse alguien (afirmación recogida de un resultado de búsqueda sobre una guía técnica; **[no leída en fuente oficial INCIBE completa, tratar como orientación]**).
+- **P4.4 Qué decir a la plantilla de centro sociosanitario:** «el gestor de contraseñas lo decide la empresa; no instales el tuyo en el PC del centro sin permiso». Un gestor corporativo permite además compartir credenciales de equipo y revocarlas al irse alguien (afirmación recogida de un resultado de búsqueda sobre una guía técnica; **[no leída en fuente oficial INCIBE completa, tratar como orientación]**).
 - **No hacer:** guardar contraseñas en notas del móvil, en WhatsApp a ti mismo, en un Excel «contraseñas.xlsx» en el escritorio.
 
 ### Bloque 5 · Verificación en dos pasos, MFA y passkeys en llano (11 min)
@@ -91,7 +91,7 @@ Convenciones: lenguaje llano, frases cortas, ejemplos de residencia. «Pantalla�
 
 ### Bloque 7 · Si sospechas que te han robado la contraseña / filtraciones (7 min)
 - **P7.1 Señales** (inventadas por el curso a partir de la lógica de las fuentes; **no cuantificar**): no puedes entrar, te llegan avisos de inicio de sesión que no has hecho, aparecen correos enviados que no recuerdas, un compañero ve cambios que «tú» hiciste.
-- **P7.2 Pasos (INCIBE «Me robaron la cuenta, ¿qué hago?», 18-nov-2020 + CCN BP/35):** 1) seguir las indicaciones de recuperación del servicio; 2) poner una contraseña robusta nueva y activar 2FA; 3) **comprobar si otras cuentas se han visto afectadas** y cambiar las que repitan la contraseña (todas distintas); 4) guardar pruebas (capturas); 5) denunciar si hay fraude. **Para el trabajador de residencia añadir:** «avisa a tu responsable / informática **inmediatamente**» (el centro debe valorar una posible brecha de datos: ver curso de incidentes). Línea **017** de INCIBE, gratuita y confidencial (también WhatsApp 900 116 117 y Telegram @INCIBE017, según INCIBE).
+- **P7.2 Pasos (INCIBE «Me robaron la cuenta, ¿qué hago?», 18-nov-2020 + CCN BP/35):** 1) seguir las indicaciones de recuperación del servicio; 2) poner una contraseña robusta nueva y activar 2FA; 3) **comprobar si otras cuentas se han visto afectadas** y cambiar las que repitan la contraseña (todas distintas); 4) guardar pruebas (capturas); 5) denunciar si hay fraude. **Para el trabajador de centro sociosanitario añadir:** «avisa a tu responsable / informática **inmediatamente**» (el centro debe valorar una posible brecha de datos: ver curso de incidentes). Línea **017** de INCIBE, gratuita y confidencial (también WhatsApp 900 116 117 y Telegram @INCIBE017, según INCIBE).
 - **P7.3 Comprobar filtraciones.** OSI/INCIBE recomiendan **HAVE I BEEN PWNED** en sus artículos (OSI «Típicos errores…», 2019; INCIBE «Me robaron la cuenta», 2020); CCN BP/35 §3e recomienda «comprobar filtraciones mediante servicios especializados». HIBP es un servicio gratuito creado por Troy Hunt (haveibeenpwned.com/About). **Cómo funciona la comprobación de contraseñas sin enviar la clave:** la API «Pwned Passwords» usa *k-anonymity*: solo se envían los 5 primeros caracteres de un hash. Para la plantilla: comprobar el **correo** (no la contraseña) en haveibeenpwned.com; **nunca escribas tu contraseña real** en webs de terceros (CCN BP/35). Con correo del trabajo, avisar primero al centro (política interna).
 - **P7.4 Actualizar tras incidente:** «renovarse inmediatamente si hay sospechas de acceso no autorizado» (CCN §3).
 
@@ -284,7 +284,7 @@ Base: AEPD (Guía sanitaria, p. 10: acceso limitado a datos precisos; personal a
    *Correcta: b.* La longitud es el principal factor (CCN-CERT BP/35); a) es un patrón conocido por atacantes; c) es información personal predecible.
 
 2. **Elige la frase de paso más adecuada para tu cuenta del centro:**
-   a) `Residencia2026` b) `Maria1234!` c) `MiPrimerTurnoFue7EnInvierno!` d) `Contraseña`
+   a) `Centro2026` b) `Maria1234!` c) `MiPrimerTurnoFue7EnInvierno!` d) `Contraseña`
    *Correcta: c.* Es larga, con sentido personal y no es pública. Las demás son cortas y predecibles.
 
 3. **Una compañera te pide tu usuario y contraseña porque aún no tiene los suyos. Lo mejor es:**
@@ -335,7 +335,7 @@ Base: AEPD (Guía sanitaria, p. 10: acceso limitado a datos precisos; personal a
     a) A todos b) **Solo a los necesarios para tus funciones** c) A los de tu familia d) A los que pida un familiar
     *Correcta: b.* AEPD: el personal administrativo accede solo a los datos necesarios; principio de mínimo privilegio (INCIBE).
 
-15. **Sospechas que alguien conoce tu contraseña del software de la residencia. Lo primero:**
+15. **Sospechas que alguien conoce tu contraseña del software del centro. Lo primero:**
     a) Esperar a ver si pasa algo b) **Avisar a tu responsable/informática y cambiar la clave desde un dispositivo de confianza** c) Cambiar solo el nombre de usuario d) Comentarlo en el grupo de WhatsApp
     *Correcta: b.* INCIBE («Me robaron la cuenta») + CCN (renovar inmediatamente si hay sospecha). Se puede llamar al 017.
 
@@ -379,6 +379,6 @@ Extra (formato V/F, para repaso): «Una contraseña con símbolos es siempre má
 - Cifras de «uso de contraseñas débiles» o de estadísticas de brechas en sanidad: no leídas.
 - Contenido de los vídeos; duración de 6 de los 8 vídeos listados.
 - Fecha de edición de la Guía AEPD sanitaria y de la ficha OSI de contraseñas.
-- Política concreta de la residencia (usuarios genéricos, gestor corporativo, tipo de software): debe aportarla el centro.
+- Política concreta del centro (usuarios genéricos, gestor corporativo, tipo de software): debe aportarla el centro.
 - Condiciones de reutilización de los materiales del kit INCIBE.
 - Pantallas exactas de Google Workspace pueden variar con las actualizaciones de Google (revisar capturas antes de publicar).

@@ -67,7 +67,7 @@ export const correo = svg(640, 640,
   rect(10, 10, 620, 620, '#fff', { r: 16, stroke: C.line, sw: 3 }) +
   rect(16, 16, 608, 84, C.sky, { r: 10 }) +
   text(32, 52, 'De: Gerencia', { size: 26, weight: 800 }) +
-  text(32, 84, '<gerencia@residencia-vlda.es>', { size: 22, fill: C.mut }) +
+  text(32, 84, '<gerencia@centro-vlda.es>', { size: 22, fill: C.mut }) +
   text(32, 150, 'URGENTE y confidencial: cambio de cuenta', { size: 23, weight: 800 }) +
   line(24, 180, 616, 180, C.line, 2) +
   text(32, 216, 'Hola, Marta: te escribo por el albarán', { size: 22 }) +
@@ -83,7 +83,7 @@ export const correo = svg(640, 640,
   text(182, 473, 'Ver factura adjunta', { size: 21, fill: '#fff', anchor: 'middle', weight: 700 }) +
   line(24, 510, 616, 510, C.line, 2) +
   circle(70, 556, 32, P) + text(70, 566, 'RV', { size: 24, fill: '#fff', anchor: 'middle', weight: 800 }) +
-  text(120, 552, 'Gerencia · Residencia Vida', { size: 22, weight: 700 }) +
+  text(120, 552, 'Gerencia · Centro Vida', { size: 22, weight: 700 }) +
   text(120, 580, 'Tel. 900 000 000', { size: 18, fill: C.mut }),
   'Correo falso sin faltas de ortografía que pide cambiar la cuenta de un proveedor y pagar hoy en secreto')
 

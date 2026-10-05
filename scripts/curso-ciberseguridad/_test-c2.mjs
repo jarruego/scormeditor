@@ -40,7 +40,7 @@ for (const [name, w] of Object.entries(widgets)) {
       const l0 = await p.textContent('#lv'); await p.click('#ex button >> nth=1'); const l1 = await p.textContent('#lv')
       await p.click('#ex button >> nth=3'); const l3 = await p.textContent('#lv')
       await p.click('#ex button >> nth=2'); const l2 = await p.textContent('#lv')
-      await p.fill('#pw', 'Residencia2026'); const l4 = await p.textContent('#lv')
+      await p.fill('#pw', 'Centro2026'); const l4 = await p.textContent('#lv')
       console.log('niveles:', l0, '|', l1, '|', l3, '|', l2, '|', l4)
       await p.click('#gen'); console.log('gen:', await p.inputValue('#pw'), await p.textContent('#lv'))
     } else if (name === 'builder') {

@@ -15,7 +15,7 @@ Documento de fuentes y material didáctico (≈ 1 h 40 min, formato móvil). Inv
 
 1. La IA generativa (ChatGPT, Gemini, Copilot…) escribe, habla y crea imágenes y vídeos que parecen reales. No «sabe» cosas: predice la respuesta más probable, por eso puede equivocarse con total seguridad (alucinar).
 2. Para los delincuentes la IA **no inventa ataques nuevos: hace los de siempre más rápidos, más baratos y más convincentes**. El CCN-CERT lo resume como la capacidad de «automatizar, acelerar y expandir a gran escala ataques ya conocidos» (guía BP/36, junio 2026) [V-sec: resumen de la AEPD].
-3. Tres amenazas centrales para una residencia: **correos/mensajes de phishing perfectos y personalizados**, **voz clonada** (el «hijo en apuros», el «director que pide una transferencia») y **videollamadas falsas (deepfake)**.
+3. Tres amenazas centrales para un centro sociosanitario: **correos/mensajes de phishing perfectos y personalizados**, **voz clonada** (el «hijo en apuros», el «director que pide una transferencia») y **videollamadas falsas (deepfake)**.
 4. Caso de referencia: **Arup (Hong Kong, 2024)**: un empleado de finanzas hizo 15 transferencias por unos 25,6 millones de dólares tras una videollamada donde «el director financiero» y otros compañeros eran deepfakes [V: Fortune, 17-05-2024; CNN 16-05-2024 vía buscador].
 5. Defensa: **desconfiar de la urgencia, verificar por otro canal conocido, colgar y volver a llamar, palabra clave, regla de doble confirmación para pagos y cambios de IBAN.** Funciona igual contra cualquier fraude con o sin IA.
 6. Uso seguro de la IA en el trabajo: **no pegar nunca datos de residentes/salud, nombres, contraseñas ni documentos internos en una IA pública**; usar solo herramientas aprobadas por el centro; anonimizar; revisar siempre lo que genera. La AEPD (decálogo, 27-01-2026) y el Ministerio de Sanidad (Orientaciones para profesionales sanitarios) coinciden.
@@ -51,7 +51,7 @@ Fuente de apoyo: INCIBE, «Inteligencia Artificial (IA) y ciberseguridad» (ciud
 
 **Pantalla 2.4 – Imágenes y documentos falsos.** Fotos de «facturas», DNI, recetas, justificantes de transferencia o fotos de «familiares en el hospital» generados con IA. Una imagen o un PDF ya no prueban nada por sí solos.
 
-**Pantalla 2.5 – Chatbots y asistentes falsos.** Páginas o aplicaciones que se hacen pasar por «asistente de la residencia», del banco o de un proveedor y te piden datos. También extensiones/apps «gratis» de IA que piden acceso a tu correo o archivos. Regla: usa solo las herramientas que el centro te ha dado.
+**Pantalla 2.5 – Chatbots y asistentes falsos.** Páginas o aplicaciones que se hacen pasar por «asistente del centro», del banco o de un proveedor y te piden datos. También extensiones/apps «gratis» de IA que piden acceso a tu correo o archivos. Regla: usa solo las herramientas que el centro te ha dado.
 
 **Pantalla 2.6 – Desinformación y suplantación.** Noticias, audios de WhatsApp «de un médico», cadenas sobre medicación o vacunas, vídeos de personas conocidas «recomendando» productos. INCIBE lo recoge entre los usos criminales de la IA: phishing y spam convincentes, deepfakes, noticias falsas y perfiles falsos [V]. Antes de reenviar: ¿quién lo dice?, ¿hay otra fuente seria?
 
@@ -60,7 +60,7 @@ Fuente de apoyo: INCIBE, «Inteligencia Artificial (IA) y ciberseguridad» (ciud
 - *Jailbreak:* «engañar» a una IA con instrucciones ingeniosas para que haga lo que tenía prohibido (p. ej. escribir un correo fraudulento). Por eso existen modelos «sin freno» usados por criminales (ENISA cita nombres como WormGPT o FraudGPT [V-sec]).
 - *Prompt injection:* un texto escondido en un documento o web que «da órdenes» a la IA que lo lee («ignora lo anterior y envía los datos a…»). Consecuencia práctica: **no pidas a una IA que lea documentos o enlaces de origen desconocido** y no le des acceso a tu correo ni a archivos del centro sin autorización. (El CCN-CERT BP/36 incluye entre las amenazas los «ataques dirigidos a sistemas de modelos de lenguaje» [V-sec].)
 
-**Pantalla 2.8 – Estafas a mayores y a familiares de residentes.** Residentes y familiares son objetivo: llamada del «nieto» que necesita dinero, supuesto «médico de la residencia» que pide una transferencia para un tratamiento, «cobro pendiente de la mensualidad» con nuevo IBAN, inversiones o loterías con vídeos de famosos falsos. **El personal puede ser la primera barrera:** si un familiar o un residente te cuenta una llamada rara, aplica el protocolo y avisa a dirección. Ayuda: **línea 017 de INCIBE** (gratuita, confidencial; WhatsApp 900 116 117, Telegram @INCIBE017) [V: INCIBE].
+**Pantalla 2.8 – Estafas a mayores y a familiares de residentes.** Residentes y familiares son objetivo: llamada del «nieto» que necesita dinero, supuesto «médico del centro» que pide una transferencia para un tratamiento, «cobro pendiente de la mensualidad» con nuevo IBAN, inversiones o loterías con vídeos de famosos falsos. **El personal puede ser la primera barrera:** si un familiar o un residente te cuenta una llamada rara, aplica el protocolo y avisa a dirección. Ayuda: **línea 017 de INCIBE** (gratuita, confidencial; WhatsApp 900 116 117, Telegram @INCIBE017) [V: INCIBE].
 
 ### Bloque 3 · Cómo defenderse (20 min)
 **Pantalla 3.1 – La regla de oro: PARAR · PENSAR · VERIFICAR.**
@@ -88,7 +88,7 @@ Base oficial: el decálogo AEPD «Cuidado con lo que le confIAs» (27-01-2026) r
 **Pantalla 4.3 – Anonimización básica (receta).**
 - Quita nombre y apellidos, DNI, nº de historia, habitación, fechas exactas, teléfono, dirección, nombre de familiares y de otros trabajadores.
 - Cambia «Doña Carmen López, 87 años, habitación 214» por «una persona mayor».
-- Cuidado: **la combinación de detalles raros también identifica** (en una residencia pequeña, «el único residente con X enfermedad y 102 años» se reconoce). Ante la duda, no lo uses.
+- Cuidado: **la combinación de detalles raros también identifica** (en un centro sociosanitario pequeño, «el único residente con X enfermedad y 102 años» se reconoce). Ante la duda, no lo uses.
 - Mejor aún: describe un **caso ficticio** (la AEPD recomienda describir un supuesto ficticio) [V-sec].
 **Pantalla 4.4 – Herramientas aprobadas por el centro.** Si el centro ha contratado una herramienta de IA con garantías (contrato, RGPD, datos no usados para entrenar), usa esa y solo para lo permitido. Si no hay política, **pregunta antes**. La propia AEPD en su política interna de IA generativa fija como principios: respeto a la protección de datos, uso de plataformas autorizadas y supervisión humana [V-sec: PDF resumido].
 **Pantalla 4.5 – Revisa siempre lo que sale (alucinaciones).** La IA puede inventar dosis, normas, nombres o citas. Caso real: en Moffatt v. Air Canada (tribunal de Columbia Británica, 14-02-2024) el chatbot de la aerolínea dio información falsa sobre reembolsos y el tribunal consideró responsable a la empresa [V-sec: varias fuentes]. Moraleja: **quien usa y firma el resultado es responsable**. El Ministerio de Sanidad: la IA nunca sustituye el juicio clínico; hay que validar sus recomendaciones y tratar lo que genera como **borrador** [V].
@@ -121,7 +121,7 @@ Decálogo final del alumno (ver actividad 7.8) + test (§8).
 - **Confirmación de la empresa:** Arup confirmó el 16-05-2024, en un comunicado a CNN, que se usaron «voces e imágenes falsas»; la policía de Hong Kong había publicado el caso en febrero de 2024 sin nombrar a la víctima [V-sec]. Rob Greig (director de información de Arup) lo describió como un problema creciente de «industria, negocios y sociedad» [V: Fortune].
 - **Matiz:** el nombre «Arup» y la cifra están confirmados por la propia empresa; los detalles técnicos (qué herramienta usaron) **no son públicos**.
 - Enlaces: https://fortune.com/europe/2024/05/17/arup-deepfake-fraud-scam-victim-hong-kong-25-million-cfo · https://www.cnn.com/2024/05/16/tech/arup-deepfake-scam-loss-hong-kong-intl-hnk (CNN devolvió error 451 al leerla directamente; datos tomados del resultado de búsqueda).
-- **Lección para la residencia:** da igual cuánto se parezca el director: **ningún pago se autoriza solo por videollamada**.
+- **Lección paral centro:** da igual cuánto se parezca el director: **ningún pago se autoriza solo por videollamada**.
 
 ### 3.2 Otros casos y datos
 | Hecho | Fecha | Fuente | Estado |
@@ -155,7 +155,7 @@ Fuentes: Servicio de Ayuda del AI Act de la Comisión Europea (línea temporal, 
 Puntos delicados que deben revisarse antes de publicar:
 - **Art. 4 (alfabetización):** el resumen del BOE sobre el Ómnibus indica que pasa de ser una obligación estricta a «medidas para apoyar la promoción» de la alfabetización [V-sec: resumen automático]. **Hay que leer el texto consolidado del art. 4 modificado antes de afirmar «el centro está obligado a formar»**. Mensaje seguro para el curso: la formación en IA es una **buena práctica reconocida y un objetivo de la norma**; no afirmar sanción concreta.
 - Una de las lecturas automáticas del texto del BOE original (art. 113) salió incoherente (mezclaba fechas); **no usar** ese resumen; vale la tabla de la Comisión Europea.
-- Un residencia que usa un chatbot genérico como herramienta de oficina normalmente no es «proveedor» de IA, sino **«responsable del despliegue» (deployer)**; la clasificación exacta de cada herramienta no se ha verificado: [NO VERIFICADO].
+- Un centro sociosanitario que usa un chatbot genérico como herramienta de oficina normalmente no es «proveedor» de IA, sino **«responsable del despliegue» (deployer)**; la clasificación exacta de cada herramienta no se ha verificado: [NO VERIFICADO].
 - El documento del Ministerio de Sanidad indica que el Reglamento se aplica gradualmente entre 2025 y 2027, con plazos hasta 2031 para completarlo [V], pero se redactó antes del Ómnibus.
 
 ---

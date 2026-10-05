@@ -25,7 +25,7 @@ function shift(md) {
 const head = `# Ciberseguridad en centros sociosanitarios — Documento base
 
 > **Programa formativo de ≈ 10 horas, en 6 cursos SCORM interactivos**, para todo el personal de
-> residencias y centros sociosanitarios (gerocultores/as, auxiliares, enfermería, administración,
+> centros sociosanitarios (gerocultores/as, auxiliares, enfermería, administración,
 > dirección, supervisión, mantenimiento). Pensado para móvil y para personas sin soltura digital.
 >
 > Este documento reúne **toda la información investigada** (fuentes oficiales, casos, datos, vídeos,
@@ -51,13 +51,13 @@ son **ficticios y didácticos** y se presentan como tales.
 
 | # | Curso (\`.scormproj\`) | Idea fuerza | Pantallas | Duración estimada* |
 |---|---|---|---|---|
-| 1 | Fundamentos: por qué importa la ciberseguridad en una residencia (\`cibersegsoc-c1-fundamentos\`) | Cuidas personas y también sus datos; tú eres la defensa | 53 | 1 h 38 |
-| 2 | Contraseñas y accesos: las llaves de la residencia (\`cibersegsoc-c2-contrasenas\`) | Frases de paso largas, nada de claves compartidas, verificación en dos pasos | 49 | 1 h 18 |
+| 1 | Fundamentos: por qué importa la ciberseguridad en un centro sociosanitario (\`cibersegsoc-c1-fundamentos\`) | Cuidas personas y también sus datos; tú eres la defensa | 53 | 1 h 38 |
+| 2 | Contraseñas y accesos: las llaves del centro (\`cibersegsoc-c2-contrasenas\`) | Frases de paso largas, nada de claves compartidas, verificación en dos pasos | 49 | 1 h 18 |
 | 3 | Correo, mensajes y llamadas: no piques el anzuelo (\`cibersegsoc-c3-correo-fraudes\`) | Parar, mirar, preguntar: señales de fraude y qué hacer si ya has picado | 64 | 1 h 42 |
-| 4 | Mi puesto, mis dispositivos y mi wifi (\`cibersegsoc-c4-puesto-dispositivos\`) | Puesto limpio, actualizaciones, wifi, móvil, copias y teletrabajo | 58 | 1 h 29 |
+| 4 | Mi puesto, mis dispositivos y mi wifi (\`cibersegsoc-c4-puesto-dispositivos\`) | Puesto limpio, actualizaciones, wifi, móvil, copias y teletrabajo | 58 | 1 h 49 |
 | 5 | Datos de las personas residentes: confidencialidad, fotos y brechas (\`cibersegsoc-c5-datos-brechas\`) | Qué se puede decir y a quién; fotos; avisar a tiempo de una brecha | 55 | 1 h 44 |
 | 6 | Inteligencia artificial: nuevas amenazas y uso seguro (\`cibersegsoc-c6-ia\`) | Voz y vídeo falsos; verificar por otro canal; qué datos no se dan a una IA | 55 | 1 h 30 |
-| | **Total** | | **334** | **≈ 8 h 20** |
+| | **Total** | | **334** | **≈ 8 h 40** |
 
 *Estimación del editor (chip de duración), con el tiempo de cada interactivo a medida declarado por el
 autor en \`est_seconds\` (a ojo, sin medir con alumnos) y el test final contado a 30 s/pregunta. Los
@@ -72,7 +72,7 @@ preguntar; lo grave es callar.
   (SVG) ligeras, vídeo por YouTube (no se aloja), sin pósteres ni infografías pesadas.
 - **Interactividad con sentido**: baraja deslizable «¿fraude o legítimo?», historias con decisiones
   (llamadas, WhatsApp, videollamada), laboratorios y simuladores a medida (HTML+CSS+JS aislados),
-  \`hotspots\` sobre escenas de la residencia, ordenar procedimientos, clasificar, emparejar, rosco,
+  \`hotspots\` sobre escenas del centro, ordenar procedimientos, clasificar, emparejar, rosco,
   crucigrama, sopa de letras, tarjetas de repaso y un **compromiso final** por curso.
 - **Por puesto**: cada curso incluye escenarios para gerocultor/a, auxiliar y enfermería, administración y
   dirección, supervisión y mantenimiento (los tests «en su puesto» del kit del INCIBE, pero con

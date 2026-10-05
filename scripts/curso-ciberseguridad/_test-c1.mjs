@@ -34,7 +34,7 @@ for (const s of embeds) {
   p.setDefaultTimeout(4000)
   const t = s.title
   try {
-    if (t === 'Mapa de la residencia') {
+    if (t === 'Mapa del centro') {
       for (let i = 0; i < 5; i++) {
         await p.locator('#map g.cell').nth(i).click()
         if (i === 1) await p.screenshot({ path: join(out, 'mapa-zona.png'), fullPage: true })

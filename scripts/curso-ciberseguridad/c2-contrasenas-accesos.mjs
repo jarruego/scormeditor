@@ -1,5 +1,5 @@
 /**
- * Curso 2 · «Contraseñas y accesos: las llaves de la residencia»
+ * Curso 2 · «Contraseñas y accesos: las llaves del centro»
  * Programa de ciberseguridad para centros sociosanitarios.
  *   node scripts/curso-ciberseguridad/run.mjs c2-contrasenas-accesos.mjs
  * Fuente única de datos: docs/curso-ciberseguridad/fuentes/02-contrasenas-accesos.md
@@ -27,7 +27,7 @@ const OBJ = [
 const c = new CourseBuilder({
   id: 'cibersegsoc-c2-contrasenas',
   identifier: 'CIBERSEG_C2',
-  title: 'Contraseñas y accesos: las llaves de la residencia',
+  title: 'Contraseñas y accesos: las llaves del centro',
   subtitle: 'Curso 2 del programa de ciberseguridad para centros sociosanitarios',
   description: 'Aprende a crear frases de paso, a no compartir tu clave en los turnos, a activar la verificación en dos pasos y a cuidar los accesos de tu cuenta del centro. Pensado para móvil, para ratos cortos y para personas sin experiencia digital.',
   hours: 1.7,
@@ -49,7 +49,7 @@ c.asset('assets/img/c2_portada.svg', doc(
   icon.key(300, 110, 120, V) + icon.key(400, 185, 90, C.amber) + icon.lock(530, 105, 110, V) + icon.shield(520, 235, 76, C.teal) +
   text(330, 268, 'Una llave para cada puerta', { size: 22, anchor: 'middle', weight: 800 }) +
   caption(W6, H6, 'Contraseñas y accesos · tu llave, tu responsabilidad', V),
-  'Una trabajadora de residencia con un llavero, un candado y un escudo'))
+  'Una trabajadora de un centro sociosanitario con un llavero, un candado y un escudo'))
 
 // 2. Usuario = nombre en la puerta; contraseña = llave
 c.asset('assets/img/c2_puerta_llave.svg', doc(
@@ -158,7 +158,7 @@ c.asset('assets/img/c2_robada.svg', doc(
   'Un móvil con un aviso de inicio de sesión sospechoso y tres pasos: avisar, cambiar la clave y proteger la cuenta'))
 
 /* ------------------------------------------------------------------ PORTADA */
-c.intro({ type: 'cover', title: 'Contraseñas y accesos: las llaves de la residencia', text: '', img: IMG('portada', 'Una trabajadora de residencia con un llavero, un candado y un escudo', { full: true }) })
+c.intro({ type: 'cover', title: 'Contraseñas y accesos: las llaves del centro', text: '', img: IMG('portada', 'Una trabajadora de un centro sociosanitario con un llavero, un candado y un escudo', { full: true }) })
 
 /* ================================================================== LECCIÓN 1 */
 const l1 = c.unit('Lección 1. Por qué te interesa a ti la llave', 'Tu usuario y tu clave abren la puerta a datos de salud de personas. Si se pierden o se roban, el problema llega a residentes, familias y al centro. Tú eres la mejor defensa.')
@@ -169,11 +169,11 @@ l1.add({ type: 'cover', title: 'Por qué te interesa a ti la llave', text: 'Lecc
   })
   .add({
     title: 'Tu usuario y tu clave', obj: 0,
-    text: 'En el trabajo entras en sitios con **usuario** y **contraseña**. El usuario es tu nombre en la puerta: dice quién eres. La contraseña es la llave: demuestra que eres tú.\n\nEn una residencia esa llave abre algo muy delicado: **datos de salud** de las personas que cuidas. La AEPD pide que solo accedan quienes lo necesitan para su trabajo.\n\n::: info\nEl usuario te **identifica**; la contraseña te **autentica**. Son dos cosas distintas.\n:::',
+    text: 'En el trabajo entras en sitios con **usuario** y **contraseña**. El usuario es tu nombre en la puerta: dice quién eres. La contraseña es la llave: demuestra que eres tú.\n\nEn un centro sociosanitario esa llave abre algo muy delicado: **datos de salud** de las personas que cuidas. La AEPD pide que solo accedan quienes lo necesitan para su trabajo.\n\n::: info\nEl usuario te **identifica**; la contraseña te **autentica**. Son dos cosas distintas.\n:::',
     img: IMG('puerta_llave', 'Una puerta con el nombre de una persona y una llave dorada: el usuario es el nombre y la contraseña es la llave', { layout: 'top', full: true }),
   })
   .add({
-    title: 'Una clave robada en la residencia', obj: 0,
+    title: 'Una clave robada en el centro', obj: 0,
     text: 'Imagina esta historia. Es un **ejemplo inventado**, no un caso real. Toca cada momento.',
     ix: ix.timeline([
       ['1', 'Una compra online', 'Marta usa en una tienda la misma contraseña que en el correo del centro. La tienda sufre una filtración y sus datos salen a la luz.'],
@@ -204,7 +204,7 @@ l1.add({ type: 'cover', title: 'Por qué te interesa a ti la llave', text: 'Lecc
   })
   .add({
     type: 'summary', title: 'Lo esencial de la lección 1',
-    text: '- Tu usuario dice quién eres; tu contraseña lo demuestra.\n- En una residencia, esa llave abre datos de salud de personas.\n- Una clave repetida y filtrada puede abrir muchas puertas a la vez.\n- Hay tres pruebas de identidad: lo que sabes, lo que tienes y lo que eres.\n\n::: tip\nTú eres la mejor defensa: ante la duda, para y pregunta.\n:::',
+    text: '- Tu usuario dice quién eres; tu contraseña lo demuestra.\n- En un centro sociosanitario, esa llave abre datos de salud de personas.\n- Una clave repetida y filtrada puede abrir muchas puertas a la vez.\n- Hay tres pruebas de identidad: lo que sabes, lo que tienes y lo que eres.\n\n::: tip\nTú eres la mejor defensa: ante la duda, para y pregunta.\n:::',
   })
 
 /* ================================================================== LECCIÓN 2 */
@@ -249,7 +249,7 @@ l2.add({ type: 'cover', title: 'Contraseñas buenas: frases de paso', text: 'Lec
       ...swipeLabeled({
         titulo: '', ayuda: 'Desliza a la derecha si es buena y a la izquierda si es mala. También puedes usar los botones.',
         cards: [
-          { canal: '🔑 Contraseña de ejemplo', de: 'Residencia2026', texto: 'Para el programa de historias.', fraude: true, pistas: ['Lleva el nombre del centro', 'Y el año actual'], porque: 'Es lo primero que probaría alguien que quiera entrar.' },
+          { canal: '🔑 Contraseña de ejemplo', de: 'Centro2026', texto: 'Para el programa de historias.', fraude: true, pistas: ['Lleva el nombre del centro', 'Y el año actual'], porque: 'Es lo primero que probaría alguien que quiera entrar.' },
           { canal: '🔑 Contraseña de ejemplo', de: 'mi cafe de las seis y media', texto: 'Para el correo del centro.', fraude: false, pistas: ['27 caracteres', 'Tiene sentido para quien la crea'], porque: 'Es larga y se recuerda. Mejor aún con un número intercalado.' },
           { canal: '🔑 Contraseña de ejemplo', de: '123456', texto: 'Para entrar «rápido» en la tablet.', fraude: true, pistas: ['Teclas seguidas'], porque: 'Está en todas las listas: cae al instante.' },
           { canal: '🔑 Contraseña de ejemplo', de: 'bufanda cometa tortuga montaña', texto: 'Para la cuenta de Drive.', fraude: false, pistas: ['Cuatro palabras sin relación', '30 caracteres'], porque: 'Larga y sin datos tuyos. Es el estilo que recomiendan las guías.' },
@@ -610,7 +610,7 @@ c.finalTest('Test final: contraseñas y accesos', [
     ['Cambio la clave del correo y de cualquier otra cuenta donde la repitiera, activo la verificación en dos pasos y aviso a mi responsable', true],
     ['Borro el correo de la tienda', false]],
     'Si repites claves, los atacantes prueban la filtrada en otros servicios (credential stuffing). Se cambian todas, se activa el segundo cerrojo y se avisa.', 0],
-  ['Tu usuario y tu contraseña, en una residencia, sirven sobre todo para…', [
+  ['Tu usuario y tu contraseña, en un centro sociosanitario, sirven sobre todo para…', [
     ['Poder entrar más rápido', false], ['Que el centro sepa quién ha hecho cada acceso y proteger datos de salud', true],
     ['Que tus compañeras te puedan sustituir', false], ['Cumplir un trámite sin importancia', false]],
     'El usuario te identifica y la contraseña lo demuestra: de ahí la trazabilidad y la protección de datos de salud.', 0],

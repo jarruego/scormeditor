@@ -25,7 +25,7 @@ const flows = {
   'La llamada de «Microsoft»': async (p) => { await p.click('text=Qué grave'); await p.click('text=No instalo nada') },
   'La «hija» pide la analítica': async (p) => { await p.click('text=No facilito datos'); await p.click('text=Entiendo su preocupación') },
   'Inspector de enlaces': async (p) => {
-    const sel = [['residenciasolmar', 'Me fío'], ['.acceso-seguro', 'No me fío'], ['.info', 'No me fío'], ['bit.ly', 'No me fío'], ['mutua-saludlaboral-gestion', 'No me fío']]
+    const sel = [['centrosolmar', 'Me fío'], ['.acceso-seguro', 'No me fío'], ['.info', 'No me fío'], ['bit.ly', 'No me fío'], ['mutua-saludlaboral-gestion', 'No me fío']]
     for (const [chunk, v] of sel) { await p.click(`.url button:text-is("${chunk}")`); await p.click(`text=${v}`); await p.click('text=Siguiente') }
   },
   '¿Quién lo envía de verdad?': async (p) => {

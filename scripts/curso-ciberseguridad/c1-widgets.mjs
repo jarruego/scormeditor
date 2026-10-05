@@ -37,13 +37,13 @@ function done(){try{if(!ME.completed)ME.complete()}catch(e){}}`
 const j = (o) => JSON.stringify(o).replace(/</g, '\\u003c')
 
 /**
- * «Mapa de la residencia»: plano con 5 zonas tocables. Cada zona muestra su riesgo típico y 2 hábitos
+ * «Mapa del centro»: plano con 5 zonas tocables. Cada zona muestra su riesgo típico y 2 hábitos
  * que se pueden «aplicar»; un medidor de riesgo global baja con cada hábito (nunca llega a 0).
  * Completa al explorar las 5 zonas y dejar el riesgo en 44 % o menos. Estado: {"e":mascara5,"a":mascara10}.
  * zonas: [{ n:'Recepción', l:'Recepción' (con \n para 2 líneas), e:'🛎️', riesgos:[..], habitos:[h1,h2] }]
  */
-export function mapaResidencia({ titulo = 'Mapa de la residencia', ayuda = 'Toca cada zona para descubrir su riesgo típico y aplica los hábitos que lo reducen. Mira cómo baja el medidor.', zonas }) {
-  const html = `<div class="wrap"><p class="ttl" id="t"></p><p class="sub" id="a"></p><svg id="map" viewBox="0 0 600 336" role="group" aria-label="Plano de la residencia con cinco zonas y el medidor de riesgo"></svg><div id="panel" aria-live="polite"></div><div id="fin"></div></div>`
+export function mapaResidencia({ titulo = 'Mapa del centro', ayuda = 'Toca cada zona para descubrir su riesgo típico y aplica los hábitos que lo reducen. Mira cómo baja el medidor.', zonas }) {
+  const html = `<div class="wrap"><p class="ttl" id="t"></p><p class="sub" id="a"></p><svg id="map" viewBox="0 0 600 336" role="group" aria-label="Plano del centro con cinco zonas y el medidor de riesgo"></svg><div id="panel" aria-live="polite"></div><div id="fin"></div></div>`
   const css = BASE_CSS + `
 #map{width:100%;height:auto;display:block;margin:2px 0 8px;touch-action:manipulation}
 #map .cell{cursor:pointer}

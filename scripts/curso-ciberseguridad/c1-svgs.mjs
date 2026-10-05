@@ -21,8 +21,8 @@ export const portada = svg(W, H,
   icon.wifi(110, 110, 56, C.blue) + icon.wifi(540, 120, 46, C.teal) +
   icon.shield(480, 238, 100, C.teal) + icon.lock(150, 250, 70, C.blue) +
   person(70, 250, { scale: 0.85, shirt: C.blue }) + person(585, 255, { scale: 0.85, shirt: C.violet, hairStyle: 'long', hair: '#6b4423', skin: C.skin2 }) +
-  ttl('Ciberseguridad en la residencia', 42, 30) + text(320, 72, 'Tú cuidas de las personas. Y también de sus datos.', { size: 18, fill: C.mut, anchor: 'middle' }),
-  'Una residencia protegida por un escudo y un candado, con dos trabajadoras a los lados')
+  ttl('Ciberseguridad en el centro', 42, 30) + text(320, 72, 'Tú cuidas de las personas. Y también de sus datos.', { size: 18, fill: C.mut, anchor: 'middle' }),
+  'Un centro sociosanitario protegido por un escudo y un candado, con dos trabajadoras a los lados')
 
 export const l1 = svg(W, H,
   bg(W, H, '#e8f0ff', '#ffffff') + rect(0, 290, W, 26, '#cfe3f7', { r: 0 }) +
@@ -30,7 +30,7 @@ export const l1 = svg(W, H,
   icon.heart(120, 190, 70) + icon.doc(520, 180, 80) + icon.bed(110, 270, 60) + icon.key(535, 262, 60) +
   pill(60, 70, 'Datos de salud', C.blue) + pill(430, 60, 'Dinero', C.amber, { color: C.ink }) +
   caption(W, H, 'Datos · Cuidados · Dinero · Confianza'),
-  'Una residencia rodeada de lo que hay que proteger: datos de salud, cuidados, dinero y confianza')
+  'Un centro sociosanitario rodeado de lo que hay que proteger: datos de salud, cuidados, dinero y confianza')
 
 export const datos = svg(W, H,
   bg(W, H, '#eaf3ff', '#fff') +
@@ -59,7 +59,7 @@ export const equipo = svg(W, H,
   person(110, 200, { shirt: C.blue, scale: 0.95, badge: true }) + person(250, 200, { shirt: C.teal, scale: 0.95, hairStyle: 'long', hair: '#6b4423', skin: C.skin2, badge: true }) +
   person(390, 200, { shirt: C.violet, scale: 0.95, hairStyle: 'bun', hair: '#8a8f98', badge: true }) + person(530, 200, { shirt: C.amber, scale: 0.95, hairStyle: 'bald', skin: C.skin3, badge: true }) +
   caption(W, H, 'Tú eres la mejor defensa'),
-  'Cuatro profesionales de una residencia, cada una con un escudo de protección sobre la cabeza')
+  'Cuatro profesionales de un centro sociosanitario, cada una con un escudo de protección sobre la cabeza')
 
 export const pilares = svg(W, H,
   bg(W, H, '#eef3ff', '#fff') +
@@ -76,7 +76,7 @@ export const niveles = svg(W, H,
     rect(24, 20 + i * 70, 592, 62, '#fff', { stroke: C.line, sw: 2, r: 12 }) + rect(24, 20 + i * 70, 200, 62, col, { r: 12 }) + text(124, 59 + i * 70, t, { size: 21, weight: 800, anchor: 'middle', fill: '#fff' }) +
     text(244, 46 + i * 70, e, { size: 17, weight: 600, lh: 21 })).join('') +
   caption(W, H, 'De más a menos protegida'),
-  'Cuatro niveles de información de mayor a menor protección con ejemplos de una residencia')
+  'Cuatro niveles de información de mayor a menor protección con ejemplos de un centro sociosanitario')
 
 export const alerta = svg(W, H,
   bg(W, H, '#fff4de', '#ffffff') +

@@ -167,7 +167,7 @@ function paint(){var p=pw.value;if(!p){mt.style.width='0';lv.textContent='—';t
  var e=ev(p);var lvl=e.bits<40?0:e.bits<60?1:e.bits<80?2:3;var names=['Muy débil','Mejorable','Buena','Fuerte'],cols=['#d6393f','#e08a00','#2f9e6b','#1f9d5c'];
  mt.style.width=Math.max(8,Math.min(100,e.bits/90*100))+'%';mt.style.background=cols[lvl];lv.textContent=names[lvl];lv.style.color=cols[lvl];
  tm.textContent='Un programa que pruebe 10.000 millones de combinaciones por segundo tardaría, orientativamente: '+human(e.bits)+'.';
- clear(ck);[[e.n>=12,'12 caracteres o más (mejor 16)'],[!e.common,'No es una contraseña típica ni lleva palabras como «password» o «residencia»'],[!e.seq,'Sin secuencias (123, abc, qwe) ni repeticiones (aaa)'],[!e.year,'Sin años o fechas (nacimiento, jubilación…)'],[e.spaced||(e.pool>=62&&e.n>=12),'Mezcla variada o, mejor, varias palabras sueltas (frase de paso)']].forEach(function(r){ck.appendChild(h('li',r[0]?'y':'n',r[1]))});
+ clear(ck);[[e.n>=12,'12 caracteres o más (mejor 16)'],[!e.common,'No es una contraseña típica ni lleva palabras como «password» o «centro»'],[!e.seq,'Sin secuencias (123, abc, qwe) ni repeticiones (aaa)'],[!e.year,'Sin años o fechas (nacimiento, jubilación…)'],[e.spaced||(e.pool>=62&&e.n>=12),'Mezcla variada o, mejor, varias palabras sueltas (frase de paso)']].forEach(function(r){ck.appendChild(h('li',r[0]?'y':'n',r[1]))});
  if(lvl===3)done()}
 pw.addEventListener('input',paint);
 document.getElementById('gen').onclick=function(){var a=[];for(var k=0;k<4;k++){a.push(W[Math.floor(Math.random()*W.length)])}var f=a.join('-');document.getElementById('gp').textContent=f;pw.value=f;paint()};`

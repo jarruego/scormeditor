@@ -64,7 +64,7 @@ export function buildSvgs() {
     rect(310, 44, 306, 112, '#fff', { r: 16, stroke: C.line, sw: 2 }) + text(326, 74, 'Lo que ves: el NOMBRE', { size: 17, weight: 800, fill: C.blue }) +
     text(326, 100, 'Lo escribe quien envía.\nCualquiera puede poner\n«Directora».', { size: 16, fill: C.ink, weight: 500, lh: 21 }) +
     rect(310, 176, 306, 122, '#fff', { r: 16, stroke: P, sw: 3 }) + text(326, 206, 'Lo que cuenta: la DIRECCIÓN', { size: 17, weight: 800, fill: P }) +
-    text(326, 234, 'direccion.residencia@gmail.com', { size: 15, weight: 700, fill: C.red }) +
+    text(326, 234, 'direccion.centro@gmail.com', { size: 15, weight: 700, fill: C.red }) +
     text(326, 262, 'Una cuenta personal, no la\ndel centro. Aquí está el engaño.', { size: 16, fill: C.ink, weight: 500, lh: 21 }) +
     line(272, 92, 308, 92, C.mut, 3, { dash: '6 6' }) + line(272, 228, 308, 228, P, 3, { dash: '6 6' }) +
     caption(W, H, 'Toca el nombre y mira la dirección real') + '</svg>'
@@ -134,7 +134,7 @@ export function buildSvgs() {
   // 9 · Fraude del jefe
   a['assets/img/c3_ceo.svg'] = frame(
     rect(24, 16, 592, 288, '#fff', { r: 16, stroke: C.line, sw: 3 }) + rect(24, 16, 592, 62, C.rose, { r: 16 }) + rect(24, 50, 592, 28, C.rose, { r: 0 }) +
-    text(44, 42, 'De: Directora Elena Ruiz <direccion.residencia@gmail.com>', { size: 15, weight: 700, fill: C.red }) + text(44, 66, 'Asunto: (sin asunto)', { size: 15, fill: C.mut }) +
+    text(44, 42, 'De: Directora Elena Ruiz <direccion.centro@gmail.com>', { size: 15, weight: 700, fill: C.red }) + text(44, 66, 'Asunto: (sin asunto)', { size: 15, fill: C.mut }) +
     text(44, 112, 'Marta, estoy en una reunión\ny no puedo hablar. Necesito que\nhagas una transferencia de\n4.800 € ahora mismo. Es\nconfidencial: no lo comentes.\nTe paso el IBAN por aquí.', { size: 16, lh: 25, weight: 500 }) +
     [['Cuenta personal (gmail)', 100], ['«No puedo hablar»', 148], ['Urgencia: «ahora mismo»', 196], ['Secreto: «no lo comentes»', 244]]
       .map(([t, y]) => path(`M338 ${y + 16} l14 -10 v20 z`, P) + pill(352, y, t, P, { size: 14 })).join('') +

@@ -1,6 +1,6 @@
-# Curso 1 · Fundamentos: por qué importa la ciberseguridad en una residencia
+# Curso 1 · Fundamentos: por qué importa la ciberseguridad en un centro sociosanitario
 
-Documento de fuentes y material didáctico (investigación de octubre de 2026). Pensado para convertirse en pantallas de un SCORM de ~1 h 40 min, a hacer en móvil, para personal sin conocimientos digitales de residencias y centros sociosanitarios.
+Documento de fuentes y material didáctico (investigación de octubre de 2026). Pensado para convertirse en pantallas de un SCORM de ~1 h 40 min, a hacer en móvil, para personal sin conocimientos digitales de centros sociosanitarios.
 
 **Convención de fiabilidad** usada en todo el documento:
 - **[L]** = leído por mí directamente en la fuente (página web, PDF o informe descargado).
@@ -11,11 +11,11 @@ Documento de fuentes y material didáctico (investigación de octubre de 2026). 
 
 ## 1. Resumen ejecutivo
 
-1. **Qué se protege.** En una residencia no solo hay «ordenadores»: hay datos de salud y vida privada de personas mayores (historia clínica, medicación, fotos, estado de ánimo, familia), la **continuidad del cuidado** (turnos, pautas, medicación, citas), el **dinero** (cuentas, nóminas, facturas, transferencias) y la **reputación/confianza** de familias y administración. La información está en papel, en digital y en la cabeza de las personas (kit INCIBE 01, pág. 4, 8 [L]).
-2. **Tres propiedades.** Disponibilidad (que esté cuando hace falta), integridad (que no se altere) y confidencialidad (que solo la vea quien debe). Se explican con ejemplos de residencia en la lección 2 (kit INCIBE 01, págs. 7-9 [L]).
+1. **Qué se protege.** En un centro sociosanitario no solo hay «ordenadores»: hay datos de salud y vida privada de personas mayores (historia clínica, medicación, fotos, estado de ánimo, familia), la **continuidad del cuidado** (turnos, pautas, medicación, citas), el **dinero** (cuentas, nóminas, facturas, transferencias) y la **reputación/confianza** de familias y administración. La información está en papel, en digital y en la cabeza de las personas (kit INCIBE 01, pág. 4, 8 [L]).
+2. **Tres propiedades.** Disponibilidad (que esté cuando hace falta), integridad (que no se altere) y confidencialidad (que solo la vea quien debe). Se explican con ejemplos de centro sociosanitario en la lección 2 (kit INCIBE 01, págs. 7-9 [L]).
 3. **Amenazas actuales.** Según INCIBE, en 2025 se gestionaron **122.223 incidentes** (+26 % que en 2024), de los que 25.133 fueron phishing, 55.411 malware y 392 ransomware [L]. Según ENISA, el **phishing es la puerta de entrada en ~60 % de los casos** y el ransomware es la amenaza de mayor impacto [L]. En el sector salud europeo, el ransomware fue el 54 % de las amenazas analizadas en el informe de ENISA de 2023 [L].
 4. **El factor humano es central.** El caso del servicio de salud irlandés (HSE, 2021) lo demuestra con el informe oficial en la mano: **un correo con un Excel abierto por una persona** el 18-mar-2021 acabó, ocho semanas después, cifrando el 80 % de sus sistemas y obligando a trabajar con papel y bolígrafo durante meses [L]. También hay errores no maliciosos (enviar un correo al destinatario equivocado, borrar un archivo) y amenazas internas (acceso curioso a historias clínicas, que la AEPD advierte que puede ser delito) [L].
-5. **Casos reales.** Hay casos documentados en hospitales de España (Hospital Clínic, 2023; Consorci Sanitari Integral, 2022; Torrejón, 2020) y de Europa (HSE Irlanda 2021, Synnovis/NHS 2024, Advanced/NHS 111 2022, Vastaamo Finlandia 2020, AZ Monica Bélgica 2026). **No he encontrado ningún ataque con filtración de datos a una residencia de mayores en España confirmado en fuente fiable** (solo un «incidente informático» de DomusVi en nov-2022, que la propia empresa dijo que no afectó a datos personales [S]). No se debe inventar uno: el curso debe decir con honestidad que los casos conocidos son sanitarios y que una residencia tiene los mismos puntos débiles.
+5. **Casos reales.** Hay casos documentados en hospitales de España (Hospital Clínic, 2023; Consorci Sanitari Integral, 2022; Torrejón, 2020) y de Europa (HSE Irlanda 2021, Synnovis/NHS 2024, Advanced/NHS 111 2022, Vastaamo Finlandia 2020, AZ Monica Bélgica 2026). **No he encontrado ningún ataque con filtración de datos a un centro sociosanitario de mayores en España confirmado en fuente fiable** (solo un «incidente informático» de DomusVi en nov-2022, que la propia empresa dijo que no afectó a datos personales [S]). No se debe inventar uno: el curso debe decir con honestidad que los casos conocidos son sanitarios y que un centro sociosanitario tiene los mismos puntos débiles.
 6. **Qué hacer ante un incidente.** Parar, no tocar más, **avisar al responsable del centro** (que decide notificaciones), no pagar rescates, llamar al **017 de INCIBE** (gratuito, confidencial, 8:00-23:00, 365 días) y, si hay datos personales, el responsable del tratamiento debe valorar notificar a la **AEPD en un máximo de 72 horas** desde que tiene constancia (guía AEPD de brechas [L]). Las denuncias de delitos van a Policía Nacional / Guardia Civil.
 7. **Higiene digital básica** (kit INCIBE «Decálogo» [L]): bloquear la pantalla al irse, no pinchar enlaces sospechosos, contraseñas únicas y secretas, no instalar apps no autorizadas, destruir el papel con datos, no usar equipos personales para tareas del centro, avisar ante cualquier cosa rara.
 8. **Material gratuito reutilizable**: 12 «consejos» y 3 pósteres PNG del kit INCIBE (apartado 6), 6 vídeos verificados (apartado 5).
@@ -28,7 +28,7 @@ Reparto orientativo de tiempos: **L1 10 min · L2 12 · L3 15 · L4 12 · L5 10 
 
 Pie de estilo: frases cortas, segunda persona del singular, ejemplos de planta. Cada «Pantalla» es una propuesta de unidad del editor.
 
-### L1. ¿Qué tenemos que proteger en una residencia? (10 min)
+### L1. ¿Qué tenemos que proteger en un centro sociosanitario? (10 min)
 
 **Idea clave:** «Proteger la información es proteger a las personas que cuidamos».
 
@@ -44,7 +44,7 @@ Apoyo del kit: la información como «activo», con partes **tangibles** (ordena
 
 **Pantalla 1.3 – Dónde vive la información.** Papel (carpetas de planta, libro de incidencias, hojas de medicación impresas), digital (software de gestión, correo, WhatsApp, fotos del móvil, USB) y **en las personas** (lo que sabes de cada residente). «La información confidencial se protege igual en cualquier formato; incluso si se ha comentado de palabra» (tríptico INCIBE «La información» [L]).
 
-**Pantalla 1.4 – Por qué a una residencia.** Mensajes (con fuente): los datos de salud valen dinero en el mercado ilegal (INCIBE-CERT cita que un expediente médico se paga entre 30 y 1.000 USD, blog de 25-ene-2024 [L]); los sistemas son heterogéneos y a veces antiguos («legacy»); y la interrupción del servicio presiona a pagar. Importante: **los criminales no «eligen» a una residencia concreta por quiénes son; atacan a quien tenga la puerta abierta**. [Matiz: esta frase es redacción didáctica, no cita.]
+**Pantalla 1.4 – Por qué a un centro sociosanitario.** Mensajes (con fuente): los datos de salud valen dinero en el mercado ilegal (INCIBE-CERT cita que un expediente médico se paga entre 30 y 1.000 USD, blog de 25-ene-2024 [L]); los sistemas son heterogéneos y a veces antiguos («legacy»); y la interrupción del servicio presiona a pagar. Importante: **los criminales no «eligen» a un centro sociosanitario concreto por quiénes son; atacan a quien tenga la puerta abierta**. [Matiz: esta frase es redacción didáctica, no cita.]
 
 ---
 
@@ -52,15 +52,15 @@ Apoyo del kit: la información como «activo», con partes **tangibles** (ordena
 
 **Idea clave:** «No toda la información pide la misma protección, pero hay que saber cuál es cuál».
 
-**Pantalla 2.1 – Los tres pilares con ejemplos de residencia.**
+**Pantalla 2.1 – Los tres pilares con ejemplos de centro sociosanitario.**
 - **Disponibilidad**: poder abrir la pauta de medicación cuando hace falta. Falla con ransomware o con un error de configuración (kit 01, pág. 7 [L]).
 - **Integridad**: que la pauta no haya sido cambiada (por error o a propósito) y que el informe diga lo que dijo el médico. Falla con alteraciones o borrados parciales (kit 01, pág. 7 [L]).
 - **Confidencialidad**: que solo vea la historia de la Sra. Carmen quien la cuida. Falla con acceso curioso, correo mal enviado, papeles a la vista (kit 01, pág. 8 [L]).
   Actividad: «¿Qué pilar se rompe?» (ver apartado 7).
 
-**Pantalla 2.2 – Tipos de información (propuesta adaptada de los cuatro niveles del kit 02, pág. 4 [L]).** El kit propone, como ejemplo orientativo, confidencial / restringida / uso interno / pública. Adaptación didáctica para residencia (**propuesta de diseño, no texto del INCIBE**):
+**Pantalla 2.2 – Tipos de información (propuesta adaptada de los cuatro niveles del kit 02, pág. 4 [L]).** El kit propone, como ejemplo orientativo, confidencial / restringida / uso interno / pública. Adaptación didáctica para un centro sociosanitario (**propuesta de diseño, no texto del INCIBE**):
 
-| Nivel (kit INCIBE) | Ejemplos en una residencia |
+| Nivel (kit INCIBE) | Ejemplos en un centro sociosanitario |
 |---|---|
 | Restringida / especialmente protegida | Historia clínica, diagnósticos, medicación, informes de psicología/salud mental, fotos de heridas o de aseo, datos de familiares en conflicto, incapacitaciones, datos de salud en general |
 | Confidencial | Nóminas, contratos, cuentas bancarias del centro, expedientes disciplinarios, contraseñas |
@@ -83,7 +83,7 @@ Nota de rigor: el kit solo da los cuatro nombres de nivel y un ejemplo con fiche
 
 Para cada amenaza: «Qué es» + «Cómo se ve en tu día a día» + «Qué hacer».
 
-| Amenaza | Explicación llana (fuente) | Escena de residencia | Reflejo correcto |
+| Amenaza | Explicación llana (fuente) | Escena de centro sociosanitario | Reflejo correcto |
 |---|---|---|---|
 | **Malware / virus** | Programa dañino que roba información o toma control del equipo (kit 01, pág. 6 [L]). | Un USB que alguien trae «con fotos de la fiesta» al ordenador de recepción. | No conectar USB ajenos. Avisar. |
 | **Ransomware** («secuestro de datos») | Impide acceder a los archivos, generalmente cifrándolos, y pide un rescate (INCIBE empresas [L]). En 2025: 392 incidentes gestionados por INCIBE [L]. La AEPD advierte que a menudo además roban datos y extorsionan a los afectados (guía AEPD sanitaria, pág. 13 [L]). | El programa de gestión no abre y aparece un mensaje pidiendo dinero. | No apagar a lo bruto ni «probar cosas»: desconectar el cable/wifi si te lo indican, avisar ya. Nunca pagar por tu cuenta (INCIBE: «en ningún caso el pago del rescate es una opción aconsejada» [L]). |
@@ -112,7 +112,7 @@ Presentar 4-5 casos en tarjetas de «Qué pasó · Cómo empezó · Qué consecu
 4. **Vastaamo (Finlandia, 2020)** – datos de psicoterapia robados y extorsión a pacientes individuales (por qué es tan grave filtrar datos de salud).
 5. **Advanced / NHS 111 (UK, 2022)** – un proveedor de software sin doble verificación; multa de 3,07 M£ en 2025.
 
-Cierre honesto: «De residencias españolas con filtración de datos no tenemos casos públicos verificados; sí hay hospitales y centros de salud. Lo que protege a un hospital protege a una residencia».
+Cierre honesto: «De centros sociosanitarios españoles con filtración de datos no tenemos casos públicos verificados; sí hay hospitales y centros de salud. Lo que protege a un hospital protege a un centro sociosanitario».
 
 ---
 
@@ -121,8 +121,8 @@ Cierre honesto: «De residencias españolas con filtración de datos no tenemos 
 **Idea clave:** «Un ataque informático es también un problema de cuidados».
 
 Mensajes basados en hechos de los casos:
-- **Se trabaja a mano**: Clínic (urgencias, laboratorio y farmacia con procedimientos manuales [L]); HSE (papel y bolígrafo [L]). En una residencia: pautas de medicación, alergias, cambios posturales, dietas especiales, protocolo de caídas.
-- **Retrasos y errores**: Synnovis: el fallo de un laboratorio tuvo como consecuencia citas y operaciones canceladas y, según el hospital King's, un fallecimiento en el que el ciberataque fue «factor contribuyente» [S, vía HIPAA Journal]. Idea para residencia: sin acceso a analíticas o pautas, el riesgo es clínico.
+- **Se trabaja a mano**: Clínic (urgencias, laboratorio y farmacia con procedimientos manuales [L]); HSE (papel y bolígrafo [L]). En un centro sociosanitario: pautas de medicación, alergias, cambios posturales, dietas especiales, protocolo de caídas.
+- **Retrasos y errores**: Synnovis: el fallo de un laboratorio tuvo como consecuencia citas y operaciones canceladas y, según el hospital King's, un fallecimiento en el que el ciberataque fue «factor contribuyente» [S, vía HIPAA Journal]. Idea para un centro sociosanitario: sin acceso a analíticas o pautas, el riesgo es clínico.
 - **Daño a las personas** si los datos salen: Vastaamo (extorsión directa a unas 22.000 personas [S]); una persona mayor con demencia puede ser más fácil de engañar usando datos de su historial.
 - **Recuperación lenta**: HSE >4 meses de recuperación [L]; Clínic: a los 5 días, 40 % de la actividad quirúrgica y 70 % de las consultas externas (INCIBE-CERT [L]).
 
@@ -148,7 +148,7 @@ Mensajes basados en hechos de los casos:
 9. **No hables de residentes en sitios donde puedan oírte** (Decálogo: «No mantengamos conversaciones confidenciales en lugares donde puedan ser oídas por terceros»).
 10. **Avisa** ante cualquier actividad sospechosa: «Todos somos seguridad» (Decálogo).
 
-**Pantalla 6.3 – WhatsApp y fotos (tema muy real en residencias).** Lo que dice la AEPD: se puede avisar al paciente por mensajería (por ejemplo para una cita) siempre que el mensaje llegue solo a la persona y no a un grupo en el que el paciente esté (guía AEPD sanitaria, sección sobre comunicación con pacientes; no anoté la página [L]). Para fotos de residentes en móviles personales, **no he localizado una norma específica leída en esta investigación**: el curso debe remitir al protocolo del centro y al responsable de protección de datos [NC].
+**Pantalla 6.3 – WhatsApp y fotos (tema muy real en centros sociosanitarios).** Lo que dice la AEPD: se puede avisar al paciente por mensajería (por ejemplo para una cita) siempre que el mensaje llegue solo a la persona y no a un grupo en el que el paciente esté (guía AEPD sanitaria, sección sobre comunicación con pacientes; no anoté la página [L]). Para fotos de residentes en móviles personales, **no he localizado una norma específica leída en esta investigación**: el curso debe remitir al protocolo del centro y al responsable de protección de datos [NC].
 
 **Pantalla 6.4 – Copias de seguridad en lenguaje llano.** Idea de «3-2-1»: 3 copias, 2 soportes distintos, 1 fuera del centro (kit 03, pág. 10; diap. 17 [L]). Mensaje para el personal: «No te toca a ti hacer las copias, pero sí no guardar datos importantes solo en tu móvil o en el escritorio del ordenador». Un backup que nunca se ha probado puede no servir (diap. 5 del kit 03: «no solo hay que hacerlas, hay que comprobar que podemos recuperarlas» [L]).
 
@@ -179,7 +179,7 @@ Mensajes basados en hechos de los casos:
 
 **Mensaje clave del 017 y la OSI:** la Oficina de Seguridad del Internauta (OSI) fue el servicio de INCIBE para ciudadanía; la web osi.es **redirige ahora a incibe.es/ciudadania** (comprobado en octubre de 2026 [L]); sus vídeos siguen en YouTube.
 
-**Aviso de rigor:** el kit INCIBE (tríptico y guías) menciona «departamento de informática» o «departamento de seguridad». Una residencia pequeña puede no tenerlo: el curso debe pedir al centro que defina **quién es la persona de contacto** antes de lanzar el curso.
+**Aviso de rigor:** el kit INCIBE (tríptico y guías) menciona «departamento de informática» o «departamento de seguridad». Un centro sociosanitario pequeño puede no tenerlo: el curso debe pedir al centro que defina **quién es la persona de contacto** antes de lanzar el curso.
 
 ---
 
@@ -226,7 +226,7 @@ Todas las cifras están marcadas **[L]** o **[S]** según se explica al inicio.
 | El sector sanitario habría recibido ~2.400 ciberataques semanales por organización (+17 %) en 2026. | Notas de prensa/blogs comerciales | **[NC]**: fuente comercial, no oficial. No usar. |
 | «Más de 300.000 ciberdelitos en España en 2021». | Gestión y Dependencia (cita a INCIBE) | **[S]**: no usar; mejor emplear el Balance INCIBE 2025 [L]. |
 
-**Lo que no he podido confirmar:** estadística oficial específica de **residencias** o centros sociosanitarios españoles (número de ataques, tipos). No existe en las fuentes consultadas; no se debe afirmar una cifra.
+**Lo que no he podido confirmar:** estadística oficial específica de **centros sociosanitarios** o centros sociosanitarios españoles (número de ataques, tipos). No existe en las fuentes consultadas; no se debe afirmar una cifra.
 
 ---
 
@@ -247,8 +247,8 @@ Todas las cifras están marcadas **[L]** o **[S]** según se explica al inicio.
 **4.3 Hospital Universitario de Torrejón (Madrid) – ransomware (17 de enero de 2020)** [S]
 - Sistemas inutilizados; sin acceso a historias electrónicas, trabajaron con papel y bolígrafo. Presentado como primer ransomware confirmado contra un hospital español. Fuente: blog de PSN Sercon (21-ene-2020) que cita a El Mundo: https://blog.psnsercon.com/el-hospital-de-torrejon-sufre-el-primer-caso-de-ransomware-a-un-hospital-en-espana/
 
-**4.4 DomusVi (grupo de residencias) – «incidente informático» (finales de noviembre de 2022)** [S]
-- La empresa lo reconoció, de «afectación muy limitada», y afirmó que no se habían vulnerado datos personales de clientes, empleados ni proveedores. Es el único caso relacionado con residencias que encontré y **no hay datos de impacto ni detalles técnicos**. Fuente: https://gestionydependencia.com/noticia/4662/innovacion/alerta.-las-residencias-de-mayores-no-estan-exentas-de-un-ciberataque.html (31-dic-2022). Usar solo como «ejemplo reconocido de incidente», nunca como «ataque con filtración».
+**4.4 DomusVi (grupo de centros sociosanitarios) – «incidente informático» (finales de noviembre de 2022)** [S]
+- La empresa lo reconoció, de «afectación muy limitada», y afirmó que no se habían vulnerado datos personales de clientes, empleados ni proveedores. Es el único caso relacionado con centros sociosanitarios que encontré y **no hay datos de impacto ni detalles técnicos**. Fuente: https://gestionydependencia.com/noticia/4662/innovacion/alerta.-las-residencias-de-mayores-no-estan-exentas-de-un-ciberataque.html (31-dic-2022). Usar solo como «ejemplo reconocido de incidente», nunca como «ataque con filtración».
 
 ### Europa
 
@@ -344,7 +344,7 @@ Las carpetas `04`-`09` también tienen pósteres (`Posters\…`) que no he inspe
 | `Tripticos\informacion.pdf`, `phishing.pdf`, `concienciacion.pdf` (Decálogo), `contraseñas.pdf`, `dispositivos_moviles.pdf`, `puesto_trabajo.pdf`, `redes_sociales.pdf`, `soportes.pdf`, `byod.pdf` | Resúmenes en tríptico (leí `informacion`, `phishing` y `concienciacion`) | Hojas de refuerzo descargables por tema |
 | `Manual_implantacion.pdf`, `Encuesta_satisfaccion.pdf`, `Manual_Gophish`, `Ataques_dirigidos` | Manual del kit, encuesta y simulador de phishing | **No usar en este curso** (no revisados; el simulador de phishing es una herramienta aparte de la organización). |
 
-Advertencia: el contenido del kit se dirige a **empresas/pymes en general** (habla de ventas, clientes, comerciales). Hay que traducir los ejemplos al mundo de la residencia (residente, familia, planta, turno). Los kits mencionan la «LOPD»; la norma vigente que citan los textos del kit en págs. 10-11 es el RGPD y la **LOPDGDD** (ya correcto en el pdf 01), pero el tríptico `informacion.pdf` aún habla de LOPD y RDLOPD: **no copiar esa parte del tríptico**.
+Advertencia: el contenido del kit se dirige a **empresas/pymes en general** (habla de ventas, clientes, comerciales). Hay que traducir los ejemplos al mundo del centro (residente, familia, planta, turno). Los kits mencionan la «LOPD»; la norma vigente que citan los textos del kit en págs. 10-11 es el RGPD y la **LOPDGDD** (ya correcto en el pdf 01), pero el tríptico `informacion.pdf` aún habla de LOPD y RDLOPD: **no copiar esa parte del tríptico**.
 
 ### Estructura de los tests de autoevaluación del kit (para inspirarnos sin copiar)
 
@@ -360,9 +360,9 @@ Advertencia: el contenido del kit se dirige a **empresas/pymes en general** (hab
 
 ### Actividades (tipos de interacción posibles en el editor; ajustar al catálogo real)
 
-1. **Clasificar tarjetas (arrastrar y soltar):** ¿Restringida, confidencial, uso interno o pública? (historia clínica, menú de la semana, nómina, cuadrante, foto de una herida, teléfono de la residencia…). Lección L2.
+1. **Clasificar tarjetas (arrastrar y soltar):** ¿Restringida, confidencial, uso interno o pública? (historia clínica, menú de la semana, nómina, cuadrante, foto de una herida, teléfono del centro…). Lección L2.
 2. **¿Qué pilar se rompe?** (relacionar): «La tablet no abre» → disponibilidad; «alguien cambió la dosis» → integridad; «el correo llegó a otra familia» → confidencialidad. Lección L2.
-3. **Verdadero o falso rápido** con mitos: «Mi residencia es pequeña, a nadie le interesa» (falso); «Si no hago clic no pasa nada» (matizar: también hay llamadas y personas); «Un correo con el logo del banco es del banco» (falso).
+3. **Verdadero o falso rápido** con mitos: «Mi centro es pequeño, a nadie le interesa» (falso); «Si no hago clic no pasa nada» (matizar: también hay llamadas y personas); «Un correo con el logo del banco es del banco» (falso).
 4. **Phishing a ciegas (3-4 mensajes en pantalla de móvil simulada):** señalar qué es sospechoso (remitente, urgencia, enlace, adjunto inesperado). Lección L3/L6.
 5. **Llamada de «soporte técnico» (escenario ramificado):** opciones: dar la clave, colgar, pedir nombre y llamar al responsable. Con consecuencias y explicación. Lección L3.
 6. **Línea de tiempo del HSE:** ordenar los hitos (16 mar correo; 18 mar clic; 8 semanas; 14 may ransomware; papel y bolígrafo). Lección L4. Muy buena para «el factor humano».
@@ -436,7 +436,7 @@ Formato propuesto: elección única con 3-4 opciones, retroalimentación inmedia
     a) 112 b) 061 c) **017** d) 091
     *Respuesta: c.* Atiende de 8:00 a 23:00 todos los días del año; también por WhatsApp (900 116 117) y Telegram (@INCIBE017). Aclarar que ante una emergencia de salud o de seguridad física se sigue llamando al 112.
 
-Extra posibles: **13.** «¿Qué significa 3-2-1?» (3 copias, 2 soportes, 1 fuera); **14.** «¿Dónde se tira un papel con datos de un residente?» (destructora); **15.** «Verdadero o falso: las residencias son pequeñas y nadie las ataca» (falso: los atacantes buscan puertas abiertas; el sector sanitario es objetivo habitual según ENISA).
+Extra posibles: **13.** «¿Qué significa 3-2-1?» (3 copias, 2 soportes, 1 fuera); **14.** «¿Dónde se tira un papel con datos de un residente?» (destructora); **15.** «Verdadero o falso: los centros sociosanitarios son pequeñas y nadie las ataca» (falso: los atacantes buscan puertas abiertas; el sector sanitario es objetivo habitual según ENISA).
 
 ---
 
@@ -481,7 +481,7 @@ Extra posibles: **13.** «¿Qué significa 3-2-1?» (3 copias, 2 soportes, 1 fue
 
 ## Anexo. Limitaciones y verificaciones pendientes
 
-1. No hay estadísticas oficiales específicas de residencias españolas; no hay caso verificado de filtración de datos de residentes en España.
+1. No hay estadísticas oficiales específicas de centros sociosanitarios españoles; no hay caso verificado de filtración de datos de residentes en España.
 2. Los casos 4.2, 4.3, 4.6, 4.8 y 4.9 están apoyados en fuentes secundarias; buscar nota oficial (Agencia de Ciberseguridad de Cataluña, King's College Hospital/NHS England, fiscalía y hospital belga, tribunal finlandés) antes de dar cifras concretas.
 3. No he visto el contenido de los vídeos, solo verificado existencia, título, canal y que se pueden incrustar.
 4. Confirmar en la guía AEPD si procede afirmar que los datos de salud son «categoría especial» (norma general RGPD, no leída aquí literalmente) y qué dice sobre fotos/WhatsApp de residentes.

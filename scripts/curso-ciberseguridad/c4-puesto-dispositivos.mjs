@@ -24,7 +24,7 @@ const c = new CourseBuilder({
   id: 'cibersegsoc-c4-puesto-dispositivos', identifier: 'CIBERSEG_C4',
   title: 'Mi puesto, mis dispositivos y mi wifi',
   subtitle: 'Curso 4 · Ciberseguridad en centros sociosanitarios',
-  description: 'Cómo proteger tu puesto de trabajo, la tablet de planta, el móvil y la wifi en una residencia o centro sociosanitario: pantallas bloqueadas, USB y programas, redes, WhatsApp, copias, teletrabajo y visitas. Con simuladores, casos por puesto y retos.',
+  description: 'Cómo proteger tu puesto de trabajo, la tablet de planta, el móvil y la wifi en un centro sociosanitario: pantallas bloqueadas, USB y programas, redes, WhatsApp, copias, teletrabajo y visitas. Con simuladores, casos por puesto y retos.',
   hours: 1.4, primary: '#0e8f86', accent: '#6DC3C0',
   moduleTitle: 'Cuida tu puesto, tus aparatos y tus redes',
   objectives: OBJ,
@@ -239,7 +239,7 @@ Si encuentras uno: **no lo conectes** ni lo «pruebes para ver de quién es». E
   })
   .add({
     title: '¿Qué hago con este USB?', obj: 1,
-    text: 'Tres situaciones de una residencia. Elige y mira qué pasaría.',
+    text: 'Tres situaciones de un centro sociosanitario. Elige y mira qué pasaría.',
     ix: ix.html({
       ...X.usbSim({ titulo: '',
         regla: 'Regla de INCIBE: ningún USB desconocido en el trabajo, bajo ningún concepto. Se entrega, no se prueba.',
@@ -338,14 +338,14 @@ Que la red de invitados esté separada es una recomendación de INCIBE si el rou
       ...X.radarWifi({ titulo: '',
         rondas: [
           { e: '🏥', lugar: 'Planta 2, con la tablet del centro', quien: 'La tablet de planta necesita conexión.', redes: [
-            { n: 'RESIDENCIA_PERSONAL', lock: true, sig: 4, ok: true, fb: 'Es la red del centro, para los equipos del centro.' },
-            { n: 'RESIDENCIA_VISITAS', lock: true, sig: 3, ok: false, fb: 'Es la de invitados: para visitas y móviles personales, no para equipos del centro.' },
-            { n: 'RESIDENCIA_PERSONAL_GRATIS', lock: false, sig: 4, ok: false, fb: 'Abierta y con un nombre que imita a la del centro: puede ser un clon para espiar. Nunca.' },
+            { n: 'CENTRO_PERSONAL', lock: true, sig: 4, ok: true, fb: 'Es la red del centro, para los equipos del centro.' },
+            { n: 'CENTRO_VISITAS', lock: true, sig: 3, ok: false, fb: 'Es la de invitados: para visitas y móviles personales, no para equipos del centro.' },
+            { n: 'CENTRO_PERSONAL_GRATIS', lock: false, sig: 4, ok: false, fb: 'Abierta y con un nombre que imita a la del centro: puede ser un clon para espiar. Nunca.' },
             { n: 'Vecino_5G', lock: true, sig: 2, ok: false, fb: 'Una red ajena: ni es del centro ni sabes quién la controla.' },
           ], ninguna: { ok: false, fb: 'Dentro del centro tienes una red adecuada; los datos móviles no son lo previsto para la tablet.' }, porque: 'Si no sabes cuál es la del centro, pregunta a informática: es mejor que adivinar.' },
           { e: '☕', lugar: 'Sala de descanso, con tu móvil personal', quien: 'Quieres ver el tiempo en tu móvil personal.', redes: [
-            { n: 'RESIDENCIA_PERSONAL', lock: true, sig: 4, ok: false, fb: 'Es la red de trabajo: no es para móviles personales.' },
-            { n: 'RESIDENCIA_VISITAS', lock: true, sig: 3, ok: true, fb: 'La de invitados está para esto: visitas, familiares y móviles personales, separada de la red interna.' },
+            { n: 'CENTRO_PERSONAL', lock: true, sig: 4, ok: false, fb: 'Es la red de trabajo: no es para móviles personales.' },
+            { n: 'CENTRO_VISITAS', lock: true, sig: 3, ok: true, fb: 'La de invitados está para esto: visitas, familiares y móviles personales, separada de la red interna.' },
             { n: 'Linksys_hogar', lock: true, sig: 1, ok: false, fb: 'Una red ajena que casualmente llega: no.' },
           ], ninguna: { ok: false, fb: 'No hace falta gastar datos: tienes la red de invitados.' }, porque: '' },
           { e: '🚉', lugar: 'Estación, con el móvil del trabajo', quien: 'Esperas un tren y necesitas mirar un dato del trabajo.', redes: [

@@ -1,6 +1,6 @@
 # Programa «Ciberseguridad en centros sociosanitarios»
 
-Curso de muestra (≈ 8-10 h) en 6 `.scormproj` para personal de residencias y centros sociosanitarios,
+Curso de muestra (≈ 8-10 h) en 6 `.scormproj` para personal de centros sociosanitarios,
 pensado para móvil y para personas sin soltura digital. Hecho con SCORMEditor para enseñar de qué es capaz:
 interactivos a medida (HTML+CSS+JS aislados), historias con decisiones, ilustraciones SVG propias, escenas
 con `hotspots`, vídeos de YouTube verificados, rosco/crucigrama/sopa de letras, compromiso final y test.

@@ -1,6 +1,6 @@
 # Curso 4 · «Mi puesto de trabajo, mis dispositivos y mis redes» — Dossier de fuentes y contenido
 
-Programa de ciberseguridad para trabajadores de residencias y centros sociosanitarios. Público: gerocultores/as, auxiliares, enfermería, administración, dirección, supervisión y mantenimiento, sin conocimientos digitales, en móvil. Objetivo de duración: ~1 h 40 min.
+Programa de ciberseguridad para trabajadores de centros sociosanitarios. Público: gerocultores/as, auxiliares, enfermería, administración, dirección, supervisión y mantenimiento, sin conocimientos digitales, en móvil. Objetivo de duración: ~1 h 40 min.
 
 Fecha de elaboración: 5 oct 2026. Convención de este dossier:
 - **[LEÍDO]** = leído por mí en la fuente (web, PDF o kit local) durante esta investigación.
@@ -13,7 +13,7 @@ Fecha de elaboración: 5 oct 2026. Convención de este dossier:
 ## 1. Resumen ejecutivo
 
 1. El curso cubre 12 grandes áreas. La base oficial más sólida es el **kit de concienciación de INCIBE** (carpetas 06, 07 y 08: puesto de trabajo I y II, y móviles/BYOD/teletrabajo), que ya trae contenido, tests y consejos gráficos listos. Cubre bien: mesa limpia, bloqueo de sesión, actualizaciones, antivirus/firewall, documentación sensible, software legítimo, USB, incidentes, móviles, wifi pública, VPN, BYOD, robo/pérdida y teletrabajo doméstico.
-2. **Huecos del kit** que hay que cubrir con otras fuentes: tablets/ordenadores compartidos de planta, shadow IT, wifi de invitados vs. corporativa, copias 3-2-1, Google Drive, seguridad física (tailgating, cuartos de comunicaciones, cámaras, domótica, IoMT), destrucción de papel y falsos técnicos. Encontré fuentes oficiales para casi todos (INCIBE, AEPD, ENISA). Para **tablets compartidas de planta** y **tailgating en residencias** no hay una fuente oficial específica leída: el contenido se construye por analogía con las pautas generales y debe llevar la etiqueta «buena práctica propuesta».
+2. **Huecos del kit** que hay que cubrir con otras fuentes: tablets/ordenadores compartidos de planta, shadow IT, wifi de invitados vs. corporativa, copias 3-2-1, Google Drive, seguridad física (tailgating, cuartos de comunicaciones, cámaras, domótica, IoMT), destrucción de papel y falsos técnicos. Encontré fuentes oficiales para casi todos (INCIBE, AEPD, ENISA). Para **tablets compartidas de planta** y **tailgating en centros sociosanitarios** no hay una fuente oficial específica leída: el contenido se construye por analogía con las pautas generales y debe llevar la etiqueta «buena práctica propuesta».
 3. Mensajes clave (todos con respaldo oficial leído): bloquear siempre al alejarse (Win+L); nada de contraseñas en post-it; actualizar y mantener antivirus y cortafuegos activos; **no usar USB desconocidos** (INCIBE, jul 2022); solo software legítimo y de tiendas oficiales; no usar wifi pública con dispositivos de trabajo, usar datos móviles o VPN; cambiar claves por defecto de router/IoT; separar la wifi de invitados; avisar de inmediato ante pérdida o robo; destruir papel con trituradora; no enviar datos de salud por WhatsApp sin criterio (guía AEPD sector sanitario).
 4. Dato de contexto sanitario (ENISA, 5 jul 2023): el 54 % de las amenazas en el sector salud de la UE son ransomware; el 80 % de organizaciones sanitarias encuestadas reportó incidentes relacionados con vulnerabilidades en software o hardware; solo el 27 % tiene un programa específico contra ransomware. Útil para el «por qué importa», con la cautela de que son datos de 2021-2023 y europeos.
 5. **Vídeos**: 6 verificados por oEmbed y por la ficha de YouTube (todos de la Oficina de Seguridad del Internauta, canal oficial de INCIBE), de 2:36 a 4:33, más 3 opcionales. No encontré vídeos oficiales cortos y verificables sobre USB, VPN, ingeniería social presencial ni robo de móvil de INCIBE/OSI; se proponen alternativas verificadas de INCIBE (2015-2021) con la advertencia de antigüedad.
@@ -24,7 +24,7 @@ Fecha de elaboración: 5 oct 2026. Convención de este dossier:
 
 ## 2. Contenido didáctico en bloques (listo para pantallas)
 
-Lenguaje llano, frases cortas. Tiempo orientativo por bloque. Los ejemplos de residencia son propuestas didácticas mías, no datos de fuente.
+Lenguaje llano, frases cortas. Tiempo orientativo por bloque. Los ejemplos de centro sociosanitario son propuestas didácticas mías, no datos de fuente.
 Cada bloque indica en «Respaldo» la fuente que sustenta las afirmaciones normativas o técnicas.
 
 ### Bloque 0 · Bienvenida: ¿qué es «mi puesto» y por qué importa? (5 min)
@@ -38,19 +38,19 @@ Cada bloque indica en «Respaldo» la fuente que sustenta las afirmaciones norma
 - Los USB o discos que se puedan desconectar se guardan fuera del alcance de otros cuando no estás.
 - **Bloquea siempre que te levantes**: en Windows, tecla Windows + L (kit 06 p. 5). En móvil/tablet, bloqueo de pantalla con el menor tiempo posible, con contraseña o huella (kit 06 p. 5; kit 08 p. 7).
 - Al terminar la jornada: equipos apagados; portátiles y móviles bajo llave.
-- **Ejemplo residencia**: la sala de enfermería se queda 2 minutos vacía porque suena una llamada de timbre. En ese rato una visita o un residente con deambulación puede ver la pantalla con la medicación de otra persona. «Win+L» tarda un segundo.
+- **Ejemplo de centro**: la sala de enfermería se queda 2 minutos vacía porque suena una llamada de timbre. En ese rato una visita o un residente con deambulación puede ver la pantalla con la medicación de otra persona. «Win+L» tarda un segundo.
 **Respaldo.** Kit 06 pp. 4-5 **[LEÍDO]**.
 **Salvedad.** Para ordenadores de planta compartidos hay un compromiso práctico (se bloquea o cierra sesión, ver bloque 2); la solución concreta depende de cada centro.
 
 ### Bloque 2 · Ordenadores y tablets de planta compartidos (10 min) — foco gerocultores
-> Fuente específica sobre equipos compartidos en residencias: **no encontrada**. Las pautas siguientes derivan de las generales (INCIBE kit 06/08: cuentas con privilegios mínimos, bloqueo, contraseña robusta, no «recordar contraseña»). Etiquetar como «buena práctica propuesta».
+> Fuente específica sobre equipos compartidos en centros sociosanitarios: **no encontrada**. Las pautas siguientes derivan de las generales (INCIBE kit 06/08: cuentas con privilegios mínimos, bloqueo, contraseña robusta, no «recordar contraseña»). Etiquetar como «buena práctica propuesta».
 - Si el equipo es compartido, cada persona entra **con su propio usuario** (cuando el centro lo permita). El kit 08 p. 7 recomienda cuentas de usuario con los privilegios mínimos necesarios y contraseña robusta **[LEÍDO]**.
 - **No marcar «Recordar contraseña»** (kit 08 p. 10 **[LEÍDO]**): en una tablet compartida, quien la coja después entra como tú.
 - **Cerrar sesión al terminar tu turno**, no solo bloquear.
 - No apuntar datos del residente en notas, fotos o chats del propio aparato.
 - Si la tablet tiene el seguimiento de residentes (ducha, cambios posturales, constantes, etc.), usa solo la aplicación autorizada; no instales otras ni uses el navegador para cosas personales.
 - Si la tablet se pierde, se rompe o se queda sin batería: avisar al responsable (ver bloque 10).
-**Ejemplo residencia**: la tablet de planta tiene abierta la sesión de «Marta» (turno de mañana). El turno de tarde registra cambios posturales con la sesión de Marta: el registro queda a su nombre. Es un problema de **trazabilidad** y de responsabilidad personal.
+**Ejemplo de centro**: la tablet de planta tiene abierta la sesión de «Marta» (turno de mañana). El turno de tarde registra cambios posturales con la sesión de Marta: el registro queda a su nombre. Es un problema de **trazabilidad** y de responsabilidad personal.
 **Nota**. La afirmación de que el registro queda a nombre del otro es una consecuencia lógica del uso de una sesión ajena, no una cita de fuente.
 
 ### Bloque 3 · Actualizaciones y antivirus (8 min)
@@ -125,10 +125,10 @@ El kit 08 p. 15 añade que la geolocalización en equipos de empresa debe comuni
 - **VPN** del centro; copias periódicas; contraseñas robustas y doble factor (INCIBE, 20 mar 2020).
 - Documento técnico para el servicio de informática: CCN-CERT BP/18, mar 2020 **[LEÍDO, orientado a TI]**.
 **Respaldo.** Kit 08 p. 12; INCIBE «Pautas para teletrabajar seguro» (20 mar 2020) **[LEÍDO]**.
-**Nota**. En residencias el teletrabajo afecta sobre todo a administración y dirección.
+**Nota**. En centros sociosanitarios el teletrabajo afecta sobre todo a administración y dirección.
 
 ### Bloque 12 · Seguridad física, papel e ingeniería social presencial (12 min) — foco mantenimiento
-- **Accesos y visitas**: control de acceso (tarjeta, PIN, llave o biometría) y cámaras/sensores son medidas de seguridad física (INCIBE-CERT, 17 abr 2019, en entorno industrial) **[LEÍDO]**. Aplicado a la residencia: puertas del personal cerradas; las visitas, **acompañadas y registradas** (buena práctica propuesta).
+- **Accesos y visitas**: control de acceso (tarjeta, PIN, llave o biometría) y cámaras/sensores son medidas de seguridad física (INCIBE-CERT, 17 abr 2019, en entorno industrial) **[LEÍDO]**. Aplicado al centro: puertas del personal cerradas; las visitas, **acompañadas y registradas** (buena práctica propuesta).
 - **Cuartos de comunicaciones y servidores**: acceso solo del personal autorizado. «Conseguir acceso físico a un centro de control implica ganar acceso lógico al sistema» (INCIBE-CERT 2019). Mantenimiento: no dejes la puerta abierta ni la llave puesta.
 - **Cámaras, domótica y otros dispositivos IoT** (cámaras de pasillos, control de accesos, sensores, domótica): INCIBE (blog 6 jun 2017) advierte de claves por defecto sin obligación de cambiarlas, falta de actualizaciones y acceso remoto inseguro; recomienda cambiar contraseñas de fábrica, elegir dispositivos con actualizaciones, no conectarlos a la wifi corporativa y deshabilitar el acceso remoto si no se necesita **[LEÍDO]**.
 - **Equipos médicos conectados (IoMT)**: INCIBE-CERT (10 ene 2019) los describe como equipos conectados a la red del hospital con riesgos de acceso no autorizado y dificultad de aplicar parches por su criticidad; recomienda monitorizar el tráfico y separar accesos operativos de los de configuración **[LEÍDO]**. Para el personal de planta: **no conectar nada a esos equipos ni moverlos de enchufe/red sin avisar** (buena práctica propuesta). El artículo es de 2019: comprobar si hay material INCIBE-CERT más reciente.
@@ -243,7 +243,7 @@ Licencia: no he revisado las condiciones de uso del kit. Comprobar antes de incl
 ## 6. Actividades interactivas y escenarios por rol
 
 ### Actividades (adaptables al editor SCORM; todas con uso táctil)
-1. **«Encuentra los fallos» en una sala de enfermería ilustrada** (imagen con puntos tocables; 8-10 fallos): post-it con clave en el monitor; ordenador de enfermería sin bloquear con la medicación visible; pendrive desconocido en la mesa; hoja de cambios posturales a la vista de las visitas; móvil personal haciendo fotos de una herida; tablet de planta con sesión de otra compañera abierta; puerta del cuarto de comunicaciones entreabierta con la llave puesta; papelera con listados sin triturar; wifi de invitados «Residencia» sin contraseña igual que la del personal; técnico desconocido con chaleco manipulando el router. Puntuación: tocar cada fallo y elegir qué hacer. Mismo concepto sirve para **«la mesa del despacho de administración»**.
+1. **«Encuentra los fallos» en una sala de enfermería ilustrada** (imagen con puntos tocables; 8-10 fallos): post-it con clave en el monitor; ordenador de enfermería sin bloquear con la medicación visible; pendrive desconocido en la mesa; hoja de cambios posturales a la vista de las visitas; móvil personal haciendo fotos de una herida; tablet de planta con sesión de otra compañera abierta; puerta del cuarto de comunicaciones entreabierta con la llave puesta; papelera con listados sin triturar; wifi de invitados «Centro» sin contraseña igual que la del personal; técnico desconocido con chaleco manipulando el router. Puntuación: tocar cada fallo y elegir qué hacer. Mismo concepto sirve para **«la mesa del despacho de administración»**.
 2. **Qué hago con este USB** (árbol de decisiones de 4 pasos): lo encuentro en la sala de personal → ¿lo conecto para ver de quién es? (no) → ¿se lo doy a un compañero? (no, a informática o al responsable) → ¿lo tiro? (no, se entrega) → refuerzo con la regla INCIBE.
 3. **Checklist de teletrabajo** (7-8 casillas): wifi con WPA2/WPA3 y clave propia; router con clave cambiada; nadie más usa el equipo; pantalla se bloquea al levantarme; VPN del centro; papel bajo llave; documentos solo en la carpeta del centro; sé a quién avisar. Resultado: semáforo y consejos.
 4. **¿Wifi del centro, de invitados o pública?** Arrastrar dispositivos y tareas a la red correcta (el ordenador de dirección → corporativa; el móvil personal de una visita → invitados; el portátil en una cafetería → datos móviles/VPN; la tablet de planta → corporativa).
@@ -359,7 +359,7 @@ Formato propuesto: 3 opciones plausibles (no «todas las anteriores»), una corr
 5. **Cargar el móvil en USB público**: solo noticia secundaria (Merca2, 12 sep 2025). No leí la fuente de INCIBE.
 6. **Obligación de notificar brechas**: el kit dice que se comunique a afectados y AEPD; el trabajador solo debe **avisar de inmediato** al responsable. No he leído el RGPD (arts. 33-34) para este dossier; es conocimiento general **[SIN CONFIRMAR]**.
 7. **Antigüedad**: varias fuentes INCIBE son de 2017-2020 (wifi 2017, IoT 2017, IoMT 2019, USB y borrado 2018-2022). Los principios siguen vigentes, pero los detalles técnicos (p. ej. «WPA2», filtrado MAC como medida) pueden estar desfasados: preferir WPA2/WPA3 de la página «Conexiones seguras».
-8. **ENISA**: cifras de 2021-2023 sobre la UE, no sobre España ni sobre residencias.
+8. **ENISA**: cifras de 2021-2023 sobre la UE, no sobre España ni sobre centros sociosanitarios.
 9. **Vídeos**: verificados por metadatos, no visionados. La ficha del vídeo `W_W6Rz8gRQ8` (clínica) no pude leerla por límite de peticiones de YouTube.
 10. **Duración del curso**: la suma de bloques (~99 min) es estimada, sin prueba con usuarios.
 11. **Licencia del kit INCIBE** para reutilizar las imágenes: sin revisar.

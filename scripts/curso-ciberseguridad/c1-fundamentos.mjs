@@ -1,5 +1,5 @@
 /**
- * Curso 1 · Fundamentos: por qué importa la ciberseguridad en una residencia.
+ * Curso 1 · Fundamentos: por qué importa la ciberseguridad en un centro sociosanitario.
  *   node scripts/curso-ciberseguridad/run.mjs c1-fundamentos.mjs
  * Fuente única de datos: docs/curso-ciberseguridad/fuentes/01-fundamentos.md (solo [L]; [S] sin cifras o con cautela).
  */
@@ -9,7 +9,7 @@ import { mapaResidencia, cadenaAtaque } from './c1-widgets.mjs'
 import * as S from './c1-svgs.mjs'
 
 const OBJ = [
-  'Identificar qué información y qué servicios de una residencia hay que proteger y por qué',
+  'Identificar qué información y qué servicios de un centro sociosanitario hay que proteger y por qué',
   'Reconocer las amenazas más habituales (ransomware, phishing, vishing, robo de dispositivos y errores) y cómo empiezan',
   'Aplicar los hábitos básicos de higiene digital en tu puesto de trabajo',
   'Clasificar la información según su sensibilidad y tratarla como corresponde',
@@ -18,7 +18,7 @@ const OBJ = [
 
 const c = new CourseBuilder({
   id: 'cibersegsoc-c1-fundamentos', identifier: 'CIBERSEG_C1',
-  title: 'Fundamentos: por qué importa la ciberseguridad en una residencia',
+  title: 'Fundamentos: por qué importa la ciberseguridad en un centro sociosanitario',
   subtitle: 'Qué cuidas, quién te ataca y qué haces tú: el curso de entrada',
   description: 'Curso de entrada del programa de ciberseguridad para centros sociosanitarios. En lenguaje llano y desde el móvil: qué información hay que proteger, cómo empiezan los ataques, los hábitos que te protegen y qué hacer (y a quién avisar) si algo falla.',
   hours: 1.7, primary: '#1d5fd1', accent: '#6DC3C0',
@@ -27,7 +27,7 @@ const c = new CourseBuilder({
 
 const img = (name, svgDoc) => c.asset(`assets/img/c1_${name}.svg`, svgDoc)
 const A = {
-  portada: img('portada', S.portada), l1: img('residencia', S.l1), datos: img('datos_salud', S.datos), l2: img('ransomware', S.ransomware),
+  portada: img('portada', S.portada), l1: img('centro', S.l1), datos: img('datos_salud', S.datos), l2: img('ransomware', S.ransomware),
   l3: img('equipo', S.equipo), pilares: img('pilares', S.pilares), niveles: img('niveles', S.niveles), l5: img('alerta', S.alerta),
   l6: img('escudo', S.escudo), escena: img('escena_planta', S.escena),
 }
@@ -37,11 +37,11 @@ const EST = [['class="phone"', 240], ['id="stage"', 210], ['id="chain"', 300], [
 const html = (w, extra = {}) => ix.html({ ...w, prompt: '', est_seconds: (EST.find(([k]) => w.html.includes(k)) || [0, 150])[1], ...extra })
 
 // ───────────────────────── Intro ─────────────────────────
-c.intro({ type: 'cover', title: 'Ciberseguridad en la residencia', text: '', img: { src: A.portada, alt: 'Una residencia protegida por un escudo y un candado, con dos trabajadoras a los lados', full: true } })
+c.intro({ type: 'cover', title: 'Ciberseguridad en el centro', text: '', img: { src: A.portada, alt: 'Un centro sociosanitario protegido por un escudo y un candado, con dos trabajadoras a los lados', full: true } })
 
 // ───────────────────────── Lección 1 ─────────────────────────
-const l1 = c.unit('Lección 1. Qué cuidas y por qué importa', 'Descubres qué información y qué servicios de una residencia hay que proteger y por qué un fallo informático es también un problema de cuidados.')
-l1.add({ type: 'cover', title: 'Qué cuidas y por qué importa', text: '', img: { src: A.l1, alt: 'Una residencia rodeada de lo que hay que proteger: datos de salud, cuidados, dinero y confianza', full: true } })
+const l1 = c.unit('Lección 1. Qué cuidas y por qué importa', 'Descubres qué información y qué servicios de un centro sociosanitario hay que proteger y por qué un fallo informático es también un problema de cuidados.')
+l1.add({ type: 'cover', title: 'Qué cuidas y por qué importa', text: '', img: { src: A.l1, alt: 'Un centro sociosanitario rodeado de lo que hay que proteger: datos de salud, cuidados, dinero y confianza', full: true } })
   .add({
     title: 'Una noche sin tablet', obj: 0,
     text: 'Este curso es la puerta de entrada al programa: en unos 90 minutos verás qué cuidas, quién intenta atacarlo y qué haces tú. Empezamos con una historia inventada para pensar. Tú decides cada paso.',
@@ -75,7 +75,7 @@ l1.add({ type: 'cover', title: 'Qué cuidas y por qué importa', text: '', img: 
   })
   .add({
     title: 'Los cuatro tesoros', obj: 0,
-    text: 'Una residencia guarda mucho más que ordenadores. Toca cada carta para ver qué hay detrás.',
+    text: 'Un centro sociosanitario guarda mucho más que ordenadores. Toca cada carta para ver qué hay detrás.',
     ix: ix.flip([
       ['🩺 **Datos de salud y vida privada**', 'Diagnósticos, medicación, caídas, informes, fotos, DNI, situación familiar. Son datos que la persona no ha elegido compartir con el mundo.'],
       ['⏱️ **Continuidad del cuidado**', 'Pautas, horarios, alergias, cambios posturales, citas, contacto con las familias. Si el sistema cae, el riesgo es clínico, no solo informático.'],
@@ -94,8 +94,8 @@ l1.add({ type: 'cover', title: 'Qué cuidas y por qué importa', text: '', img: 
     ], fbk('¡Bien! Cada tesoro tiene su forma de romperse.', 'Alguna pareja no encaja. Piensa qué se pierde en cada caso.', 'Un solo incidente puede tocar varios tesoros a la vez: por eso protegerlos es cosa de todo el equipo.')),
   })
   .add({
-    title: 'Por qué a una residencia', obj: 0,
-    text: 'Los criminales no eligen una residencia concreta: **atacan a quien deja la puerta abierta**. Y los datos de salud tienen valor: INCIBE-CERT recoge que un expediente médico se paga entre 30 y 1.000 dólares en el mercado ilegal.\n\nAdemás, en el sector sanitario conviven sistemas nuevos y antiguos, y parar el servicio presiona a pagar.\n\n::: info\nNo hay casos públicos verificados de filtración de datos en residencias españolas; sí en hospitales y servicios de salud. Una residencia tiene los mismos puntos débiles.\n:::',
+    title: 'Por qué a un centro sociosanitario', obj: 0,
+    text: 'Los criminales no eligen un centro sociosanitario concreto: **atacan a quien deja la puerta abierta**. Y los datos de salud tienen valor: INCIBE-CERT recoge que un expediente médico se paga entre 30 y 1.000 dólares en el mercado ilegal.\n\nAdemás, en el sector sanitario conviven sistemas nuevos y antiguos, y parar el servicio presiona a pagar.\n\n::: info\nNo hay casos públicos verificados de filtración de datos en centros sociosanitarios españoles; sí en hospitales y servicios de salud. Un centro sociosanitario tiene los mismos puntos débiles.\n:::',
     img: { src: A.datos, alt: 'Un expediente de salud protegido por un candado, con un anzuelo y un ojo que intentan llegar a él', layout: 'top', full: true, caption: 'Ilustración propia. Dato: INCIBE-CERT, «Ciberseguridad en el sector sanitario» (2024).' },
   })
   .add({
@@ -111,7 +111,7 @@ l1.add({ type: 'cover', title: 'Qué cuidas y por qué importa', text: '', img: 
   })
   .add({
     type: 'summary', title: 'Lo esencial de la lección 1',
-    text: '- Una residencia protege **datos de salud, continuidad del cuidado, dinero y confianza**.\n- Un fallo informático es también un **problema de cuidados**.\n- Los atacantes buscan puertas abiertas, no centros concretos.\n- Ante un fallo: **para, anota y avisa**. Y ten siempre un plan B en papel.',
+    text: '- Un centro sociosanitario protege **datos de salud, continuidad del cuidado, dinero y confianza**.\n- Un fallo informático es también un **problema de cuidados**.\n- Los atacantes buscan puertas abiertas, no centros concretos.\n- Ante un fallo: **para, anota y avisa**. Y ten siempre un plan B en papel.',
   })
 
 // ───────────────────────── Lección 2 ─────────────────────────
@@ -153,7 +153,7 @@ l2.add({ type: 'cover', title: 'Quién ataca y cómo', text: '', img: { src: A.l
   })
   .add({
     title: 'Cuando pasa en España', obj: 1,
-    text: 'No es ciencia ficción. En marzo de 2023, un ataque de ransomware golpeó el **Hospital Clínic de Barcelona**: urgencias, laboratorio y farmacia tuvieron que trabajar con procedimientos manuales.\n\nLos atacantes pidieron 4,5 millones de dólares y las autoridades dijeron que no pagarían. Cinco días después se había recuperado el 40 % de la actividad quirúrgica y el 70 % de las consultas externas.\n\n::: reflect\nSi le pasa a un gran hospital, ¿qué le puede pasar a un centro más pequeño sin plan B?\n:::\n\n::: info\nSon casos de hospitales; no hay casos públicos verificados de filtración de datos en residencias españolas.\n:::',
+    text: 'No es ciencia ficción. En marzo de 2023, un ataque de ransomware golpeó el **Hospital Clínic de Barcelona**: urgencias, laboratorio y farmacia tuvieron que trabajar con procedimientos manuales.\n\nLos atacantes pidieron 4,5 millones de dólares y las autoridades dijeron que no pagarían. Cinco días después se había recuperado el 40 % de la actividad quirúrgica y el 70 % de las consultas externas.\n\n::: reflect\nSi le pasa a un gran hospital, ¿qué le puede pasar a un centro más pequeño sin plan B?\n:::\n\n::: info\nSon casos de hospitales; no hay casos públicos verificados de filtración de datos en centros sociosanitarios españoles.\n:::',
   })
   .add({
     title: 'Un clic, ocho semanas después', obj: 1,
@@ -202,7 +202,7 @@ l2.add({ type: 'cover', title: 'Quién ataca y cómo', text: '', img: { src: A.l
         { canal: '💬 WhatsApp', de: 'Supervisora (número de tu agenda)', texto: 'El cuadrante de la semana que viene está en la carpeta compartida de siempre. Si hay cambios, dímelo.', fraude: false, pistas: ['Número conocido y canal habitual', 'Sin enlaces ni peticiones de datos'], porque: 'Es lo que esperas, por el canal de siempre y sin pedirte nada raro.' },
         { canal: '📞 Llamada', de: 'Número desconocido', texto: 'Soy del soporte técnico. Su tablet está infectada. Dígame su contraseña y se lo arreglo.', fraude: true, pistas: ['Llamada inesperada', 'Te piden la contraseña'], porque: 'El soporte real no necesita tu contraseña. Cuelga y llama tú al número que conoces.' },
         { canal: '📱 SMS', de: 'Correos', texto: 'Tu paquete está retenido. Paga 1,99 € de tasas aquí: correos-envio.top/pago', fraude: true, pistas: ['Pide un pago pequeño con un enlace', 'El dominio acaba en .top y no es el de Correos'], porque: 'Es smishing: un pago pequeño para robarte los datos de la tarjeta.' },
-        { canal: '✉️ Correo', de: 'Dirección <direccion@residencia-centro.com>', asunto: 'Urgente', texto: 'Necesito hoy una transferencia a esta cuenta nueva. No se lo cuentes a nadie.', fraude: true, pistas: ['Urgencia + secreto + dinero', 'Cuenta nueva'], porque: 'Es el «fraude del director». Verifica por teléfono, con un número que ya conozcas.' },
+        { canal: '✉️ Correo', de: 'Dirección <direccion@centro-solmar.com>', asunto: 'Urgente', texto: 'Necesito hoy una transferencia a esta cuenta nueva. No se lo cuentes a nadie.', fraude: true, pistas: ['Urgencia + secreto + dinero', 'Cuenta nueva'], porque: 'Es el «fraude del director». Verifica por teléfono, con un número que ya conozcas.' },
         { canal: '✉️ Correo', de: 'Tu responsable de planta', asunto: 'Reunión de equipo el jueves', texto: 'Recordad que el jueves a las 16:00 tenemos reunión en la sala de personal.', fraude: false, pistas: ['Sin enlaces, urgencia ni dinero', 'Es lo esperable'], porque: 'No pide nada raro y encaja con tu rutina. No todo es un fraude.' },
       ],
     })),
@@ -241,7 +241,7 @@ l2.add({ type: 'cover', title: 'Quién ataca y cómo', text: '', img: { src: A.l
 
 // ───────────────────────── Lección 3 ─────────────────────────
 const l3 = c.unit('Lección 3. El factor humano: tú eres la defensa', 'Entiendes por qué funcionan los engaños y adoptas los hábitos básicos que te protegen en tu puesto.')
-l3.add({ type: 'cover', title: 'Tú eres la defensa', text: '', img: { src: A.l3, alt: 'Cuatro profesionales de una residencia, cada una con un escudo de protección sobre la cabeza', full: true } })
+l3.add({ type: 'cover', title: 'Tú eres la defensa', text: '', img: { src: A.l3, alt: 'Cuatro profesionales de un centro sociosanitario, cada una con un escudo de protección sobre la cabeza', full: true } })
   .add({
     title: 'Por qué funciona el engaño', obj: 2,
     text: 'Los atacantes rara vez fuerzan la cerradura: **te piden la llave** con una excusa convincente. Juegan con la urgencia, el miedo, la autoridad, la curiosidad y tu amabilidad.\n\n::: tip\nPrisa + secreto + petición de datos o dinero = **para y pregunta**.\n:::',
@@ -266,7 +266,7 @@ l3.add({ type: 'cover', title: 'Tú eres la defensa', text: '', img: { src: A.l3
     ix: html(W.passwordLab()),
   })
   .add({
-    title: 'Mapa de la residencia', obj: 2,
+    title: 'Mapa del centro', obj: 2,
     text: 'Cada zona tiene su riesgo. Descúbrelos y aplica hábitos hasta bajar el riesgo global.',
     ix: html(mapaResidencia({
       titulo: '',
@@ -336,8 +336,8 @@ l4.add({ type: 'cover', title: 'Tipos de información', text: '', img: { src: A.
   })
   .add({
     title: 'Cuatro niveles', obj: 3,
-    text: 'No toda la información pide la misma protección. Esta propuesta de cuatro niveles está inspirada en el kit de concienciación de INCIBE y adaptada a una residencia.\n\n::: fact\n**Dato personal** es cualquier información sobre una persona identificada o identificable: el DNI, una foto o un nombre en la pizarra de la planta.\n:::',
-    img: { src: A.niveles, alt: 'Cuatro niveles de información de mayor a menor protección con ejemplos de una residencia', layout: 'top', full: true, caption: 'Propuesta didáctica adaptada de los niveles del kit de concienciación de INCIBE.' },
+    text: 'No toda la información pide la misma protección. Esta propuesta de cuatro niveles está inspirada en el kit de concienciación de INCIBE y adaptada a un centro sociosanitario.\n\n::: fact\n**Dato personal** es cualquier información sobre una persona identificada o identificable: el DNI, una foto o un nombre en la pizarra de la planta.\n:::',
+    img: { src: A.niveles, alt: 'Cuatro niveles de información de mayor a menor protección con ejemplos de un centro sociosanitario', layout: 'top', full: true, caption: 'Propuesta didáctica adaptada de los niveles del kit de concienciación de INCIBE.' },
   })
   .add({
     title: 'Cuatro niveles', obj: 3,
@@ -468,7 +468,7 @@ l6.add({ type: 'cover', title: 'Repaso y reto', text: '', img: { src: A.l6, alt:
     title: 'Repasa con tarjetas', obj: 0,
     text: 'Piensa la respuesta y toca para comprobarla.',
     ix: ix.flash([
-      ['¿Cuáles son los cuatro tesoros de una residencia?', '**Datos de salud**, **continuidad del cuidado**, **dinero** y **confianza**.'],
+      ['¿Cuáles son los cuatro tesoros de un centro sociosanitario?', '**Datos de salud**, **continuidad del cuidado**, **dinero** y **confianza**.'],
       ['¿Cómo empezó el ataque al servicio de salud irlandés?', 'Con un **correo de phishing** y un archivo Excel adjunto que abrió una persona.'],
       ['Te llaman del «soporte técnico» y te piden la clave. ¿Qué haces?', '**Cuelgas** y avisas a tu responsable.'],
       ['¿Qué señal común tienen muchos fraudes?', '**Prisa + secreto + petición de datos o dinero.**'],
@@ -529,7 +529,7 @@ c.bib('INCIBE (2026). Balance de ciberseguridad 2025. INCIBE.', 'https://www.inc
 // ───────────────────────── Test final ─────────────────────────
 c.finalTest('Test final', [
   ['En el turno de noche, la tablet de planta no abre la pauta de medicación. ¿Por qué es también un problema de cuidados y no solo de informática?', [['Porque sin una pauta fiable hay riesgo clínico para la residente', true], ['Porque la tablet cuesta dinero', false], ['Porque hay que rellenar un parte más', false]], 'Si falla la información de la que depende el cuidado (dosis, alergias, horarios), el riesgo es clínico. Por eso hace falta un plan B en papel.', 0],
-  ['Una compañera dice: «Somos una residencia pequeña, a nadie le interesamos». ¿Qué le respondes?', [['Tiene razón: los atacantes solo van a los grandes', false], ['Los atacantes buscan puertas abiertas, y los datos de salud valen dinero', true], ['Solo pasa en hospitales', false]], 'Los criminales no eligen centros concretos: atacan a quien deja la puerta abierta. Y los datos de salud tienen valor en el mercado ilegal.', 0],
+  ['Una compañera dice: «Somos un centro pequeño, a nadie le interesamos». ¿Qué le respondes?', [['Tiene razón: los atacantes solo van a los grandes', false], ['Los atacantes buscan puertas abiertas, y los datos de salud valen dinero', true], ['Solo pasa en hospitales', false]], 'Los criminales no eligen centros concretos: atacan a quien deja la puerta abierta. Y los datos de salud tienen valor en el mercado ilegal.', 0],
   ['Te llaman del «soporte técnico» y te piden la contraseña de la tablet para arreglarla. ¿Qué haces?', [['Se la doy, es de la empresa', false], ['La doy y luego la cambio', false], ['Cuelgo y aviso a mi responsable', true], ['La doy si suena muy seguro', false]], 'El soporte legítimo no te llama por sorpresa para pedirte tu contraseña. Es vishing.', 1],
   ['En el caso del servicio de salud irlandés (HSE), ¿cómo empezó el ataque?', [['Con un técnico que actualizó mal un programa', false], ['Con una persona que abrió el Excel adjunto de un correo de phishing', true], ['Con alguien que entró en el edificio', false]], 'Según el informe independiente, una persona abrió un Excel adjunto el 18 de marzo de 2021; el ransomware se activó semanas después.', 1],
   ['Un correo del «director» pide una transferencia urgente a una cuenta nueva y que no se lo cuentes a nadie. ¿Cuál es la señal de alarma más clara?', [['El logo del correo', false], ['Urgencia + secreto + dinero', true], ['Que llegue en lunes', false], ['Que no lleve adjunto', false]], 'Urgencia, secreto y dinero juntos son la señal clásica del fraude del director. Verifica por un teléfono que ya conozcas.', 1],

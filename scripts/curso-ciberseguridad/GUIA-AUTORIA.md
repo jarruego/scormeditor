@@ -5,9 +5,9 @@ Documento interno para quien escribe un `cN-*.mjs`. Se ejecuta con
 Es una **muestra comercial** de lo que puede hacer SCORMEditor: interactivo, vistoso, ligero y útil.
 
 ## Público y tono
-- Trabajadores/as de residencias **sin soltura digital**; verán el curso **en el móvil**, a ratos, en turno.
+- Trabajadores/as de centros sociosanitarios **sin soltura digital**; verán el curso **en el móvil**, a ratos, en turno.
 - **Tuteo**, frases cortas, palabras de la calle («pinchar un enlace», «te piden el código»), cero jerga.
-  Si aparece un término técnico, se explica en la misma frase. Ejemplos del día a día de una residencia
+  Si aparece un término técnico, se explica en la misma frase. Ejemplos del día a día de un centro sociosanitario
   (turno de noche, tablet de planta, la llamada de «soporte», la familia que pregunta por WhatsApp…).
 - Positivo: el miedo no enseña. «Tú eres la mejor defensa», «ante la duda, para y pregunta».
 - Sin culpabilizar: equivocarse es humano; lo grave es no avisar.

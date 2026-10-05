@@ -22,7 +22,7 @@ const c = new CourseBuilder({
   identifier: 'CIBERSEG_C3',
   title: 'Correo, mensajes y llamadas: no piques el anzuelo',
   subtitle: 'Cómo reconocer y frenar fraudes por correo, SMS, WhatsApp y teléfono en un centro sociosanitario',
-  description: 'Curso práctico para el personal de residencias y centros sociosanitarios: aprende a detectar correos, SMS, mensajes de WhatsApp, códigos QR y llamadas fraudulentas, a verificar antes de actuar y a reaccionar con rapidez si has picado. Pensado para el móvil, sin jerga técnica.',
+  description: 'Curso práctico para el personal de centros sociosanitarios: aprende a detectar correos, SMS, mensajes de WhatsApp, códigos QR y llamadas fraudulentas, a verificar antes de actuar y a reaccionar con rapidez si has picado. Pensado para el móvil, sin jerga técnica.',
   hours: 1.7,
   primary: '#d9482b',
   accent: '#f4c910',
@@ -40,11 +40,11 @@ const swipe = W.swipeDeck({
   titulo: '',
   cards: [
     { canal: '📱 SMS', de: 'Correos', texto: 'Su paquete #ES48392 no pudo entregarse. Confirme la dirección y pague 1,29 € de tasa en: https://correos-envios.info/pago', fraude: true, pistas: ['No esperabas ningún paquete', 'Pide pagar una tasa pequeña', 'Dominio «.info» ajeno a la empresa', 'Pide datos de tarjeta'], porque: 'Es smishing de paquetería. Si dudas, entra tú en la web o app oficial de la empresa de envíos y comprueba si hay un envío a tu nombre.' },
-    { canal: '✉️ Correo', de: 'coordinacion@tu-residencia.es (la dirección de siempre)', asunto: 'Formación de mañana', texto: 'Recordatorio: mañana a las 10:00 formación en la sala 2. Si tienes dudas, llama a coordinación.', fraude: false, pistas: ['Dominio conocido', 'Sin enlaces ni adjuntos', 'No pide datos'], porque: 'Canal habitual, remitente correcto, nada que pulsar y nada que te pidan. Un correo legítimo existe y no hay que ver fantasmas en todo.' },
+    { canal: '✉️ Correo', de: 'coordinacion@tu-centro.es (la dirección de siempre)', asunto: 'Formación de mañana', texto: 'Recordatorio: mañana a las 10:00 formación en la sala 2. Si tienes dudas, llama a coordinación.', fraude: false, pistas: ['Dominio conocido', 'Sin enlaces ni adjuntos', 'No pide datos'], porque: 'Canal habitual, remitente correcto, nada que pulsar y nada que te pidan. Un correo legítimo existe y no hay que ver fantasmas en todo.' },
     { canal: '💬 WhatsApp', de: 'Número no guardado, con la foto de tu supervisora', texto: 'Hola Marta, soy Elena, he cambiado de móvil. ¿Me envías el código que te llegue por SMS? Es para entrar en la app de turnos. Rápido porfa, que llego tarde.', fraude: true, pistas: ['Número nuevo y foto copiada', 'Pide un código de SMS', 'Prisa'], porque: 'Es el patrón de robo de cuenta de WhatsApp: el código de 6 cifras es la llave. Verifica llamando al número de siempre de tu supervisora.' },
     { canal: '📱 SMS', de: 'Tu banco', texto: 'Compra de 45 € en un comercio. Si no la reconoces, llama al teléfono de la tarjeta (el de la parte de atrás).', fraude: false, pistas: ['No trae enlace', 'No pide claves', 'Te manda a un número que ya tienes'], porque: 'Llega por el hilo habitual, no te pide nada y te invita a llamar a un número que ya conoces. Eso es verificar bien.' },
     { canal: '📱 SMS', de: 'Agencia Tributaria', texto: 'Tiene una devolución pendiente de 312,45 €. Solicítela en https://aeat-devoluciones.top/ver antes del viernes.', fraude: true, pistas: ['Dinero «gratis»', 'Dominio «.top»', 'Plazo corto'], porque: 'La Administración no pide datos bancarios por un enlace de SMS: se entra escribiendo tú su dirección en el navegador.' },
-    { canal: '📞 Llamada', de: 'Una hija llama al teléfono de la residencia', texto: 'Pregunta por el horario de visitas. Tras identificarla según el protocolo, el centro le explica lo que está permitido.', fraude: false, pistas: ['Llama ella al número del centro', 'El centro controla el canal', 'Identificación según protocolo'], porque: 'Aquí el canal lo controla el centro y la identidad se comprueba. Es justo lo contrario del WhatsApp que pide datos de salud.' },
+    { canal: '📞 Llamada', de: 'Una hija llama al teléfono del centro', texto: 'Pregunta por el horario de visitas. Tras identificarla según el protocolo, el centro le explica lo que está permitido.', fraude: false, pistas: ['Llama ella al número del centro', 'El centro controla el canal', 'Identificación según protocolo'], porque: 'Aquí el canal lo controla el centro y la identidad se comprueba. Es justo lo contrario del WhatsApp que pide datos de salud.' },
     { canal: '✉️ Correo', de: 'Servicio de Seguridad TI <seguridad@centro-sociosanitario.net>', asunto: 'Verificación obligatoria de su cuenta', texto: 'Para mantener su acceso debe verificar su identidad. Escanee el código QR de este correo con su móvil antes de las 18:00.', fraude: true, pistas: ['Dominio parecido, pero no igual', 'QR en lugar de enlace', 'Plazo de pocas horas'], porque: 'Es quishing: el QR esconde el destino y salta filtros. Un QR inesperado por correo no se escanea.' },
     { canal: '📞 Llamada', de: 'Un proveedor llama a administración', texto: 'Le avisa de que enviará un cambio de datos. Administración le devuelve la llamada al número del contrato; luego llega el correo desde su dominio habitual y un segundo responsable lo valida.', fraude: false, pistas: ['Doble canal', 'Llamada de vuelta a un número conocido', 'Segundo responsable'], porque: 'Es un cambio verificado por otro canal y con doble control. Así debe hacerse.' },
   ],
@@ -130,8 +130,8 @@ const chatFamilia = W.chatStory({
 const urlLab = W.urlLab({
   titulo: '',
   urls: [
-    { partes: ['https://', 'intranet.', 'residenciasolmar', '.es', '/cuadrante'], dominio: 2, fiable: true, porque: 'El dominio es residenciasolmar.es, el del centro. «intranet.» solo es una sección de ese dominio.' },
-    { partes: ['https://', 'residenciasolmar', '.es', '.acceso-seguro', '.top', '/login'], dominio: 3, fiable: false, porque: 'Se lee «residenciasolmar.es», pero el dominio real es lo último antes de la barra: acceso-seguro.top. Lo anterior es el disfraz.' },
+    { partes: ['https://', 'intranet.', 'centrosolmar', '.es', '/cuadrante'], dominio: 2, fiable: true, porque: 'El dominio es centrosolmar.es, el del centro. «intranet.» solo es una sección de ese dominio.' },
+    { partes: ['https://', 'centrosolmar', '.es', '.acceso-seguro', '.top', '/login'], dominio: 3, fiable: false, porque: 'Se lee «centrosolmar.es», pero el dominio real es lo último antes de la barra: acceso-seguro.top. Lo anterior es el disfraz.' },
     { partes: ['https://', 'correos-envios', '.info', '/pago'], dominio: 1, fiable: false, porque: 'No esperabas ningún paquete, te piden pagar y el dominio «.info» no es el de la empresa de envíos. Verifica en su web o app oficial.' },
     { partes: ['https://', 'bit.ly', '/4kLm2'], dominio: 1, fiable: false, porque: 'Un enlace acortado esconde el destino. En un SMS que no esperabas, no lo pulses.' },
     { partes: ['https://', 'mutua-saludlaboral-gestion', '.com', '/verifica'], dominio: 1, fiable: false, porque: 'Pide «verificar» tus datos y su dominio no es el de la mutua que conoces. Entra tú por su app o su web.' },
@@ -168,7 +168,7 @@ const inbox = M.inboxSim({
     {
       canal: '✉️ Correo 3 · Coordinación', cierre: 'Este correo era legítimo: dominio de siempre, canal habitual, sin enlaces ni adjuntos y sin pedir nada. Desconfiar con método no es desconfiar de todo.',
       partes: [
-        { l: 'De:', t: 'Coordinación <coordinacion@tu-residencia.es>', s: false, why: 'Es la dirección de siempre.' },
+        { l: 'De:', t: 'Coordinación <coordinacion@tu-centro.es>', s: false, why: 'Es la dirección de siempre.' },
         { l: 'Asunto:', t: 'Formación de mañana', s: false, why: 'Un asunto normal, sin prisa ni miedo.' },
         { l: '', t: 'Hola Marta, mañana a las 10:00 hay formación en la sala 2.', s: false, why: 'Te llama por tu nombre y habla de algo esperable.' },
         { l: '', t: 'Si tienes dudas, llama a coordinación.', s: false, why: 'Te manda a llamar a un número que ya conoces: verificación por otro canal.' },
@@ -180,12 +180,12 @@ const inbox = M.inboxSim({
 const compare = M.senderCompare({
   titulo: '',
   casos: [
-    { nombre: 'Elena Ruiz (Directora)', conocida: 'elena.ruiz@residenciasolmar.es', recibida: 'elena.ruiz@residenciasolmar.es', impostor: false, porque: 'La dirección coincide letra por letra con la que tienes guardada. Aun así, si te pide dinero con prisa, verifica por otro canal.' },
+    { nombre: 'Elena Ruiz (Directora)', conocida: 'elena.ruiz@centrosolmar.es', recibida: 'elena.ruiz@centrosolmar.es', impostor: false, porque: 'La dirección coincide letra por letra con la que tienes guardada. Aun así, si te pide dinero con prisa, verifica por otro canal.' },
     { nombre: 'Rosa Mena · Suministros', conocida: 'rosa.mena@suministros-delnorte.es', recibida: 'rosa.mena@suministros-delnorte.co', impostor: true, porque: 'Cambia solo la terminación: «.co» en lugar de «.es». Una letra basta para suplantar a tu proveedor.' },
-    { nombre: 'Recepción', conocida: 'recepcion@residenciasolmar.es', recibida: 'recepcion@residenciasolrnar.es', impostor: true, porque: 'Han sustituido «m» por «rn» (una erre y una ene juntas): a simple vista se leen igual.' },
-    { nombre: 'Directora Elena Ruiz', conocida: 'elena.ruiz@residenciasolmar.es', recibida: 'direccion.residencia@gmail.com', impostor: true, porque: 'Una cuenta personal de gmail a nombre de la directora. El nombre lo escribe cualquiera; la dirección no es la del centro.' },
+    { nombre: 'Recepción', conocida: 'recepcion@centrosolmar.es', recibida: 'recepcion@centrosolrnar.es', impostor: true, porque: 'Han sustituido «m» por «rn» (una erre y una ene juntas): a simple vista se leen igual.' },
+    { nombre: 'Directora Elena Ruiz', conocida: 'elena.ruiz@centrosolmar.es', recibida: 'direccion.centro@gmail.com', impostor: true, porque: 'Una cuenta personal de gmail a nombre de la directora. El nombre lo escribe cualquiera; la dirección no es la del centro.' },
     { nombre: 'Mutua Salud Laboral', conocida: 'avisos@mutua-saludlaboral.es', recibida: 'avisos@mutua-saludlaboral-gestion.com', impostor: true, porque: 'Le han añadido «-gestion» y cambiado la terminación. Los dominios «casi iguales» son el disfraz favorito.' },
-    { nombre: 'Soporte TIC', conocida: 'tic@residenciasolmar.es', recibida: 'tic@residenciasolmar.es', impostor: false, porque: 'Es la dirección correcta. No todo mensaje es un fraude: se comprueba y se sigue.' },
+    { nombre: 'Soporte TIC', conocida: 'tic@centrosolmar.es', recibida: 'tic@centrosolmar.es', impostor: false, porque: 'Es la dirección correcta. No todo mensaje es un fraude: se comprueba y se sigue.' },
   ],
 })
 
@@ -229,7 +229,7 @@ c.intro({ type: 'cover', title: 'Correo, mensajes y llamadas: no piques el anzue
 const l1 = c.unit('Lección 1. Cómo piensa el estafador', 'Los estafadores no fuerzan la puerta: te piden que se la abras. Conoces los seis trucos que usan y el hábito que los frena.')
 l1.add({ type: 'cover', title: 'Cómo piensa el estafador', text: 'Lección 1' })
   .add({ type: 'objectives', title: 'Lo que vas a lograr', obj: 0, text: 'No hace falta saber de ordenadores: hace falta **desconfiar con método**. Al terminar sabrás:\n- **Reconocer** los trucos con los que te engañan.\n- **Detectar** un correo, SMS o QR falso y comprobar un enlace sin pulsar.\n- **Responder** a llamadas y WhatsApp que piden códigos o datos.\n- **Verificar** por otro canal el dinero y los cambios de IBAN.\n- **Actuar rápido** si ya has picado.' })
-  .add({ title: 'Te engañan a ti, no al aparato', obj: 0, img: IMG('anzuelo', 'Un desconocido dice «ábreme, soy de informática» ante una puerta cerrada, mientras una trabajadora duda'), text: 'Los estafadores no fuerzan la puerta: **te piden que se la abras**. Se llama **ingeniería social**: manipular a las personas para que hagan algo que no deberían.\n\nEn una residencia hay cosas que les interesan: **dinero** (facturas, proveedores, nóminas), **datos de salud** de residentes y **familias** que se preocupan y responden rápido.\n\n::: fact\nEl 28 % de las personas que llamaron en 2025 a la línea 017 de INCIBE había recibido phishing, vishing o smishing.\n:::' })
+  .add({ title: 'Te engañan a ti, no al aparato', obj: 0, img: IMG('anzuelo', 'Un desconocido dice «ábreme, soy de informática» ante una puerta cerrada, mientras una trabajadora duda'), text: 'Los estafadores no fuerzan la puerta: **te piden que se la abras**. Se llama **ingeniería social**: manipular a las personas para que hagan algo que no deberían.\n\nEn un centro sociosanitario hay cosas que les interesan: **dinero** (facturas, proveedores, nóminas), **datos de salud** de residentes y **familias** que se preocupan y responden rápido.\n\n::: fact\nEl 28 % de las personas que llamaron en 2025 a la línea 017 de INCIBE había recibido phishing, vishing o smishing.\n:::' })
   .add({ title: 'Seis trucos para tu cabeza', obj: 0, text: 'Cambian el canal, pero tocan siempre las mismas emociones. Da la vuelta a cada carta.', ix: ix.flip([
     ['**Autoridad**', '«Soy la directora, la Policía o la Seguridad Social: haz esto ya.»'],
     ['**Ayudar**', '«Soy de informática, dame tu clave para arreglarlo.» «Soy tu compañera, ¿me cubres el turno?»'],
@@ -342,7 +342,7 @@ l4.add({ type: 'cover', title: 'Llamadas y falsos «soporte técnico»', text: '
 const l5 = c.unit('Lección 5. Fraudes que van contra el centro', 'El fraude del jefe, el cambio de IBAN y las familias que piden datos: siempre se verifica por otro canal.')
 l5.add({ type: 'cover', title: 'Fraudes que van contra el centro', text: 'Lección 5' })
   .add({ title: 'El fraude del jefe', obj: 3, img: IMG('ceo', 'Correo falso de la directora desde una cuenta personal que pide una transferencia urgente y secreta'), text: 'En el **fraude del CEO** (o «del jefe»), un correo de la dirección pide una transferencia **urgente y confidencial**: «estoy en una reunión, no puedo hablar». Es un patrón que describe INCIBE.\n\nHay variantes: tarjetas regalo, falsas incorporaciones, incluso voz o vídeo falsos (deepfake).\n\n::: important\nSolo hay una respuesta: **verificar por otro canal**, llamando a un teléfono que ya tengas.\n:::' })
-  .add({ title: 'Correo de la directora', obj: 3, text: 'Eres de administración.', ix: ix.scenario('Recibes este correo: «Marta, estoy en una reunión y no puedo hablar. Necesito que hagas una transferencia de 4.800 € ahora mismo a un proveedor. Es confidencial, no lo comentes con nadie. Te paso el IBAN por aquí.» Viene de direccion.residencia@gmail.com.', '¿Qué haces?', [
+  .add({ title: 'Correo de la directora', obj: 3, text: 'Eres de administración.', ix: ix.scenario('Recibes este correo: «Marta, estoy en una reunión y no puedo hablar. Necesito que hagas una transferencia de 4.800 € ahora mismo a un proveedor. Es confidencial, no lo comentes con nadie. Te paso el IBAN por aquí.» Viene de direccion.centro@gmail.com.', '¿Qué haces?', [
     ['Hago la transferencia: es la directora y es urgente.', false, 'La urgencia y el secreto son justo el patrón del fraude del jefe.'],
     ['Respondo al correo para preguntar si es ella.', false, 'Responderías al propio estafador. Hay que cambiar de canal.'],
     ['Llamo a la directora a su teléfono de siempre y aviso según el procedimiento de pagos.', true, 'Verificar por otro canal conocido y respetar el procedimiento de pagos es lo correcto.'],

@@ -104,7 +104,7 @@ export function usbSim({ casos, regla, titulo = '¿Qué hago con este USB?' }) {
 var D=${j({ casos, regla })};
 var s0=ME.state||{c:0,s:0};var c=s0.c|0,p=s0.s|0,first=0,tries=0,total=0;D.casos.forEach(function(k){total+=k.pasos.length});
 var st=document.getElementById('st'),pb=document.getElementById('pb');
-document.getElementById('a').textContent='Tres situaciones reales de una residencia. Elige qué haces; si no es lo mejor, verás qué pasaría y podrás probar otra opción.';
+document.getElementById('a').textContent='Tres situaciones reales de un centro sociosanitario. Elige qué haces; si no es lo mejor, verás qué pasaría y podrás probar otra opción.';
 function bar(){var d=0;for(var k=0;k<c&&k<D.casos.length;k++)d+=D.casos[k].pasos.length;d+=p;pb.style.width=Math.round(d/total*100)+'%'}
 function show(){clear(st);bar();if(c>=D.casos.length)return fin();var cs=D.casos[c],pa=cs.pasos[p];
  st.appendChild(h('p','cnt','Caso '+(c+1)+' de '+D.casos.length+' · '+cs.lugar+(cs.pasos.length>1?' · paso '+(p+1)+' de '+cs.pasos.length:'')));

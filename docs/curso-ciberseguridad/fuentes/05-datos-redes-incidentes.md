@@ -1,6 +1,6 @@
 # Curso 5 — Datos de las personas residentes, redes sociales y qué hacer si algo sale mal
 
-> Documento de fuentes para el diseño del curso (programa de ciberseguridad para trabajadores de residencias y centros sociosanitarios). Investigación realizada el 5 de octubre de 2026.
+> Documento de fuentes para el diseño del curso (programa de ciberseguridad para trabajadores de centros sociosanitarios). Investigación realizada el 5 de octubre de 2026.
 > **Criterio de rigor:** cada dato, artículo, sanción o enlace de este documento fue leído directamente en la fuente citada durante la investigación. Lo que NO se pudo confirmar se marca con **[NO CONFIRMADO]** o se explica en la sección «Lo que no se pudo confirmar».
 > Público: gerocultores/as, auxiliares, enfermería, administración, dirección, supervisión y mantenimiento, sin conocimientos digitales, que harán el curso en el móvil. Duración objetivo: ~1 h 40 min.
 
@@ -8,7 +8,7 @@
 
 ## 1. Resumen ejecutivo
 
-**Idea fuerza del curso:** los datos de las personas residentes son *de ellas*, no del centro ni de quien los ve. Lo más habitual en residencias no es un hacker: es una foto que se comparte, un comentario en el WhatsApp de planta, un correo al destinatario equivocado, o mirar una ficha por curiosidad.
+**Idea fuerza del curso:** los datos de las personas residentes son *de ellas*, no del centro ni de quien los ve. Lo más habitual en centros sociosanitarios no es un hacker: es una foto que se comparte, un comentario en el WhatsApp de planta, un correo al destinatario equivocado, o mirar una ficha por curiosidad.
 
 **Cinco mensajes que el trabajador debe llevarse:**
 
@@ -19,13 +19,13 @@
 5. **Si algo sale mal, avisa YA y no borres nada.** El centro tiene solo **72 horas** (RGPD art. 33) desde que se entera para notificar a la AEPD si hay riesgo. Si tú tardas en contarlo, el reloj corre igual. Avisar rápido nunca es el error; esconderlo, sí.
 
 **Datos reales que anclan el curso (todos verificados, ver §3):**
-- Residencia sancionada por la AEPD por enviar correos a ~50 familiares **sin copia oculta** (PS/00208-2024; multa 1.000 € reducida a 600 € por pago voluntario).
+- Centro sancionado por la AEPD por enviar correos a ~50 familiares **sin copia oculta** (PS/00208-2024; multa 1.000 € reducida a 600 € por pago voluntario).
 - Farmacia sancionada (11.000 € reducidos a 6.600 €) por tratar datos de residentes de geriátricos sin base legal y enviar Excel con datos de salud sin cifrar (PS/00177-2025).
 - Tres resoluciones de la AEPD por accesos indebidos a historias clínicas y comentarios en un grupo de WhatsApp de trabajo (hospitales públicos).
 - 2.765 brechas notificadas a la AEPD en 2025 (Memoria 2025).
 - Delito: revelar secretos conocidos por la relación laboral/profesional puede ser delito (Código Penal arts. 197 y 199).
 
-**Honestidad normativa (importante para no sobrevender):** ENS y NIS2 se tratan a nivel orientativo. El ENS obliga al sector público y a sus proveedores; **no hay base leída para afirmar que una residencia privada esté obligada**. NIS2 incluye a «prestadores de asistencia sanitaria» (anexo I), pero **no se ha podido confirmar** que una residencia lo sea ni que España haya transpuesto ya la directiva. Ver §2.11.
+**Honestidad normativa (importante para no sobrevender):** ENS y NIS2 se tratan a nivel orientativo. El ENS obliga al sector público y a sus proveedores; **no hay base leída para afirmar que un centro sociosanitario privado esté obligada**. NIS2 incluye a «prestadores de asistencia sanitaria» (anexo I), pero **no se ha podido confirmar** que un centro sociosanitario lo sea ni que España haya transpuesto ya la directiva. Ver §2.11.
 
 **Estructura temporal propuesta (100 min):**
 
@@ -55,7 +55,7 @@
 Cualquier información sobre una persona que permita saber quién es. Nombre, cara en una foto, DNI, voz, número de habitación junto a su nombre, firma… (RGPD art. 4.1: «información sobre una persona física identificada o identificable»; las fotos y vídeos son datos personales).
 
 **[Pantalla A2] ¿Y un dato de salud?**
-Todo lo que cuenta algo sobre la salud física o mental de una persona: un diagnóstico, una medicación, que usa pañal, que tiene demencia, que se ha caído, que le han puesto una sonda, su dieta por disfagia, una analítica… También el simple hecho de que **esté ingresada en una residencia concreta** puede ser sensible. (RGPD art. 4.15: «datos personales relativos a la salud física o mental de una persona física, incluida la prestación de servicios de atención sanitaria, que revelen información sobre su estado de salud»).
+Todo lo que cuenta algo sobre la salud física o mental de una persona: un diagnóstico, una medicación, que usa pañal, que tiene demencia, que se ha caído, que le han puesto una sonda, su dieta por disfagia, una analítica… También el simple hecho de que **esté ingresada en un centro sociosanitario concreto** puede ser sensible. (RGPD art. 4.15: «datos personales relativos a la salud física o mental de una persona física, incluida la prestación de servicios de atención sanitaria, que revelen información sobre su estado de salud»).
 
 **[Pantalla A3] «Categoría especial»: protección reforzada**
 El RGPD (art. 9.1) **prohíbe** tratar datos de salud, salvo excepciones. Una de ellas permite al centro usarlos para dar la asistencia sanitaria o social (art. 9.2.h), **pero** quien los trate debe estar sujeto a secreto profesional o actuar bajo la responsabilidad de quien lo está (art. 9.3, citado por la AEPD en su Plan de inspección sociosanitaria, apdo. 7.4). Traducción: **tienes permiso para usarlos para cuidar, no para otra cosa.**
@@ -102,7 +102,7 @@ Y: **tu clave es personal e intransferible.** La AEPD desaconseja los usuarios g
 
 **[Pantalla C1] Los principios, sin jerga (RGPD art. 5.1)**
 
-| Principio (art. 5.1) | En llano | En la residencia |
+| Principio (art. 5.1) | En llano | En el centro |
 |---|---|---|
 | Finalidad (b) | Usar los datos solo para lo que se recogieron | La foto de la ficha médica no es para el álbum de la fiesta |
 | Minimización (c) | Solo los datos necesarios | Al familiar, la cita (día y hora), no «el motivo» |
@@ -142,7 +142,7 @@ La Ley 41/2002 (art. 5.1) dice que se informa a las personas vinculadas «en la 
 **[Pantalla D4] WhatsApp con familias y el «WhatsApp de planta»**
 - La AEPD, para centros sanitarios, indica que si usas una app de mensajería, debes asegurarte de que el mensaje va **solo al paciente y no a un grupo del que forme parte**, aplicar minimización («revelando por estos cauces la mínima información necesaria») y ofrecer siempre medios alternativos de comunicación (Guía para profesionales del sector sanitario de la AEPD, revisión de octubre de 2024).
 - **Grupos de trabajo:** no es un lugar para historias clínicas ni capturas. En PS/00187/2024 la AEPD declaró infracción del art. 5.1.f RGPD cuando se comentó la historia clínica de una persona en un chat de compañeros (personal médico y al menos un celador) (ver §3).
-- **Móvil personal:** el centro debe indicar qué canal oficial usar. Si no lo hay, pregunta a dirección. **[NO CONFIRMADO]** una norma general que prohíba cualquier uso de WhatsApp en residencias: lo que sí está claro es que no se deben mandar datos de salud a grupos ni a personas no identificadas.
+- **Móvil personal:** el centro debe indicar qué canal oficial usar. Si no lo hay, pregunta a dirección. **[NO CONFIRMADO]** una norma general que prohíba cualquier uso de WhatsApp en centros sociosanitarios: lo que sí está claro es que no se deben mandar datos de salud a grupos ni a personas no identificadas.
 - **Correos a varias familias:** usar siempre **«CCO» (copia oculta)**. Caso real: PS/00208-2024.
 
 **[Pantalla D5] Visitas y presencial**
@@ -184,7 +184,7 @@ No publiques (ni en el perfil, ni en historias, ni en comentarios, ni en grupos)
 La guía de INCIBE lo dice así: entre los errores que causan incidentes está «hacer pública información que debería ser privada» y «publicar detalles sobre la empresa donde se trabaja o del evento al que se va a acudir», porque pueden ser usados por un ciberdelincuente (Kit 09, apdo. 2.1). INCIBE recuerda que lo publicado «puede ser constitutivo de delito» en ciertos casos (comentarios inapropiados, difundir información confidencial, acoso…; Kit 09, apdo. 3.2) y que **«internet tiene memoria»** (póster del kit).
 
 **[Pantalla F2] Anécdota sin nombre ≠ anónima**
-«Hoy una señora de la habitación 12 de mi planta me ha dicho…» + tu perfil con el nombre de la residencia = identificable. En una población pequeña, hasta sin nombre.
+«Hoy una señora de la habitación 12 de mi planta me ha dicho…» + tu perfil con el nombre del centro = identificable. En una población pequeña, hasta sin nombre.
 
 **[Pantalla F3] Tu perfil, tu escaparate para el delincuente (OSINT sencillo)**
 OSINT = «inteligencia de fuentes abiertas»: reunir información pública sobre alguien. Un estafador puede mirar tus redes para saber: dónde trabajas, quién es tu supervisora, en qué turno estás, qué residentes cuidas, a qué hora sales. Con eso prepara una **llamada o mensaje creíble** («soy el hijo de la señora X de tu planta…», «soy del servicio técnico y tu jefa me ha dicho…»).
@@ -212,7 +212,7 @@ Definición del RGPD (art. 4.12): «toda violación de la seguridad que ocasione
 En llano: **cualquier cosa que haga que los datos de alguien se pierdan, cambien, o los vea quien no debe — por accidente o a propósito.**
 La AEPD aclara: también es brecha **el acceso no autorizado hecho por alguien de la propia organización**, y el acceso autorizado si se excede de sus funciones (AEPD, «Brechas de datos personales en el sector de la salud»). Y que **no solo los ciberataques**: también un papel perdido o un correo mal enviado (Guía de brechas AEPD, apdo. II.A).
 
-**[Pantalla G2] Ejemplos de residencia (clasificar)**
+**[Pantalla G2] Ejemplos de centro sociosanitario (clasificar)**
 - Correo con datos de residentes enviado al destinatario equivocado → brecha (comunicación no autorizada).
 - Mensaje con foto de una cura al grupo de familias por error → brecha.
 - Informe/PAI olvidado en el mostrador y visto por visitas → posible brecha (acceso no autorizado).
@@ -255,7 +255,7 @@ Desconecta el equipo de la red **si te lo indican**, **no pagues nada ni contact
 
 **[Pantalla H4] El DPD / DPO, tu aliado**
 El **delegado de protección de datos** asesora al centro, supervisa el cumplimiento y es el **punto de contacto con la AEPD** y con las personas (la notificación de brecha debe incluir sus datos de contacto: art. 33.3.b). Es obligatorio en ciertos casos: cuando se tratan **a gran escala categorías especiales de datos** (RGPD art. 37.1.c) y, según la LOPDGDD art. 34.1.l, en «los centros sanitarios legalmente obligados al mantenimiento de las historias clínicas de los pacientes» (excepto profesionales que ejerzan a título individual).
-**[NO CONFIRMADO]** si una residencia concreta está obligada a tenerlo: depende de su naturaleza (si es centro sanitario obligado a historias clínicas) y del volumen. Mensaje seguro: *«pregunta quién es el DPD de tu centro; si hay dudas, tu dirección lo sabe».*
+**[NO CONFIRMADO]** si un centro sociosanitario concreto está obligada a tenerlo: depende de su naturaleza (si es centro sanitario obligado a historias clínicas) y del volumen. Mensaje seguro: *«pregunta quién es el DPD de tu centro; si hay dudas, tu dirección lo sabe».*
 
 ### Bloque I — Consecuencias, ENS y NIS2 (6 min)
 
@@ -266,11 +266,11 @@ El **delegado de protección de datos** asesora al centro, supervisa el cumplimi
 - La LOPDGDD clasifica las infracciones en muy graves, graves y leves (arts. 72–74).
 - Importante para el trabajador: **las multas van contra el centro**, pero existen vías disciplinarias y penales sobre la persona (ver B5).
 
-**[Pantalla I2] Ejemplos reales (ver §3)**: una residencia sancionada con 600 €, una farmacia con 6.600 €, hospitales públicos con apercibimiento y orden de medidas, una empresa con 10.000 € por una foto en Instagram. *No son cifras «para asustar»: muestran que los errores cotidianos (CCO, Excel sin cifrar, foto) tienen consecuencias.*
+**[Pantalla I2] Ejemplos reales (ver §3)**: un centro sociosanitario sancionado con 600 €, una farmacia con 6.600 €, hospitales públicos con apercibimiento y orden de medidas, una empresa con 10.000 € por una foto en Instagram. *No son cifras «para asustar»: muestran que los errores cotidianos (CCO, Excel sin cifrar, foto) tienen consecuencias.*
 
 **[Pantalla I3] ENS y NIS2: lo que conviene saber (orientativo)**
-- **ENS** (Esquema Nacional de Seguridad, RD 311/2022): se aplica a **todo el sector público** (art. 2.1) y también a entidades del sector privado que, por contrato, presten servicios o provean soluciones a entidades del sector público para el ejercicio de sus competencias (art. 2.3). *Si tu residencia es pública, o presta un servicio contratado por la administración, puede afectarle; si es privada sin ese vínculo, **no hay base leída para afirmar que lo esté**.*
-- **NIS2** (Directiva (UE) 2022/2555): su anexo I incluye en el sector sanitario a los «prestadores de asistencia sanitaria» (tal como los define el art. 3.g de la Directiva 2011/24/UE) y se aplica a entidades públicas o privadas **medianas o mayores** (art. 2.1). España debía transponerla antes del 17 de octubre de 2024 (art. 41.1). **[NO CONFIRMADO]**: (a) que una residencia sea «prestador de asistencia sanitaria» a efectos de NIS2; (b) que la transposición española esté ya en vigor. Fuentes secundarias consultadas indican que a mediados/finales de 2026 el anteproyecto de ley de coordinación y gobernanza de la ciberseguridad seguía en tramitación y no estaba publicado en el BOE, y que la Comisión Europea habría remitido a España al TJUE el 8/7/2026; **no se leyó esa información en una fuente oficial**, así que debe revisarse antes de publicar.
+- **ENS** (Esquema Nacional de Seguridad, RD 311/2022): se aplica a **todo el sector público** (art. 2.1) y también a entidades del sector privado que, por contrato, presten servicios o provean soluciones a entidades del sector público para el ejercicio de sus competencias (art. 2.3). *Si tu centro es pública, o presta un servicio contratado por la administración, puede afectarle; si es privada sin ese vínculo, **no hay base leída para afirmar que lo esté**.*
+- **NIS2** (Directiva (UE) 2022/2555): su anexo I incluye en el sector sanitario a los «prestadores de asistencia sanitaria» (tal como los define el art. 3.g de la Directiva 2011/24/UE) y se aplica a entidades públicas o privadas **medianas o mayores** (art. 2.1). España debía transponerla antes del 17 de octubre de 2024 (art. 41.1). **[NO CONFIRMADO]**: (a) que un centro sociosanitario sea «prestador de asistencia sanitaria» a efectos de NIS2; (b) que la transposición española esté ya en vigor. Fuentes secundarias consultadas indican que a mediados/finales de 2026 el anteproyecto de ley de coordinación y gobernanza de la ciberseguridad seguía en tramitación y no estaba publicado en el BOE, y que la Comisión Europea habría remitido a España al TJUE el 8/7/2026; **no se leyó esa información en una fuente oficial**, así que debe revisarse antes de publicar.
 - *Mensaje para el trabajador:* «El centro puede tener obligaciones adicionales de seguridad; tu parte es seguir sus normas y avisar de los incidentes».
 
 ---
@@ -279,17 +279,17 @@ El **delegado de protección de datos** asesora al centro, supervisa el cumplimi
 
 > Todos los PDF de resoluciones se descargaron de aepd.es y se leyeron directamente el 5/10/2026. Las resoluciones están anonimizadas en parte. Las fechas de resolución exactas no aparecen en el texto extraído de algunos PDF: se indica lo que sí figura. Para citar en pantalla, usar el número de expediente.
 
-### 3.1 Casos en residencias y entorno sociosanitario
+### 3.1 Casos en centros sociosanitarios y entorno sociosanitario
 
-**Caso R1 — Residencia: correos a familias sin copia oculta (PS/00208-2024, expediente EXP202401115)**
+**Caso R1 — Centro sociosanitario: correos a familias sin copia oculta (PS/00208-2024, expediente EXP202401115)**
 - Entidad: Asilo de Ancianos Santo Domingo y Santa Eloísa (la resolución la nombra).
-- Hechos: reclamación de un familiar el 23/11/2023. La residencia enviaba correos masivos a familiares de residentes con **las direcciones y los nombres visibles**, de forma reiterada, y siguió haciéndolo pese a avisos. Ejemplo documentado: correo del 17/11/2023 «cambios y pautas en relación a las visitas» a **51 destinatarios**; otro del 6/10/2023 «vacunación y gripe» a 50; otro del 1/9/2023 «nueva directora» a 23.
+- Hechos: reclamación de un familiar el 23/11/2023. El centro enviaba correos masivos a familiares de residentes con **las direcciones y los nombres visibles**, de forma reiterada, y siguió haciéndolo pese a avisos. Ejemplo documentado: correo del 17/11/2023 «cambios y pautas en relación a las visitas» a **51 destinatarios**; otro del 6/10/2023 «vacunación y gripe» a 50; otro del 1/9/2023 «nueva directora» a 23.
 - Infracciones: art. 5.1.f RGPD (confidencialidad) y art. 32 RGPD (seguridad). Inicialmente se propuso 600 € + 400 € = 1.000 €. El 8/11/2024 la entidad pagó **600 €** acogiéndose a las dos reducciones (reconocimiento de responsabilidad y pago voluntario). Se ordenaron además medidas correctivas.
 - Acuerdo de inicio: 30/10/2024. Resolución de terminación firmada en 2025 (el PDF no muestra la fecha textual; una fuente secundaria la sitúa el 7/03/2025).
 - Enlace: https://www.aepd.es/documento/ps-00208-2024.pdf
 - Lección: «Copia oculta» (CCO). Un error pequeño y repetido sale caro, y **repetir tras un aviso agrava**.
 
-**Caso R2 — Farmacia que dispensa a residencias: datos de residentes sin base legal y Excel sin cifrar (PS/00177-2025, expediente EXP202414356)**
+**Caso R2 — Farmacia que dispensa a centros sociosanitarios: datos de residentes sin base legal y Excel sin cifrar (PS/00177-2025, expediente EXP202414356)**
 - Origen: denuncia de la Direcció General d'Ordenació i Regulació Sanitària de Cataluña, remitida por la Autoritat Catalana de Protecció de Dades (entrada en la AEPD el 7/09/2023), tras inspecciones a farmacias.
 - Hechos: una oficina de farmacia trató datos de residentes en geriátricos para dispensar absorbentes de incontinencia y **recibía/enviaba hojas Excel con nombres y datos de salud por correo electrónico sin cifrar**.
 - Infracciones propuestas: art. 6 (5.000 €), art. 14 (3.000 €) y art. 32 (3.000 €) = 11.000 €; con las dos reducciones quedó en **6.600 €** (resolución de terminación por reconocimiento y pago voluntario; acuerdo de inicio 12/04/2025).
@@ -297,7 +297,7 @@ El **delegado de protección de datos** asesora al centro, supervisa el cumplimi
 - Lección: el eslabón débil puede ser el **proveedor**; y los **Excel con datos de residentes por correo normal** no son seguros.
 
 **Caso R3 — Plan de inspección de oficio de la atención sociosanitaria (AEPD, publicado en 2020; inspecciones presenciales desde septiembre de 2018 hasta finales de diciembre de 2018)**
-- Primer análisis sistemático de la AEPD de este sector (centros sociosanitarios, residencias, etc.). Carácter preventivo. Recomendaciones clave usadas en este curso: perfiles de acceso diferenciados, no usar usuarios genéricos compartidos, compromiso de confidencialidad escrito, procedimiento escrito para informar a familias, consentimiento específico para imágenes.
+- Primer análisis sistemático de la AEPD de este sector (centros sociosanitarios, centros sociosanitarios, etc.). Carácter preventivo. Recomendaciones clave usadas en este curso: perfiles de acceso diferenciados, no usar usuarios genéricos compartidos, compromiso de confidencialidad escrito, procedimiento escrito para informar a familias, consentimiento específico para imágenes.
 - Enlace: https://www.aepd.es/sites/default/files/2020-06/plan-inspeccion-oficio-atencion-sociosanitaria.pdf
 
 ### 3.2 Casos de acceso indebido y WhatsApp en el sistema sanitario (aplicables por analogía)
@@ -324,7 +324,7 @@ El **delegado de protección de datos** asesora al centro, supervisa el cumplimi
 **Caso F1 — Foto en Instagram sin base legal (PS/00066/2022, expediente EXP202104917)**
 - Una empresa (tienda de novias) publicó en Instagram una foto de una clienta con su traje de boda; alegó que la cara estaba tapada con un círculo negro y que no se identificaba. La AEPD impuso **10.000 €** por infracción del art. 6 RGPD.
 - Enlace: https://www.aepd.es/documento/ps-00066-2022.pdf
-- Lección: «taparle la cara» puede no bastar si sigue siendo identificable; **no es un caso de residencias** y no se debe presentar como tal. [Resultado leído en la resolución; la afirmación de que la AEPD descartó el argumento de la cara tapada se deduce de que impuso la sanción propuesta; para una cita textual, releer el fundamento correspondiente.]
+- Lección: «taparle la cara» puede no bastar si sigue siendo identificable; **no es un caso de centros sociosanitarios** y no se debe presentar como tal. [Resultado leído en la resolución; la afirmación de que la AEPD descartó el argumento de la cara tapada se deduce de que impuso la sanción propuesta; para una cita textual, releer el fundamento correspondiente.]
 
 ### 3.4 Datos agregados y contexto
 
@@ -334,7 +334,7 @@ El **delegado de protección de datos** asesora al centro, supervisa el cumplimi
 | 15 % de las notificaciones de brechas del 2.º semestre de 2021 vinieron de responsables del ámbito asistencial de salud; al menos una brecha al mes con más de 200.000 afectados en este sector | AEPD, https://www.aepd.es/areas-de-actuacion/salud/brechas-de-datos-personales-en-el-sector-de-la-salud | Página actualizada el 24/04/2025 (dato de 2021) |
 | Ciberataque con ransomware al Hospital Clínic de Barcelona: ataque el 5/03/2023; paralizó urgencias, laboratorio y farmacia, forzando a trabajar en papel; los atacantes pidieron 4,5 millones de dólares y se hablaba de unos 4,5 TB de datos | INCIBE-CERT, «Ciberataque ransomware paraliza actividad del Hospital», https://www.incibe.es/en/incibe-cert/publicaciones/bitacora-de-seguridad/ciberataque-ransomware-paraliza-actividad-del-hospital | Publicación 14/03/2023. Datos leídos en resumen de la página |
 
-**No se encontró** (y por tanto no se incluye): una resolución de la AEPD que sancione a una residencia por publicar fotos de residentes; un caso verificable de ciberataque a una residencia española con fuente oficial; estadísticas oficiales de brechas específicas de residencias. Hay referencias en medios (p. ej. «Alerta. Las residencias de mayores no están exentas de un ciberataque», gestionydependencia.com, sobre un «incidente informático» de DomusVi) que **no se leyeron en profundidad y no se usan como dato**.
+**No se encontró** (y por tanto no se incluye): una resolución de la AEPD que sancione a un centro sociosanitario por publicar fotos de residentes; un caso verificable de ciberataque a un centro sociosanitario español con fuente oficial; estadísticas oficiales de brechas específicas de centros sociosanitarios. Hay referencias en medios (p. ej. «Alerta. Los centros sociosanitarios de mayores no están exentas de un ciberataque», gestionydependencia.com, sobre un «incidente informático» de DomusVi) que **no se leyeron en profundidad y no se usan como dato**.
 
 ---
 
@@ -363,7 +363,7 @@ Un auxiliar de otra planta te pregunta cómo le ha salido la analítica a don Ma
 - **Por qué:** necesidad de conocer; el deber de confidencialidad abarca a todo el personal y se mantiene entre compañeros (LOPDGDD art. 5; Ley 41/2002 art. 16).
 
 **Caso 5 — Has enviado un correo al destinatario equivocado**
-Mandaste el informe de seguimiento de una residente a «Marta G.» en lugar de a «Marta L.» (otra residencia/otra familia).
+Mandaste el informe de seguimiento de una residente a «Marta G.» en lugar de a «Marta L.» (otro centro/otra familia).
 - **Correcta:** No intentes «arreglarlo» en silencio: avisar inmediatamente a tu responsable/DPD, **no borrar** el correo enviado, y si se te indica, pedir al destinatario que no lo abra y lo elimine. Se documenta; el centro valora si notifica en 72 h.
 - **Por qué:** es una brecha (comunicación no autorizada) y el plazo corre desde que el centro lo sabe (RGPD arts. 4.12, 33).
 
@@ -373,7 +373,7 @@ En el grupo de tu planta, una compañera pone una foto de la herida de un reside
 - **Por qué:** un grupo de WhatsApp no garantiza la confidencialidad; una foto de una herida identifica y es dato de salud (AEPD, PS/00187/2024: historia comentada en un chat de compañeros).
 
 **Caso 7 — Tu perfil de Facebook y «el mejor trabajo del mundo»**
-Pones en una historia: «Hoy en mi residencia, la señora de la 14 me ha hecho llorar de risa» con una foto de la mano de una residente.
+Pones en una historia: «Hoy en mi centro, la señora de la 14 me ha hecho llorar de risa» con una foto de la mano de una residente.
 - **Correcta:** Borrar la publicación y comunicarlo a dirección. En adelante, nada del trabajo en tu perfil.
 - **Por qué:** identificable por contexto; es un posible tratamiento sin base legal y puede tener consecuencias laborales; además «internet tiene memoria» (INCIBE).
 
@@ -428,7 +428,7 @@ Ruta base: `C:\Users\Jose Alberto Arruego\Downloads\kit_concienciacion\kit_conci
 | `Ficha\09_Redes_sociales.pdf` (1 pág.) | **Ojo:** por su contenido es la ficha de **CONTRASEÑAS** («Buenas prácticas en el uso de las contraseñas»): no compartir, no repetir, doble factor, longitud mínima de 8 caracteres, regla mnemotécnica con una frase | Reutilizable para el bloque F5 (contraseñas y 2FA); **el contenido no corresponde al nombre de la carpeta** |
 | `Test_evaluacion\09_Test_Redes_sociales.pdf` (6 págs.) | **Ojo:** es el test de **CONTRASEÑAS y medidas complementarias**, no de redes sociales. 10 preguntas, 4 opciones (a–d) cada una, una sola correcta, soluciones al final en tabla | Ver «Formato del test» abajo |
 
-**Formato de sus tests (para inspirarnos sin copiar):** 10 preguntas de opción única con cuatro respuestas (a–d); mezcla de (i) definiciones («El doble factor de autenticación es…»), (ii) «¿cuál es falsa?» (negación), (iii) elegir la mejor entre cuatro ejemplos (contraseñas), y (iv) el recurso de «todas las anteriores». Cada pregunta es de enunciado largo y sin escenario; **no hay explicación de la respuesta**, solo la clave al final. *Para nuestro curso:* preguntas cortas, basadas en situaciones cotidianas de residencia, con **retroalimentación explicativa** inmediata, sin «todas las anteriores» (mal en móvil) y con 3 opciones.
+**Formato de sus tests (para inspirarnos sin copiar):** 10 preguntas de opción única con cuatro respuestas (a–d); mezcla de (i) definiciones («El doble factor de autenticación es…»), (ii) «¿cuál es falsa?» (negación), (iii) elegir la mejor entre cuatro ejemplos (contraseñas), y (iv) el recurso de «todas las anteriores». Cada pregunta es de enunciado largo y sin escenario; **no hay explicación de la respuesta**, solo la clave al final. *Para nuestro curso:* preguntas cortas, basadas en situaciones cotidianas de centro sociosanitario, con **retroalimentación explicativa** inmediata, sin «todas las anteriores» (mal en móvil) y con 3 opciones.
 
 **Otros materiales de INCIBE útiles (leídos en web):** página «Ingeniería social» (https://www.incibe.es/aprendeciberseguridad/ingenieria-social) con infografías, vídeos y el juego «Detecta el fraude». Resto del kit: no explorado en esta tarea.
 
@@ -442,7 +442,7 @@ Ruta base: `C:\Users\Jose Alberto Arruego\Downloads\kit_concienciacion\kit_conci
 2. **Semáforo de la necesidad de conocer:** lista de situaciones (mirar la ficha de un residente que no es mío, hacer la cura que me han encargado…) → verde/rojo. (Bloque B)
 3. **Simulador de llamada de familia:** conversación ramificada con 3 respuestas; cada una abre el efecto («la hija se enfada», «has dado datos de salud sin comprobar…»). (Bloque D; casos 1, 2, 8)
 4. **Tinder de fotos:** muestra 6 fotos imaginarias (fiesta con todos mirando a cámara, foto con el residente con sonda, foto de grupo con una persona de fondo, captura de pizarra con diagnósticos…) y el usuario decide «publicar / no publicar» según el esquema E3. (Bloque E)
-5. **Perfil «detective» (OSINT):** captura ficticia de un perfil de Instagram de una gerocultora; el usuario toca las pistas que ayudarían a un estafador (nombre de la residencia, turnos, fotos de uniforme con logotipo…). (Bloque F)
+5. **Perfil «detective» (OSINT):** captura ficticia de un perfil de Instagram de una gerocultora; el usuario toca las pistas que ayudarían a un estafador (nombre del centro, turnos, fotos de uniforme con logotipo…). (Bloque F)
 6. **«¿Es una brecha?» (sí/no/duda):** 8 situaciones de G2, con feedback. (Bloque G)
 7. **Cronómetro de 72 horas:** línea de tiempo que muestra qué pasa si avisas en 1 hora vs. 3 días. (Bloque G)
 8. **Ordenar el protocolo:** ordenar los 5 pasos (detecta, no borres, avisa, contén, documenta). (Bloque H)
@@ -477,7 +477,7 @@ b) No, solo accedo a lo que necesito para mi trabajo
 c) La miro si no se entera nadie
 **Correcta: b.** Necesidad de conocer; los accesos se registran y pueden ser infracción (Ley 41/2002 art. 16; casos de la AEPD).
 
-**P3.** Dejas de trabajar en la residencia. ¿Sigue el deber de confidencialidad?
+**P3.** Dejas de trabajar en el centro. ¿Sigue el deber de confidencialidad?
 a) No, se acaba con el contrato
 b) Sí, se mantiene aunque finalice la relación
 c) Solo un año
@@ -495,7 +495,7 @@ b) Todos en «CCO» (copia oculta)
 c) En «CC», para que sepan quién más lo recibe
 **Correcta: b.** Si no, se muestran correos y nombres de familiares de residentes. Caso real: PS/00208-2024.
 
-**P6.** En la fiesta de verano alguien hace una foto de grupo. ¿Puede publicarse en la web de la residencia?
+**P6.** En la fiesta de verano alguien hace una foto de grupo. ¿Puede publicarse en la web del centro?
 a) Sí, es una fiesta pública
 b) Solo si hay consentimiento de quienes salen para esa finalidad (o de sus representantes)
 c) Sí, si se tapa la cara de uno
@@ -591,10 +591,10 @@ c) Un trabajador que revisa las fotografías
 
 ## Lo que no se pudo confirmar (resumen de lagunas)
 
-1. **Residencias y NIS2/ENS:** no consta (en lo leído) que una residencia privada esté en el ámbito de NIS2 o del ENS. El ENS aplica al sector público y a sus proveedores (RD 311/2022 art. 2). NIS2 incluye «prestadores de asistencia sanitaria»; no se confirmó el encaje de las residencias.
+1. **Centros sociosanitarios y NIS2/ENS:** no consta (en lo leído) que un centro sociosanitario privado esté en el ámbito de NIS2 o del ENS. El ENS aplica al sector público y a sus proveedores (RD 311/2022 art. 2). NIS2 incluye «prestadores de asistencia sanitaria»; no se confirmó el encaje de los centros sociosanitarios.
 2. **Transposición de NIS2 en España:** solo fuentes secundarias (no oficiales) indican que sigue en tramitación; verificar en el BOE y en el Congreso antes de afirmar nada en el SCORM.
-3. **DPD en residencias:** la obligación depende de que el centro sea «centro sanitario legalmente obligado a mantener historias clínicas» (LOPDGDD art. 34.1.l) o trate categorías especiales a gran escala (RGPD art. 37.1.c); no se confirmó para cada residencia.
-4. **Sanciones a residencias por fotos:** no se encontró ninguna resolución de la AEPD con ese objeto. El caso F1 es de otro sector.
+3. **DPD en centros sociosanitarios:** la obligación depende de que el centro sea «centro sanitario legalmente obligado a mantener historias clínicas» (LOPDGDD art. 34.1.l) o trate categorías especiales a gran escala (RGPD art. 37.1.c); no se confirmó para cada centro.
+4. **Sanciones a centros sociosanitarios por fotos:** no se encontró ninguna resolución de la AEPD con ese objeto. El caso F1 es de otro sector.
 5. **Fechas exactas de resolución:** no aparecen en el texto de varios PDF; se citan por expediente.
 6. **Derecho a la propia imagen (LO 1/1982):** no se leyó en BOE.
 7. **Vídeos:** verificados título/canal por oEmbed pero **no visionados**; duración tomada del listado de YouTube.
