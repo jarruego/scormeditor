@@ -25,6 +25,16 @@ con la carcasa real y lo recorre entero en Chrome móvil (390 px). Reglas de aut
 `scripts/curso-ciberseguridad/GUIA-AUTORIA.md`; kit reutilizable en `lib.mjs` (DSL), `widgets.mjs`
 (interactivos), `svgkit.mjs` (ilustraciones).
 
+## Imágenes profesionales
+
+Las ilustraciones de escena son imágenes generadas (prompts en `imagenes/PROMPTS.md`). Los originales van en
+`imagenes/entrada/` (fuera de git); `imagenes-tools.mjs optimize` los reduce a JPG de 1280 px
+(`imagenes/optimizadas/`, ≈ 90 KB cada uno) y `lib.mjs` los coloca solo en lugar del SVG del mismo nombre,
+con su texto alternativo (`imagenes/alts.json`) y, en las 4 escenas con `hotspots`, sus zonas
+(`imagenes/hotspots.json`, medidas con `imagenes-tools.mjs grid`/`boxes`). Para cambiar una imagen:
+sustituir el fichero en `entrada/`, `optimize <nombre>` y regenerar el curso con `run.mjs`.
+Los esquemas con texto (3-2-1, líneas de tiempo, mockups de mensajes…) siguen en vector.
+
 ## Pendiente de revisión humana antes de publicar
 
 Ver «Verificaciones pendientes» en `documento-base.md` y las `editor_notes` de cada pantalla (vídeos por ver,

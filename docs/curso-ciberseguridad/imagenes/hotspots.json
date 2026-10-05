@@ -1,0 +1,40 @@
+{
+  "_nota": "Zonas pulsables de las escenas con hotspots, en % de la imagen: [x, y, ancho, alto]. Se aplican por etiqueta al integrar la imagen (lib.mjs). Medidas con una rejilla del 10 % (imagenes-tools.mjs grid / boxes).",
+  "c1_escena_planta": {
+    "Tablet con la clave pegada en un post-it": [3.5, 22, 19.5, 31],
+    "Ordenador con la sesión abierta y sin nadie": [31, 13.5, 34, 40.5],
+    "Papeles con datos sobre el mostrador": [67, 37.5, 20.5, 18],
+    "USB sin dueño sobre el mostrador": [24.5, 46, 10, 10],
+    "Móvil personal con una foto de una residente": [88, 29.5, 9.5, 22.5],
+    "Destructora de papel": [1.5, 61, 22.5, 39],
+    "Carpeta de pautas en papel en su sitio": [0, 4.5, 18, 10]
+  },
+  "c2_sala_enfermeria": {
+    "Portátil con la sesión abierta": [30, 37, 43, 42],
+    "Post-it con una clave": [64.5, 38.5, 7, 10.5],
+    "Tablet sin bloqueo": [2, 61, 27, 26],
+    "Cartel con usuario y clave comunes": [67, 1, 24, 45],
+    "Móvil bloqueado": [79, 70.5, 17.5, 16],
+    "Reloj de pared": [8.5, 2, 16.5, 25]
+  },
+  "c4_enfermeria": {
+    "Ordenador con medicación a la vista": [3, 31.5, 22.5, 28],
+    "Post-it con la clave": [1.5, 60.5, 8.5, 7.5],
+    "Tablet con la sesión de otra persona": [55, 41, 11, 15],
+    "USB sobre el mostrador": [58, 57, 7, 6.5],
+    "Hoja de cambios posturales en la pared": [38.5, 6, 22.5, 27.5],
+    "Puerta de comunicaciones entreabierta, con la llave puesta": [72.5, 0.5, 27, 72],
+    "Papelera con listados": [85, 62.5, 15, 35],
+    "Ordenador bloqueado": [34, 34, 20, 25.5],
+    "Armario cerrado con llave": [3, 2.5, 24.5, 29],
+    "Trituradora": [65, 63, 14.5, 30.5]
+  },
+  "c5_sala": {
+    "Pantalla con la historia a la vista": [1.5, 37, 28, 35],
+    "Pizarra con nombres y diagnósticos": [31, 5.5, 40.5, 42],
+    "Expediente abierto en el mostrador": [30, 67, 38, 19],
+    "Tablet con una foto en el grupo de planta": [68.5, 54, 21.5, 26],
+    "Armario cerrado con llave": [1.5, 1, 22, 34.5],
+    "Cartel de horario de visitas": [75, 5.5, 23.5, 37.5]
+  }
+}

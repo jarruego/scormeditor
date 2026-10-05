@@ -18,6 +18,7 @@ import { estimateScreensSync, formatEstimatedDuration } from '../../src/report/e
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 export const OUT_DIR = join(HERE, '..', '..', 'docs', 'curso-ciberseguridad', 'scormproj')
+const IMG_DIR = join(HERE, '..', '..', 'docs', 'curso-ciberseguridad', 'imagenes')
 
 const pad = (n, w = 2) => String(n).padStart(w, '0')
 
@@ -237,9 +238,49 @@ export class CourseBuilder {
     }
   }
 
+  /**
+   * Sustituye las ilustraciones SVG por las imágenes profesionales generadas (docs/curso-ciberseguridad/
+   * imagenes/optimizadas/<nombre>.jpg) cuando existen con el mismo nombre base. Reescribe rutas, aplica el
+   * alt de `alts.json` y, en las escenas con hotspots, las zonas de `hotspots.json` (por etiqueta).
+   */
+  applyGeneratedImages(raw) {
+    const optDir = join(IMG_DIR, 'optimizadas')
+    const readJson = (f) => (existsSync(join(IMG_DIR, f)) ? JSON.parse(readFileSync(join(IMG_DIR, f), 'utf8')) : {})
+    const alts = readJson('alts.json'), zones = readJson('hotspots.json')
+    const swapped = new Map() // ruta nueva → nombre base
+    for (const p of Object.keys(this.assets)) {
+      const m = p.match(/^assets\/img\/(.+)\.svg$/)
+      if (!m || !existsSync(join(optDir, `${m[1]}.jpg`))) continue
+      const np = `assets/img/${m[1]}.jpg`
+      this.assets[np] = readFileSync(join(optDir, `${m[1]}.jpg`))
+      delete this.assets[p]
+      swapped.set(np, m[1])
+      raw = JSON.parse(JSON.stringify(raw).split(p).join(np))
+    }
+    const screens = [...raw.intro_screens, ...(raw.closing_screens || []), ...raw.modules.flatMap((mod) => [...mod.screens, ...(mod.closing_screens || []), ...mod.units.flatMap((u) => u.screens)])]
+    for (const s of screens) {
+      const vr = s.visual_resource
+      if (vr && swapped.has(vr.src) && alts[swapped.get(vr.src)]) vr.alt = alts[swapped.get(vr.src)]
+      const cfg = s.interaction && s.interaction.config
+      if (cfg && swapped.has(cfg.image)) {
+        const base = swapped.get(cfg.image)
+        if (alts[base]) cfg.alt = alts[base]
+        if (s.interaction.type === 'hotspots') {
+          for (const sp of cfg.spots || []) {
+            const z = (zones[base] || {})[sp.label]
+            if (z) [sp.x, sp.y, sp.w, sp.h] = z
+            else console.log(`  ⚠ hotspots ${base}: sin zona nueva para «${sp.label}» (se mantiene la del SVG)`)
+          }
+        }
+      }
+    }
+    if (swapped.size) console.log(`  ▸ ${swapped.size} ilustración(es) sustituida(s) por imagen generada`)
+    return raw
+  }
+
   /** Valida (Zod + validateCourse), informa y escribe `<id>.scormproj`. */
   async build({ outDir = OUT_DIR, strict = true } = {}) {
-    const raw = this.toJson()
+    const raw = this.applyGeneratedImages(this.toJson())
     const parsed = Course.safeParse(raw)
     if (!parsed.success) {
       console.error('✗ ZOD:', JSON.stringify(parsed.error.issues.slice(0, 15), null, 2))
