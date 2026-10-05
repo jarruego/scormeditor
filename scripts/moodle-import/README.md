@@ -152,3 +152,9 @@ encabezado «…:», si no «último título (continuación)»); imágenes (en `
 base64) propias de la diapositiva, descartando logos repetidos en ≥3 diapositivas
 o de ≤60 px de alto. Diapositivas de pregunta → `final_test` (V/F u opción única,
 respuesta correcta de `cal`). La diapositiva de resultados de Captivate se omite.
+
+## Secciones con un test por lección
+Si una sección tiene `lecciones + 1` quizzes, los primeros van a
+`assessments.unit_tests` (anclados a su lección) y el último a `final_test`, con
+`score_source: mixed` (50/50). Con otro número de quizzes se usa el primero como
+`final_test` y `score_source: final_test`.

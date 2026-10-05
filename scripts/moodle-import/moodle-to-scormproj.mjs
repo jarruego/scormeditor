@@ -130,7 +130,7 @@ function buildUnitProject(sec, unitNumber) {
   // "Unidad N: ..." / "Unidad N. ..." -> se queda solo la parte descriptiva
   // (el número de unidad ya lo aporta `unitNumber`/`u0N`, duplicarlo en el
   // slug y en "Unidad N. Unidad N: ..." es ruido).
-  const unitTitleClean = unitTitleRaw.replace(/^unidad\s+\d+\s*[:.]\s*/i, '').trim() || unitTitleRaw
+  const unitTitleClean = unitTitleRaw.replace(/^unidad formativa\s+[IVX\d]+\s*[-:.]\s*/i, '').replace(/^unidad\s+\d+\s*[:.]\s*/i, '').trim() || unitTitleRaw
   const unitSlug = slugify(unitTitleClean)
   const uPad = String(unitNumber).padStart(2, '0')
   const courseId = courseNameOverride ? slugify(courseNameOverride) : `${prefix}-u${uPad}-${unitSlug}`
@@ -142,13 +142,22 @@ function buildUnitProject(sec, unitNumber) {
   const nextScreenId = () => { screenSeq += 1; return `s${String(screenSeq).padStart(3, '0')}` }
 
   const units = sec.lessons.map((lessonAct, tIdx) => buildUnit(lessonAct, tIdx))
-  const matchQuestions = []
-  const finalTest = buildFinalTest(sec, units[0]?.id)
-  // Las preguntas «relacionar» de Moodle no caben en el test final del editor
-  // (solo single/multiple/true_false): se emiten como pantalla de práctica con
-  // la interacción `match_pairs` al final de la última lección de la unidad.
-  const lastUnit = units[units.length - 1]
-  matchQuestions.forEach((q, i) => lastUnit.screens.push(buildMatchScreen(q, i)))
+  // Un test por lección + uno final de sección (quizzes = lecciones + 1) →
+  // tests por tema en `unit_tests` (anclados a su lección) y el último, `final_test`.
+  // En cualquier otro caso, el primer quiz de la sección es el `final_test`.
+  const perLesson = sec.quizzes.length === sec.lessons.length + 1
+  const unitTests = []
+  let finalTest = null
+  if (perLesson) {
+    sec.lessons.forEach((_, i) => {
+      const t = buildAssessment(sec, sec.quizzes[i], units[i], `T${String(i + 1).padStart(2, '0')}`)
+      if (t) unitTests.push({ ...t, unit_id: units[i].id })
+    })
+    finalTest = buildAssessment(sec, sec.quizzes[sec.quizzes.length - 1], units[units.length - 1], 'A01')
+  } else {
+    finalTest = buildAssessment(sec, sec.quizzes[0], units[units.length - 1], 'A01')
+    if (finalTest) finalTest.unit_id = units[0]?.id || ''
+  }
 
   function buildUnit(lessonAct, tIdx) {
     const lessonXmlPath = join(backupDir, lessonAct.directory, 'lesson.xml')
@@ -210,24 +219,29 @@ function buildUnitProject(sec, unitNumber) {
     }
   }
 
-  function buildFinalTest(sec, anchorUnitId) {
-    const quizAct = sec.quizzes[0]
+  function buildAssessment(sec, quizAct, targetUnit, id) {
     if (!quizAct) return null
     const quizXmlPath = join(backupDir, quizAct.directory, 'quiz.xml')
     const { questions, skipped } = parseQuizQuestions(quizXmlPath, questionBank)
-    for (const s of skipped) {
-      skippedQuestions.push({ section: sec.name, quiz: quizAct.title, ...s })
-    }
-    matchQuestions.push(...questions.filter((q) => q.type === 'match'))
+    for (const sk of skipped) skippedQuestions.push({ section: sec.name, quiz: quizAct.title, ...sk })
+    // Las preguntas «relacionar» de Moodle no caben en un test del editor
+    // (solo single/multiple/true_false): pantalla de práctica con `match_pairs`
+    // al final de la lección asociada.
+    questions.filter((q) => q.type === 'match').forEach((q, i) => targetUnit.screens.push(buildMatchScreen(q, i)))
     const { title: quizTitleClean } = stripWorkMarkers(quizAct.title)
     return {
-      id: 'A01',
+      id,
       title: quizTitleClean || 'Autoevaluación',
       instructions: '',
-      questions: questions.filter((q) => q.type !== 'match').map((q, i) => buildQuestion(q, i)),
+      questions: questions.filter((q) => q.type !== 'match').map((q, i) => {
+        const bq = buildQuestion(q, i)
+        // ids únicos entre los varios tests de un mismo proyecto
+        if (id !== 'A01') bq.id = `${id}_${bq.id}`, bq.options.forEach((o, j) => (o.id = `${bq.id}_o${j + 1}`))
+        return bq
+      }),
       pass_score: 60,
       one_question_per_screen: false,
-      unit_id: anchorUnitId || '',
+      unit_id: targetUnit.id,
     }
   }
 
@@ -332,8 +346,8 @@ function buildUnitProject(sec, unitNumber) {
         require_interactions: true,
         min_score: 60,
         attempts_allowed: 0,
-        score_source: 'final_test',
-        mixed_final_weight: 70,
+        score_source: perLesson ? 'mixed' : 'final_test',
+        mixed_final_weight: perLesson ? 50 : 70,
         navigation: 'mixed',
         allow_resume: true,
       },
@@ -341,7 +355,7 @@ function buildUnitProject(sec, unitNumber) {
     shell: {},
     narration: { mode: 'auto' },
     modules: [{ id: moduleId, title: `Unidad ${unitNumber} - ${unitTitleClean}`, screens: [], units }],
-    assessments: { unit_tests: [], final_test: finalTest },
+    assessments: { unit_tests: unitTests, final_test: finalTest },
     glossary: [],
     glossary_title: 'Glosario',
     bibliography: [],
