@@ -196,7 +196,20 @@ export class CourseBuilder {
     const nUnits = this.modules.reduce((n, mm) => n + mm.units.length, 0)
     const u = { id: `u${nUnits + 1}`, title, summary, status: 'ok', screens: [] }
     m.units.push(u)
-    const api = { unit: u, add: (s) => { u.screens.push(this.makeScreen({ ...s })); return api } }
+    // Portada de lección: el número va en el título («Lección 6. Marco legal, repaso y reto»), sin subtítulo suelto.
+    const num = title.match(/^(Lección \d+)\./)
+    const api = {
+      unit: u,
+      add: (s) => {
+        const sc = { ...s }
+        if (sc.type === 'cover' && num) {
+          if (!/^Lección \d+/.test(sc.title)) sc.title = `${num[1]}. ${sc.title}`
+          sc.text = ''
+        }
+        u.screens.push(this.makeScreen(sc))
+        return api
+      },
+    }
     return api
   }
 
