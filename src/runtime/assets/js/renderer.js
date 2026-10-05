@@ -141,7 +141,7 @@
         if (ytId) {
           html += '<figure class="me-md-img"><div class="me-video"' + (iw ? ' style="width:' + iw + '%"' : '') +
             '><iframe src="https://www.youtube-nocookie.com/embed/' + esc(ytId) +
-            '" title="' + esc(im[1] || 'Vídeo') + '" allowfullscreen loading="lazy"></iframe></div>' + caption + '</figure>';
+            '" title="' + esc(im[1] || 'Vídeo') + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe></div>' + caption + '</figure>';
         } else {
           html += '<figure class="me-md-img"><img class="me-zoomable" src="' + esc(asset(im[3])) +
             '" alt="' + esc(im[1]) + '" loading="lazy" tabindex="0" role="button" aria-label="Ampliar imagen"' +
@@ -185,8 +185,8 @@
       var ratio = ['4x3', '1x1', '9x16'].indexOf(vr.media_ratio) >= 0 ? vr.media_ratio : '16x9';
       // El pie, si lo hay, viaja también en el `title` del iframe (accesible
       // sin depender del figcaption) además de mostrarse debajo, como la imagen.
-      return '<figure class="me-figure"><div class="me-video me-ratio-' + ratio + '"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(vr.src) +
-        '" title="' + esc(vr.caption || 'Vídeo') + '" allowfullscreen loading="lazy"></iframe></div>' +
+      return '<figure class="me-figure"><div class="me-video me-ratio-' + ratio + '"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(youtubeId(vr.src) || vr.src) +
+        '" title="' + esc(vr.caption || 'Vídeo') + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe></div>' +
         (vr.caption ? '<figcaption>' + rich(vr.caption) + '</figcaption>' : '') + '</figure>';
     }
     if (vr.kind === 'video_file') {

@@ -153,6 +153,11 @@ que lo etiquete).
   vía clase `me-ratio-*`; el vertical 9:16 se acota a 380px de ancho y `.me-media-center`
   lo centra con `margin-inline:auto` (text-align no centra bloques con max-width). El
   mismo CSS cubre el YouTube de la interacción `video` (comparte `.me-video`).
+  `visual_resource.src` (y `config.youtube`) acepta el **ID desnudo o la URL pegada**: el
+  runtime extrae el ID (`youtubeId()` / `ytIdOf()`) antes de montar `…/embed/ID`; antes una
+  URL completa producía un embed roto (error de reproducción). Los iframes llevan el
+  `allow` del código oficial de YouTube (con `encrypted-media`) y `referrerpolicy=
+  "strict-origin-when-cross-origin"`: sin Referer YouTube responde «error 153».
 - **Pie/leyenda (`caption`), unificado en los tres tipos con archivo** (`image`,
   `video_youtube`, `video_file`): `mediaBlock()` envuelve los tres en `<figure
   class="me-figure">` con un `<figcaption>` visible al final si hay `caption` —

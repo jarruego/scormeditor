@@ -72,12 +72,13 @@ for (; i < total + 4; i++) {
   const info = await page.evaluate(() => {
     const h1 = document.querySelector('h1')
     const imgs = [...document.querySelectorAll('img')].filter((im) => im.getAttribute('src') && im.complete && im.naturalWidth === 0).map((im) => im.getAttribute('src'))
-    const frames = [...document.querySelectorAll('iframe')].map((f) => ({ src: (f.getAttribute('src') || '').slice(0, 60), hasDoc: !!f.getAttribute('srcdoc'), h: f.getBoundingClientRect().height }))
+    const frames = [...document.querySelectorAll('iframe')].map((f) => ({ src: (f.getAttribute('src') || '').slice(0, 90), hasDoc: !!f.getAttribute('srcdoc'), h: f.getBoundingClientRect().height }))
     return { title: h1 ? h1.textContent.trim() : '', overflowX: document.documentElement.scrollWidth > window.innerWidth + 2, imgs, frames, last: /fin/i.test(document.getElementById('me-next')?.textContent || '') }
   })
   const tag = String(i + 1).padStart(2, '0')
   if (info.overflowX) problems.push(`[${tag}] «${info.title}»: desborde horizontal`)
   for (const b of info.imgs) problems.push(`[${tag}] «${info.title}»: imagen rota ${b}`)
+  for (const f of info.frames) if (f.src.includes('youtube') && !/\/embed\/[A-Za-z0-9_-]{11}(\?|$)/.test(f.src)) problems.push(`[${tag}] «${info.title}»: URL de vídeo mal formada ${f.src}`)
   for (const f of info.frames) if (f.hasDoc && f.h < 40) problems.push(`[${tag}] «${info.title}»: iframe html_embed con altura ${f.h}`)
   if (shotsDir && i % every === 0) await page.screenshot({ path: join(shotsDir, `${tag}.png`), fullPage: true })
   console.log(`${tag} ${info.title}${info.frames.some((f) => f.hasDoc) ? ' [embed]' : ''}${info.frames.some((f) => f.src.includes('youtube')) ? ' [vídeo]' : ''}`)

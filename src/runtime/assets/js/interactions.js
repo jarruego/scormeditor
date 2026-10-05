@@ -9,6 +9,12 @@
 (function (global) {
   'use strict';
 
+  // Acepta el ID desnudo o la URL pegada (watch, youtu.be, embed, shorts).
+  function ytIdOf(v) {
+    var m = /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,15})/.exec(String(v || ''));
+    return m ? m[1] : String(v || '').trim();
+  }
+
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -840,9 +846,9 @@
 
     var html = header(data) + '<div class="me-iv-box">';
     if (c.youtube) {
-      html += '<div class="me-video"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(c.youtube) +
+      html += '<div class="me-video"><iframe src="https://www.youtube-nocookie.com/embed/' + esc(ytIdOf(c.youtube)) +
         (questions.length ? '?enablejsapi=1' : '') +
-        '" title="' + esc(stripTags(data.prompt) || 'Vídeo') + '" allow="autoplay" allowfullscreen loading="lazy"></iframe></div>';
+        '" title="' + esc(stripTags(data.prompt) || 'Vídeo') + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe></div>';
     } else if (c.src) {
       html += '<video class="me-video" controls preload="metadata"' + (c.poster ? ' poster="' + esc(assetUrl(c.poster)) + '"' : '') + '>' +
         '<source src="' + esc(assetUrl(c.src)) + '">';

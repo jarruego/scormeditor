@@ -132,7 +132,7 @@ l2.add({ type: 'cover', title: 'Quién ataca y cómo', text: '', img: { src: A.l
   .add({
     title: 'Ransomware en un minuto', obj: 1,
     text: 'Mira este vídeo breve de INCIBE. Después verás cómo avanza un ataque de este tipo.',
-    video: { id: 'https://www.youtube.com/watch?v=vqwtLVfg7ns', caption: '«¿Qué es el ransomware?» · INCIBE (#AprendeCiberseguridad)', transcript: 'Vídeo breve de INCIBE (aproximadamente 1 minuto y 20 segundos) que explica qué es el ransomware: un tipo de programa dañino que impide acceder a los archivos, normalmente cifrándolos, y pide un rescate para devolverlos.' },
+    video: { id: 'vqwtLVfg7ns', caption: '«¿Qué es el ransomware?» · INCIBE (#AprendeCiberseguridad)', transcript: 'Vídeo breve de INCIBE (aproximadamente 1 minuto y 20 segundos) que explica qué es el ransomware: un tipo de programa dañino que impide acceder a los archivos, normalmente cifrándolos, y pide un rescate para devolverlos.' },
     notes: ['Verificar la transcripción viendo el vídeo (vqwtLVfg7ns): el dossier solo confirma título, canal y duración, no el contenido.'],
   })
   .add({
@@ -210,7 +210,7 @@ l2.add({ type: 'cover', title: 'Quién ataca y cómo', text: '', img: { src: A.l
   .add({
     title: 'Phishing en un minuto', obj: 1,
     text: 'Un repaso rápido del correo trampa, y luego practicas con enlaces.',
-    video: { id: 'https://www.youtube.com/watch?v=uhzV5-iFb5E', caption: '«¿Qué es el phishing?» · INCIBE (#AprendeCiberseguridad)', transcript: 'Vídeo breve de INCIBE (aproximadamente 1 minuto y 25 segundos) que explica qué es el phishing: el engaño que suplanta a una entidad o persona de confianza, normalmente por correo, para conseguir datos o que la víctima pinche un enlace.' },
+    video: { id: 'uhzV5-iFb5E', caption: '«¿Qué es el phishing?» · INCIBE (#AprendeCiberseguridad)', transcript: 'Vídeo breve de INCIBE (aproximadamente 1 minuto y 25 segundos) que explica qué es el phishing: el engaño que suplanta a una entidad o persona de confianza, normalmente por correo, para conseguir datos o que la víctima pinche un enlace.' },
     notes: ['Verificar la transcripción viendo el vídeo (uhzV5-iFb5E).'],
   })
   .add({
@@ -245,7 +245,7 @@ l3.add({ type: 'cover', title: 'Tú eres la defensa', text: '', img: { src: A.l3
   .add({
     title: 'Por qué funciona el engaño', obj: 2,
     text: 'Los atacantes rara vez fuerzan la cerradura: **te piden la llave** con una excusa convincente. Juegan con la urgencia, el miedo, la autoridad, la curiosidad y tu amabilidad.\n\n::: tip\nPrisa + secreto + petición de datos o dinero = **para y pregunta**.\n:::',
-    video: { id: 'https://www.youtube.com/watch?v=SSjdJgINu2E', caption: '«¿Qué es la ingeniería social?» · Oficina de Seguridad del Internauta (INCIBE)', transcript: 'Vídeo de la Oficina de Seguridad del Internauta (INCIBE), de unos 3 minutos, sobre qué es la ingeniería social: engañar a las personas, no a las máquinas, para conseguir información o acceso.' },
+    video: { id: 'SSjdJgINu2E', caption: '«¿Qué es la ingeniería social?» · Oficina de Seguridad del Internauta (INCIBE)', transcript: 'Vídeo de la Oficina de Seguridad del Internauta (INCIBE), de unos 3 minutos, sobre qué es la ingeniería social: engañar a las personas, no a las máquinas, para conseguir información o acceso.' },
     notes: ['Verificar la transcripción viendo el vídeo (SSjdJgINu2E): el dossier solo confirma título, canal y duración.'],
   })
   .add({
@@ -296,7 +296,7 @@ l3.add({ type: 'cover', title: 'Tú eres la defensa', text: '', img: { src: A.l3
   .add({
     title: 'El fraude del director', obj: 2,
     text: 'La Guardia Civil explica cómo funciona este fraude y cómo evitarlo.',
-    video: { id: 'https://www.youtube.com/watch?v=o_GRQYiNRsk', caption: '«¿Cómo evitar el fraude del CEO?» · Guardia Civil', transcript: 'Vídeo de la Guardia Civil (aproximadamente 1 minuto y 30 segundos) sobre el fraude del CEO: alguien se hace pasar por la dirección de una empresa para pedir una transferencia urgente, y cómo evitarlo verificando la petición por otra vía.' },
+    video: { id: 'o_GRQYiNRsk', caption: '«¿Cómo evitar el fraude del CEO?» · Guardia Civil', transcript: 'Vídeo de la Guardia Civil (aproximadamente 1 minuto y 30 segundos) sobre el fraude del CEO: alguien se hace pasar por la dirección de una empresa para pedir una transferencia urgente, y cómo evitarlo verificando la petición por otra vía.' },
     notes: ['Verificar la transcripción viendo el vídeo (o_GRQYiNRsk).'],
   })
   .add({
@@ -423,13 +423,13 @@ l5.add({ type: 'cover', title: 'Reflejos ante un incidente', text: '', img: { sr
   .add({
     title: 'A quién se avisa', obj: 4,
     text: '- **Tu responsable o la persona de contacto del centro:** siempre el primero. Pregunta quién es.\n- **017 (INCIBE):** ayuda gratuita y confidencial, de 8:00 a 23:00 todos los días. También por WhatsApp (900 116 117) y Telegram (@INCIBE017).\n- **AEPD:** si hay datos personales afectados, lo notifica el centro como máximo en 72 horas desde que lo sabe.\n- **Policía Nacional o Guardia Civil:** para denunciar un delito (estafa, extorsión).\n\n::: warn\nPara una emergencia de salud o de seguridad física, sigue siendo el **112**.\n:::',
-    video: { id: 'https://www.youtube.com/watch?v=TWKvYnz6mL0', caption: '«Tu Ayuda en Ciberseguridad - Línea 017» · INCIBE', transcript: 'Vídeo de INCIBE, de unos 40 segundos, que presenta la Línea de Ayuda en Ciberseguridad 017, un servicio gratuito y confidencial al que se puede recurrir ante dudas o incidentes de ciberseguridad.' },
+    video: { id: 'TWKvYnz6mL0', caption: '«Tu Ayuda en Ciberseguridad - Línea 017» · INCIBE', transcript: 'Vídeo de INCIBE, de unos 40 segundos, que presenta la Línea de Ayuda en Ciberseguridad 017, un servicio gratuito y confidencial al que se puede recurrir ante dudas o incidentes de ciberseguridad.' },
     notes: ['Verificar la transcripción viendo el vídeo (TWKvYnz6mL0).', 'Pedir al centro que defina la persona de contacto antes de lanzar el curso.'],
   })
   .add({
     title: 'Brechas de datos', obj: 4,
     text: 'Una brecha es cuando datos personales se pierden, se alteran o los ve quien no debe. La AEPD publica este vídeo con medidas para evitarlas.',
-    video: { id: 'https://www.youtube.com/watch?v=vTEs11IdvYE', caption: '«5 medidas técnicas para evitar brechas de datos personales» · AEPD', transcript: 'Vídeo de la Agencia Española de Protección de Datos (aproximadamente 1 minuto) con cinco medidas técnicas para evitar brechas de datos personales.' },
+    video: { id: 'vTEs11IdvYE', caption: '«5 medidas técnicas para evitar brechas de datos personales» · AEPD', transcript: 'Vídeo de la Agencia Española de Protección de Datos (aproximadamente 1 minuto) con cinco medidas técnicas para evitar brechas de datos personales.' },
     notes: ['Verificar la transcripción viendo el vídeo (vTEs11IdvYE): el dossier solo confirma título, canal y duración.'],
   })
   .add({
