@@ -33,7 +33,9 @@ Las ilustraciones de escena son imágenes generadas (prompts en `imagenes/PROMPT
 con su texto alternativo (`imagenes/alts.json`) y, en las 4 escenas con `hotspots`, sus zonas
 (`imagenes/hotspots.json`, medidas con `imagenes-tools.mjs grid`/`boxes`). Para cambiar una imagen:
 sustituir el fichero en `entrada/`, `optimize <nombre>` y regenerar el curso con `run.mjs`.
-Los esquemas con texto (3-2-1, líneas de tiempo, mockups de mensajes…) siguen en vector.
+Los esquemas con texto (3-2-1, líneas de tiempo, mockups de mensajes…) también son imágenes generadas
+(`imagenes/PROMPTS-esquemas.md`, texto literal en el prompt y revisado palabra a palabra); se muestran a
+todo el ancho (`imagenes/esquemas.json`). Solo los 4 carteles del kit del INCIBE siguen siendo los originales.
 
 ## Pendiente de revisión humana antes de publicar
 

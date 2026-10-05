@@ -246,7 +246,8 @@ export class CourseBuilder {
   applyGeneratedImages(raw) {
     const optDir = join(IMG_DIR, 'optimizadas')
     const readJson = (f) => (existsSync(join(IMG_DIR, f)) ? JSON.parse(readFileSync(join(IMG_DIR, f), 'utf8')) : {})
-    const alts = readJson('alts.json'), zones = readJson('hotspots.json')
+    const alts = readJson('alts.json'), zones = readJson('hotspots.json'), esq = readJson('esquemas.json')
+    const completo = new Set(esq.completo || []), pies = esq.pies || {}
     const swapped = new Map() // ruta nueva → nombre base
     for (const p of Object.keys(this.assets)) {
       const m = p.match(/^assets\/img\/(.+)\.svg$/)
@@ -260,7 +261,13 @@ export class CourseBuilder {
     const screens = [...raw.intro_screens, ...(raw.closing_screens || []), ...raw.modules.flatMap((mod) => [...mod.screens, ...(mod.closing_screens || []), ...mod.units.flatMap((u) => u.screens)])]
     for (const s of screens) {
       const vr = s.visual_resource
-      if (vr && swapped.has(vr.src) && alts[swapped.get(vr.src)]) vr.alt = alts[swapped.get(vr.src)]
+      if (vr && swapped.has(vr.src)) {
+        const base = swapped.get(vr.src)
+        if (alts[base]) vr.alt = alts[base]
+        if (pies[base]) vr.caption = pies[base]
+        // Esquemas con texto: a todo el ancho, sin disposición lateral (el texto debe leerse en el móvil).
+        if (completo.has(base)) Object.assign(vr, { layout: 'top', media_full: true, media_align: 'center' })
+      }
       const cfg = s.interaction && s.interaction.config
       if (cfg && swapped.has(cfg.image)) {
         const base = swapped.get(cfg.image)

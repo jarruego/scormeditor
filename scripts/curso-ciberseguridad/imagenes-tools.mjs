@@ -61,7 +61,7 @@ if (cmd === 'optimize') {
   console.log(`total ${(tot / 1048576).toFixed(1)} MB, ${names.length} imágenes`)
 } else if (cmd === 'sheet') {
   const [out, ...names] = rest
-  const cols = 3, cw = 560, ch = 373
+  const cols = Number(process.env.COLS || 3), cw = Math.floor(1680 / cols), ch = Math.round((cw * 2) / 3)
   const imgs = names.map((n) => ({ n, src: find(n) ? dataUrl(find(n)) : null }))
   const url = await render(async ({ imgs, cols, cw, ch }) => {
     const rows = Math.ceil(imgs.length / cols)
