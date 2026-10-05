@@ -9,3 +9,9 @@ dist
 .DS_Store
 .vite
 *.code-workspace
+
+# Contenidos de cursos reales (privados): no se suben a GitHub. Solo el curso
+# demo de la app (src/schema/sample-course.ts) y sus recursos son públicos.
+docs/curso-*/
+scripts/curso-*/
+__pycache__/
