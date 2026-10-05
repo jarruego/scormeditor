@@ -128,15 +128,27 @@ parser que usa el editor al abrir un proyecto.
   «manipulador de alimentos»: 0 divs `caja-*`) simplemente no se activa, sin
   romper nada. En otro curso con otros rótulos, revisar/ampliar
   `CALLOUT_BY_TITLE` en `html-to-md.mjs`.
-- **`mod_scorm`** (paquetes SCORM ya empaquetados y subidos como actividad
-  Moodle, p. ej. un curso con «Tema 12» hecho de 4 SCORM sueltos en vez de
-  lección+quiz): **fuera de alcance total**, ni el script ni `ingesta-moodle.md`
-  lo tocan — la sección se excluye automáticamente (no tiene lesson+quiz). Esos
-  paquetes ya son SCORM: hay que decidir aparte si se importan tal cual a
-  Moodle/otro LMS o se rehacen.
+- **`mod_scorm`**: `moodle-to-scormproj.mjs` los ignora (la sección no tiene
+  lesson+quiz). Si el paquete es de **Adobe Captivate** (HTML5, `assets/js/CPM.js`),
+  se rehace con `captivate-to-scormproj.mjs` (ver abajo). Otros autores de SCORM
+  no están soportados.
+- **Preguntas `match`** (relacionar) del quiz: no caben en `final_test`; se emiten
+  como pantalla de práctica con `match_pairs` (no puntúa) al final de la unidad.
 - El nombre del curso (`course.source_document`, `source_refs[].doc`) se lee
   de `original_course_shortname`/`_fullname` en `moodle_backup.xml`
   (`parseCourseInfo`); `--course-name` lo sobreescribe. **Antes** (hasta
   jul 2026) tenía como *fallback* el literal `'PAI_2026'` hardcodeado del
   primer curso de prueba — pasaba desapercibido porque coincidía con ese
   curso; se detectó y corrigió al probar contra un curso distinto.
+
+## Paquetes Captivate (`captivate-to-scormproj.mjs`)
+```bash
+node scripts/moodle-import/captivate-to-scormproj.mjs carpeta-backup/ carpeta-salida/ --prefix miprefijo
+```
+Descomprime cada `mod_scorm` del backup y lee el literal `cp.model.data` de
+`CPM.js` por regex (no es JSON). Diapositiva normal → pantalla `content` (HTML →
+markdown ligero con negrita y listas; título = primera línea en negrita o
+encabezado «…:», si no «último título (continuación)»); imágenes (en `dr/*.json`
+base64) propias de la diapositiva, descartando logos repetidos en ≥3 diapositivas
+o de ≤60 px de alto. Diapositivas de pregunta → `final_test` (V/F u opción única,
+respuesta correcta de `cal`). La diapositiva de resultados de Captivate se omite.

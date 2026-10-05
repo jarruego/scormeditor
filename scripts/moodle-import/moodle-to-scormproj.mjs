@@ -142,7 +142,13 @@ function buildUnitProject(sec, unitNumber) {
   const nextScreenId = () => { screenSeq += 1; return `s${String(screenSeq).padStart(3, '0')}` }
 
   const units = sec.lessons.map((lessonAct, tIdx) => buildUnit(lessonAct, tIdx))
+  const matchQuestions = []
   const finalTest = buildFinalTest(sec, units[0]?.id)
+  // Las preguntas «relacionar» de Moodle no caben en el test final del editor
+  // (solo single/multiple/true_false): se emiten como pantalla de práctica con
+  // la interacción `match_pairs` al final de la última lección de la unidad.
+  const lastUnit = units[units.length - 1]
+  matchQuestions.forEach((q, i) => lastUnit.screens.push(buildMatchScreen(q, i)))
 
   function buildUnit(lessonAct, tIdx) {
     const lessonXmlPath = join(backupDir, lessonAct.directory, 'lesson.xml')
@@ -212,12 +218,13 @@ function buildUnitProject(sec, unitNumber) {
     for (const s of skipped) {
       skippedQuestions.push({ section: sec.name, quiz: quizAct.title, ...s })
     }
+    matchQuestions.push(...questions.filter((q) => q.type === 'match'))
     const { title: quizTitleClean } = stripWorkMarkers(quizAct.title)
     return {
       id: 'A01',
       title: quizTitleClean || 'Autoevaluación',
       instructions: '',
-      questions: questions.map((q, i) => buildQuestion(q, i)),
+      questions: questions.filter((q) => q.type !== 'match').map((q, i) => buildQuestion(q, i)),
       pass_score: 60,
       one_question_per_screen: false,
       unit_id: anchorUnitId || '',
@@ -257,6 +264,43 @@ function buildUnitProject(sec, unitNumber) {
       points: 1,
       learning_objective: '',
       source_refs: [{ doc: `Moodle: ${courseSourceLabel()}`, locator: `quiz Q${i + 1}`, transform: 'conservación' }],
+    }
+  }
+
+  function buildMatchScreen(q, i) {
+    const sid = nextScreenId()
+    const prompt = htmlToInlineText(q.questiontext).replace(/\s+/g, ' ').trim()
+    const groups = q.pairs.map((p, j) => ({ id: `g${j + 1}`, label: htmlToInlineText(p.term).replace(/\s+/g, ' ').trim() }))
+    const options = q.pairs.map((p, j) => ({ id: `o${j + 1}`, text: htmlToInlineText(p.definition).replace(/\s+/g, ' ').trim(), group: `g${j + 1}` }))
+    return {
+      id: sid,
+      type: 'content',
+      title: `Actividad: ${prompt.replace(/[:.]+$/, '') || 'relaciona'}`,
+      objective: '',
+      student_text: 'Relaciona cada concepto con su definición o ejemplo.',
+      source_refs: [{ doc: `Moodle: ${courseSourceLabel()}`, locator: `quiz «${q.name}» (relacionar)`, transform: 'conservación' }],
+      visual_resource: { kind: 'none' },
+      interaction: {
+        id: `${sid}_i`,
+        type: 'match_pairs',
+        prompt: '',
+        instructions: '',
+        options,
+        config: { groups },
+        feedback: { correct: 'Emparejado correctamente.', incorrect: 'Alguna pareja no es correcta: revísalo.', explanation: '' },
+        scored: false,
+        points: 1,
+        attempts: 2,
+        retries: 0,
+        source_refs: [],
+      },
+      interaction_layout: 'bottom',
+      required: true,
+      min_time_seconds: 0,
+      audio_src: '',
+      transcript: '',
+      editor_notes: ['Pregunta «relacionar» del cuestionario Moodle, convertida en actividad de práctica (no puntúa).'],
+      status: 'ok',
     }
   }
 

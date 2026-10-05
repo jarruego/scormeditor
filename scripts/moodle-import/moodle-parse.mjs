@@ -170,7 +170,18 @@ export function parseQuestionBank(backupDir) {
         feedback: decodeHtmlEntities(unescapeXml(tag(a, 'feedback'))),
       }))
     }
-    bank.set(entryId, { name, questiontext, generalfeedback, qtype, type, answers, correctFeedback, incorrectFeedback })
+    let pairs = []
+    if (qtype === 'match') {
+      type = 'match'
+      const plugin = tag(q, 'plugin_qtype_match_question')
+      pairs = tagAll(tag(plugin, 'matches'), 'match')
+        .map((m) => ({
+          term: decodeHtmlEntities(unescapeXml(tag(m, 'questiontext'))),
+          definition: decodeHtmlEntities(unescapeXml(tag(m, 'answertext'))),
+        }))
+        .filter((p) => p.term.replace(/<[^>]*>/g, '').trim() && p.definition.trim())
+    }
+    bank.set(entryId, { name, questiontext, pairs, generalfeedback, qtype, type, answers, correctFeedback, incorrectFeedback })
   }
   return bank
 }
