@@ -76,9 +76,16 @@ const EVALUABLE: Partial<Record<InteractionType, { base: number; perUnit: number
       return cols * rows
     },
   },
-  // Contenido a medida del autor: imposible de estimar por tamaño, se usa un
-  // tiempo fijo (ver HTML_EMBED_SECONDS).
-  html_embed: { base: HTML_EMBED_SECONDS, perUnit: 0, unit: () => 0 },
+  // Contenido a medida del autor: imposible de estimar por tamaño. Usa el tiempo
+  // que declara el autor (`config.est_seconds`, 0-3600 s) o, si no, un tiempo
+  // fijo (ver HTML_EMBED_SECONDS).
+  html_embed: {
+    base: 0, perUnit: 1,
+    unit: (it) => {
+      const n = Number((it.config as Record<string, unknown>)?.est_seconds)
+      return Number.isFinite(n) && n > 0 ? Math.min(n, 3600) : HTML_EMBED_SECONDS
+    },
+  },
 }
 
 /** Tiempo (s) de la parte «hacer la actividad» de una interacción evaluable
@@ -170,7 +177,8 @@ function estimateScreen(s: Screen): ScreenTimeEstimate {
   const videoPaths: string[] = []
   if (s.visual_resource) {
     if (s.visual_resource.kind === 'video_file' && s.visual_resource.src) videoPaths.push(s.visual_resource.src)
-    else if (s.visual_resource.kind === 'video_youtube' && extractYoutubeId(s.visual_resource.src)) seconds += YOUTUBE_DEFAULT_SECONDS
+    // `src` puede ser la URL pegada o el ID desnudo (el runtime y el contrato aceptan el ID).
+    else if (s.visual_resource.kind === 'video_youtube' && (extractYoutubeId(s.visual_resource.src) || /^[A-Za-z0-9_-]{11}$/.test(s.visual_resource.src.trim()))) seconds += YOUTUBE_DEFAULT_SECONDS
   }
   let audioPath: string | undefined
   if (s.interaction) {

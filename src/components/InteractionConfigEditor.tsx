@@ -799,6 +799,9 @@ export function InteractionConfigEditor({
             <label className="ed-field ed-field-narrow"><span>Memoria para guardar su estado (caracteres)</span>
               <input type="number" min={0} max={300} placeholder="100" value={cfg.state_max ?? ''}
                 onChange={(e) => setConfig({ state_max: e.target.value === '' ? undefined : Number(e.target.value) })} /></label>
+            <label className="ed-field ed-field-narrow" title="Solo afecta a la duración estimada del curso (chip de la barra y Informe)"><span>Tiempo estimado (segundos)</span>
+              <input type="number" min={0} max={3600} placeholder="30" value={cfg.est_seconds ?? ''}
+                onChange={(e) => setConfig({ est_seconds: e.target.value === '' ? undefined : Number(e.target.value) })} /></label>
           </div>
           <p className="ed-hint">
             Dentro de tu JS tienes <code>window.MeEmbed</code>: llama a <code>MeEmbed.complete()</code> cuando el

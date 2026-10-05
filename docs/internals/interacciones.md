@@ -201,6 +201,9 @@ height?, embed_assets? }`.
 - **Alto**: fijo si `config.height` (px); si no, **auto-resize** — el doc interno reporta
   `scrollHeight` por `postMessage` (`{meEmbed: id, height}`, único canal con origen
   opaco) y la carcasa ajusta el iframe filtrando por id de interacción.
+- **Tiempo estimado**: `config.est_seconds` (opcional, 0-3600 s; campo «Tiempo estimado» del
+  editor) lo lee `estimateDuration.ts` para el chip de duración del curso; sin él cuenta 30 s.
+  No afecta al runtime ni a la nota.
 - **Contrato «MeEmbed v1»** (`config: { …, require_completion?, state_max? }`, ver
   `docs/html-embed-contract.md` para el detalle autor-facing): se inyecta
   `window.MeEmbed = {version, id, completed, state, stateMax, complete(), saveState(obj)}`

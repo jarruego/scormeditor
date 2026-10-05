@@ -134,7 +134,10 @@ cifra exacta a prometer al cliente.
   `interacciones.md`). Los **revelables** (accordion/tabs/flip_cards/timeline/image_cards/
   flashcards) usan `itemsOf()` para sumar el texto REAL de cada ítem (label + cuerpo, que
   `interactionPlain` deja fuera a propósito) más un pequeño margen de revelado por ítem.
-  `html_embed` no es estimable (contenido a medida): tiempo fijo (`HTML_EMBED_SECONDS`).
+  `html_embed` no es estimable por tamaño (contenido a medida): usa el tiempo que declara el
+  autor en `config.est_seconds` (0-3600 s, campo «Tiempo estimado» del editor) y, sin él, un
+  tiempo fijo (`HTML_EMBED_SECONDS`, 30 s). Un curso con interactivos a medida largos (simuladores,
+  historias con decisiones) debe declararlo o el chip de duración se queda corto.
 - **Vídeo**: de archivo (`visual_resource` o `config.src`/`config.youtube` de la
   interacción `video`), duración REAL vía sondeo de metadatos (ver más abajo); de YouTube,
   duración FIJA asumida (`YOUTUBE_DEFAULT_SECONDS`, 4 min) — el editor es una SPA sin
