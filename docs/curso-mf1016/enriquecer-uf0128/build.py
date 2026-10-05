@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Ensambla UF0127 enriquecido: tema1.py, tema2.py, tema3.py → .scormproj.
+"""Ensambla UF0128 enriquecido: tema1.py, tema2.py, tema3.py → .scormproj.
 
     python build.py [--out ruta.scormproj]
 
@@ -23,15 +23,15 @@ import zipfile
 import lib
 
 HERE = lib.HERE
-OUT_DEFAULT = os.path.join(HERE, '..', 'scormproj', 'mf1016-u01-uf0127-apoyo-en-la-recepcion-y-acogida-en-instituciones-de-p.scormproj')
+OUT_DEFAULT = os.path.join(HERE, '..', 'scormproj', 'mf1016-u02-uf0128-apoyo-en-la-organizacion-de-actividades-para-personas.scormproj')
 
-COURSE_TITLE = 'UF0127. Apoyo en la recepción y acogida en instituciones de personas dependientes'
+COURSE_TITLE = 'UF0128. Apoyo en la organización de actividades para personas dependientes en instituciones'
 UNIT_TITLES = {
-    'u01_t00': 'Tema 1. Instituciones de atención a personas dependientes y equipo interdisciplinar',
-    'u01_t01': 'Tema 2. Personas en situación de dependencia y atención institucional',
-    'u01_t02': 'Tema 3. Atención integral y principios éticos en la recepción y acogida',
+    'u02_t00': 'Tema 1. Participación en la preparación de actividades en instituciones sociales',
+    'u02_t01': 'Tema 2. Participación en la organización funcional de una institución sociosanitaria',
+    'u02_t02': 'Tema 3. Plan de cuidados individualizado y documentación básica de trabajo',
 }
-TEMAS = [('u01_t00', 'tema1'), ('u01_t01', 'tema2'), ('u01_t02', 'tema3')]
+TEMAS = [('u02_t00', 'tema1'), ('u02_t01', 'tema2'), ('u02_t02', 'tema3')]
 
 
 def words(t):
@@ -101,7 +101,7 @@ def main():
                 s['interaction']['id'] = f"{s['id']}_i01"
     mod['title'] = COURSE_TITLE
     course['course']['title'] = COURSE_TITLE
-    course['course']['subtitle'] = 'Módulo formativo MF1016_2 · SCO independiente de la UF0127'
+    course['course']['subtitle'] = 'Módulo formativo MF1016_2 · SCO independiente de la UF0128'
     course['scorm']['title'] = COURSE_TITLE
     if glossary:
         seen = set()

@@ -8,3 +8,13 @@ Cada lección es una unidad; el test de cada tema va en `assessments.unit_tests`
 No importados: páginas «Contenidos»/«Objetivos del curso» y los dos «Ejercicio
 evaluable» (tareas). El backup no contiene vídeos de YouTube. Pendiente de revisión:
 objetivos (vacíos) y texto alternativo de las imágenes.
+
+## Versión enriquecida (UF0127 y UF0128)
+Los dos `.scormproj` se rehicen a partir del importado literal con
+`enriquecer-uf0127/` y `enriquecer-uf0128/` (`python build.py`): títulos de menú sin
+numeración, formato corregido, pantallas largas divididas, portada de módulo y de
+tema, objetivos, actividades (informativas, evaluables, repaso y pasatiempo) y
+resumen, según `docs/gpt/guia-diseno-interacciones.md` (decisiones en `CRITERIOS.md`).
+Cobertura de texto ≥97 % (solo faltan numeraciones/encabezados quitados a propósito).
+Revisar a mano: objetivos, preguntas y rúbricas (redactados a partir del tema),
+transcripciones de tablas-imagen, bibliografía (el backup no la trae).
