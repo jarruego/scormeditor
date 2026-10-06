@@ -31,6 +31,10 @@ ese contrato; no conoce el tipo concreto.
   al restaurar se repintan (la asignación guardada es la de la última comprobación). Es
   **siempre así, sin opción**: se aplica también a proyectos antiguos al re-exportarlos
   (decisión del autor). Como en `crossword`, color + icono, nunca solo color.
+- **Tocar y colocar**: con una pieza seleccionada, tocar OTRA pieza que está en una
+  categoría distinta a la de la seleccionada cuenta como tocar esa categoría
+  (`dropPicked`); si está en la misma zona, solo cambia la selección. Sin esto, tocar una
+  categoría por el centro (donde suele haber una pieza) no permitía soltar.
 - **Forzar completado** (`config.force_complete`, solo `match_pairs`, `classification`
   y `crossword`): con la clave **ausente o `true`** (proyectos antiguos) Comprobar solo se
   activa con todo colocado/rellenado, como siempre. Con **`false`** se activa en cuanto

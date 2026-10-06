@@ -614,24 +614,37 @@
         chips[id].setAttribute('aria-pressed', 'true');
       }
     }
+    // Coloca el chip seleccionado en `zone` (misma lógica para tocar la zona o
+    // una pieza que ya está dentro de ella).
+    function dropPicked(zone) {
+      var picked = pickedId;
+      assign[picked] = zone.getAttribute('data-zone');
+      setPicked(null); place(picked); chips[picked].focus();
+      refreshCheck(true);
+      var title = zone.querySelector('.me-dnd-title');
+      ctx.announce('Colocado en «' + (title ? title.textContent : 'Sin asignar') + '».');
+    }
     el.addEventListener('click', function (e) {
       if (locked) return;
       var chip = e.target.closest('.me-chip');
       if (chip) {
         var id = chip.getAttribute('data-id');
+        // Con una pieza ya seleccionada, tocar OTRA pieza que está en una categoría
+        // distinta de la de la seleccionada equivale a tocar esa categoría: si no, al
+        // tocar una zona por el centro (donde suele haber una pieza) no se podía soltar.
+        if (pickedId && pickedId !== id) {
+          var chipZone = chip.closest('.me-dnd-zone');
+          if (chipZone && chipZone.getAttribute('data-zone') !== (assign[pickedId] || '')) {
+            dropPicked(chipZone);
+            return;
+          }
+        }
         setPicked(pickedId === id ? null : id);
         if (pickedId) ctx.announce('Elemento seleccionado. Toca una categoría para colocarlo.');
         return;
       }
       var zone = e.target.closest('.me-dnd-zone');
-      if (zone && pickedId) {
-        var picked = pickedId;
-        assign[picked] = zone.getAttribute('data-zone');
-        setPicked(null); place(picked); chips[picked].focus();
-        refreshCheck(true);
-        var title = zone.querySelector('.me-dnd-title');
-        ctx.announce('Colocado en «' + (title ? title.textContent : 'Sin asignar') + '».');
-      }
+      if (zone && pickedId) dropPicked(zone);
     });
     el.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' && e.key !== ' ') return;
