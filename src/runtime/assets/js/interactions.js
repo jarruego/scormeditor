@@ -570,7 +570,12 @@
     var attempts = (ctx.state && ctx.state.attempts) || 0;
     var maxAtt = attemptsOf(data);
     var updateAttempts = attemptsHint(el, maxAtt);
-    var refreshCheck = wireCheck(el, allAssigned);
+    // config.force_complete: ausente o true (proyectos antiguos) → Comprobar solo
+    // se activa con TODO colocado; false → basta con haber colocado algo (lo que
+    // falte cuenta como fallo al comprobar). Sigue siendo necesario pulsar Comprobar.
+    var force = (data.config || {}).force_complete !== false;
+    var ready = function () { return force ? allAssigned() : anyAssigned(); };
+    var refreshCheck = wireCheck(el, ready);
 
     // Construye los chips y los coloca en su zona inicial
     var chips = {};
@@ -664,6 +669,7 @@
     updateAttempts(attempts, correct);
     if (!done) refreshCheck(false); // asignación restaurada sin resolver: activo sin pulso
     function allAssigned() { return opts.every(function (o) { return !!assign[o.id]; }); }
+    function anyAssigned() { return opts.some(function (o) { return !!assign[o.id]; }); }
     function check() {
       if (done) return { resolved: true, correct: correct };
       var all = true;
@@ -681,7 +687,7 @@
     return {
       result: function () { return { completed: done, scored: !!data.scored, correct: correct, score: correct ? (data.points || 1) : 0, maxScore: data.points || 1 }; },
       check: check,
-      hasAnswer: allAssigned,
+      hasAnswer: ready,
     };
   }
   register('match_pairs', dragAssignFactory);
@@ -1866,8 +1872,14 @@
     var inputs = [].slice.call(el.querySelectorAll('.me-cw-cell'));
     var attempts = 0, done = false, correct = false;
     var updateAttempts = attemptsHint(el, maxAtt);
+    // config.force_complete: ausente o true (proyectos antiguos) → Comprobar solo
+    // se activa con TODAS las casillas rellenas; false → basta con una letra (las
+    // palabras incompletas cuentan como fallo). Hay que pulsar Comprobar igualmente.
+    var force = (data.config || {}).force_complete !== false;
     var refreshCheck = wireCheck(el, function () {
-      return inputs.every(function (inp) { return normLetters(inp.value).length === 1; });
+      return force
+        ? inputs.every(function (inp) { return normLetters(inp.value).length === 1; })
+        : inputs.some(function (inp) { return normLetters(inp.value).length === 1; });
     });
 
     // Autoavance: al escribir una letra, el foco salta solo a la siguiente
@@ -1956,8 +1968,10 @@
     function hasAnswer() { return inputs.some(function (inp) { return !!inp.value; }); }
     function check() {
       if (done) return { resolved: true, correct: correct };
-      if (inputs.some(function (inp) { return !inp.value; })) {
-        ctx.announce('Rellena todas las casillas.');
+      // Con force_complete (por defecto en proyectos antiguos) exige todo relleno;
+      // sin él, solo que haya al menos una letra.
+      if (force ? inputs.some(function (inp) { return !inp.value; }) : !hasAnswer()) {
+        ctx.announce(force ? 'Rellena todas las casillas.' : 'Escribe alguna letra antes de comprobar.');
         return { resolved: false, correct: false };
       }
       attempts++;

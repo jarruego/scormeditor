@@ -280,6 +280,9 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: true,
     supportsAttempts: true,
     family: 'assign',
+    // Nuevas: Comprobar se activa sin colocarlo todo (force_complete ausente en
+    // proyectos antiguos = comportamiento de siempre, «forzado»).
+    seed: () => ({ config: { force_complete: false } }),
     defaultPrompt: 'Empareja cada elemento con el que le corresponde.',
     defaultInstructions: 'Arrastra cada elemento hasta su pareja y pulsa Comprobar.',
   },
@@ -291,6 +294,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: true,
     supportsAttempts: true,
     family: 'assign',
+    seed: () => ({ config: { force_complete: false } }),
     defaultPrompt: 'Clasifica cada elemento en su categoría.',
     defaultInstructions: 'Arrastra cada elemento a la categoría que le corresponde y pulsa Comprobar.',
   },
@@ -314,6 +318,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'juegos',
     gradable: true,
     supportsAttempts: true,
+    seed: () => ({ config: { force_complete: false } }),
     defaultPrompt: 'Completa el crucigrama a partir de las pistas.',
     defaultInstructions: 'Cada casilla numerada es el inicio de una palabra: busca su número en las pistas '
       + '(Horizontales o Verticales) y escribe la palabra letra a letra — al escribir, el cursor avanza solo a '
@@ -490,7 +495,14 @@ export function migrateInteractionData(
   if (fromRec.family && fromRec.family === toRec.family) {
     // `options` y `assign` viven en `options` con el mismo shape: migra tal cual.
     if (fromRec.family === 'options' || fromRec.family === 'assign')
-      return { options: it.options ?? [], config: {}, lossy: hasText(it.config) }
+      // En `assign` se conserva la preferencia force_complete del origen (si la tiene).
+      return {
+        options: it.options ?? [],
+        config: fromRec.family === 'assign' && it.config && 'force_complete' in it.config
+          ? { force_complete: it.config.force_complete }
+          : {},
+        lossy: hasText(it.config),
+      }
     if (fromRec.family === 'questions') {
       const rest = { ...(it.config ?? {}) }
       const kept = rest.questions ?? []

@@ -279,7 +279,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     description: 'Unir conceptos relacionados entre sí.',
     group: 'practica',
     type: 'content',
-    extras: () => ({ interaction: makeInteraction('match_pairs') }),
+    extras: () => ({ interaction: makeInteraction('match_pairs', { config: { force_complete: false } }) }),
   },
   {
     key: 'sort-steps',
@@ -297,7 +297,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     description: 'Repartir elementos en sus categorías.',
     group: 'practica',
     type: 'content',
-    extras: () => ({ interaction: makeInteraction('classification') }),
+    extras: () => ({ interaction: makeInteraction('classification', { config: { force_complete: false } }) }),
   },
   {
     key: 'fill-blanks',
@@ -351,7 +351,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     description: 'Rellenar el crucigrama generado a partir de palabras y pistas.',
     group: 'practica',
     type: 'content',
-    extras: () => ({ interaction: makeInteraction('crossword') }),
+    extras: () => ({ interaction: makeInteraction('crossword', { config: { force_complete: false } }) }),
   },
   {
     key: 'hidden-image',

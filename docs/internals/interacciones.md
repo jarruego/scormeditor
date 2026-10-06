@@ -25,6 +25,17 @@ ese contrato; no conoce el tipo concreto.
   y `dragAssignFactory` daban por resuelta CUALQUIER interacción con un `correct` guardado
   (aunque quedaran intentos): un fallo, salir de la pantalla y volver la dejaba bloqueada
   de por vida. Corregido para que restaurar respete `maxAtt` igual que las otras 3.
+- **Forzar completado** (`config.force_complete`, solo `match_pairs`, `classification`
+  y `crossword`): con la clave **ausente o `true`** (proyectos antiguos) Comprobar solo se
+  activa con todo colocado/rellenado, como siempre. Con **`false`** se activa en cuanto
+  hay algo (una pieza, una letra) y lo que falte cuenta como fallo al comprobar — el
+  alumno sigue teniendo que pulsar Comprobar. Las interacciones **nuevas** nacen con
+  `false` (`seed` del catálogo y recetas de pantalla); las antiguas no se tocan. El
+  default «ausente = forzado» es lo que garantiza la retrocompatibilidad: no invertirlo.
+  `sort_steps` ya se comprueba tras el primer movimiento y el resto de juegos
+  (sopa de letras, puzzle, rosco) no tienen Comprobar, así que no llevan la opción. No
+  confundir con «Obligatoria» (`screen.required`), que decide si la pantalla bloquea el
+  avance, no cuándo se activa Comprobar.
 - **Intentos**: campo `attempts` por interacción (`attemptsOf(data)`: `null`/ausente ⇒ 1;
   `0` ⇒ ilimitados; `n` ⇒ n). `retries` quedó **DEPRECATED**, no usar. Editor: el input
   de intentos de `ScreenEditor.tsx` se muestra según `supportsAttempts` del catálogo

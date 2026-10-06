@@ -113,6 +113,18 @@ export function InteractionConfigEditor({
 }) {
   const cfg: Record<string, any> = it.config || {}
   const setConfig = (patch: Record<string, any>) => onChange({ ...it, config: { ...cfg, ...patch } })
+  // «Forzar completado» (match_pairs, classification, crossword): marcada = Comprobar
+  // solo se activa con todo hecho (comportamiento de siempre; también el de los
+  // proyectos antiguos, donde la clave no existe); desmarcada = se puede comprobar
+  // con respuestas parciales (lo que falte cuenta como fallo). Las nuevas nacen
+  // desmarcadas (`force_complete: false` en el seed).
+  const forceCompleteToggle = (todo: string) => (
+    <label className="ed-check" title="Si la dejas desmarcada, el alumno puede pulsar Comprobar sin haber completado la actividad: lo que falte cuenta como fallo. Siempre tiene que pulsar Comprobar.">
+      <input type="checkbox" checked={cfg.force_complete !== false}
+        onChange={(e) => setConfig({ force_complete: e.target.checked ? undefined : false })} />
+      <span>Forzar completado (Comprobar solo se activa cuando se ha {todo})</span>
+    </label>
+  )
   const setOptions = (options: InteractionOption[]) => onChange({ ...it, options })
   // Modal del editor visual de zonas (solo lo usa el caso `hotspots`; el hook
   // vive aquí porque dentro del switch no puede haber hooks).
@@ -175,6 +187,7 @@ export function InteractionConfigEditor({
       const groups: { id: string; label: string }[] = cfg.groups || []
       return (
         <>
+          {forceCompleteToggle('colocado todo')}
           <ListEditor
             title="Categorías / grupos"
             items={groups}
@@ -618,6 +631,7 @@ export function InteractionConfigEditor({
       const entries: { word: string; clue: string }[] = cfg.entries || []
       return (
         <>
+          {forceCompleteToggle('rellenado todas las casillas')}
           <ListEditor
             title="Palabras y pistas (3–12 letras; el crucigrama se monta solo con los cruces posibles)"
             items={entries}
