@@ -224,14 +224,18 @@ export function CourseSettingsSection() {
       <fieldset className="ed-group">
         <legend>Aprobado (nota)</legend>
         <div className="ed-row">
-          <label className="ed-field ed-field-narrow">
+          <label className="ed-field ed-field-narrow"
+            title={r.completion_mode === 'screens' ? 'No aplica: en modo «Por llegar al final» la nota no decide la finalización' : undefined}>
             <span>Nota mínima para aprobar (%)</span>
             <input type="number" min={0} max={100} value={r.min_score}
+              disabled={r.completion_mode === 'screens'}
               onChange={(e) => setRule({ min_score: Number(e.target.value) })} />
           </label>
-          <label className="ed-field ed-field-narrow">
+          <label className="ed-field ed-field-narrow"
+            title={r.completion_mode === 'screens' ? 'No aplica: en modo «Por llegar al final» el paquete no declara masteryscore, para que el LMS no marque suspenso por la nota' : undefined}>
             <span>Nota de superación SCORM (masteryscore)</span>
             <input type="number" min={0} max={100} value={scorm.mastery_score}
+              disabled={r.completion_mode === 'screens'}
               onChange={(e) => updateScorm({ mastery_score: Number(e.target.value) })} />
           </label>
           <label className="ed-field">
