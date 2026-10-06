@@ -53,6 +53,16 @@ y luego decide el `lesson_status` según `rules.completion_mode`:
   compatibilidad pero **se ignora** (pintaba un APTO propio que podía contradecir al del
   curso).
 
+## Configuración de Moodle (finalización de la actividad)
+Moodle no completa un SCORM solo con «Requerir ver»: hay que activar **«Requerir estado»**
+y marcar **Completado y Pasado** (dentro de ese bloque es una O: vale cualquiera de los
+dos; con otras condiciones como «Requerir ver» sí se suman). Hace falta marcar los dos
+porque `evaluation` con contenido calificable envía `passed`/`failed` y nunca
+`completed`, y sin nota envía `completed`. Un `failed` no completa nunca en Moodle: si
+la finalización debe depender solo de llegar al final, usar `completion_mode: 'screens'`.
+Verificado en Moodle 5.0. Para diagnosticar, mirar `cmi.core.lesson_status` en el informe
+de intentos de la actividad.
+
 ## Cierre de sesión y modos del LMS
 - `finishSession()` (app.js) es **idempotente** (flag `sessionFinished`) y se engancha a
   `beforeunload` **y** `pagehide` (Safari/iOS no dispara beforeunload de forma fiable).
