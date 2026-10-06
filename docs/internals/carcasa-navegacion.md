@@ -25,7 +25,7 @@
   `suspend_data` (el LMS la guardaría por alumno/intento y engordaría el campo). Cada
   botón se desactiva en su extremo. Con 200 % en móvil el título del curso de la topbar
   puede quedar sin sitio (ellipsis); es un compromiso aceptado.
-- **Cerrar el curso**: `#me-btn-close` (topbar, icono `log-out`) llama a `requestExit()`
+- **Cerrar el curso**: `#me-btn-close` (topbar, icono `log-out`, en rojo `--me-error`) llama a `requestExit()`
   (app.js) — la misma lógica que el botón «Salir del curso» de la pantalla de
   Resultados: si `evaluateCompletion()` da `incomplete`, pide confirmación
   (`confirmExitIncomplete`, progreso guardado, se puede seguir luego); si no, cierra la

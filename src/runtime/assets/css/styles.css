@@ -453,6 +453,9 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-ghost { background: transparent; }
 .me-icon-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: .25rem .5rem; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
 .me-icon-btn:hover { background: var(--me-bg); }
+/* Cerrar el curso (topbar): rojo para distinguirlo de las herramientas neutras. */
+#me-btn-close { color: var(--me-error); }
+#me-btn-close:hover { background: color-mix(in srgb, var(--me-error) 12%, transparent); }
 /* A− / A+ de la topbar: una «A» (pequeña o grande) + signo, en px para que el
    propio control no crezca con el tamaño de texto que gobierna. */
 .me-textsize-btn { gap: 1px; font-weight: 700; font-size: 13px; line-height: 1; }
