@@ -585,7 +585,19 @@
       chips[o.id] = tmp.firstChild;
     });
     function listFor(zone) { return el.querySelector('[data-zone-list="' + (zone || '') + '"]'); }
-    function place(id) { (listFor(assign[id] || '') || listFor('')).appendChild(chips[id]); }
+    // Al mover una pieza se borra su marca de la última comprobación (el resto la conserva).
+    function place(id) {
+      chips[id].classList.remove('is-right', 'is-wrong');
+      (listFor(assign[id] || '') || listFor('')).appendChild(chips[id]);
+    }
+    // Tras Comprobar: cada pieza en su categoría → verde ✔; en otra o sin colocar → rojo ✖.
+    function markChips() {
+      opts.forEach(function (o) {
+        var ok = !!assign[o.id] && assign[o.id] === o.group;
+        chips[o.id].classList.toggle('is-right', ok);
+        chips[o.id].classList.toggle('is-wrong', !ok);
+      });
+    }
     opts.forEach(function (o) { place(o.id); });
 
     // Tocar y colocar (táctil / teclado / ratón): se selecciona un chip y luego
@@ -664,6 +676,7 @@
     }
     if (ctx.state && typeof ctx.state.correct === 'boolean') {
       correct = ctx.state.correct; showFeedback(el, correct, data);
+      markChips(); // la asignación guardada es la de la última comprobación
       if (correct || (maxAtt > 0 && attempts >= maxAtt)) { done = true; lockAssign(); }
     }
     updateAttempts(attempts, correct);
@@ -677,10 +690,12 @@
       correct = all; attempts++;
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
       showFeedback(el, correct, data);
+      markChips();
       updateAttempts(attempts, correct);
       ctx.save({ answers: assign, correct: correct, attempts: attempts });
       if (done) lockAssign();
-      ctx.announce(correct ? 'Clasificación correcta.' : (done ? 'Incorrecto. Sin más intentos.' : 'Hay asignaciones incorrectas. Inténtalo de nuevo.'));
+      var nOk = opts.filter(function (o) { return !!assign[o.id] && assign[o.id] === o.group; }).length;
+      ctx.announce(correct ? 'Clasificación correcta.' : (nOk + ' de ' + opts.length + ' elementos bien colocados.' + (done ? ' Sin más intentos.' : ' Revisa los marcados en rojo e inténtalo de nuevo.')));
       return { resolved: done, correct: correct };
     }
     el.querySelector('.me-check').addEventListener('click', check);

@@ -25,6 +25,12 @@ ese contrato; no conoce el tipo concreto.
   y `dragAssignFactory` daban por resuelta CUALQUIER interacción con un `correct` guardado
   (aunque quedaran intentos): un fallo, salir de la pantalla y volver la dejaba bloqueada
   de por vida. Corregido para que restaurar respete `maxAtt` igual que las otras 3.
+- **Marcas tras Comprobar en `match_pairs`/`classification`** (`dragAssignFactory`):
+  cada pieza queda en verde ✔ (`.is-right`) o rojo ✖ (`.is-wrong`) según esté en su
+  categoría; una sin colocar cuenta como mal. Mover una pieza borra solo SU marca (`place`);
+  al restaurar se repintan (la asignación guardada es la de la última comprobación). Es
+  **siempre así, sin opción**: se aplica también a proyectos antiguos al re-exportarlos
+  (decisión del autor). Como en `crossword`, color + icono, nunca solo color.
 - **Forzar completado** (`config.force_complete`, solo `match_pairs`, `classification`
   y `crossword`): con la clave **ausente o `true`** (proyectos antiguos) Comprobar solo se
   activa con todo colocado/rellenado, como siempre. Con **`false`** se activa en cuanto

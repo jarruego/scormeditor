@@ -594,6 +594,11 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-chip:active { cursor: grabbing; }
 .me-chip.is-dragging { opacity: .5; border-style: dashed; border-color: var(--me-primary); }
 .me-chip.is-picked { border-color: var(--me-primary); background: color-mix(in srgb, var(--me-primary) 10%, var(--me-surface)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--me-primary) 35%, transparent); }
+/* Resultado de Comprobar en Emparejar/Clasificar: color + icono (no solo color). */
+.me-chip.is-right { border-color: var(--me-ok); background: #e7f6ec; }
+.me-chip.is-wrong { border-color: var(--me-error); background: #fdecea; }
+.me-chip.is-right::after { content: '✔'; color: var(--me-ok); font-weight: 700; margin-left: auto; }
+.me-chip.is-wrong::after { content: '✖'; color: var(--me-error); font-weight: 700; margin-left: auto; }
 .me-chip-text a, .me-prose a, .me-acc-body a, [role=tabpanel] a { color: var(--me-primary); }
 @media (max-width: 640px) {
   .me-dnd { grid-template-columns: 1fr; }
