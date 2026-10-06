@@ -1382,13 +1382,16 @@
   register('image_cards', function (el, data, ctx) {
     var cards = (data.config || {}).cards || [];
     var seen = (ctx.state && ctx.state.seen) || {}; // índice -> true (persistido)
-    var html = header(data) + '<div class="me-imgcards">';
+    // show_cover_image: false → la tarjeta muestra solo el título (aspecto de
+    // flip card); la imagen sigue viéndose en la modal. Por defecto, con imagen.
+    var cover = (data.config || {}).show_cover_image !== false;
+    var html = header(data) + '<div class="me-imgcards' + (cover ? '' : ' is-textcover') + '">';
     cards.forEach(function (c, i) {
       html += '<div class="me-imgcard-wrap">' +
         '<button class="me-imgcard' + (seen[i] ? ' is-seen' : '') + '" type="button" data-i="' + i + '"' +
         (c.title ? '' : ' aria-label="' + esc(stripTags(c.alt || 'Ver detalle')) + '"') + '>' +
         '<span class="me-flip-tab" aria-hidden="true"></span>' +
-        (c.image ? '<img src="' + esc(assetUrl(c.image)) + '" alt="' + esc(c.alt || '') + '" loading="lazy">' : '') +
+        (c.image && cover ? '<img src="' + esc(assetUrl(c.image)) + '" alt="' + esc(c.alt || '') + '" loading="lazy">' : '') +
         (c.title ? '<span class="me-imgcard-title">' + rich(c.title) + '</span>' : '') +
         '</button>' +
         // Solo impresión: el texto de la modal, oculto en pantalla (print.css lo muestra)

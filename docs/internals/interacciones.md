@@ -229,11 +229,17 @@ height?, embed_assets? }`.
   `saveState()`/`ME.saveState()`). No participa en TTS (`buildTranscript` no lo lista como informativa
   narrable: es código).
 
-### `image_cards` — tarjetas de imagen con modal
+### `image_cards` — tarjetas con imagen (ventana)
 Tipo informativo: rejilla de tarjetas (imagen + título) que al clicarlas abren una
 **modal** con el **texto a la izquierda y la imagen a la derecha** (apilado en móvil,
 imagen primero). `config.cards: [{image, alt, title, text}]` (`text` es markdown de
 bloque, `block()`).
+- **Portada con o sin imagen**: `config.show_cover_image` (por defecto `true`; el editor
+  guarda `false` o lo omite). Con `false` la tarjeta no pinta `<img>` y queda como una
+  flip card (título centrado, `.me-imgcards.is-textcover`), pero la modal conserva la
+  imagen: por eso `image`/`alt` siguen siendo obligatorios. No es un tipo nuevo a
+  propósito: mismo `config`, mismo estado `{seen}` y mismo codec, sin tocar
+  `state_codec.js` ni el exportador `.elpx`.
 - Reutiliza `.me-modal`/`.me-modal-card` de la carcasa; la modal se crea al abrir y se
   destruye al cerrar (`document.body`, no dentro de `.me-screen`, para esquivar los
   `transform` de las animaciones de entrada, que romperían el `position: fixed`). Cierre
@@ -244,7 +250,8 @@ bloque, `block()`).
 - **Impresión**: el texto de la modal viaja oculto en el DOM (`.me-imgcard-print[hidden]`,
   fuera del `<button>` para no anidar bloques en él) y `print.css` lo muestra bajo cada
   tarjeta — sin tocar `setupPrint`.
-- Validadores: `IC_EMPTY` (sin tarjetas), `IC_NO_IMAGE` (tarjeta sin imagen) e
+- Validadores: `IC_EMPTY` (sin tarjetas), `IC_NO_IMAGE` (tarjeta sin imagen),
+  `IC_NO_TITLE` (con `show_cover_image:false`, tarjeta sin título: no se vería nada) e
   `IMG_NO_ALT` (imagen sin alt), errores. Sí se narra en TTS (título + texto).
 - Tiene tarjeta en la modal de Añadir pantalla (receta `image-cards`, grupo Contenido).
 

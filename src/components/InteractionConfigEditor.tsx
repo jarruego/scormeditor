@@ -522,8 +522,13 @@ export function InteractionConfigEditor({
       }
       return (
         <>
+          <label className="ed-check" title="Si la desmarcas, la tarjeta solo muestra el título (aspecto de tarjeta giratoria) y la imagen se ve únicamente al abrir la ventana">
+            <input type="checkbox" checked={cfg.show_cover_image !== false}
+              onChange={(e) => setConfig({ show_cover_image: e.target.checked ? undefined : false })} />
+            <span>Mostrar la imagen en la portada de la tarjeta</span>
+          </label>
           <ListEditor
-            title="Tarjetas de imagen (clic → modal con texto a la izquierda e imagen a la derecha)"
+            title="Tarjetas con imagen (clic → ventana con texto a la izquierda e imagen a la derecha)"
             items={cards}
             onChange={(next) => setConfig({ cards: next })}
             summary={(c) => c.title.trim() || c.alt.trim() || '(sin título)'}

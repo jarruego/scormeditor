@@ -39,7 +39,7 @@ export const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
   timeline: 'Línea de tiempo',
   flashcards: 'Tarjetas de repaso',
   html_embed: 'HTML a medida (código)',
-  image_cards: 'Tarjetas de imagen (modal)',
+  image_cards: 'Tarjetas con imagen (ventana)',
   before_after: 'Antes / después (comparador)',
   word_search: 'Sopa de letras',
   crossword: 'Crucigrama',

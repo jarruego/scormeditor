@@ -165,10 +165,14 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
         add('EMBED_STATE_UNUSED', 'warning', 'Tiene reservado presupuesto para guardar estado, pero el código no llama a MeEmbed.saveState() (o a su alias ME.saveState()): no se está usando.')
     }
     if (it.type === 'image_cards') {
-      const cards = (((it.config as any)?.cards || []) as { image?: string; alt?: string }[])
+      const cards = (((it.config as any)?.cards || []) as { image?: string; alt?: string; title?: string }[])
+      const textCover = (it.config as any)?.show_cover_image === false
       if (cards.length === 0)
         add('IC_EMPTY', 'error', 'Tarjetas de imagen sin tarjetas.')
       cards.forEach((c, i) => {
+        // Sin imagen en la portada, el título es lo único que se ve en la tarjeta.
+        if (textCover && !String(c.title || '').trim())
+          add('IC_NO_TITLE', 'error', `La tarjeta ${i + 1} no tiene título y la portada no muestra imagen: no se vería nada.`)
         if (!String(c.image || '').trim())
           add('IC_NO_IMAGE', 'error', `La tarjeta de imagen ${i + 1} no tiene imagen.`)
         else if (!String(c.alt || '').trim())

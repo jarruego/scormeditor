@@ -703,6 +703,10 @@ markdown ligero:
   { "image": "assets/img/extintor.jpg", "alt": "Extintor de CO2", "title": "Extintor de CO2", "text": "Indicado para fuegos eléctricos.\n\n- No deja residuo." }
 ] }, "scored": false
 ```
+`config.show_cover_image` (opcional, por defecto `true`): con `false` la tarjeta solo
+muestra el `title` (aspecto de tarjeta giratoria) y la imagen se ve únicamente en la
+ventana. No lo pongas salvo que el autor lo pida; con `false` cada tarjeta necesita
+`title` (`IC_NO_TITLE`).
 
 **`before_after`** — comparador antes/después (informativa, no puntúa): dos
 imágenes superpuestas con un divisor deslizante. Ideal para mostrar el efecto de

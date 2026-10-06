@@ -76,6 +76,7 @@ informe de revisión.
 | `FC_SCORED` | ⚠ | `flashcards` con `scored:true` | Pon `scored:false`: es autoevaluación de repaso | GPT |
 | `IC_EMPTY` | ⛔ | `image_cards` sin tarjetas | Añade las `cards` (`alt`, `title`, `text`); `image` vacío + `editor_note` describiendo cada imagen | GPT |
 | `IC_NO_IMAGE` | ⛔ | Tarjeta de imagen sin `image` | **Esperado** si generaste el tipo: las imágenes las sube el editor humano. **No inventes rutas `assets/`** | Editor |
+| `IC_NO_TITLE` | ⛔ | `image_cards` con `show_cover_image:false` y una tarjeta sin `title` | Pon un `title` breve en cada tarjeta: es lo único que se ve en su portada | GPT |
 
 ## Tipos reservados al editor humano
 

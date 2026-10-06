@@ -718,6 +718,10 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-imgcard.is-seen .me-flip-tab { background: var(--me-ok); }
 .me-imgcard.is-seen .me-flip-tab::after { content: '✓'; }
 .me-imgcard.me-pulse { animation: me-pulse-glow 1.6s ease-out infinite; }
+/* Sin imagen en la portada (config.show_cover_image === false): la tarjeta se ve
+   como una flip card (título centrado) y la imagen queda solo en la modal. */
+.me-imgcards.is-textcover .me-imgcard { min-height: 110px; align-items: center; justify-content: center; text-align: center; padding: .75rem; }
+.me-imgcards.is-textcover .me-imgcard-title { padding: 0; font-size: 1.05rem; }
 .me-imgcard-print[hidden] { display: none; }
 
 /* --- Antes/después (comparador de imágenes) -------------------------------- */
