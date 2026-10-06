@@ -19,6 +19,13 @@ export function generateManifest(course: Course, extraFiles: string[] = []): str
   const id = course.scorm.identifier || 'SCORMEDITOR-COURSE'
   const title = course.scorm.title || course.course.title || 'Curso'
   const mastery = course.scorm.mastery_score ?? 60
+  // En modo «screens» la nota no decide la finalización: sin masteryscore el LMS
+  // (Moodle) no reescribe el lesson_status a passed/failed a partir de la nota
+  // y respeta el `completed` que envía la carcasa (ver evaluacion-finalizacion.md).
+  const masteryEl =
+    (course.scorm.rules?.completion_mode ?? 'evaluation') === 'screens'
+      ? ''
+      : `\n        <adlcp:masteryscore>${mastery}</adlcp:masteryscore>`
 
   // Ficheros base: la carcasa completa (misma fuente que el ZIP y la vista
   // estudiante) + los datos del curso + los metadatos LOM.
@@ -45,8 +52,7 @@ export function generateManifest(course: Course, extraFiles: string[] = []): str
     <organization identifier="ORG-${xml(id)}">
       <title>${xml(title)}</title>
       <item identifier="ITEM-${xml(id)}" identifierref="RES-${xml(id)}" isvisible="true">
-        <title>${xml(title)}</title>
-        <adlcp:masteryscore>${mastery}</adlcp:masteryscore>
+        <title>${xml(title)}</title>${masteryEl}
       </item>
     </organization>
   </organizations>

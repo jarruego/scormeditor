@@ -45,7 +45,11 @@ y luego decide el `lesson_status` según `rules.completion_mode`:
   alumno en el test final aunque suspenda con intentos restantes.
 
 - `mastery_score`/`masteryscore` van al manifiesto (`src/scorm/manifest.ts`);
-  `rules.min_score` es el umbral APTO en el runtime.
+  `rules.min_score` es el umbral APTO en el runtime. **Solo en modo `evaluation`**: en
+  `screens` el manifiesto **no** lleva `masteryscore`, porque Moodle, al ver un
+  `masteryscore` y recibir una nota, reescribe el `lesson_status` a `passed`/`failed`
+  según ella — con lo que un alumno con nota baja quedaba `failed` y no completaba aunque
+  la carcasa enviara `completed`, contradiciendo «la nota no decide» de ese modo.
 - **Nota mínima única**: `rules.min_score` es el ÚNICO umbral. El banner APTO/NO APTO de
   la pantalla del test también lo usa, y solo aparece con `score_source: 'final_test'`
   (con `mixed`/`unit_tests` el test muestra solo su puntuación y remite a «Resultados»,
