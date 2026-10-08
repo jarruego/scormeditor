@@ -26,7 +26,7 @@ const MOTION_SEGS = [
   { value: 'none', icon: 'Sin', title: 'Sin animaciones' },
   { value: 'subtle', icon: 'Mínimas', title: 'Transiciones básicas (por defecto)' },
   { value: 'rich', icon: 'Sutiles', title: 'Revelado progresivo del contenido al ir bajando' },
-  { value: 'vivid', icon: 'Llamativas', title: 'Revelado con entradas más expresivas (rebote, giros leves) y transición direccional entre pantallas' },
+  { value: 'vivid', icon: 'Llamativas', title: 'Revelado con entradas más amplias y transición direccional entre pantallas' },
 ]
 const SPEED_SEGS = [
   { value: 'fast', icon: 'Rápida', title: 'Entradas más cortas' },
@@ -153,7 +153,7 @@ export function AppearanceSection() {
         <p className="ed-hint">
           «Sutiles» y «Llamativas» revelan el contenido de cada pantalla en cascada la primera vez
           y el resto al hacer scroll (las pantallas ya vistas no se re-animan); «Llamativas» añade
-          entradas más expresivas (rebote, giros leves) y una transición direccional entre
+          entradas más amplias y una transición direccional entre
           pantallas. «Mínimas» solo aplica transiciones básicas. La velocidad alarga o acorta las
           entradas del nivel elegido. Si el alumno tiene activada la
           reducción de movimiento en su equipo, no se anima nada.

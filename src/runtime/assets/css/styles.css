@@ -1066,24 +1066,24 @@ body.me-motion-rich .me-interaction.me-rv .me-tl-item:nth-child(n+6),
 body.me-motion-rich .me-interaction.me-rv .me-chip:nth-child(n+6) { animation-delay: calc(450ms * var(--me-speed, 1)); }
 
 /* 'vivid' (Llamativas): hereda TODO lo de 'rich' (app.js le pone también la clase
-   me-motion-rich) y añade entradas con más personalidad —resorte con rebote, giros
-   leves, cascadas más marcadas— y transición direccional entre pantallas. Solo
+   me-motion-rich) y añade entradas más amplias y fluidas —deslizamientos largos,
+   cascadas más marcadas, SIN rebote ni giros— y transición direccional entre pantallas. Solo
    opacity/transform, igual que 'rich'. */
-body.me-motion-vivid { --me-anim-dur: .5s; --me-rv-dur: .65s; --me-spring: cubic-bezier(.34, 1.56, .64, 1); }
+body.me-motion-vivid { --me-anim-dur: .5s; --me-rv-dur: .65s; --me-spring: cubic-bezier(.22, 1, .36, 1); }
 body.me-motion-vivid .me-rv { animation-timing-function: var(--me-spring); }
 body.me-motion-vivid .me-callout.me-rv { animation-name: me-rv-callout-v; }
-@keyframes me-rv-callout-v { from { opacity: 0; transform: translateX(-34px) rotate(-1.5deg) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes me-rv-callout-v { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: none; } }
 body.me-motion-vivid .me-prose > h2.me-rv, body.me-motion-vivid .me-prose > h3.me-rv { animation-name: me-rv-heading-v; }
-@keyframes me-rv-heading-v { from { opacity: 0; transform: translateX(-34px) skewX(-8deg); } to { opacity: 1; transform: none; } }
+@keyframes me-rv-heading-v { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: none; } }
 body.me-motion-vivid .me-media.me-rv { animation-name: me-rv-media-v; }
-@keyframes me-rv-media-v { from { opacity: 0; transform: scale(.65) rotate(-2.5deg) translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes me-rv-media-v { from { opacity: 0; transform: scale(.9) translateY(22px); } to { opacity: 1; transform: none; } }
 body.me-motion-vivid .me-interaction.me-rv .me-acc-item,
 body.me-motion-vivid .me-interaction.me-rv .me-card,
 body.me-motion-vivid .me-interaction.me-rv .me-tl-item,
 body.me-motion-vivid .me-interaction.me-rv .me-chip {
   animation: me-rv-item-v calc(var(--me-rv-dur, .65s) * var(--me-speed, 1)) var(--me-spring) both;
 }
-@keyframes me-rv-item-v { from { opacity: 0; transform: translateY(22px) scale(.6) rotate(-3deg); } to { opacity: 1; transform: none; } }
+@keyframes me-rv-item-v { from { opacity: 0; transform: translateY(20px) scale(.92); } to { opacity: 1; transform: none; } }
 body.me-motion-vivid .me-interaction.me-rv .me-acc-item:nth-child(2),
 body.me-motion-vivid .me-interaction.me-rv .me-card:nth-child(2),
 body.me-motion-vivid .me-interaction.me-rv .me-tl-item:nth-child(2),
