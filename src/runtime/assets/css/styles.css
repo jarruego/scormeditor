@@ -492,11 +492,16 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-feedback.is-ok { background: #e7f6ec; border: 1px solid var(--me-ok); color: #0c5a26; }
 .me-feedback.is-error { background: #fdecea; border: 1px solid var(--me-error); color: #7a1a14; }
 .me-fbmodal { z-index: 120; }
-.me-fbmodal-card { max-width: 480px; padding: 1rem 1.1rem; animation: me-pop .18s ease-out; }
-.me-fbmodal-card.is-ok { border-top: 6px solid var(--me-ok); }
-.me-fbmodal-card.is-error { border-top: 6px solid var(--me-error); }
-.me-fbmodal-body .me-expl { margin: .5rem 0 0; }
-.me-fbmodal-foot { margin-top: 1rem; text-align: right; }
+/* Misma estética que la caja .me-feedback (fondo teñido, borde y texto del color del
+   resultado), pero como ventana centrada. */
+.me-modal-card.me-fbmodal-card { max-width: 440px; overflow: visible; padding: 1.1rem 1.25rem; border-radius: 10px; border: 2px solid; box-shadow: 0 10px 40px rgba(0,0,0,.35); animation: me-pop .18s ease-out; }
+.me-fbmodal-card.is-ok { background: #e7f6ec; border-color: var(--me-ok); color: #0c5a26; }
+.me-fbmodal-card.is-error { background: #fdecea; border-color: var(--me-error); color: #7a1a14; }
+.me-fbmodal-body { font-size: 1.05rem; line-height: 1.45; }
+.me-fbmodal-body .me-expl { margin: .6rem 0 0; font-size: .95rem; }
+.me-fbmodal-foot { margin-top: .8rem; text-align: right; }
+.me-fbmodal-card .me-fbmodal-close { background: transparent; color: inherit; border-color: currentColor; font-weight: 600; }
+.me-fbmodal-card .me-fbmodal-close:hover:not(:disabled) { background: rgba(255,255,255,.6); border-color: currentColor; }
 .me-feedback.is-warn { background: #fff7e0; border: 1px solid var(--me-warn, #F4C910); color: #6a4b00; }
 .me-expl { margin: .4rem 0 0; font-size: .9rem; }
 
