@@ -287,6 +287,21 @@ interacción, el `student_text` lleva como mucho una **introducción breve y nat
 (Recuerda: una informativa que **contiene** el texto fuente es ella misma el cuerpo
 de la pantalla — eso no es «texto + interacción», es la forma correcta.)
 
+**`prompt` e `instructions`: dicen cosas distintas y, si no aportan, van vacíos.**
+- `prompt` (enunciado) = **la tarea o la pregunta** para este contenido concreto
+  («¿Qué hacer ante un paciente con…?»). `instructions` = **solo la mecánica** del
+  componente, y solo si no es evidente («Arrastra cada pieza a su lugar y pulsa
+  Comprobar»).
+- **Nunca** el mismo mensaje dicho dos veces con otras palabras entre ambos campos, ni
+  repetir el `title` de la pantalla o su `student_text`. Mejor **vacío** (`""`) que
+  relleno: en `accordion`/`tabs`/`flip_cards`/`timeline`/`image_cards` el `prompt` va
+  vacío salvo que haya una tarea real, y `instructions` se queda en una frase de
+  mecánica o vacío.
+- **Prohibido** en ambos campos: avisos de bloqueo o progreso («No podrás avanzar hasta
+  haber leído todas», «Debes abrirlas todas»…) — la carcasa ya lo indica sola —, y
+  frases vacías del tipo «Abre las pestañas para revisar cada aspecto», «Explora el
+  contenido», «Lee con atención».
+
 **Formato DENTRO de los campos de interacción (lo que renderiza la carcasa).** Los
 campos de texto corto — `prompt`, `instructions`, `scenario`, textos de `options`,
 `feedback.*`, `front`/`back` de tarjetas, `title`/`label` de ítems — solo renderizan

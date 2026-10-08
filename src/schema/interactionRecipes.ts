@@ -126,8 +126,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: false,
     supportsAttempts: false,
     family: 'titled-content',
-    defaultPrompt: 'Explora cada apartado.',
-    defaultInstructions: 'Pulsa el título de cada apartado para desplegar su contenido.',
+    defaultInstructions: 'Pulsa el título de cada apartado para desplegarlo.',
   },
   {
     type: 'tabs',
@@ -137,8 +136,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: false,
     supportsAttempts: false,
     family: 'titled-content',
-    defaultPrompt: 'Recorre las pestañas para ver todo el contenido.',
-    defaultInstructions: 'Pulsa cada pestaña para mostrar su contenido.',
+    defaultInstructions: 'Pulsa cada pestaña para ver su contenido.',
   },
   {
     type: 'flip_cards',
@@ -148,8 +146,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: false,
     supportsAttempts: false,
     family: 'titled-content',
-    defaultPrompt: 'Descubre el contenido de cada tarjeta.',
-    defaultInstructions: 'Pulsa cada tarjeta para girarla y ver el reverso.',
+    defaultInstructions: 'Pulsa cada tarjeta para girarla.',
   },
   {
     type: 'timeline',
@@ -159,8 +156,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: false,
     supportsAttempts: false,
     family: 'titled-content',
-    defaultPrompt: 'Recorre los hitos en orden.',
-    defaultInstructions: 'Pulsa cada hito para desplegar su detalle.',
+    defaultInstructions: 'Pulsa cada hito para ver su detalle.',
   },
   {
     type: 'image_cards',
@@ -170,7 +166,6 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: false,
     supportsAttempts: false,
     family: 'titled-content',
-    defaultPrompt: 'Explora las tarjetas.',
     defaultInstructions: 'Pulsa una tarjeta para ver su imagen y su texto.',
   },
   {
@@ -180,7 +175,6 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'presentar',
     gradable: false,
     supportsAttempts: false,
-    defaultPrompt: 'Compara el antes y el después.',
     defaultInstructions: 'Arrastra el divisor para comparar las dos imágenes.',
   },
   {
@@ -190,8 +184,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'presentar',
     gradable: true,
     supportsAttempts: false,
-    defaultPrompt: 'Explora la imagen.',
-    defaultInstructions: 'Pulsa cada zona marcada para ver su información.',
+    defaultInstructions: 'Pulsa las zonas de la imagen hasta encontrar todas las correctas.',
   },
 
   // ---- Preguntar -----------------------------------------------------------
@@ -209,7 +202,6 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
         { id: oid(), text: '' },
       ],
     }),
-    defaultPrompt: 'Selecciona la respuesta correcta.',
     defaultInstructions: 'Elige una opción y pulsa Comprobar.',
   },
   {
@@ -226,7 +218,6 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
         { id: oid(), text: 'Falso' },
       ],
     }),
-    defaultPrompt: 'Indica si la afirmación es verdadera o falsa.',
     defaultInstructions: 'Elige una opción y pulsa Comprobar.',
   },
   {
@@ -270,7 +261,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     gradable: true,
     supportsAttempts: true,
     defaultPrompt: 'Ordena los pasos correctamente.',
-    defaultInstructions: 'Arrastra los elementos hasta dejarlos en el orden correcto y pulsa Comprobar.',
+    defaultInstructions: 'Arrastra cada elemento a su lugar y pulsa Comprobar.',
   },
   {
     type: 'match_pairs',
@@ -284,7 +275,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     // proyectos antiguos = comportamiento de siempre, «forzado»).
     seed: () => ({ config: { force_complete: false } }),
     defaultPrompt: 'Empareja cada elemento con el que le corresponde.',
-    defaultInstructions: 'Arrastra cada elemento hasta su pareja y pulsa Comprobar.',
+    defaultInstructions: 'Arrastra cada pieza a su lugar (o tócala y toca el destino) y pulsa Comprobar.',
   },
   {
     type: 'classification',
@@ -296,7 +287,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     family: 'assign',
     seed: () => ({ config: { force_complete: false } }),
     defaultPrompt: 'Clasifica cada elemento en su categoría.',
-    defaultInstructions: 'Arrastra cada elemento a la categoría que le corresponde y pulsa Comprobar.',
+    defaultInstructions: 'Arrastra cada pieza a una categoría (o tócala y toca la categoría) y pulsa Comprobar.',
   },
 
   // ---- Juegos didácticos ---------------------------------------------------
@@ -320,9 +311,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     supportsAttempts: true,
     seed: () => ({ config: { force_complete: false } }),
     defaultPrompt: 'Completa el crucigrama a partir de las pistas.',
-    defaultInstructions: 'Cada casilla numerada es el inicio de una palabra: busca su número en las pistas '
-      + '(Horizontales o Verticales) y escribe la palabra letra a letra — al escribir, el cursor avanza solo a '
-      + 'la siguiente casilla. Cuando hayas rellenado todo el crucigrama, pulsa Comprobar.',
+    defaultInstructions: 'Cada casilla numerada es el inicio de una palabra: busca su número en las pistas (Horizontales o Verticales) y escríbela letra a letra; el cursor avanza solo. Pulsa Comprobar cuando quieras revisar.',
   },
   {
     type: 'az_quiz',
@@ -331,10 +320,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     group: 'juegos',
     gradable: true,
     supportsAttempts: false,
-    defaultPrompt: 'Responde una definición por cada letra.',
-    defaultInstructions: 'Vas a responder una pregunta por cada letra, en orden: la pista indica por qué letra '
-      + 'debe empezar tu respuesta. Escribe tu respuesta y pulsa Enter (o «Responder»); si no la sabes, pulsa '
-      + '«Pasapalabra» y volverá a preguntarse al final.',
+    defaultInstructions: 'Responde por orden: la pista indica la letra por la que empieza la respuesta. Escribe y pulsa Enter (o «Responder»); si no la sabes, pulsa «Pasapalabra» y volverá a preguntarse al final.',
   },
   {
     type: 'hidden_image',
@@ -356,7 +342,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     supportsAttempts: false,
     seed: () => ({ config: { cols: 3, rows: 3 } }),
     defaultPrompt: 'Recompón la imagen.',
-    defaultInstructions: 'Toca dos piezas para intercambiarlas hasta reconstruir la imagen.',
+    defaultInstructions: 'Toca dos piezas para intercambiarlas.',
   },
   {
     type: 'flashcards',

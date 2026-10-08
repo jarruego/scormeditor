@@ -477,7 +477,10 @@ El bloque cuenta una historia en 4 partes (no una pila plana de campos al mismo 
    del tipo (`defaultPrompt`/`defaultInstructions` del catálogo, homogeneidad y menos
    tecleo); el autor los sobrescribe libremente. Un enlace **«Usar texto habitual»** junto
    a cada campo (visible solo si el tipo tiene frase por defecto; no la tiene
-   `html_embed`, contenido a medida) permite recuperarlo en cualquier momento sin perder
+   `html_embed`, contenido a medida). **Criterio de los textos por defecto**: Enunciado e
+   Instrucciones nunca se parecen — el enunciado es la tarea/pregunta (en informativas y
+   preguntas simples va **vacío**: lo escribe el autor o lo dice la propia pantalla) y las
+   instrucciones solo la mecánica del componente; mejor vacío que repetir permite recuperarlo en cualquier momento sin perder
    el resto de la interacción. Al **cambiar de tipo** (`onChangeInteractionType`) se
    aplica lo mismo pero solo al campo que esté vacío — nunca se pisa texto ya escrito.
 3. **Fold «Evaluación»** (solo si el tipo es `gradable` — o `scored` importado):

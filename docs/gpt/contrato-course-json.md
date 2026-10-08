@@ -514,8 +514,8 @@ Estructura común a TODAS:
 {
   "id": "s05_i01",
   "type": "single_choice",
-  "prompt": "Enunciado claro.",
-  "instructions": "Instrucción breve de qué hacer.",
+  "prompt": "Enunciado claro (la tarea/pregunta; vacío si no aporta).",
+  "instructions": "Solo la mecánica del componente; vacío si es evidente. Nunca repite el enunciado.",
   "options": [],
   "config": {},
   "feedback": { "correct": "Texto de acierto.", "incorrect": "Texto de error.", "explanation": "Explicación pedagógica." },
