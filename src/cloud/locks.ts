@@ -7,6 +7,11 @@ function requireSupabase() {
   })
 }
 
+/** TTL del bloqueo. Holgado a propósito: una pestaña oculta (y más tras 5 min, cuando el
+ *  navegador agrupa sus temporizadores a ~1/min) puede saltarse un latido sin que
+ *  eso entregue el control al otro equipo. */
+export const LOCK_TTL_SECONDS = 120
+
 export interface DocumentLockInfo {
   holderId: string
   holderEmail: string
@@ -14,7 +19,7 @@ export interface DocumentLockInfo {
 }
 
 /** Adquiere (o renueva, si ya la tienes) el bloqueo blando de todo el documento. */
-export async function acquireDocumentLock(documentId: string, ttlSeconds = 60): Promise<boolean> {
+export async function acquireDocumentLock(documentId: string, ttlSeconds = LOCK_TTL_SECONDS): Promise<boolean> {
   const supabase = await requireSupabase()
   const { data, error } = await supabase.rpc('acquire_document_lock', {
     p_document_id: documentId, p_scope: 'structural', p_scope_ref: '', p_ttl_seconds: ttlSeconds,
@@ -37,7 +42,7 @@ export async function releaseDocumentLock(documentId: string): Promise<void> {
  * (Realtime sobre `document_locks`, ver `src/cloud/watch.ts`), no hace falta
  * avisarle desde aquí.
  */
-export async function forceTakeDocumentLock(documentId: string, ttlSeconds = 60): Promise<void> {
+export async function forceTakeDocumentLock(documentId: string, ttlSeconds = LOCK_TTL_SECONDS): Promise<void> {
   const supabase = await requireSupabase()
   const { error } = await supabase.rpc('force_take_document_lock', {
     p_document_id: documentId, p_scope: 'structural', p_scope_ref: '', p_ttl_seconds: ttlSeconds,

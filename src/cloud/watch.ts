@@ -30,6 +30,15 @@ import { confirmDialog } from '../store/confirm'
 // bloqueo caduca solo — no hace falta liberarlo a mano para que se cure.
 const HEARTBEAT_MS = 25_000
 
+// Una pestaña OCULTA (ventana minimizada, tapada por otra, otra pestaña delante)
+// sigue renovando su bloqueo durante este margen. Sin él, quien tomaba el control
+// y pasaba a otra ventana un minuto lo perdía por caducidad y el otro equipo, con
+// la pestaña visible, lo recuperaba en silencio: «Tomar el control» iba y venía
+// sin que nadie lo pidiera. Pasado el margen se considera abandonada y se deja
+// caducar (TTL) para que no retenga el documento indefinidamente.
+const HIDDEN_GRACE_MS = 10 * 60_000
+let hiddenSince: number | null = null
+
 // Debounce del auto-sync a la nube: sube sola tras unos minutos SIN cambios
 // nuevos (no cada X tiempo mientras editas sin parar) — mismo patrón que el
 // autoguardado local (`scheduleSave` en autosave.ts), solo que con una espera
@@ -120,7 +129,11 @@ async function refreshStaleness(documentId: string) {
 async function startHeartbeat(documentId: string) {
   stopHeartbeat()
   const tick = async () => {
-    if (document.visibilityState !== 'visible') return // pestaña en segundo plano: no renueva, se deja caducar
+    if (document.visibilityState === 'visible') hiddenSince = null
+    else {
+      hiddenSince ??= Date.now()
+      if (Date.now() - hiddenSince > HIDDEN_GRACE_MS) return // abandonada: no renueva, se deja caducar
+    }
     // Un viewer (sin permiso de edición en la carpeta de este documento) NUNCA
     // podría adquirir el bloqueo — el propio RPC lo rechaza por RLS — así que
     // ni se intenta: evita ensuciar los logs de Postgres cada 25s con un

@@ -97,8 +97,10 @@ capas:
 
 1. **Blando, de servidor** (`acquireDocumentLock`/`releaseDocumentLock`/
    `getDocumentLock` en `src/cloud/locks.ts`): un latido cada 25s
-   (`HEARTBEAT_MS`, bien por debajo del TTL de 60s del RPC) mientras la pestaña está
-   visible; en background no renueva y se deja caducar solo — no hace falta liberarlo a
+   (`HEARTBEAT_MS`) con un TTL de 120s (`LOCK_TTL_SECONDS`; holgado para que un latido
+   perdido no entregue el control). Una pestaña **oculta** (minimizada, tapada, otra
+   delante) sigue renovando hasta `HIDDEN_GRACE_MS` (10 min); pasado ese margen se
+   considera abandonada y se deja caducar sola — no hace falta liberarlo a
    mano para que se cure. `acquire_document_lock` (RPC, SECURITY INVOKER a propósito: su
    INSERT pasa por las políticas RLS de `document_locks` sin duplicarlas aquí) **nunca**
    roba un bloqueo todavía vivo de otra persona, solo renueva el tuyo o toma uno ya
@@ -129,7 +131,7 @@ mecanismo aparte de notificación. Se le quita el foco a cualquier campo activo 
 solo-lectura no deje un input a medio escribir. Quien toma el control ve su propio cambio
 al instante por actualización **optimista** del store (no espera a Realtime/latido).
 
-Si el otro cierra la pestaña o dejar de renovar (TTL 60s), el control vuelve solo al
+Si el otro cierra la pestaña o deja de renovar (TTL 120s), el control vuelve solo al
 siguiente latido — no hace falta pulsar nada.
 
 ## Permisos por carpeta (`folder_access`)
