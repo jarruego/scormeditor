@@ -116,11 +116,8 @@ módulo/curso, que sí tienen los dos contenedores).
   fue lo que cambió el default de abierto a cerrado sin tocar `onToggle`. No entra en el
   historial de deshacer ni en el proyecto; con filtro activo se fuerza abierto sin tocar
   lo guardado.
-- **Acordeón solo entre módulos** (no entre unidades de un mismo módulo, que se pliegan
-  independientemente): abrir un módulo cierra los demás, vía `useTreeFold.openOnly(id,
-  allModuleIds)` en el `onToggle` del `<details>` de módulo. Con más de un módulo abierto
-  a la vez el árbol se hacía largo de recorrer; con uno solo se ve siempre el contexto
-  completo de dónde se está.
+- **Módulos y unidades se pliegan de forma independiente** (puede haber varios abiertos a
+  la vez): hace falta para arrastrar pantallas entre módulos sin que el destino se pliegue.
 - **CRÍTICO — un `<details>` cerrado necesita `display:none` explícito en sus hijos**:
   cualquier regla de autor que fije `display` en un descendiente (`.ed-screens{display:
   grid}`, `.ed-add{...}`) gana SIEMPRE al valor por defecto del user-agent para
@@ -209,8 +206,8 @@ módulo/curso, que sí tienen los dos contenedores).
   a la vista; diferido dos `requestAnimationFrame` porque en el montaje el layout aún no
   es definitivo). Si el módulo/unidad contenedor está plegado, el `<li>` existe en el DOM
   pero oculto — `scrollIntoView` no puede llevarlo a la vista mientras siga oculto —, así
-  que `useScrollWhenSelected` (`CourseTree.tsx`) abre primero el módulo (mismo acordeón
-  que al abrir a mano: cierra los demás) y la unidad, y solo entonces programa el scroll.
+  que `useScrollWhenSelected` (`CourseTree.tsx`) abre primero el módulo (sin cerrar los
+  demás) y la unidad, y solo entonces programa el scroll.
 
 ### Estructura desde el árbol y «Nuevo (vacío)»
 Sin esto, borrar la estructura demo era un callejón sin salida (no había forma de crear

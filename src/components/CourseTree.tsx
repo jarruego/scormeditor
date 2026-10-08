@@ -42,17 +42,9 @@ import { Icon } from './Icon'
 const useTreeFold = create<{
   collapsed: Record<string, boolean>
   setCollapsed: (id: string, v: boolean) => void
-  /** Acordeón: abre `id` y cierra el resto de `allIds` (solo un módulo activo). */
-  openOnly: (id: string, allIds: string[]) => void
 }>((set) => ({
   collapsed: {},
   setCollapsed: (id, v) => set((s) => ({ collapsed: { ...s.collapsed, [id]: v } })),
-  openOnly: (id, allIds) =>
-    set((s) => {
-      const next = { ...s.collapsed }
-      for (const other of allIds) next[other] = other !== id
-      return { collapsed: next }
-    }),
 }))
 
 /** Lado de inserción («antes»/«después» de la pantalla apuntada) durante un
@@ -103,16 +95,12 @@ function scrollTreeTo(el: HTMLElement | null) {
  *  no aplica, p. ej. una pantalla de introducción). Si están cerrados, el
  *  `<li>` existe en el DOM pero oculto por el `<details>` — `scrollIntoView`
  *  no puede llevarlo a la vista mientras siga oculto — así que se abren
- *  ANTES de programar el scroll (mismo acordeón que al abrir a mano: abrir el
- *  módulo de la pantalla cierra los demás). */
+ *  ANTES de programar el scroll (sin cerrar los demás módulos). */
 function useScrollWhenSelected(selected: boolean, moduleId?: string, unitId?: string) {
   const ref = useRef<HTMLLIElement | null>(null)
   useEffect(() => {
     if (!selected) return
-    if (moduleId) {
-      const allModuleIds = useCourseStore.getState().course.modules.map((m) => m.id)
-      useTreeFold.getState().openOnly(moduleId, allModuleIds)
-    }
+    if (moduleId) useTreeFold.getState().setCollapsed(moduleId, false)
     if (unitId) useTreeFold.getState().setCollapsed(unitId, false)
     let raf2 = 0
     const raf1 = requestAnimationFrame(() => {
@@ -390,7 +378,6 @@ export function CourseTree() {
   const [filter, setFilter] = useState('')
   const collapsed = useTreeFold((s) => s.collapsed)
   const setCollapsed = useTreeFold((s) => s.setCollapsed)
-  const openOnly = useTreeFold((s) => s.openOnly)
 
   // Rótulos personalizables (por defecto «Módulo»/«Unidad», ver Ajustes → Curso):
   // un paquete SCORM no siempre es un curso con módulos de verdad. En minúscula
@@ -605,12 +592,7 @@ export function CourseTree() {
         {course.modules.map((m, mi) => (
           <details key={`${m.id}-${q ? 'f' : 'n'}`} className="ed-module ed-tree-module"
             open={q ? true : collapsed[m.id] === false}
-            onToggle={(e) => {
-              if (q) return
-              // Acordeón: un solo módulo abierto a la vez — abrirlo cierra los demás.
-              if (e.currentTarget.open) openOnly(m.id, course.modules.map((mm) => mm.id))
-              else setCollapsed(m.id, true)
-            }}>
+            onToggle={(e) => { if (!q) setCollapsed(m.id, !e.currentTarget.open) }}>
             <summary className="ed-module-title">
               <span className="ed-module-name">
                 <InlineRename value={m.title} title={`Renombrar ${moduleLabel}`}
