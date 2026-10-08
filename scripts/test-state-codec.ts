@@ -230,7 +230,7 @@ function synthDetail(type: string, it: AnyRec): AnyRec | null {
       return opts.length ? { choice: opts[0].id } : null
     case 'hotspots': {
       const spots = cfg.spots || []
-      return spots.length ? { choice: spots[0].id } : null
+      return spots.length ? { found: [spots[0].id], wrong: spots.length > 1 ? [spots[1].id] : [] } : null
     }
     case 'sort_steps': {
       const steps = cfg.steps || []
@@ -350,7 +350,7 @@ interactions.forEach((it, i) => {
       ok(d.choice === it.interaction.options[0].id, `round-trip [${it.type}]: choice no coincide`)
       break
     case 'hotspots':
-      ok(d.choice === it.interaction.config.spots[0].id, `round-trip [${it.type}]: choice no coincide`)
+      ok(Array.isArray(d.found) && d.found[0] === it.interaction.config.spots[0].id, `round-trip [${it.type}]: found no coincide`)
       break
     case 'sort_steps':
       ok(Array.isArray(d.order) && d.order.length === it.interaction.config.steps.length,

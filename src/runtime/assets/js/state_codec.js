@@ -331,20 +331,39 @@
     },
   };
 
-  // hotspots: igual que scenario_decision pero contra config.spots.
+  // hotspots: detalle = { found:[ids de zonas correctas halladas], wrong:[ids de zonas
+  // erróneas pulsadas], correct }. Payload: dos máscaras de bits contra config.spots
+  // ("<bitsFound>" y "<bitsWrong>" en packChunks; lleva ':'). El formato antiguo era el
+  // índice base36 de la única zona elegida (sin ':'): se decodifica como { choice } y la
+  // interacción lo traduce a found/wrong. `correct` lo recalcula la interacción.
   TYPE_CODECS.hotspots = {
     encode: function (detail, it) {
-      if (!detail || detail.choice == null) return null;
+      if (!detail) return null;
       var spots = (it.config || {}).spots || [];
-      var idx = indexOfById(spots, detail.choice);
-      if (idx < 0 || idx > 35) return null;
-      return b36(idx);
+      if (!spots.length) return null;
+      var f = {}, w = {};
+      (detail.found || []).forEach(function (id) { f[id] = true; });
+      (detail.wrong || []).forEach(function (id) { w[id] = true; });
+      var fb = [], wb = [], any = false;
+      spots.forEach(function (sp) {
+        fb.push(f[sp.id] ? 1 : 0); wb.push(w[sp.id] ? 1 : 0);
+        if (f[sp.id] || w[sp.id]) any = true;
+      });
+      if (!any) return null;
+      return packChunks([packBits(fb), packBits(wb)]);
     },
     decode: function (payload, it) {
       var spots = (it.config || {}).spots || [];
-      var spot = spots[fromB36(payload)];
-      if (!spot) return null;
-      return { choice: spot.id };
+      if (payload.indexOf(':') < 0) {
+        var spot = spots[fromB36(payload)];
+        return spot ? { choice: spot.id } : null;
+      }
+      var p = unpackChunks(payload);
+      if (!p || p.length !== 2) return null;
+      var fb = unpackBits(p[0]), wb = unpackBits(p[1]);
+      var found = [], wrong = [];
+      spots.forEach(function (sp, i) { if (fb[i]) found.push(sp.id); if (wb[i]) wrong.push(sp.id); });
+      return { found: found, wrong: wrong };
     },
   };
 
@@ -1072,7 +1091,7 @@
         return opts.length ? { choice: opts[0].id } : null;
       case 'hotspots': {
         var spots = cfg.spots || [];
-        return spots.length ? { choice: spots[0].id } : null;
+        return spots.length ? { found: spots.map(function (x) { return x.id; }), wrong: [] } : null;
       }
       case 'sort_steps': {
         var steps = cfg.steps || [];
@@ -1188,7 +1207,7 @@
       case 'single_choice': case 'true_false': case 'scenario_decision':
         return type + ': una opción elegida';
       case 'hotspots':
-        return 'hotspots: una zona elegida';
+        return 'hotspots: zonas encontradas y falladas';
       case 'sort_steps':
         return 'sort_steps: ' + ((cfg.steps || []).length) + ' pasos';
       case 'match_pairs': case 'classification':

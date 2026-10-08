@@ -641,7 +641,8 @@ puntúa. `config.rubric` opcional pero muy recomendada (sin ella solo queda el e
   "spots": [ { "id": "z1", "x": 30, "y": 40, "w": 10, "h": 10, "label": "Zona correcta", "correct": true, "feedback": "..." } ]
 }
 ```
-(`x,y,w,h` en % sobre la imagen.)
+(`x,y,w,h` en % sobre la imagen.) El alumno debe encontrar **todas** las zonas con
+`correct: true`; las erróneas se marcan en rojo y no bloquean.
 
 **`fill_blanks`** — completar huecos (evaluable). `config.text` con cada respuesta
 correcta entre dobles corchetes `[[...]]`; el runtime convierte cada hueco en un

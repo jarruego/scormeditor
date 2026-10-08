@@ -168,11 +168,18 @@ No hay lista de botones equivalentes bajo la imagen — duplicaba las zonas para
 de pantalla (cada zona ya es un `<button>` con `aria-label`) y desvelaba las etiquetas.
 Las zonas llevan **glow permanente** (anillo blanco + halo del primario) para que se vea
 que existen; el pulso de invitación usa keyframes propios (`me-hotspot-pulse`) que
-conservan el anillo blanco mientras animan. Evaluación: `result()` devuelve
-`scored: !!data.scored` — puede puntuar si el autor la marca evaluable, pero **no** tiene
-botón Comprobar ni `attempts`: las zonas siguen activas tras responder y cada clic
-re-evalúa (intentos ilimitados de facto; el último clic manda). Al clicar una zona el
-feedback sale en una **ventana modal** (ver «Feedback en ventana modal» abajo). Sus zonas se editan
+conservan el anillo blanco mientras animan. **Hay que encontrar todas las zonas
+correctas** (siempre, sin casilla): las halladas quedan `.is-right` (verde, ✔) y las
+erróneas pulsadas `.is-wrong` (rojo, ✖), y la actividad se completa al hallar la última
+correcta (sin zonas correctas configuradas, cualquier clic completa). `result()` devuelve
+`scored: !!data.scored`; `correct` (y la nota) exige además **no haber fallado ningún
+clic**. No tiene botón Comprobar ni `attempts`: las zonas siguen activas y cada clic
+muestra su feedback (con el avance «n de N» si hay varias correctas). Estado:
+`{ found:[ids], wrong:[ids] }`; el formato antiguo `{ choice }` (un clic) se migra al
+restaurar (correcta → hallada, errónea → fallada). Codec en `state_codec.js`: dos máscaras
+de bits contra `spots`; el payload antiguo (índice base36, sin `:`) sigue leyéndose.
+Al clicar una zona el feedback sale en una **ventana modal** (ver «Feedback en ventana
+modal» abajo). Sus zonas se editan
 visualmente en el editor (ver `editor-pantallas.md`). Es evaluable a efectos de narración
 (solo su `prompt` entra en la transcripción general, nunca las etiquetas de zona — eso
 desvelaría las opciones de la pregunta, ver `tts-narracion.md`), pero cada zona admite su

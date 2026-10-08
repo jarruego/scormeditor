@@ -862,33 +862,64 @@
     // lista textual aparte (se retiró en jul 2026: duplicaba los botones y
     // desvelaba las etiquetas de las zonas bajo la imagen).
     el.innerHTML = html + '</div>' + feedbackBox(data);
+    // Hay que encontrar TODAS las zonas correctas. Las encontradas quedan en verde y las
+    // erróneas en rojo (se pueden seguir pulsando). Completa al hallar la última correcta;
+    // `correct` (y la puntuación) exige además no haber fallado ningún clic. Sin zonas
+    // correctas configuradas, cualquier clic completa (comportamiento previo).
+    var spots = c.spots || [];
+    var total = spots.filter(function (x) { return x.correct; }).length;
+    var found = {}, wrong = {};
     var correct = false, done = false;
+    function count(o) { return Object.keys(o).length; }
+    function paint() {
+      el.querySelectorAll('.me-hotspot').forEach(function (b) {
+        b.classList.toggle('is-right', !!found[b.dataset.id]);
+        b.classList.toggle('is-wrong', !!wrong[b.dataset.id]);
+      });
+      done = total ? count(found) >= total : (count(found) + count(wrong)) > 0;
+      correct = done && count(wrong) === 0;
+    }
+    function fbFor(s, partial) {
+      var okMsg = s.feedback || data.feedback.correct || 'Correcto.';
+      if (partial) okMsg += ' (' + count(found) + ' de ' + total + ' zonas encontradas)';
+      return { feedback: { correct: okMsg, incorrect: s.feedback || data.feedback.incorrect, explanation: data.feedback.explanation } };
+    }
     // Pulso en las zonas para invitar al clic (en todas: señalar solo una sesgaría
     // la respuesta); se apaga al primer intento
-    if (!(ctx.state && ctx.state.choice)) {
+    if (!(ctx.state && (ctx.state.found || ctx.state.wrong || ctx.state.choice))) {
       el.querySelectorAll('.me-hotspot').forEach(function (b) { b.classList.add('me-pulse'); });
     }
     function pick(id) {
       el.querySelectorAll('.me-hotspot').forEach(function (b) { b.classList.remove('me-pulse'); });
-      var s = (c.spots || []).filter(function (x) { return x.id === id; })[0];
-      correct = !!s.correct; done = true;
-      var fb = { feedback: { correct: s.feedback || data.feedback.correct, incorrect: s.feedback || data.feedback.incorrect, explanation: data.feedback.explanation } };
-      showFeedback(el, correct, fb);
-      showFeedbackModal(el, correct, fb, el.querySelector('.me-hotspot[data-id="' + id + '"]'));
-      ctx.save({ choice: id, correct: correct });
-      ctx.announce(correct ? 'Zona correcta.' : 'Zona incorrecta.');
+      var s = spots.filter(function (x) { return x.id === id; })[0];
+      if (!s) return;
+      if (!total) { found = {}; wrong = {}; } // sin correctas: el último clic manda
+      (s.correct ? found : wrong)[id] = true;
+      paint();
+      var isOk = !!s.correct;
+      var fb = fbFor(s, isOk && total > 1 && !done);
+      showFeedback(el, isOk, fb);
+      showFeedbackModal(el, isOk, fb, el.querySelector('.me-hotspot[data-id="' + id + '"]'));
+      ctx.save({ found: Object.keys(found), wrong: Object.keys(wrong), correct: correct });
+      ctx.announce(isOk ? (done ? 'Zona correcta. Has encontrado todas.' : 'Zona correcta.') : 'Zona incorrecta.');
     }
     el.querySelectorAll('.me-hotspot').forEach(function (b) {
       // El audio de zona suena al clicar, nunca al restaurar estado (abajo):
       // es una pista que acompaña el gesto, no una narración automática.
       b.addEventListener('click', function () { pick(b.dataset.id); revealItemAudio(ctx, wireItemAudio(b)); });
     });
-    if (ctx.state && ctx.state.choice) {
-      var hs = (c.spots || []).filter(function (x) { return x.id === ctx.state.choice; })[0];
-      if (hs) {
-        correct = !!hs.correct; done = true;
-        showFeedback(el, correct, { feedback: { correct: hs.feedback || data.feedback.correct, incorrect: hs.feedback || data.feedback.incorrect, explanation: data.feedback.explanation } });
-      }
+    var st = ctx.state || {};
+    if (st.found || st.wrong) {
+      (st.found || []).forEach(function (id) { found[id] = true; });
+      (st.wrong || []).forEach(function (id) { wrong[id] = true; });
+    } else if (st.choice) { // estado antiguo: un único clic
+      var hs = spots.filter(function (x) { return x.id === st.choice; })[0];
+      if (hs) { if (hs.correct) found[hs.id] = true; else wrong[hs.id] = true; }
+    }
+    if (count(found) + count(wrong)) {
+      paint();
+      var last = spots.filter(function (x) { return found[x.id] || wrong[x.id]; }).pop();
+      if (last) showFeedback(el, !!found[last.id], fbFor(last, false));
     }
     return { result: function () { return { completed: done, scored: !!data.scored, correct: correct, score: correct ? (data.points || 1) : 0, maxScore: data.points || 1 }; } };
   });
