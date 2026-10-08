@@ -1066,44 +1066,39 @@ body.me-motion-rich .me-interaction.me-rv .me-tl-item:nth-child(n+6),
 body.me-motion-rich .me-interaction.me-rv .me-chip:nth-child(n+6) { animation-delay: calc(450ms * var(--me-speed, 1)); }
 
 /* 'vivid' (Llamativas): hereda TODO lo de 'rich' (app.js le pone también la clase
-   me-motion-rich) y añade entradas más amplias y fluidas —deslizamientos largos,
-   cascadas más marcadas, SIN rebote ni giros— y transición direccional entre pantallas. Solo
+   me-motion-rich) y VARÍA el gesto de entrada: los bloques de cada pantalla y los
+   ítems de cada interacción ciclan entre subir, entrar por la izquierda, hacer zoom
+   y entrar por la derecha (nth-child 4n+k), de modo que no todo entra igual. Solo
+   algunos gestos (zoom y «pop» de ítems) llevan un rebote leve; el resto es suave.
+   Cascadas más marcadas y transición direccional entre pantallas. Solo
    opacity/transform, igual que 'rich'. */
-body.me-motion-vivid { --me-anim-dur: .5s; --me-rv-dur: .65s; --me-spring: cubic-bezier(.22, 1, .36, 1); }
-body.me-motion-vivid .me-rv { animation-timing-function: var(--me-spring); }
-body.me-motion-vivid .me-callout.me-rv { animation-name: me-rv-callout-v; }
-@keyframes me-rv-callout-v { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: none; } }
-body.me-motion-vivid .me-prose > h2.me-rv, body.me-motion-vivid .me-prose > h3.me-rv { animation-name: me-rv-heading-v; }
-@keyframes me-rv-heading-v { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: none; } }
-body.me-motion-vivid .me-media.me-rv { animation-name: me-rv-media-v; }
-@keyframes me-rv-media-v { from { opacity: 0; transform: scale(.9) translateY(22px); } to { opacity: 1; transform: none; } }
-body.me-motion-vivid .me-interaction.me-rv .me-acc-item,
-body.me-motion-vivid .me-interaction.me-rv .me-card,
-body.me-motion-vivid .me-interaction.me-rv .me-tl-item,
-body.me-motion-vivid .me-interaction.me-rv .me-chip {
-  animation: me-rv-item-v calc(var(--me-rv-dur, .65s) * var(--me-speed, 1)) var(--me-spring) both;
+body.me-motion-vivid { --me-anim-dur: .5s; --me-rv-dur: .65s; --me-spring: cubic-bezier(.22, 1, .36, 1); --me-bounce: cubic-bezier(.34, 1.4, .64, 1); }
+@keyframes me-v-up    { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
+@keyframes me-v-left  { from { opacity: 0; transform: translateX(-38px); } to { opacity: 1; transform: none; } }
+@keyframes me-v-right { from { opacity: 0; transform: translateX(38px); } to { opacity: 1; transform: none; } }
+@keyframes me-v-zoom  { from { opacity: 0; transform: scale(.86) translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes me-v-pop   { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
+/* Bloques de la pantalla */
+body.me-motion-vivid .me-prose > .me-rv:nth-child(4n+1) { animation-name: me-v-up; animation-timing-function: var(--me-spring); }
+body.me-motion-vivid .me-prose > .me-rv:nth-child(4n+2) { animation-name: me-v-left; animation-timing-function: var(--me-spring); }
+body.me-motion-vivid .me-prose > .me-rv:nth-child(4n+3) { animation-name: me-v-zoom; animation-timing-function: var(--me-bounce); }
+body.me-motion-vivid .me-prose > .me-rv:nth-child(4n) { animation-name: me-v-right; animation-timing-function: var(--me-spring); }
+/* Los encabezados siempre desde la izquierda (ancla visual coherente). */
+body.me-motion-vivid .me-prose > h2.me-rv:nth-child(n), body.me-motion-vivid .me-prose > h3.me-rv:nth-child(n) { animation-name: me-v-left; animation-timing-function: var(--me-spring); }
+body.me-motion-vivid .me-media.me-rv { animation-name: me-v-zoom; animation-timing-function: var(--me-bounce); }
+body.me-motion-vivid .me-interaction.me-rv { animation-name: me-v-up; animation-timing-function: var(--me-spring); }
+/* Ítems de las interacciones: ciclan gesto y se escalonan */
+body.me-motion-vivid .me-interaction.me-rv :is(.me-acc-item, .me-card, .me-tl-item, .me-chip) {
+  animation: me-v-up calc(var(--me-rv-dur, .65s) * var(--me-speed, 1)) var(--me-spring) both;
 }
-@keyframes me-rv-item-v { from { opacity: 0; transform: translateY(20px) scale(.92); } to { opacity: 1; transform: none; } }
-body.me-motion-vivid .me-interaction.me-rv .me-acc-item:nth-child(2),
-body.me-motion-vivid .me-interaction.me-rv .me-card:nth-child(2),
-body.me-motion-vivid .me-interaction.me-rv .me-tl-item:nth-child(2),
-body.me-motion-vivid .me-interaction.me-rv .me-chip:nth-child(2) { animation-delay: calc(130ms * var(--me-speed, 1)); }
-body.me-motion-vivid .me-interaction.me-rv .me-acc-item:nth-child(3),
-body.me-motion-vivid .me-interaction.me-rv .me-card:nth-child(3),
-body.me-motion-vivid .me-interaction.me-rv .me-tl-item:nth-child(3),
-body.me-motion-vivid .me-interaction.me-rv .me-chip:nth-child(3) { animation-delay: calc(260ms * var(--me-speed, 1)); }
-body.me-motion-vivid .me-interaction.me-rv .me-acc-item:nth-child(4),
-body.me-motion-vivid .me-interaction.me-rv .me-card:nth-child(4),
-body.me-motion-vivid .me-interaction.me-rv .me-tl-item:nth-child(4),
-body.me-motion-vivid .me-interaction.me-rv .me-chip:nth-child(4) { animation-delay: calc(390ms * var(--me-speed, 1)); }
-body.me-motion-vivid .me-interaction.me-rv .me-acc-item:nth-child(5),
-body.me-motion-vivid .me-interaction.me-rv .me-card:nth-child(5),
-body.me-motion-vivid .me-interaction.me-rv .me-tl-item:nth-child(5),
-body.me-motion-vivid .me-interaction.me-rv .me-chip:nth-child(5) { animation-delay: calc(520ms * var(--me-speed, 1)); }
-body.me-motion-vivid .me-interaction.me-rv .me-acc-item:nth-child(n+6),
-body.me-motion-vivid .me-interaction.me-rv .me-card:nth-child(n+6),
-body.me-motion-vivid .me-interaction.me-rv .me-tl-item:nth-child(n+6),
-body.me-motion-vivid .me-interaction.me-rv .me-chip:nth-child(n+6) { animation-delay: calc(650ms * var(--me-speed, 1)); }
+body.me-motion-vivid .me-interaction.me-rv :is(.me-acc-item, .me-card, .me-tl-item, .me-chip):nth-child(4n+2) { animation-name: me-v-left; }
+body.me-motion-vivid .me-interaction.me-rv :is(.me-acc-item, .me-card, .me-tl-item, .me-chip):nth-child(4n+3) { animation-name: me-v-pop; animation-timing-function: var(--me-bounce); }
+body.me-motion-vivid .me-interaction.me-rv :is(.me-acc-item, .me-card, .me-tl-item, .me-chip):nth-child(4n) { animation-name: me-v-right; }
+body.me-motion-vivid .me-interaction.me-rv :is(.me-acc-item, .me-card, .me-tl-item, .me-chip):nth-child(2) { animation-delay: calc(130ms * var(--me-speed, 1)); }
+body.me-motion-vivid .me-interaction.me-rv :is(.me-acc-item, .me-card, .me-tl-item, .me-chip):nth-child(3) { animation-delay: calc(260ms * var(--me-speed, 1)); }
+body.me-motion-vivid .me-interaction.me-rv :is(.me-acc-item, .me-card, .me-tl-item, .me-chip):nth-child(4) { animation-delay: calc(390ms * var(--me-speed, 1)); }
+body.me-motion-vivid .me-interaction.me-rv :is(.me-acc-item, .me-card, .me-tl-item, .me-chip):nth-child(5) { animation-delay: calc(520ms * var(--me-speed, 1)); }
+body.me-motion-vivid .me-interaction.me-rv :is(.me-acc-item, .me-card, .me-tl-item, .me-chip):nth-child(n+6) { animation-delay: calc(650ms * var(--me-speed, 1)); }
 /* Transición entre pantallas con dirección: entra desde la derecha al avanzar y
    desde la izquierda al retroceder (app.js pone data-dir en #me-content). */
 body.me-motion-vivid #me-content[data-dir="fwd"] .me-screen { animation-name: me-screen-fwd; animation-timing-function: var(--me-spring); }

@@ -399,11 +399,14 @@ Mínimas / Sutiles / Llamativas; editable en ⚙ Ajustes → Interfaz
 
 - **`vivid`** (Llamativas): incluye todo `rich` (`applyBranding` añade también
   `me-motion-rich`, así que el CSS de `rich` y el revelado aplican tal cual) más reglas
-  propias bajo `body.me-motion-vivid`: entradas más amplias y fluidas (easing suave
-  `--me-spring`, **sin rebote ni giros**: el rebote cansaba), deslizamientos más largos en
-  callouts/encabezados/media, ítems de accordion/cards/timeline/chips con ligero escalado y
-  cascada más marcada (130 ms/ítem), y **transición direccional** entre pantallas (`goTo`
-  pone `data-dir="fwd|back"` en `#me-content`; la pantalla entra desde la derecha al
+  propias bajo `body.me-motion-vivid`: el gesto de entrada **varía** — los bloques de
+  `.me-prose` y los ítems de accordion/cards/timeline/chips ciclan por `nth-child(4n+k)`
+  entre subir, entrar por la izquierda, zoom y entrar por la derecha (los ítems usan «pop» en
+  vez de zoom); solo zoom y pop llevan un rebote leve (`--me-bounce`), el resto es suave
+  (`--me-spring`, sin overshoot). Un rebote en TODAS las entradas cansaba, y quitarlo del
+  todo lo dejaba plano: la variedad es el criterio. Encabezados siempre desde la izquierda
+  (ancla visual). Cascada más marcada (130 ms/ítem) y **transición direccional** entre
+  pantallas (`goTo` pone `data-dir="fwd|back"` en `#me-content`; entra desde la derecha al
   avanzar y desde la izquierda al retroceder) con barra de progreso más suave. Los valores `none`/`subtle`/`rich` de proyectos antiguos no cambian de
   comportamiento (solo de etiqueta en el selector).
 

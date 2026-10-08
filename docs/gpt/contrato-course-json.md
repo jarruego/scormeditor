@@ -141,7 +141,7 @@ Reglas que NO se pueden romper:
   título del curso.
 - `motion` (opcional; def. `"subtle"`): animaciones de la carcasa. `"none"` (sin),
   `"subtle"` (transiciones básicas), `"rich"` (revelado progresivo del contenido
-  al entrar/hacer scroll) o `"vivid"` (lo de `"rich"` con entradas más amplias y
+  al entrar/hacer scroll) o `"vivid"` (lo de `"rich"` con entradas variadas y
   transición direccional entre pantallas). Es una preferencia de presentación:
   déjalo en `"subtle"` salvo que se pida otra cosa.
 - `motion_speed` (opcional; def. `"normal"`): velocidad de las animaciones de entrada.
