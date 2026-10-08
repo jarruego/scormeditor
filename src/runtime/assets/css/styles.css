@@ -491,6 +491,12 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 }
 .me-feedback.is-ok { background: #e7f6ec; border: 1px solid var(--me-ok); color: #0c5a26; }
 .me-feedback.is-error { background: #fdecea; border: 1px solid var(--me-error); color: #7a1a14; }
+.me-fbmodal { z-index: 120; }
+.me-fbmodal-card { max-width: 480px; padding: 1rem 1.1rem; animation: me-pop .18s ease-out; }
+.me-fbmodal-card.is-ok { border-top: 6px solid var(--me-ok); }
+.me-fbmodal-card.is-error { border-top: 6px solid var(--me-error); }
+.me-fbmodal-body .me-expl { margin: .5rem 0 0; }
+.me-fbmodal-foot { margin-top: 1rem; text-align: right; }
 .me-feedback.is-warn { background: #fff7e0; border: 1px solid var(--me-warn, #F4C910); color: #6a4b00; }
 .me-expl { margin: .4rem 0 0; font-size: .9rem; }
 

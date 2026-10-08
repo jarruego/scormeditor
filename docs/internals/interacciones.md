@@ -171,7 +171,11 @@ que existen; el pulso de invitación usa keyframes propios (`me-hotspot-pulse`) 
 conservan el anillo blanco mientras animan. Evaluación: `result()` devuelve
 `scored: !!data.scored` — puede puntuar si el autor la marca evaluable, pero **no** tiene
 botón Comprobar ni `attempts`: las zonas siguen activas tras responder y cada clic
-re-evalúa (intentos ilimitados de facto; el último clic manda). Sus zonas se editan
+re-evalúa (intentos ilimitados de facto; el último clic manda). Al clicar una zona el
+feedback sale en una **ventana modal** (`showFeedbackModal`, `.me-fbmodal`; se cierra con
+«Cerrar», clicando fuera o Esc, y devuelve el foco a la zona) porque la caja inferior
+podía quedar fuera de vista; la caja en línea se rellena igualmente como registro y es la
+única que se pinta al restaurar estado (no se reabre el modal al volver a la pantalla). Sus zonas se editan
 visualmente en el editor (ver `editor-pantallas.md`). Es evaluable a efectos de narración
 (solo su `prompt` entra en la transcripción general, nunca las etiquetas de zona — eso
 desvelaría las opciones de la pregunta, ver `tts-narracion.md`), pero cada zona admite su

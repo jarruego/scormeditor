@@ -176,6 +176,33 @@
     replay(box);
   }
 
+  // Feedback en ventana modal (además de la caja en línea, que queda como registro):
+  // la caja inferior puede quedar fuera de la vista. Se cierra con el botón, clicando
+  // fuera o con Esc; al cerrar devuelve el foco a `returnFocus`.
+  function showFeedbackModal(el, ok, data, returnFocus) {
+    var doc = el.ownerDocument;
+    var old = doc.querySelector('.me-fbmodal');
+    if (old) old.remove();
+    var msg = ok ? (data.feedback.correct || 'Correcto.') : (data.feedback.incorrect || 'Revisa tu respuesta.');
+    var expl = data.feedback.explanation ? '<p class="me-expl">' + rich(data.feedback.explanation) + '</p>' : '';
+    var m = doc.createElement('div');
+    m.className = 'me-modal me-fbmodal';
+    m.innerHTML = '<div class="me-modal-card me-fbmodal-card ' + (ok ? 'is-ok' : 'is-error') + '" role="dialog" aria-modal="true" aria-label="Resultado">' +
+      '<div class="me-fbmodal-body"><strong>' + (ok ? '✔ ' : '✖ ') + rich(msg) + '</strong>' + expl + '</div>' +
+      '<div class="me-fbmodal-foot"><button type="button" class="me-btn me-fbmodal-close">Cerrar</button></div></div>';
+    function close() {
+      doc.removeEventListener('keydown', onKey, true);
+      m.remove();
+      if (returnFocus && returnFocus.focus) returnFocus.focus();
+    }
+    function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
+    m.addEventListener('click', function (e) { if (e.target === m) close(); });
+    m.querySelector('.me-fbmodal-close').addEventListener('click', close);
+    doc.addEventListener('keydown', onKey, true);
+    doc.body.appendChild(m);
+    m.querySelector('.me-fbmodal-close').focus();
+  }
+
   function header(data) {
     return (data.prompt ? '<p class="me-prompt">' + rich(data.prompt) + '</p>' : '') +
            (data.instructions ? '<p class="me-instructions">' + rich(data.instructions) + '</p>' : '');
@@ -842,7 +869,9 @@
       el.querySelectorAll('.me-hotspot').forEach(function (b) { b.classList.remove('me-pulse'); });
       var s = (c.spots || []).filter(function (x) { return x.id === id; })[0];
       correct = !!s.correct; done = true;
-      showFeedback(el, correct, { feedback: { correct: s.feedback || data.feedback.correct, incorrect: s.feedback || data.feedback.incorrect, explanation: data.feedback.explanation } });
+      var fb = { feedback: { correct: s.feedback || data.feedback.correct, incorrect: s.feedback || data.feedback.incorrect, explanation: data.feedback.explanation } };
+      showFeedback(el, correct, fb);
+      showFeedbackModal(el, correct, fb, el.querySelector('.me-hotspot[data-id="' + id + '"]'));
       ctx.save({ choice: id, correct: correct });
       ctx.announce(correct ? 'Zona correcta.' : 'Zona incorrecta.');
     }
