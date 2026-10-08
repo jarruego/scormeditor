@@ -181,6 +181,8 @@
   // fuera o con Esc; al cerrar devuelve el foco a `returnFocus`.
   function showFeedbackModal(el, ok, data, returnFocus) {
     var doc = el.ownerDocument;
+    var inline = el.querySelector('.me-feedback');
+    if (inline) inline.hidden = true; // el modal sustituye a la caja en línea (que solo se pinta al restaurar)
     var old = doc.querySelector('.me-fbmodal');
     if (old) old.remove();
     var msg = ok ? (data.feedback.correct || 'Correcto.') : (data.feedback.incorrect || 'Revisa tu respuesta.');
@@ -428,7 +430,6 @@
       attempts++;
       var opt = opts.filter(function (o) { return o.id === sel.value; })[0];
       correct = !!(opt && opt.correct);
-      showFeedback(el, correct, data);
       showFeedbackModal(el, correct, data, el.querySelector('.me-check'));
       markChoice(sel, correct);
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
@@ -555,7 +556,6 @@
       correct = JSON.stringify(order) === JSON.stringify(expected);
       attempts++;
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
-      showFeedback(el, correct, data);
       showFeedbackModal(el, correct, data, el.querySelector('.me-check'));
       updateAttempts(attempts, correct);
       ctx.save({ order: order, correct: correct, attempts: attempts });
@@ -731,7 +731,7 @@
       opts.forEach(function (o) { if (!assign[o.id] || assign[o.id] !== o.group) all = false; });
       correct = all; attempts++;
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
-      showFeedback(el, correct, data);
+      showFeedbackModal(el, correct, data, el.querySelector('.me-check'));
       markChips();
       updateAttempts(attempts, correct);
       ctx.save({ answers: assign, correct: correct, attempts: attempts });
@@ -771,11 +771,6 @@
         var o = (data.options || []).filter(function (x) { return x.id === b.dataset.id; })[0];
         correct = !!o.correct; done = true;
         markOption(o.id, correct);
-        var box = el.querySelector('.me-feedback');
-        box.className = 'me-feedback ' + (correct ? 'is-ok' : 'is-error');
-        box.innerHTML = '<strong>' + (correct ? '✔ ' : '✖ ') + rich(o.feedback || (correct ? data.feedback.correct : data.feedback.incorrect)) + '</strong>' +
-          (data.feedback.explanation ? '<p class="me-expl">' + rich(data.feedback.explanation) + '</p>' : '');
-        box.hidden = false;
         showFeedbackModal(el, correct, { feedback: { correct: o.feedback || data.feedback.correct, incorrect: o.feedback || data.feedback.incorrect, explanation: data.feedback.explanation } }, b);
         ctx.save({ choice: o.id, correct: correct });
         ctx.announce(correct ? 'Decisión correcta.' : 'Decisión mejorable.');
@@ -898,7 +893,6 @@
       paint();
       var isOk = !!s.correct;
       var fb = fbFor(s, isOk && total > 1 && !done);
-      showFeedback(el, isOk, fb);
       showFeedbackModal(el, isOk, fb, el.querySelector('.me-hotspot[data-id="' + id + '"]'));
       ctx.save({ found: Object.keys(found), wrong: Object.keys(wrong), correct: correct });
       ctx.announce(isOk ? (done ? 'Zona correcta. Has encontrado todas.' : 'Zona correcta.') : 'Zona incorrecta.');
@@ -1186,7 +1180,6 @@
       }
       attempts++;
       correct = selects.every(function (s, i) { return s.value === answers[i]; });
-      showFeedback(el, correct, data);
       showFeedbackModal(el, correct, data, el.querySelector('.me-check'));
       markBlanks();
       done = correct || (maxAtt > 0 && attempts >= maxAtt);

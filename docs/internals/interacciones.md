@@ -465,8 +465,10 @@ típico», no ítems de lista ni cajas destacadas). Editor: tres botones en la b
 `showFeedbackModal(el, ok, data, returnFocus)` (`.me-fbmodal`) muestra el resultado en un
 modal porque la caja `.me-feedback` inferior puede quedar fuera de la vista. Se cierra con
 «Cerrar», clicando fuera o Esc, y devuelve el foco al control que lo provocó. Se usa en
-`single_choice`, `true_false`, `scenario_decision`, `sort_steps`, `fill_blanks` y
-`hotspots`. La caja en línea se rellena igualmente como registro y es la única que se pinta
-al **restaurar** estado (el modal solo se abre al comprobar, nunca al volver a la pantalla).
-**No** se usa en los tableros (`match_pairs`, `classification`, `crossword`, `word_search`,
-`puzzle`): ahí el modal taparía las piezas marcadas en rojo/verde justo tras Comprobar.
+`single_choice`, `true_false`, `scenario_decision`, `sort_steps`, `fill_blanks`,
+`hotspots`, `match_pairs` y `classification`. Al abrirse **oculta** la caja en línea (no se
+duplica el mensaje); esa caja solo se pinta al **restaurar** estado, para que al volver a
+una pantalla resuelta siga viéndose el resultado (el modal nunca se reabre al restaurar).
+Tras cerrar el modal en Emparejar/Clasificar quedan visibles las piezas marcadas en
+rojo/verde. **No** se usa en `crossword`, `word_search` ni `puzzle` (siguen con la caja en
+línea).
