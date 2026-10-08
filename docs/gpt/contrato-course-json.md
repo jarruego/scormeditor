@@ -140,8 +140,9 @@ Reglas que NO se pueden romper:
   vacía salvo que se pida expresamente**: sin marca, la cabecera muestra únicamente el
   título del curso.
 - `motion` (opcional; def. `"subtle"`): animaciones de la carcasa. `"none"` (sin),
-  `"subtle"` (transiciones básicas) o `"rich"` (revelado progresivo del contenido
-  al entrar/hacer scroll y microanimaciones). Es una preferencia de presentación:
+  `"subtle"` (transiciones básicas), `"rich"` (revelado progresivo del contenido
+  al entrar/hacer scroll) o `"vivid"` (lo de `"rich"` con entradas más expresivas y
+  transición direccional entre pantallas). Es una preferencia de presentación:
   déjalo en `"subtle"` salvo que se pida otra cosa.
 - `motion_speed` (opcional; def. `"normal"`): velocidad de las animaciones de entrada.
   `"fast"`, `"normal"` o `"slow"`. Déjalo en `"normal"` salvo que se pida otra cosa.

@@ -73,7 +73,7 @@ herramientas de la **edición del curso abierto**, no chrome general de la app �
   (`shell.brand`; `shell.primary_color`/`shell.accent_color`, cada uno con picker
   `input[type=color]` + campo hex, `.ed-color-row`; el runtime los aplica en
   `applyBranding()`, ver `arquitectura-runtime.md`) y **Animaciones** (`shell.motion`,
-  none/subtle/rich, y `shell.motion_speed`, fast/normal/slow). Decisión: la apariencia NO
+  none/subtle/rich/vivid, y `shell.motion_speed`, fast/normal/slow). Decisión: la apariencia NO
   va con finalización — es config de interfaz, con ventana propia.
   - **Paletas típicas**: fila de botones `.ed-palette-swatch` (`PALETTES` en
     `CourseSettingsEditor.tsx`) sobre los dos pickers — cada uno muestra dos puntos de

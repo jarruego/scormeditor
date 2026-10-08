@@ -412,9 +412,9 @@ export const ShellConfig = z.object({
   show_progress: z.boolean().default(true),
   language: LanguageCode,
   motion: z
-    .enum(['none', 'subtle', 'rich'])
+    .enum(['none', 'subtle', 'rich', 'vivid'])
     .default('subtle')
-    .describe('Animaciones de la carcasa: none (sin), subtle (básicas), rich (revelado progresivo y microanimaciones)'),
+    .describe('Animaciones de la carcasa: none (sin), subtle (básicas), rich (revelado progresivo), vivid (revelado con entradas más expresivas y transición direccional entre pantallas)'),
   motion_speed: z
     .enum(['fast', 'normal', 'slow'])
     .default('normal')

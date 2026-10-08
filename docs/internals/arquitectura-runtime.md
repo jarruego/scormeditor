@@ -376,7 +376,8 @@ que lo etiquete).
 > `carcasa-navegacion.md`, doc hermano de este.
 
 ### Niveles de animación (`shell.motion`)
-`shell.motion` (`none`/`subtle` def./`rich`; editable en ⚙ Ajustes → Interfaz
+`shell.motion` (`none`/`subtle` def./`rich`/`vivid`; etiquetas en el selector: Sin /
+Mínimas / Sutiles / Llamativas; editable en ⚙ Ajustes → Interfaz
 (Apariencia)) pone `body.me-motion-<nivel>` en `applyShell`:
 - **`none`**: mata toda animación/transición por CSS (y `celebrate()` no lanza confeti).
 - **`subtle`** (defecto): el lenguaje visual base tal cual.
@@ -395,6 +396,16 @@ que lo etiquete).
   `--me-rv-dur` revelado) que `body.me-motion-rich` sube a .45s/.55s (defecto
   `subtle`: .22s/.32s); los retardos de la cascada `nth-child` van aparte (90 ms/ítem
   en rich).
+
+- **`vivid`** (Llamativas): incluye todo `rich` (`applyBranding` añade también
+  `me-motion-rich`, así que el CSS de `rich` y el revelado aplican tal cual) más reglas
+  propias bajo `body.me-motion-vivid`: entradas con **resorte** (`--me-spring`, rebote),
+  giros leves (callouts, encabezados, media), ítems de accordion/cards/timeline/chips con
+  pop de escala y cascada más marcada (130 ms/ítem), y **transición direccional** entre
+  pantallas (`goTo` pone `data-dir="fwd|back"` en `#me-content`; la pantalla entra desde
+  la derecha al avanzar y desde la izquierda al retroceder) con barra de progreso
+  elástica. Los valores `none`/`subtle`/`rich` de proyectos antiguos no cambian de
+  comportamiento (solo de etiqueta en el selector).
 
 **Velocidad** (`shell.motion_speed`): `fast`/`normal` def./`slow`, editable en ⚙ Ajustes
 → Interfaz (Apariencia), deshabilitado con `motion: none`. `applyBranding` pone

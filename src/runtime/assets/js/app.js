@@ -184,8 +184,11 @@
     if (shell.primary_color) document.documentElement.style.setProperty('--me-primary', shell.primary_color);
     if (shell.accent_color) document.documentElement.style.setProperty('--me-accent', shell.accent_color);
     // Nivel de animación de la carcasa (shell.motion): none | subtle | rich.
-    MOTION = shell.motion === 'none' || shell.motion === 'rich' ? shell.motion : 'subtle';
+    MOTION = ['none', 'rich', 'vivid'].indexOf(shell.motion) >= 0 ? shell.motion : 'subtle';
     document.body.classList.add('me-motion-' + MOTION);
+    // 'vivid' (Llamativas) incluye todo lo de 'rich' (revelado progresivo): el CSS
+    // de 'rich' aplica también con esta clase; las reglas propias van en me-motion-vivid.
+    if (MOTION === 'vivid') document.body.classList.add('me-motion-rich');
     // Velocidad (shell.motion_speed): fast | normal | slow. La clase alimenta
     // la variable CSS --me-speed; SPEED escala los delays de la cascada JS.
     var spd = shell.motion_speed === 'fast' || shell.motion_speed === 'slow' ? shell.motion_speed : 'normal';
@@ -579,6 +582,7 @@
     // la pantalla anterior: el DOM de la interacción se destruye al re-renderizar,
     // pero el audio seguiría reproduciéndose de fondo si no se para explícito.
     if (global.Interactions && global.Interactions.stopItemAudio) global.Interactions.stopItemAudio();
+    var navDir = idx >= current ? 'fwd' : 'back'; // dirección de la transición (nivel «Llamativas»)
     current = idx;
     screenEnter = Date.now();
     var entry = SCREENS[idx];
@@ -590,6 +594,7 @@
       try { global.parent.postMessage({ type: 'me-screen-change', screenId: entry.screen.id }, '*'); } catch (e) {}
     }
     var content = document.getElementById('me-content');
+    content.setAttribute('data-dir', navDir);
 
     finalNav = null; finalLeave = null; // renderFinalTest los repone si toca
     if (entry.isResults) {
@@ -1825,7 +1830,7 @@
 
   function applyReveal(screenId, content) {
     if (revealObserver) { revealObserver.disconnect(); revealObserver = null; }
-    if (MOTION !== 'rich' || prefersReducedMotion() || REVEALED[screenId]) return;
+    if ((MOTION !== 'rich' && MOTION !== 'vivid') || prefersReducedMotion() || REVEALED[screenId]) return;
     REVEALED[screenId] = true;
     var blocks = [].slice.call(content.querySelectorAll(
       '.me-prose > *, .me-media, .me-interaction, .me-transcript'));
