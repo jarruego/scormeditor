@@ -112,6 +112,12 @@ Al **subir imágenes** se optimizan antes de guardar (`optimizeImage` en `FileBu
 lado máx. 1600 px, recompresión (PNG opaco→JPEG q0.85, PNG con alfa se mantiene, SVG/GIF
 intactos); solo se usa el resultado si pesa menos, y se avisa «Imagen reducida de X a Y».
 
+**Aviso de peso** (`media/sizeWarning.ts`, `confirmMediaSize`): si una imagen sigue pesando
+más de **1 MB tras optimizar**, o un vídeo subido más de **5 MB**, se pide confirmación
+(«Usar igualmente» / «Cancelar») antes de guardarlo. Solo avisa, no bloquea. Aplica a
+`FileButton` (imagen y vídeo) y a las imágenes de `RichTextArea` e `ImageFigureNode`;
+el audio no se comprueba.
+
 ## Recuperación automática (IndexedDB) — invisible, NO es «el guardado»
 Copia interna continua en IndexedDB (`DB_NAME = 'scormeditor'`, store `kv`, clave
 `project`) con `{ course, assets, dirty }` vía structured clone; debounce 800 ms

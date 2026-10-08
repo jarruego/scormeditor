@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { optimizeImage } from '../media/optimizeImage'
 import { confirmDialog } from '../store/confirm'
+import { confirmMediaSize } from '../media/sizeWarning'
 
 // Formatea un tamaño en bytes de forma legible (coma decimal en español).
 function fmtSize(n: number): string {
@@ -48,11 +49,15 @@ export function FileButton({
       })
       if (!ok) { e.target.value = ''; return }
     }
+    // Vídeo pesado: se avisa antes de procesar nada.
+    if (file.type.startsWith('video/') && !(await confirmMediaSize('video', file.size))) { e.target.value = ''; return }
     setBusy(true)
     setMsg(null)
     try {
       const originalSize = file.size
       const { blob, ext, changed } = await optimizeImage(file)
+      // Imagen aún pesada tras optimizar: se avisa antes de guardarla.
+      if (file.type.startsWith('image/') && !(await confirmMediaSize('image', blob.size))) return
       const path = makePath(ext)
       addAsset(path, blob)
       // Actualizamos la referencia a la nueva ruta ANTES de borrar la anterior:

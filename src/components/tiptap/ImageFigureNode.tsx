@@ -18,6 +18,7 @@ import { useState } from 'react'
 import { Icon } from '../Icon'
 import { useCourseStore } from '../../store/courseStore'
 import { optimizeImage } from '../../media/optimizeImage'
+import { confirmMediaSize } from '../../media/sizeWarning'
 import { extractYoutubeId } from '../../media/youtube'
 
 const imgUrlCache = new Map<string, { raw: unknown; url: string }>()
@@ -48,6 +49,7 @@ function ImageFigureView({ node, updateAttributes, deleteNode, selected }: NodeV
     setBusy(true)
     try {
       const { blob, ext } = await optimizeImage(file)
+      if (!(await confirmMediaSize('image', blob.size))) return
       const path = `assets/img/txt-${Date.now().toString(36)}.${ext}`
       addAsset(path, blob)
       if (src.startsWith('assets/') && src !== path) removeAsset(src)

@@ -13,6 +13,7 @@ import { CustomBlockPanel, type CustomBlockDraft } from './tiptap/CustomBlockPan
 import { loadPresets, savePresets, PALETTE, type CustomBlockPreset } from '../store/customBlocks'
 import { useCourseStore } from '../store/courseStore'
 import { optimizeImage } from '../media/optimizeImage'
+import { confirmMediaSize } from '../media/sizeWarning'
 import { extractYoutubeId } from '../media/youtube'
 import { Icon } from './Icon'
 
@@ -192,6 +193,7 @@ function RichTextAreaBody({ editor, rows }: { editor: Editor; rows: number }) {
     setImgBusy(true)
     try {
       const { blob, ext } = await optimizeImage(file)
+      if (!(await confirmMediaSize('image', blob.size))) return
       const path = `assets/img/txt-${Date.now().toString(36)}.${ext}`
       addAsset(path, blob)
       editor.chain().focus().insertContent({ type: 'imageFigure', attrs: { src: path, alt: '', width: null } }).run()
