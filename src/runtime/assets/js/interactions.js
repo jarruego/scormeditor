@@ -429,6 +429,7 @@
       var opt = opts.filter(function (o) { return o.id === sel.value; })[0];
       correct = !!(opt && opt.correct);
       showFeedback(el, correct, data);
+      showFeedbackModal(el, correct, data, el.querySelector('.me-check'));
       markChoice(sel, correct);
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
       if (done) lock();
@@ -555,6 +556,7 @@
       attempts++;
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
       showFeedback(el, correct, data);
+      showFeedbackModal(el, correct, data, el.querySelector('.me-check'));
       updateAttempts(attempts, correct);
       ctx.save({ order: order, correct: correct, attempts: attempts });
       if (done) lockSort();
@@ -774,6 +776,7 @@
         box.innerHTML = '<strong>' + (correct ? '✔ ' : '✖ ') + rich(o.feedback || (correct ? data.feedback.correct : data.feedback.incorrect)) + '</strong>' +
           (data.feedback.explanation ? '<p class="me-expl">' + rich(data.feedback.explanation) + '</p>' : '');
         box.hidden = false;
+        showFeedbackModal(el, correct, { feedback: { correct: o.feedback || data.feedback.correct, incorrect: o.feedback || data.feedback.incorrect, explanation: data.feedback.explanation } }, b);
         ctx.save({ choice: o.id, correct: correct });
         ctx.announce(correct ? 'Decisión correcta.' : 'Decisión mejorable.');
       });
@@ -1153,6 +1156,7 @@
       attempts++;
       correct = selects.every(function (s, i) { return s.value === answers[i]; });
       showFeedback(el, correct, data);
+      showFeedbackModal(el, correct, data, el.querySelector('.me-check'));
       markBlanks();
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
       if (done) lock();

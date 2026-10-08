@@ -172,10 +172,7 @@ conservan el anillo blanco mientras animan. Evaluación: `result()` devuelve
 `scored: !!data.scored` — puede puntuar si el autor la marca evaluable, pero **no** tiene
 botón Comprobar ni `attempts`: las zonas siguen activas tras responder y cada clic
 re-evalúa (intentos ilimitados de facto; el último clic manda). Al clicar una zona el
-feedback sale en una **ventana modal** (`showFeedbackModal`, `.me-fbmodal`; se cierra con
-«Cerrar», clicando fuera o Esc, y devuelve el foco a la zona) porque la caja inferior
-podía quedar fuera de vista; la caja en línea se rellena igualmente como registro y es la
-única que se pinta al restaurar estado (no se reabre el modal al volver a la pantalla). Sus zonas se editan
+feedback sale en una **ventana modal** (ver «Feedback en ventana modal» abajo). Sus zonas se editan
 visualmente en el editor (ver `editor-pantallas.md`). Es evaluable a efectos de narración
 (solo su `prompt` entra en la transcripción general, nunca las etiquetas de zona — eso
 desvelaría las opciones de la pregunta, ver `tts-narracion.md`), pero cada zona admite su
@@ -456,3 +453,13 @@ típico», no ítems de lista ni cajas destacadas). Editor: tres botones en la b
   la única candidata que tocaría el gating/finalización además del catálogo (ver
   `evaluacion-finalizacion.md`); la alternativa simple es implementarlo como interacción
   puntuable normal (código correcto = completada) sin tocar el gating.
+
+## Feedback en ventana modal
+`showFeedbackModal(el, ok, data, returnFocus)` (`.me-fbmodal`) muestra el resultado en un
+modal porque la caja `.me-feedback` inferior puede quedar fuera de la vista. Se cierra con
+«Cerrar», clicando fuera o Esc, y devuelve el foco al control que lo provocó. Se usa en
+`single_choice`, `true_false`, `scenario_decision`, `sort_steps`, `fill_blanks` y
+`hotspots`. La caja en línea se rellena igualmente como registro y es la única que se pinta
+al **restaurar** estado (el modal solo se abre al comprobar, nunca al volver a la pantalla).
+**No** se usa en los tableros (`match_pairs`, `classification`, `crossword`, `word_search`,
+`puzzle`): ahí el modal taparía las piezas marcadas en rojo/verde justo tras Comprobar.
