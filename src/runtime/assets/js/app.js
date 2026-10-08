@@ -412,6 +412,7 @@
     global.addEventListener('beforeunload', function () { finishSession(); });
     global.addEventListener('pagehide', function () { finishSession(); });
     setupLightbox();
+    setupProgressScrub();
     setupPrint();
     setupAuthorToggle();
   }
@@ -731,7 +732,95 @@
     var bar = document.getElementById('me-progress-bar');
     bar.style.width = posPct + '%';
     document.getElementById('me-progress-done').style.width = donePct + '%';
-    bar.parentElement.setAttribute('aria-valuenow', String(donePct));
+    var pe = bar.parentElement;
+    pe.setAttribute('aria-valuemax', String(Math.max(1, total)));
+    pe.setAttribute('aria-valuenow', String(current + 1));
+    pe.setAttribute('aria-valuetext', 'Pantalla ' + (current + 1) + ' de ' + total + ' (' + donePct + '% visitado)');
+  }
+
+  // ---- Barra de progreso arrastrable ---------------------------------------
+  // Además de Anterior/Siguiente, se puede cambiar de pantalla pulsando o
+  // deslizando por la barra (y con ←/→/Inicio/Fin si tiene el foco). Respeta
+  // EXACTAMENTE las mismas reglas que los botones: hacia atrás siempre; hacia
+  // delante solo hasta donde dejaría avanzar «Siguiente» (pantalla actual
+  // satisfecha + canNavigateTo). Arrastrando solo se previsualiza (barra +
+  // globo con el título); la pantalla cambia al soltar, para no re-renderizar
+  // en cada píxel. Fuera del tope alcanzable el control se queda en el tope.
+  function canAdvanceTo(t) {
+    if (t <= current) return true;
+    if (AUTHOR) return true;
+    return screenSatisfied(current) && canNavigateTo(t);
+  }
+  function maxReachable() {
+    var t = current;
+    while (t + 1 < SCREENS.length && canAdvanceTo(t + 1)) t++;
+    return t;
+  }
+  function scrubTo(t) {
+    if (t === current) return;
+    if (t > current) {
+      // Test final con intentos pendientes: mismo aviso que «Siguiente».
+      if (finalLeave && finalLeave(function () { finalLeave = null; scrubTo(t); })) return;
+    }
+    goTo(t, false, true);
+  }
+  function setupProgressScrub() {
+    var el = document.querySelector('.me-progress');
+    if (!el || !global.PointerEvent) return;
+    var tip = document.createElement('div');
+    tip.className = 'me-progress-tip';
+    tip.hidden = true;
+    tip.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(tip);
+    var dragging = false, preview = -1, wanted = -1;
+
+    function indexAt(clientX) {
+      var r = el.getBoundingClientRect();
+      var frac = r.width ? (clientX - r.left) / r.width : 0;
+      return Math.max(0, Math.min(SCREENS.length - 1, Math.floor(frac * SCREENS.length)));
+    }
+    function show(clientX) {
+      wanted = indexAt(clientX);
+      preview = Math.min(wanted, maxReachable());
+      var r = el.getBoundingClientRect();
+      var pct = ((preview + 1) / SCREENS.length) * 100;
+      document.getElementById('me-progress-bar').style.width = pct + '%';
+      var label = (preview + 1) + ' / ' + SCREENS.length + ' — ' + menuScreenLabel(SCREENS[preview].screen);
+      if (wanted > preview) label += ' · completa esta pantalla para avanzar';
+      tip.textContent = label;
+      tip.hidden = false;
+      tip.style.left = Math.max(8, Math.min(global.innerWidth - 8, r.left + (r.width * pct) / 100)) + 'px';
+      tip.style.bottom = (global.innerHeight - r.top + 8) + 'px';
+    }
+    function end(commit) {
+      if (!dragging) return;
+      dragging = false;
+      tip.hidden = true;
+      el.classList.remove('is-scrubbing');
+      var t = preview, blocked = commit && wanted > t && t === current;
+      if (commit && t >= 0 && t !== current) scrubTo(t);
+      else updateProgress();
+      if (blocked) A11Y.announce(blockReason(current));
+      preview = wanted = -1;
+    }
+    el.addEventListener('pointerdown', function (e) {
+      if (e.button != null && e.button !== 0) return;
+      dragging = true;
+      el.classList.add('is-scrubbing');
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      show(e.clientX);
+      e.preventDefault();
+    });
+    el.addEventListener('pointermove', function (e) { if (dragging) show(e.clientX); });
+    el.addEventListener('pointerup', function () { end(true); });
+    el.addEventListener('pointercancel', function () { end(false); });
+    el.addEventListener('keydown', function (e) {
+      var k = e.key;
+      if (k === 'ArrowLeft' || k === 'ArrowDown') { e.preventDefault(); goRelative(-1); }
+      else if (k === 'ArrowRight' || k === 'ArrowUp') { e.preventDefault(); goRelative(1); }
+      else if (k === 'Home') { e.preventDefault(); scrubTo(0); }
+      else if (k === 'End') { e.preventDefault(); scrubTo(maxReachable()); }
+    });
   }
 
   // Snapshot del estado del curso para el desglose de calificaciones de la

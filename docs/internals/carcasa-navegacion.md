@@ -167,6 +167,15 @@ al final) y `.me-toolbar-nav` (Anterior, progreso, Siguiente).
 - **Barra de progreso**: `min-width: 240px` en escritorio (hay margen de sobra en el
   hueco central autoestirado — antes 100px, se veía innecesariamente estrecha); el
   media query de móvil la recorta a 90px.
+- **Barra de progreso arrastrable** (`setupProgressScrub`, app.js; `role="slider"`): pulsar
+  o deslizar por la barra cambia de pantalla, y con el foco funcionan ←/→/Inicio/Fin.
+  Respeta **las mismas reglas que Siguiente** (`canAdvanceTo`/`maxReachable`: atrás
+  siempre; adelante solo si la pantalla actual está satisfecha y `canNavigateTo`; en modo
+  autor, libre) — nunca permite saltarse una pantalla obligatoria. Al arrastrar solo se
+  **previsualiza** (barra + globo `.me-progress-tip` con «n / total — título», y el aviso
+  «completa esta pantalla para avanzar» si se pasa del tope); la pantalla cambia al soltar,
+  sin re-renderizar en cada píxel. Si hay test final con fallos pendientes, usa el mismo
+  aviso `finalLeave` que Siguiente.
 - **En móvil** (≤1024px, ver punto de corte más abajo): `.me-toolbar-center` pasa a
   `flex-direction: column-reverse` — como `.me-toolbar-audio` va primero en el HTML y
   `.me-toolbar-nav` segundo, el reverse pone **navegación arriba, audio abajo**. Ambos

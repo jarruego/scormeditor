@@ -432,6 +432,13 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-progress-done { position: absolute; inset: 0 auto 0 0; height: 100%; width: 0; background: color-mix(in srgb, var(--me-accent) 32%, white); transition: width .3s ease; }
 .me-progress-bar { position: absolute; inset: 0 auto 0 0; height: 100%; width: 0; background: var(--me-accent); transition: width .3s ease; }
 .me-progress-bar::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: color-mix(in srgb, var(--me-accent) 65%, black); }
+/* Barra arrastrable (setupProgressScrub en app.js): cursor de agarre y sin scroll táctil. */
+.me-progress { cursor: pointer; touch-action: none; user-select: none; }
+.me-progress.is-scrubbing { cursor: grabbing; }
+.me-progress.is-scrubbing .me-progress-bar { transition: none; }
+.me-progress:focus-visible { outline: 3px solid var(--me-primary); outline-offset: 2px; }
+.me-progress-tip { position: fixed; z-index: 150; transform: translateX(-50%); max-width: min(90vw, 420px); padding: .35rem .6rem; border-radius: 6px; background: #1f2933; color: #fff; font-size: .85rem; line-height: 1.3; box-shadow: 0 4px 14px rgba(0,0,0,.3); pointer-events: none; }
+.me-progress-tip[hidden] { display: none; }
 .me-position { position: relative; z-index: 1; color: var(--me-text); font-size: .85rem; font-weight: 600; text-shadow: 0 1px 1px rgba(255,255,255,.6); }
 /* Anterior/Siguiente: menos anchos (menos padding) y con icono de flecha
    propio (icons.js) en vez del triángulo tipográfico. */
