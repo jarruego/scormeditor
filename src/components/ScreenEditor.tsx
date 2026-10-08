@@ -13,7 +13,7 @@ import { ObjectiveInput } from './ObjectiveSelect'
 import { FileButton } from './FileButton'
 import { generateForScreen, hasApiKey } from '../tts/tts'
 import { buildTranscript, contentHash, INFORMATIVE } from '../tts/buildTranscript'
-import { confirmDialog } from '../store/confirm'
+import { confirmDialog, confirmDialogTri } from '../store/confirm'
 import type { AssetMap } from '../export/exportScorm'
 import { Icon } from './Icon'
 
@@ -243,6 +243,27 @@ export function ScreenEditor() {
     }
     const prev = vrMemory.current[`${id}:${next}`]
     setVr({ kind: next as any, src: prev?.src ?? '', poster: prev?.poster ?? '', tracks: prev?.tracks ?? [] })
+  }
+
+  // Cambia el tipo de pantalla. Al dejar de ser «Vídeo» con un vídeo como recurso
+  // visual, pregunta si quitarlo (si no, la pantalla seguiría mostrándolo arriba
+  // sin ser de vídeo, lo que desconcierta). Cancelar deja el tipo como estaba.
+  async function onChangeScreenType(next: ScreenType) {
+    if (!id || next === screen!.type) return
+    const isVideoRes = vr.kind === 'video_youtube' || vr.kind === 'video_file'
+    if (screen!.type === 'video' && isVideoRes && vr.src) {
+      const r = await confirmDialogTri({
+        title: 'Cambiar el tipo de pantalla',
+        message: 'Esta pantalla tiene un vídeo como recurso visual. ¿Quieres quitarlo al dejar de ser una pantalla de Vídeo? Si lo mantienes, seguirá viéndose arriba.',
+        confirmLabel: 'Quitar el vídeo',
+        thirdLabel: 'Mantener el vídeo',
+      })
+      if (r === 'cancel') return
+      changeType(id, next)
+      if (r === 'confirm') await changeKind('none')
+      return
+    }
+    changeType(id, next)
   }
 
   // Regenera la transcripción a partir del contenido de la pantalla. Si hay un
@@ -691,7 +712,7 @@ export function ScreenEditor() {
         <div className="ed-row">
           <label className="ed-field">
             <span>Tipo de pantalla</span>
-            <select value={screen.type} onChange={(e) => changeType(id, e.target.value as ScreenType)}>
+            <select value={screen.type} onChange={(e) => void onChangeScreenType(e.target.value as ScreenType)}>
               {ScreenType.options.map((t) => <option key={t} value={t}>{screenTypeLabel(t, { module: course.module_label, unit: course.unit_label })}</option>)}
             </select>
           </label>

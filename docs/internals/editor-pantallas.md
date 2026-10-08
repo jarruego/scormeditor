@@ -677,3 +677,10 @@ expandidos):
   (`MaterialsEditor`, ver `carcasa-navegacion.md`): ambos tienen un botón «Vaciar…» con
   confirmación para borrar todo el contenido de golpe, y la carcasa oculta su entrada del
   menú lateral mientras esté vacío.
+
+### Cambiar el tipo de una pantalla de Vídeo
+`ScreenEditor.onChangeScreenType`: si la pantalla es `video` y su recurso visual es un
+vídeo (`video_youtube`/`video_file`) con fuente, al elegir otro tipo se pregunta
+(`confirmDialogTri`) si quitar el vídeo («Quitar el vídeo» reutiliza `changeKind('none')`,
+con su propio aviso de borrado de binarios) o mantenerlo; cancelar deja el tipo como estaba.
+Sin esta pregunta la pantalla dejaba de ser «Vídeo» pero seguía mostrándolo arriba.
