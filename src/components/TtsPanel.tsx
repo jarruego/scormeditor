@@ -2,8 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { confirmDialog } from '../store/confirm'
 import {
+  cachedElevenLabsVoices,
   ELEVENLABS_VOICES,
+  elevenLabsCredits,
   elevenLabsEnvKey,
+  pendingNarrationChars,
   generateAll,
   generateAllItems,
   getTtsConfig,
@@ -21,14 +24,20 @@ import {
   voiceLabel,
   voicesFor,
   type BulkResult,
+  type ElevenLabsCreditos,
   type ElevenLabsVoice,
   type TtsConfig,
   type TtsProvider,
 } from '../tts/tts'
+import { EL_USD_POR_MIL_CREDITOS, estimarCoste, formatoUsd, TARIFAS_FECHA } from '../tts/ttsCost'
+import { guardarMuestra, leerMuestra } from '../tts/sampleCache'
 import { useDurationSum } from '../media/useDurationSum'
 import { getCompressedAudio } from '../media/compressedAudioCache'
 import { formatEstimatedDuration } from '../report/estimateDuration'
 import { Icon } from './Icon'
+
+const FRASE_PRUEBA = 'Hola, esta es una prueba de la voz seleccionada para la narración del curso.'
+const LS_EL_PRECIO = 'scormeditor.tts.elprecio'
 
 /**
  * Sección «Narración por voz (TTS)»: configura la clave/voz/modelo de la API y
@@ -62,8 +71,15 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
   const audioRef = useRef<HTMLAudioElement | null>(null)
   // Voces de ElevenLabs cargadas de la cuenta (solo en memoria: el proyecto
   // guarda únicamente el ID de la voz elegida).
-  const [elVoices, setElVoices] = useState<ElevenLabsVoice[]>([])
+  const [elVoices, setElVoices] = useState<ElevenLabsVoice[]>(() => cachedElevenLabsVoices())
   const [elMsg, setElMsg] = useState<string | null>(null)
+  // Precio de 1.000 créditos de ElevenLabs según el plan de cada uno (solo
+  // para la estimación; se recuerda en este navegador).
+  const [elPrecio, setElPrecio] = useState<number>(() => {
+    try { return Number(localStorage.getItem(LS_EL_PRECIO)) || EL_USD_POR_MIL_CREDITOS } catch { return EL_USD_POR_MIL_CREDITOS }
+  })
+  const [creditos, setCreditos] = useState<ElevenLabsCreditos | null>(null)
+  const [creditosMsg, setCreditosMsg] = useState<string | null>(null)
 
   // Recuento reactivo (depende del curso). `missingTranscript` usa el mismo
   // criterio que el aviso NARR_NO_TRANSCRIPT de validación (contenido narrable,
@@ -136,6 +152,22 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
   const willGenerate = onlyMissing
     ? stats.missingAudio + stats.itemsMissingAudio
     : stats.withTranscript + stats.itemsTotal
+  // Estimación de coste de lo que generaría el botón (mismos objetivos).
+  const pendingChars = useMemo(() => { void course; return pendingNarrationChars(onlyMissing) }, [course, onlyMissing])
+  const coste = estimarCoste(cfg, pendingChars, elPrecio)
+  function textoCoste(): string {
+    const partes = [`~${pendingChars.toLocaleString('es-ES')} caracteres`, `~${formatEstimatedDuration(coste.minutos * 60)} de audio`]
+    if (coste.creditos != null) partes.push(`${coste.creditos.toLocaleString('es-ES')} créditos de ElevenLabs`)
+    const dinero = coste.usd == null
+      ? 'sin tarifa conocida para este modelo'
+      : `≈ ${formatoUsd(coste.usd)}${coste.gratisPosible ? ' (0 $ si cabe en la capa gratuita)' : ''}`
+    return `${partes.join(' · ')} → ${dinero}`
+  }
+
+  async function onCreditos() {
+    setCreditosMsg(null)
+    try { setCreditos(await elevenLabsCredits()) } catch (e) { setCreditos(null); setCreditosMsg((e as Error).message) }
+  }
   // Curso marcado como NO narrado: la generación masiva queda deshabilitada
   // (probable despiste y coste de API); el ajuste está justo encima.
   const narrationOff = course.narration.mode === 'off'
@@ -216,14 +248,19 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
     if (!keyFor(cfg)) { setTestMsg('Introduce primero la clave de API.'); return }
     setBusy(true)
     try {
-      const blob = await synthesize(
-        'Hola, esta es una prueba de la voz seleccionada para la narración del curso.',
-      )
+      // La muestra se guarda (sampleCache): repetir la prueba con la misma
+      // voz/modelo/ajustes no vuelve a llamar a la API ni a gastar cuota.
+      let blob = await leerMuestra(cfg, FRASE_PRUEBA)
+      const guardada = !!blob
+      if (!blob) {
+        blob = await synthesize(FRASE_PRUEBA)
+        await guardarMuestra(cfg, FRASE_PRUEBA, blob)
+      }
       const url = URL.createObjectURL(blob)
       if (!audioRef.current) audioRef.current = new Audio()
       audioRef.current.src = url
+      setTestMsg(guardada ? '▶ Muestra guardada (no consume cuota).' : '✓ Voz generada y guardada para próximas pruebas.')
       await audioRef.current.play()
-      setTestMsg('✓ Voz generada correctamente.')
     } catch (e) {
       setTestMsg(`Error: ${(e as Error).message}`)
     } finally {
@@ -234,6 +271,14 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
   async function onGenerate() {
     setResult(null)
     setTestMsg(null)
+    if (pendingChars > 0) {
+      const ok = await confirmDialog({
+        title: `Generar ${willGenerate} audio${willGenerate === 1 ? '' : 's'}`,
+        message: `Estimación: ${textoCoste()}. Es orientativa (tarifas públicas de ${TARIFAS_FECHA}; tu plan o tus descuentos pueden cambiarla).`,
+        confirmLabel: 'Generar',
+      })
+      if (!ok) return
+    }
     const ctrl = new AbortController()
     abortRef.current = ctrl
     setBusy(true)
@@ -553,6 +598,43 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
                 <Icon name="refresh" size={14} /> Forzar regeneración de TODAS las transcripciones
               </button>
             </div>
+
+            {pendingChars > 0 && !narrationOff && (
+              <div className="ed-tts-cost">
+                <p className="ed-tts-stats">
+                  <strong>Coste estimado:</strong> {textoCoste()}.
+                </p>
+                {isEL && (
+                  <div className="ed-row">
+                    <label className="ed-field ed-field-narrow">
+                      <span>$ por 1.000 créditos (tu plan)</span>
+                      <input type="number" min={0} step={0.01} value={elPrecio}
+                        onChange={(e) => {
+                          const v = Number(e.target.value)
+                          setElPrecio(v)
+                          try { localStorage.setItem(LS_EL_PRECIO, String(v)) } catch { /* ignorar */ }
+                        }} />
+                    </label>
+                    <button type="button" onClick={() => void onCreditos()} disabled={busy}>
+                      <Icon name="refresh" size={14} /> Ver mis créditos
+                    </button>
+                    {creditos && (
+                      <span className="ed-tts-msg">
+                        Te quedan {(creditos.limite - creditos.usados).toLocaleString('es-ES')} de {creditos.limite.toLocaleString('es-ES')}
+                        {creditos.renueva ? ` (se renuevan el ${new Date(creditos.renueva).toLocaleDateString('es-ES')})` : ''}.
+                        {coste.creditos != null && coste.creditos > creditos.limite - creditos.usados && <strong> No alcanzan para esta generación.</strong>}
+                      </span>
+                    )}
+                    {creditosMsg && <span className="ed-tts-msg">{creditosMsg}</span>}
+                  </div>
+                )}
+                <p className="ed-hint">
+                  Orientativo: tarifas públicas de {TARIFAS_FECHA} y ~900 caracteres por minuto de locución.
+                  {isEL ? ' ElevenLabs cobra en créditos de tu plan (1 por carácter; la mitad con los modelos flash/turbo); el importe depende de lo que pagues por ellos.' : ''}
+                  {isGemini ? ' Gemini tiene capa gratuita con límite de peticiones diarias; el importe es lo que costaría en la capa de pago.' : ''}
+                </p>
+              </div>
+            )}
 
             <label className="ed-check">
               <input type="checkbox" checked={onlyMissing} disabled={busy || narrationOff}

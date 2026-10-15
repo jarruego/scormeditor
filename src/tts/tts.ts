@@ -518,7 +518,52 @@ export async function listElevenLabsVoices(): Promise<ElevenLabsVoice[]> {
       throw err
     }
     const json = await res.json()
-    return ((json?.voices || []) as any[]).map((v) => ({ id: v.voice_id, name: v.name, previewUrl: v.preview_url || undefined }))
+    const list: ElevenLabsVoice[] = ((json?.voices || []) as any[]).map((v) => ({ id: v.voice_id, name: v.name, previewUrl: v.preview_url || undefined }))
+    try { localStorage.setItem(LS_EL_VOICES, JSON.stringify(list)) } catch { /* ignorar */ }
+    return list
+  } finally {
+    cleanup()
+  }
+}
+
+/** Última lista de voces cargada en este navegador (nombres + muestras), para
+ *  no tener que pedirla a la API cada vez que se abre el panel. */
+const LS_EL_VOICES = 'scormeditor.tts.elvoices'
+export function cachedElevenLabsVoices(): ElevenLabsVoice[] {
+  try {
+    const raw = localStorage.getItem(LS_EL_VOICES)
+    const list = raw ? JSON.parse(raw) : []
+    return Array.isArray(list) ? list.filter((v) => typeof v?.id === 'string' && typeof v?.name === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export interface ElevenLabsCreditos {
+  usados: number
+  limite: number
+  /** Fecha de renovación de la cuota (ms), si la API la da. */
+  renueva?: number
+}
+
+/** Créditos de la suscripción de ElevenLabs. Requiere el permiso `user_read`. */
+export async function elevenLabsCredits(): Promise<ElevenLabsCreditos> {
+  const key = keyFor({ ...getTtsConfig(), provider: 'elevenlabs' })
+  if (!key) throw new Error('Falta la clave de API de ElevenLabs.')
+  const { signal, cleanup } = withTimeout(undefined, FETCH_TIMEOUT_MS)
+  try {
+    const res = await fetch(`${EL_BASE}/user/subscription`, { headers: { 'xi-api-key': key }, signal })
+    if (!res.ok) {
+      const err = await errorFromResponse(res)
+      if (/user_read/.test(err.message)) throw new Error('Para ver los créditos que te quedan, activa el permiso «User → Read» en la clave.')
+      throw err
+    }
+    const j = await res.json()
+    return {
+      usados: Number(j.character_count) || 0,
+      limite: Number(j.character_limit) || 0,
+      renueva: j.next_character_count_reset_unix ? j.next_character_count_reset_unix * 1000 : undefined,
+    }
   } finally {
     cleanup()
   }
@@ -594,6 +639,23 @@ export function listNarratable(): NarratableScreen[] {
     staleTranscript: !!s.transcript_content_hash && s.transcript_content_hash !== contentHash(buildTranscript(s)),
     staleAudio: !!s.audio_src.trim() && !!s.audio_transcript_hash && s.audio_transcript_hash !== contentHash(s.transcript),
   }))
+}
+
+/** Caracteres que enviaría «Generar N audios» con estas opciones — mismos
+ *  objetivos que `generateAll` + `generateAllItems` —, para estimar el coste
+ *  antes de lanzarlo (ver `ttsCost.ts`). */
+export function pendingNarrationChars(onlyMissing: boolean): number {
+  let chars = 0
+  for (const s of eachScreen()) {
+    const t = s.transcript.trim()
+    if (t && !(onlyMissing && s.audio_src.trim())) chars += t.length
+    if (!s.interaction) continue
+    for (const item of itemsOf(s.interaction)) {
+      const tx = item.text.trim()
+      if (tx && !(onlyMissing && item.audioSrc.trim())) chars += tx.length
+    }
+  }
+  return chars
 }
 
 /** Guarda el audio generado como asset y lo enlaza en la pantalla. */

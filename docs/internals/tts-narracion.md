@@ -408,6 +408,22 @@ informa de `busy` para que la ventana no se cierre mientras genera.
   clave del navegador sobre la del `.env` (`keyFor`), la voz del proyecto sobre la del
   `.env`.
 
+- **Muestras guardadas** (`src/tts/sampleCache.ts`): «Probar voz» guarda el audio de la
+  frase de prueba en la Cache API del navegador (persistente; en memoria si no hay
+  contexto seguro), con clave proveedor+modelo+voz+formato+velocidad+Vibe+texto — repetir
+  la prueba con los mismos ajustes no vuelve a llamar a la API. La última lista de voces
+  de ElevenLabs cargada también se recuerda en `localStorage`.
+- **Estimación de coste** (`src/tts/ttsCost.ts`): antes de «Generar N audios» el panel
+  muestra —y el botón pide confirmar— caracteres, minutos aproximados y dinero, a partir de
+  `pendingNarrationChars(onlyMissing)` (`tts.ts`, mismos objetivos que `generateAll` +
+  `generateAllItems`). Es **orientativa**: tarifas públicas en la tabla `TARIFAS` (una
+  sola tabla, con `TARIFAS_FECHA`, para actualizarlas juntas) y ~900 caracteres/min de
+  locución en español. OpenAI gpt-4o-mini-tts y Gemini cobran por audio (se estiman por
+  minutos); tts-1/-hd por carácter; ElevenLabs en **créditos** (1/carácter, ½ en
+  flash/turbo) cuyo precio depende del plan — campo «$ por 1.000 créditos» recordado en
+  `localStorage` — y «Ver mis créditos» (`elevenLabsCredits`, permiso `user_read`) avisa si
+  no alcanzan.
+
 El panel de generación masiva **respeta el ajuste «Curso narrado»**: con `off` la
 generación (audios y transcripciones) queda deshabilitada con una nota — probable
 despiste y coste de API. Los contadores incluyen las pantallas **con contenido narrable
