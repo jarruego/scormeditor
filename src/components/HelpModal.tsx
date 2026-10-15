@@ -466,8 +466,10 @@ const SECTIONS: Section[] = [
         <Shot id="narracion" caption="Ajustes → Narración: proveedor, voz, clave de API y generación masiva de audio para todo el curso." />
         <p>
           Elige el proveedor de síntesis de voz — <strong>Google Gemini</strong> (con
-          nivel gratuito) u <strong>OpenAI</strong> (pago por uso, de céntimos) —, la voz
-          y pega tu <strong>clave de API</strong>: se guarda solo en tu navegador, nunca
+          nivel gratuito), <strong>OpenAI</strong> (pago por uso, de céntimos) o{' '}
+          <strong>ElevenLabs</strong> (las voces más naturales; la voz se elige por su ID,
+          con «Escuchar muestra» para oírla) —, la voz y pega tu{' '}
+          <strong>clave de API</strong>: se guarda solo en tu navegador, nunca
           en el proyecto ni en ningún servidor de SCORMEditor. Desde aquí,{' '}
           <strong>«Generar N audios»</strong> encadena en una sola pasada las
           transcripciones que falten, el audio de cada pantalla narrable y el de cada

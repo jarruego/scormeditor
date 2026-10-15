@@ -2,9 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { confirmDialog } from '../store/confirm'
 import {
+  ELEVENLABS_VOICES,
+  elevenLabsEnvKey,
   generateAll,
   generateAllItems,
   getTtsConfig,
+  keyFor,
+  listElevenLabsVoices,
   listNarratable,
   listNarratableItems,
   listNarrationAudioPaths,
@@ -17,6 +21,7 @@ import {
   voiceLabel,
   voicesFor,
   type BulkResult,
+  type ElevenLabsVoice,
   type TtsConfig,
   type TtsProvider,
 } from '../tts/tts'
@@ -55,6 +60,10 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
   const [testMsg, setTestMsg] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  // Voces de ElevenLabs cargadas de la cuenta (solo en memoria: el proyecto
+  // guarda únicamente el ID de la voz elegida).
+  const [elVoices, setElVoices] = useState<ElevenLabsVoice[]>([])
+  const [elMsg, setElMsg] = useState<string | null>(null)
 
   // Recuento reactivo (depende del curso). `missingTranscript` usa el mismo
   // criterio que el aviso NARR_NO_TRANSCRIPT de validación (contenido narrable,
@@ -172,9 +181,39 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
     setCfg(setTtsConfig(patch)) // persiste al instante (proyecto, salvo `keys`: solo localStorage)
   }
 
+  async function onLoadElVoices() {
+    setElMsg(null)
+    setBusy(true)
+    try {
+      const list = await listElevenLabsVoices()
+      setElVoices(list)
+      setElMsg(`✓ ${list.length} voz${list.length === 1 ? '' : 'es'} en tu cuenta.`)
+    } catch (e) {
+      setElMsg(`Error: ${(e as Error).message}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Muestra de la voz: la que publica ElevenLabs si la conocemos (gratis);
+  // si no, se sintetiza la frase de prueba (consume unos pocos caracteres).
+  async function onPreview() {
+    const url = elVoices.find((v) => v.id === cfg.voice)?.previewUrl
+    if (!url) { await onTest(); return }
+    setTestMsg(null)
+    try {
+      if (!audioRef.current) audioRef.current = new Audio()
+      audioRef.current.src = url
+      await audioRef.current.play()
+      setTestMsg('▶ Muestra de la voz (no consume cuota).')
+    } catch (e) {
+      setTestMsg(`Error: ${(e as Error).message}`)
+    }
+  }
+
   async function onTest() {
     setTestMsg(null)
-    if (!(cfg.keys[cfg.provider] || '').trim()) { setTestMsg('Introduce primero la clave de API.'); return }
+    if (!keyFor(cfg)) { setTestMsg('Introduce primero la clave de API.'); return }
     setBusy(true)
     try {
       const blob = await synthesize(
@@ -236,8 +275,21 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
   }
 
   const isGemini = cfg.provider === 'gemini'
+  const isEL = cfg.provider === 'elevenlabs'
+  const isOpenAI = cfg.provider === 'openai'
   // El estilo por texto lo admiten Gemini (todas) y OpenAI gpt-4o-mini-tts.
-  const showInstructions = isGemini || cfg.model === 'gpt-4o-mini-tts'
+  const showInstructions = isGemini || (isOpenAI && cfg.model === 'gpt-4o-mini-tts')
+  // Opciones del selector de voz de ElevenLabs: conocidas + cargadas de la
+  // cuenta + la del proyecto si no está en ninguna de las dos (ID pegado a mano).
+  const elOptions = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const v of ELEVENLABS_VOICES) map.set(v.id, v.name)
+    for (const v of voicesFor('elevenlabs')) if (!map.has(v)) map.set(v, `${v} (del .env)`)
+    for (const v of elVoices) map.set(v.id, v.name)
+    if (cfg.voice && !map.has(cfg.voice)) map.set(cfg.voice, cfg.voice)
+    return [...map].map(([id, name]) => ({ id, name }))
+  }, [elVoices, cfg.voice])
+  const providerName = isGemini ? 'Google Gemini' : isEL ? 'ElevenLabs' : 'OpenAI'
 
   return (
     <>
@@ -264,14 +316,24 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
               </select>
             </label>
             <label className="ed-field">
-              <span>Clave de API de {isGemini ? 'Google Gemini' : 'OpenAI'} (se guarda por proveedor, solo en este navegador; nunca en el proyecto)</span>
+              <span>Clave de API de {providerName} (se guarda por proveedor, solo en este navegador; nunca en el proyecto)</span>
               <input type="password" autoComplete="off" value={cfg.keys[cfg.provider] || ''}
-                placeholder={isGemini ? 'Clave de Google AI Studio' : 'sk-…'}
+                placeholder={isGemini ? 'Clave de Google AI Studio' : isEL
+                  ? (elevenLabsEnvKey() ? 'Vacío = se usa la del .env' : 'sk_…')
+                  : 'sk-…'}
                 onChange={(e) => setCfg(setProviderKey(cfg.provider, e.target.value))} />
             </label>
             {isGemini ? (
               <p className="ed-tts-msg">
                 Consigue una clave gratis en <strong>aistudio.google.com → Get API key</strong>.
+              </p>
+            ) : isEL ? (
+              <p className="ed-hint">
+                Crea la clave en <strong>elevenlabs.io → Developers → API Keys</strong> con los permisos
+                {' '}<em>Text to Speech</em> y, para listar tus voces, <em>Voices → Read</em>.
+                {elevenLabsEnvKey()
+                  ? ' Ahora mismo hay una clave en el .env del proyecto: se usa mientras este campo esté vacío; si escribes otra aquí, manda la tuya.'
+                  : ' En desarrollo también puede venir de ELEVENLABS_API_KEY en el .env (lo que pongas aquí tiene prioridad).'}
               </p>
             ) : (
               <label className="ed-field">
@@ -304,10 +366,19 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
               <label className="ed-field">
                 <span>Voz</span>
                 <select value={cfg.voice} onChange={(e) => update({ voice: e.target.value })}>
-                  {voicesFor(cfg.provider, cfg.model).map((v) => <option key={v} value={v}>{voiceLabel(cfg.provider, v)}</option>)}
+                  {isEL
+                    ? elOptions.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)
+                    : voicesFor(cfg.provider, cfg.model).map((v) => <option key={v} value={v}>{voiceLabel(cfg.provider, v)}</option>)}
                 </select>
               </label>
-              {!isGemini && (
+              {isEL && (
+                <label className="ed-field ed-field-narrow">
+                  <span>Velocidad (0,7–1,2)</span>
+                  <input type="number" min={0.7} max={1.2} step={0.05} value={cfg.speed}
+                    onChange={(e) => update({ speed: Number(e.target.value) })} />
+                </label>
+              )}
+              {isOpenAI && (
                 <>
                   <label className="ed-field ed-field-narrow">
                     <span>Formato</span>
@@ -323,7 +394,25 @@ export function NarrationSection({ onBusyChange }: { onBusyChange?: (busy: boole
                 </>
               )}
             </div>
-            {!isGemini && (
+            {isEL && (
+              <>
+                <label className="ed-field">
+                  <span>ID de la voz (cópialo en ElevenLabs → Voices → ⋯ → Copy voice ID, o elige arriba)</span>
+                  <input value={cfg.voice} spellCheck={false}
+                    onChange={(e) => update({ voice: e.target.value.trim() })} />
+                </label>
+                <div className="ed-row">
+                  <button type="button" onClick={() => void onLoadElVoices()} disabled={busy}>
+                    <Icon name="refresh" size={14} /> Cargar mis voces
+                  </button>
+                  <button type="button" onClick={() => void onPreview()} disabled={busy || !cfg.voice}>
+                    <Icon name="play" size={14} /> Escuchar muestra
+                  </button>
+                  {elMsg && <span className="ed-tts-msg">{elMsg}</span>}
+                </div>
+              </>
+            )}
+            {isOpenAI && (
               <p className="ed-hint">
                 El género entre paréntesis es orientativo (percepción más repetida en la comunidad, no un dato
                 oficial de OpenAI: varias voces están pensadas como neutras y para las más nuevas

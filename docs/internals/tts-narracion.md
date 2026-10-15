@@ -320,7 +320,8 @@ informa de `busy` para que la ventana no se cierre mientras genera.
   `course.schema.ts`) — así todo el equipo locuta con la misma voz al abrir el mismo
   `.scormproj`/documento-nube, sin reconfigurarla cada uno. La **clave de API** (`keys`,
   una por proveedor vía `setProviderKey`) es la única excepción: vive SOLO en
-  `localStorage` de cada navegador y nunca se escribe en el proyecto ni en el ZIP —
+  `localStorage` de cada navegador (en ElevenLabs, con respaldo en el `.env` solo en
+  desarrollo, ver más abajo) y nunca se escribe en el proyecto ni en el ZIP —
   `readProjectTts()`/`readLocalKeys()` leen cada mitad de su sitio y `getTtsConfig()` las
   junta; `readProjectTts()` copia los campos **uno a uno** (nunca con un `{ ...tts }` a
   ciegas) precisamente para que un `keys` que pudiera colarse en `narration.tts` (p. ej.
@@ -389,6 +390,23 @@ informa de `busy` para que la ventana no se cierre mientras genera.
   migran solos (la voz/Vibe ya guardados en `course.narration.tts` no se tocan): hay que
   cambiarlos a mano una vez desde Ajustes → Narración si se quiere lo mismo en un proyecto
   existente.
+
+- **ElevenLabs** (`elevenlabsChunk`, `/v1/text-to-speech/{voice_id}`, siempre MP3
+  44,1 kHz): la voz es un **ID**, no un nombre de catálogo — el proyecto guarda solo el
+  ID. `ELEVENLABS_VOICES` lista las conocidas con nombre (por defecto «Lydia - Warm,
+  Energetic and Confident», la voz corporativa); «Cargar mis voces»
+  (`listElevenLabsVoices`, `/v1/voices`) añade al selector las de la cuenta si la clave
+  tiene el permiso `voices_read` (si no, mensaje claro y se pega el ID a mano). «Escuchar
+  muestra» reproduce el `preview_url` de la voz cuando se conoce (gratis); si no,
+  sintetiza la frase de prueba. `speed` se recorta a 0,7–1,2 (rango de la API); el
+  «Vibe» no se envía (ElevenLabs no lo admite así).
+  **Valores del `.env`** (`ELEVENLABS_API_KEY`/`_VOICE_ID`/`_MODEL`, sin prefijo `VITE_`):
+  `vite.config.ts` los inyecta como `__ELEVENLABS_ENV__`. Voz y modelo son el valor por
+  defecto al elegir el proveedor; la **clave solo se inyecta con el servidor de
+  desarrollo** (`command === 'serve'`), nunca en un build publicado — un bundle en
+  Netlify la expondría a cualquiera. Lo configurado en el editor **siempre manda**: la
+  clave del navegador sobre la del `.env` (`keyFor`), la voz del proyecto sobre la del
+  `.env`.
 
 El panel de generación masiva **respeta el ajuste «Curso narrado»**: con `off` la
 generación (audios y transcripciones) queda deshabilitada con una nota — probable

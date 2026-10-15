@@ -463,7 +463,7 @@ export const Course = z.object({
      *  propósito: nunca se guarda aquí ni en el ZIP, solo en el `localStorage`
      *  del navegador de cada autor (ver `src/tts/tts.ts`). */
     tts: z.object({
-      provider: z.enum(['openai', 'gemini']).default('openai'),
+      provider: z.enum(['openai', 'gemini', 'elevenlabs']).default('openai'),
       baseUrl: z.string().default('https://api.openai.com/v1'),
       model: z.string().default('gpt-4o-mini-tts'),
       voice: z.string().default('marin'),

@@ -16,18 +16,22 @@ import { buildTranscript, contentHash, itemsOf, itemsKeyOf } from './buildTransc
  * sin tener que reconfigurarla cada uno en su navegador. Sin dependencias:
  * usamos `fetch` contra la API REST.
  *
- * Dos proveedores soportados:
+ * Tres proveedores soportados:
  *  - `openai`: endpoint `/audio/speech`, devuelve audio ya codificado (mp3/…).
  *    Pago por uso (céntimos por curso).
  *  - `gemini`: Google Generative Language API (`:generateContent`), devuelve PCM
  *    crudo (L16, 24 kHz, mono) que envolvemos en WAV. Tiene capa gratuita.
+ *  - `elevenlabs`: `/v1/text-to-speech/{voice_id}`, devuelve MP3. La voz es un
+ *    ID (de la cuenta, clonada o de la biblioteca). Clave, voz y modelo por
+ *    defecto pueden venir del `.env` (`__ELEVENLABS_ENV__`, ver vite.config.ts);
+ *    lo configurado en el editor siempre tiene prioridad.
  *
  * El audio generado se guarda como asset (`assets/media/<id>_narracion.<ext>`),
  * igual que un audio subido a mano, y se referencia en `screen.audio_src`, de
  * modo que viaja en el ZIP del proyecto y del SCORM.
  */
 
-export type TtsProvider = 'openai' | 'gemini'
+export type TtsProvider = 'openai' | 'gemini' | 'elevenlabs'
 
 export interface TtsConfig {
   provider: TtsProvider
@@ -39,7 +43,7 @@ export interface TtsConfig {
   voice: string
   /** Formato de salida OpenAI. Gemini siempre produce WAV. */
   format: 'mp3' | 'wav' | 'opus' | 'aac' | 'flac'
-  /** Velocidad de locución OpenAI (0.25–4.0). Ignorado en Gemini. */
+  /** Velocidad de locución: OpenAI 0.25–4.0; ElevenLabs 0.7–1.2 (se recorta). Ignorado en Gemini. */
   speed: number
   /** Indicaciones de tono/estilo (OpenAI gpt-4o-mini-tts; Gemini como prefijo). */
   instructions: string
@@ -50,6 +54,7 @@ const LS_KEY = 'scormeditor.tts'
 export const PROVIDERS: { value: TtsProvider; label: string }[] = [
   { value: 'openai', label: 'OpenAI (pago por uso, céntimos)' },
   { value: 'gemini', label: 'Google Gemini (gratis)' },
+  { value: 'elevenlabs', label: 'ElevenLabs (voces más naturales; plan con cuota)' },
 ]
 
 export const OPENAI_MODELS = ['gpt-4o-mini-tts', 'tts-1', 'tts-1-hd'] as const
@@ -88,25 +93,44 @@ export const GEMINI_VOICES = [
   'Kore', 'Puck', 'Zephyr', 'Charon', 'Aoede', 'Leda', 'Orus', 'Fenrir', 'Callirrhoe', 'Enceladus',
 ] as const
 
+export const ELEVENLABS_MODELS = ['eleven_multilingual_v2', 'eleven_v3', 'eleven_turbo_v2_5', 'eleven_flash_v2_5'] as const
+/** Voces de ElevenLabs conocidas de antemano (id → nombre); la primera es la
+ *  voz por defecto si el `.env` no indica otra. El resto de voces de la cuenta
+ *  se cargan desde la API (`listElevenLabsVoices`, requiere el permiso
+ *  voices_read en la clave) o se pegan por ID: el proyecto guarda solo el ID. */
+export const ELEVENLABS_VOICES: { id: string; name: string }[] = [
+  { id: 'SDVJaMLoJa7wc3s2sn7d', name: 'Lydia - Warm, Energetic and Confident' },
+]
+const ENV_EL = typeof __ELEVENLABS_ENV__ !== 'undefined' ? __ELEVENLABS_ENV__ : { key: '', voice: '', model: '' }
+const EL_DEFAULT_VOICE = ENV_EL.voice || ELEVENLABS_VOICES[0].id
+const EL_DEFAULT_MODEL = (ELEVENLABS_MODELS as readonly string[]).includes(ENV_EL.model) ? ENV_EL.model : ELEVENLABS_MODELS[0]
+
 export function modelsFor(provider: TtsProvider): readonly string[] {
+  if (provider === 'elevenlabs') return ELEVENLABS_MODELS
   return provider === 'gemini' ? GEMINI_MODELS : OPENAI_MODELS
 }
 /** Voces disponibles; en OpenAI depende también del modelo (tts-1/tts-1-hd
  *  soportan menos que gpt-4o-mini-tts). */
 export function voicesFor(provider: TtsProvider, model?: string): readonly string[] {
   if (provider === 'gemini') return GEMINI_VOICES
+  if (provider === 'elevenlabs') {
+    const ids = ELEVENLABS_VOICES.map((v) => v.id)
+    return ids.includes(EL_DEFAULT_VOICE) ? ids : [EL_DEFAULT_VOICE, ...ids]
+  }
   if (model === 'tts-1' || model === 'tts-1-hd') return OPENAI_VOICES.filter((v) => OPENAI_VOICES_LEGACY.has(v))
   return OPENAI_VOICES
 }
 /** Etiqueta de una voz para el desplegable: nombre + género orientativo entre
  *  paréntesis cuando hay consenso de comunidad suficiente (ver OPENAI_VOICE_GENDER). */
 export function voiceLabel(provider: TtsProvider, voice: string): string {
+  if (provider === 'elevenlabs') return ELEVENLABS_VOICES.find((v) => v.id === voice)?.name ?? voice
   if (provider !== 'openai') return voice
   const g = OPENAI_VOICE_GENDER[voice as (typeof OPENAI_VOICES)[number]]
   return g ? `${voice} (${g === 'm' ? 'hombre' : g === 'f' ? 'mujer' : 'neutra'})` : voice
 }
 /** Valores que deben restablecerse al cambiar de proveedor (modelo y voz válidos). */
 export function providerDefaults(provider: TtsProvider): Partial<TtsConfig> {
+  if (provider === 'elevenlabs') return { provider, model: EL_DEFAULT_MODEL, voice: EL_DEFAULT_VOICE }
   const model = modelsFor(provider)[0]
   return { provider, model, voice: voicesFor(provider, model)[0] }
 }
@@ -134,7 +158,7 @@ Pauses: Short, natural pauses at sentences and commas. Longer, deliberate pauses
 
 const DEFAULTS: TtsConfig = {
   provider: 'openai',
-  keys: { openai: '', gemini: '' },
+  keys: { openai: '', gemini: '', elevenlabs: '' },
   baseUrl: 'https://api.openai.com/v1',
   model: 'gpt-4o-mini-tts',
   voice: 'marin',
@@ -220,10 +244,16 @@ export function setTtsConfig(patch: Partial<TtsConfig>): TtsConfig {
   return getTtsConfig()
 }
 
-/** Clave activa según el proveedor seleccionado (sin espacios). */
+/** Clave activa según el proveedor seleccionado (sin espacios). En
+ *  ElevenLabs, si no hay clave guardada en el navegador se usa la del `.env`
+ *  (solo existe con el servidor de desarrollo, ver vite.config.ts). */
 export function keyFor(cfg: TtsConfig): string {
-  return (cfg.keys[cfg.provider] || '').trim()
+  const own = (cfg.keys[cfg.provider] || '').trim()
+  return own || (cfg.provider === 'elevenlabs' ? ENV_EL.key : '')
 }
+
+/** ¿Hay clave de ElevenLabs disponible desde el `.env`? (para el panel). */
+export const elevenLabsEnvKey = (): boolean => !!ENV_EL.key
 
 /** Guarda la clave de un proveedor concreto sin tocar la del otro. */
 export function setProviderKey(provider: TtsProvider, key: string): TtsConfig {
@@ -236,6 +266,7 @@ export function hasApiKey(): boolean {
 
 /** Extensión del archivo de salida según el proveedor/formato. */
 function outputExt(cfg: TtsConfig): string {
+  if (cfg.provider === 'elevenlabs') return 'mp3'
   return cfg.provider === 'gemini' ? 'wav' : cfg.format
 }
 
@@ -279,6 +310,9 @@ async function errorFromResponse(res: Response): Promise<Error> {
   try {
     const j = await res.json()
     if (j?.error?.message) detail = j.error.message
+    // ElevenLabs: { detail: { message, status } } o { detail: '…' }
+    else if (typeof j?.detail?.message === 'string') detail = j.detail.message
+    else if (typeof j?.detail === 'string') detail = j.detail
   } catch {
     /* cuerpo no-JSON: nos quedamos con el status */
   }
@@ -427,6 +461,69 @@ async function geminiChunk(text: string, cfg: TtsConfig, signal?: AbortSignal): 
   return { pcm: base64ToBytes(b64), rate: rateFromMime(part.inlineData.mimeType) }
 }
 
+// ---- ElevenLabs -------------------------------------------------------------
+
+const EL_BASE = 'https://api.elevenlabs.io/v1'
+
+/** Sintetiza un fragmento con ElevenLabs (MP3 44,1 kHz). La velocidad se
+ *  recorta al rango que admite la API (0.7–1.2). */
+async function elevenlabsChunk(text: string, cfg: TtsConfig, signal?: AbortSignal): Promise<Blob> {
+  const url = `${EL_BASE}/text-to-speech/${encodeURIComponent(cfg.voice)}?output_format=mp3_44100_128`
+  const { signal: fetchSignal, cleanup } = withTimeout(signal, FETCH_TIMEOUT_MS)
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'xi-api-key': keyFor(cfg), 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+      body: JSON.stringify({
+        text,
+        model_id: cfg.model,
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.8,
+          style: 0.15,
+          use_speaker_boost: true,
+          speed: Math.min(1.2, Math.max(0.7, cfg.speed || 1)),
+        },
+      }),
+      signal: fetchSignal,
+    })
+    if (!res.ok) throw await errorFromResponse(res)
+    return await res.blob()
+  } finally {
+    cleanup()
+  }
+}
+
+export interface ElevenLabsVoice {
+  id: string
+  name: string
+  /** Muestra de audio que publica ElevenLabs (gratis, no consume cuota). */
+  previewUrl?: string
+}
+
+/** Voces disponibles en la cuenta (propias y añadidas de la biblioteca).
+ *  Requiere que la clave tenga el permiso `voices_read`. */
+export async function listElevenLabsVoices(): Promise<ElevenLabsVoice[]> {
+  const cfg = { ...getTtsConfig(), provider: 'elevenlabs' as const }
+  const key = keyFor(cfg)
+  if (!key) throw new Error('Introduce primero la clave de API de ElevenLabs.')
+  const { signal, cleanup } = withTimeout(undefined, FETCH_TIMEOUT_MS)
+  try {
+    const res = await fetch(`${EL_BASE}/voices`, { headers: { 'xi-api-key': key }, signal })
+    if (!res.ok) {
+      const err = await errorFromResponse(res)
+      if (/voices_read/.test(err.message)) {
+        throw new Error('La clave no tiene el permiso «voices_read» (Voices → Read): actívalo en ElevenLabs para listar tus voces, o pega el ID de la voz a mano.')
+      }
+      throw err
+    }
+    const json = await res.json()
+    return ((json?.voices || []) as any[]).map((v) => ({ id: v.voice_id, name: v.name, previewUrl: v.preview_url || undefined }))
+  } finally {
+    cleanup()
+  }
+}
+
 // ---- Síntesis (multi-proveedor, con troceado) -------------------------------
 
 /**
@@ -456,9 +553,10 @@ export async function synthesize(
   }
 
   const parts: Blob[] = []
-  for (const chunk of chunks) parts.push(await openaiChunk(chunk, cfg, signal))
+  const el = cfg.provider === 'elevenlabs'
+  for (const chunk of chunks) parts.push(await (el ? elevenlabsChunk(chunk, cfg, signal) : openaiChunk(chunk, cfg, signal)))
   if (parts.length === 1) return parts[0]
-  return new Blob(parts, { type: parts[0].type || mimeFor(cfg.format) })
+  return new Blob(parts, { type: parts[0].type || (el ? 'audio/mpeg' : mimeFor(cfg.format)) })
 }
 
 // ---- Aplicación al curso ----------------------------------------------------
