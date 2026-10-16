@@ -15,6 +15,9 @@ export interface ConfirmOptions {
    *  presente, usar `confirmDialogTri` en vez de `confirmDialog` para
    *  distinguir las tres resoluciones. */
   thirdLabel?: string
+  /** El tercer botón es destructivo (rojo, como «Descartar y cerrar»). Por
+   *  defecto sale neutro, con el mismo aspecto que Cancelar. */
+  thirdDanger?: boolean
   danger?: boolean
   /** Aviso solo-informativo: oculta el botón Cancelar (queda solo «Aceptar»). */
   hideCancel?: boolean

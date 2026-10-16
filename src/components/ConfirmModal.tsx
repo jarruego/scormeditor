@@ -43,7 +43,8 @@ export function ConfirmModal() {
             </button>
           )}
           {current.thirdLabel && (
-            <button type="button" className="ed-danger" onClick={() => resolve('third')}>
+            <button type="button" className={current.thirdDanger ? 'ed-danger' : 'ed-confirm-cancel'}
+              onClick={() => resolve('third')}>
               {current.thirdLabel}
             </button>
           )}

@@ -184,7 +184,8 @@ sin ningún proyecto abierto: desvincula archivo local y documento-nube y muestr
 (`projectDirty`), antes pregunta con un confirm de **tres botones**
 (`confirmDialogTri`, `src/store/confirm.ts` — extiende el `confirmDialog` de dos botones
 sin romper sus ~10 usos existentes, que siguen viendo `Promise<boolean>`): «Guardar y
-cerrar» / «Descartar y cerrar» / «Cancelar» (la etiqueta de guardar cambia a «Subir y
+cerrar» / «Descartar y cerrar» (rojo: `thirdDanger`; sin esa opción el tercer botón sale
+neutro, como Cancelar) / «Cancelar» (la etiqueta de guardar cambia a «Subir y
 cerrar» en modo nube). Si el usuario guarda pero el guardado no llega a completarse
 (p. ej. cancela el selector de archivo o deniega el permiso nativo), `onCloseProject`
 comprueba `projectDirty` tras el intento y **no cierra** — evita perder cambios por un

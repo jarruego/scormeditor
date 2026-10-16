@@ -254,6 +254,7 @@ export function Toolbar() {
           : 'Tienes cambios sin guardar en el archivo. ¿Quieres guardarlos antes de cerrar?',
         confirmLabel: isCloudMode ? 'Subir y cerrar' : 'Guardar y cerrar',
         thirdLabel: 'Descartar y cerrar',
+        thirdDanger: true,
         cancelLabel: 'Cancelar',
       })
       if (res === 'cancel') return
