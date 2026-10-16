@@ -148,6 +148,26 @@ export function Toolbar() {
         })
         if (!ok) return
       }
+      // Registro de respuestas en el LMS (cmi.interactions): se decide en cada
+      // export, con sus implicaciones a la vista. No se guarda en el proyecto.
+      const choice = await confirmDialogTri({
+        title: '¿Registrar las respuestas en el LMS?',
+        message: [
+          'Si lo activas, cada vez que un alumno pulsa «Comprobar» (y en cada envío del test final) el paquete guarda en el LMS qué respondió, si acertó y cuánto tardó (cmi.interactions de SCORM 1.2). Sirve para analizar en qué actividades se atascan o fallan los alumnos.',
+          '',
+          'Cómo afecta:',
+          '• No ocupa la memoria de progreso del curso (suspend_data) ni cambia la reanudación ni la nota.',
+          '• Aumenta los datos que guarda el LMS: una entrada por intento (máx. 10 por actividad y 300 por sesión).',
+          '• Si el LMS rechaza un dato, el curso sigue funcionando con normalidad; solo se pierde ese registro.',
+          '• Las respuestas quedan guardadas en el LMS: tenlo en cuenta en la información de protección de datos.',
+          '',
+          'Es una opción de este export; no se guarda en el proyecto.',
+        ].join('\n'),
+        confirmLabel: 'Exportar con registro',
+        thirdLabel: 'Exportar sin registro',
+      })
+      if (choice === 'cancel') return
+      const trackInteractions = choice === 'confirm'
       // Registra la estructura actual en el historial de layouts (para el
       // remapeo de suspend_data, ver docs/suspend-data.md) SOLO al exportar
       // el paquete real, nunca en Vista previa. Deduplica por huella.
@@ -158,7 +178,7 @@ export function Toolbar() {
         useCourseStore.getState().updateScorm({ layouts: [...layouts, { ...entry, exported_at: new Date().toISOString() }] })
         exportCourse = useCourseStore.getState().course
       }
-      await downloadScorm({ course: exportCourse, assets }, undefined, setExportProgress)
+      await downloadScorm({ course: exportCourse, assets, trackInteractions }, undefined, setExportProgress)
     } finally {
       setBusy(false)
       setExportProgress(null)

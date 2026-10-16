@@ -19,6 +19,12 @@ export type AssetMap = Record<string, Blob | Uint8Array | ArrayBuffer | string>
 export interface ExportOptions {
   course: Course
   assets?: AssetMap
+  /** Registrar en el LMS las respuestas de cada «Comprobar» (`cmi.interactions`).
+   *  Se decide en cada export (modal de Toolbar): NO es un campo del esquema ni
+   *  se guarda en el `.scormproj`; solo viaja en el `course.json` del ZIP como
+   *  `scorm.track_interactions` (ver «Registro de respuestas» en
+   *  arquitectura-runtime.md). */
+  trackInteractions?: boolean
 }
 
 /** Progreso de `buildScormZip`/`downloadScorm`: `percent` es relativo a la
@@ -35,7 +41,7 @@ export interface ExportProgress {
  * Estructura: imsmanifest.xml + index.html + assets/** + data/course.json
  */
 export async function buildScormZip(
-  { course: courseWithDrafts, assets = {} }: ExportOptions,
+  { course: courseWithDrafts, assets = {}, trackInteractions = false }: ExportOptions,
   onProgress?: (p: ExportProgress) => void,
 ): Promise<Blob> {
   const zip = new JSZip()
@@ -100,8 +106,13 @@ export async function buildScormZip(
     zip.file(f.path, f.content)
   }
 
-  // 2) Datos del curso (con las rutas de audio ya reescritas, si procede)
-  zip.file('data/course.json', JSON.stringify(course, null, 2))
+  // 2) Datos del curso (con las rutas de audio ya reescritas, si procede). El
+  //    registro de respuestas se marca solo aquí, en el paquete: la carcasa lo
+  //    lee de `COURSE.scorm.track_interactions`; al reabrir el ZIP como proyecto,
+  //    Zod descarta la clave (no es del esquema) y la decisión se vuelve a tomar
+  //    en el siguiente export.
+  const packaged = trackInteractions ? { ...course, scorm: { ...course.scorm, track_interactions: true } } : course
+  zip.file('data/course.json', JSON.stringify(packaged, null, 2))
 
   // 3) Assets de media (imágenes, vídeos, audios, VTT...). Solo los REFERENCIADOS
   //    por el curso: así los huérfanos (versiones antiguas, pantallas borradas…)

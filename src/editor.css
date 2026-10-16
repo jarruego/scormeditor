@@ -589,7 +589,7 @@ button.ed-pill.info:hover:not(:disabled) { background: #e8f0fe; }
 .ed-confirm-icon.is-danger { color: #b3261e; }
 .ed-confirm-icon.is-info { color: var(--c-primary); }
 .ed-confirm-title { margin: 0; font-size: 1.15rem; }
-.ed-confirm-msg { margin: 0 0 1.2rem; color: var(--c-text); line-height: 1.45; }
+.ed-confirm-msg { margin: 0 0 1.2rem; color: var(--c-text); line-height: 1.45; white-space: pre-line; }
 .ed-confirm-actions { display: flex; justify-content: flex-end; gap: .6rem; }
 .ed-confirm-actions button { padding: .5rem 1rem; }
 .ed-confirm-cancel { background: var(--c-surface); }

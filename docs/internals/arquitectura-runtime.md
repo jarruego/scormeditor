@@ -41,6 +41,33 @@ pendiente»).
   el LMS conserva el tracking al re-subir el paquete; misma decisión que eXeLearning
   #1785). No regenerarlo nunca automáticamente.
 
+## Registro de respuestas en el LMS (`cmi.interactions`, opcional)
+- **Se decide en cada export**: «Exportar SCORM ZIP» pregunta en un modal (Exportar con
+  registro / sin registro / Cancelar) y explica cómo afecta. **No es un campo del esquema
+  ni se guarda en el `.scormproj`**: `buildScormZip({ trackInteractions })` lo escribe
+  solo en el `course.json` del paquete como `scorm.track_interactions: true`. Al reabrir
+  ese ZIP como proyecto, Zod descarta la clave. Así el formato del proyecto no cambia
+  (retrocompatible) y la decisión, que tiene implicaciones de protección de datos, se
+  toma a la vista cada vez.
+- **Para qué**: analizar en el LMS en qué actividades fallan o se atascan los alumnos
+  (junto con `cmi.core.lesson_location`). Lo lee el informe de interacciones de Moodle,
+  o un análisis propio de sus tablas de seguimiento.
+- **Qué se registra** (`ixAfterSave`/`ixRecord` en `app.js`, genérico sobre el contrato
+  `result()`, sin ramas por tipo): una entrada por cada «Comprobar» de las interacciones
+  con `attempts` (el estado guardado trae `attempts` y sube); en las que no lo llevan, una
+  al pasar a resueltas (`neutral` si no son evaluables); y una por pregunta en cada envío
+  del test final. Campos: `id` = `<tipo>:<id de interacción>` (o
+  `final_test:<id de pregunta>`), `type` siempre `performance` (el tipo real va en el id),
+  `student_response` = estado sin `attempts`/`correct` en JSON recortado a 255, `result`
+  `correct`/`wrong`/`neutral`, `latency` = tiempo en la pantalla y `time` = hora.
+- **Independiente de `suspend_data`**: no consume su presupuesto de 4096 ni interviene en la
+  reanudación (en SCORM 1.2 las interacciones son de solo escritura). Al restaurar una
+  pantalla se toman los `attempts` ya guardados como consumidos, para no duplicar.
+- **Nunca bloquea al alumno**: sin LMS (Vista estudiante), en modo repaso o con la opción
+  apagada no hace nada; todo va en try/catch, y si el LMS rechaza el `id` deja de
+  intentarlo en esa sesión. **Límite de volumen** por sesión: 10 entradas por
+  interacción y 300 en total (cada entrada son ~6 filas en las tablas del LMS).
+
 ## Texto enriquecido (markdown ligero)
 Editor: `src/components/RichTextArea.tsx` (ver `editor-richtext.md`).
 Render: `mdToHtml`/`blocksToHtml` en `src/runtime/assets/js/renderer.js`.

@@ -97,6 +97,78 @@
     SCORM.commit();
   }
 
+  // ---- Registro de respuestas en el LMS (cmi.interactions, opcional) -----
+  // Solo si el paquete se exportó con «Registrar respuestas» (el export escribe
+  // `scorm.track_interactions: true` en el course.json del ZIP; no es un campo
+  // del esquema ni se guarda en el .scormproj). Sirve para analizar en el LMS
+  // dónde fallan o se atascan los alumnos. Es independiente de suspend_data:
+  // no ocupa su presupuesto de 4096 ni interviene en la reanudación (en SCORM
+  // 1.2 las interacciones son de solo escritura). Cada «Comprobar» añade una
+  // entrada nueva; se limita el volumen por sesión para no inflar el LMS. Un
+  // valor que el LMS rechace nunca debe bloquear al alumno: todo en try/catch
+  // y, si el LMS no admite interacciones, se deja de intentar.
+  var IX = { count: -1, written: 0, perId: {}, lastAttempts: {}, off: false };
+  var IX_MAX_TOTAL = 300, IX_MAX_PER_ID = 10;
+  function ixEnabled() {
+    return !IX.off && !SCORM.isStandalone() && !SCORM.isReview() &&
+      !!(COURSE && COURSE.scorm && COURSE.scorm.track_interactions);
+  }
+  function ixPad(n) { return (n < 10 ? '0' : '') + n; }
+  // CMIIdentifier: ASCII imprimible sin espacios, ≤ 255.
+  function ixId(raw) { return String(raw).replace(/[^\x21-\x7E]/g, '_').slice(0, 255); }
+  // CMITime (hora del día) y CMITimespan (latencia) de SCORM 1.2.
+  function ixClock() { var d = new Date(); return ixPad(d.getHours()) + ':' + ixPad(d.getMinutes()) + ':' + ixPad(d.getSeconds()); }
+  function ixSpan(sec) {
+    sec = Math.max(0, Math.min(sec, 9999 * 3600));
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60);
+    return (h < 10 ? '0' : '') + h + ':' + ixPad(m) + ':' + ixPad(s);
+  }
+  // Respuesta del alumno: el estado de la interacción sin los campos de
+  // control, en JSON compacto y recortado a los 255 caracteres de SCORM 1.2.
+  function ixResponse(v) {
+    var o = v;
+    if (v && typeof v === 'object') {
+      o = {};
+      Object.keys(v).forEach(function (k) { if (k !== 'attempts' && k !== 'correct') o[k] = v[k]; });
+    }
+    var s;
+    try { s = typeof o === 'string' ? o : JSON.stringify(o); } catch (e) { s = ''; }
+    return String(s == null ? '' : s).slice(0, 255);
+  }
+  function ixRecord(id, result, response, latencySec) {
+    if (!ixEnabled()) return;
+    try {
+      if (IX.count < 0) IX.count = parseInt(SCORM.get('cmi.interactions._count'), 10) || 0;
+      var key = ixId(id), per = IX.perId[key] || 0;
+      if (IX.written >= IX_MAX_TOTAL || per >= IX_MAX_PER_ID) return;
+      var p = 'cmi.interactions.' + IX.count + '.';
+      if (!SCORM.set(p + 'id', key)) { IX.off = true; return; }
+      SCORM.set(p + 'time', ixClock());
+      SCORM.set(p + 'type', 'performance');
+      SCORM.set(p + 'student_response', ixResponse(response));
+      SCORM.set(p + 'result', result);
+      SCORM.set(p + 'latency', ixSpan(latencySec));
+      IX.count++; IX.written++; IX.perId[key] = per + 1;
+    } catch (e) { IX.off = true; }
+  }
+  // Tras cada guardado de una interacción de pantalla: registra un intento
+  // nuevo (las que llevan `attempts`) o el paso a resuelta (las que no).
+  // `prev` es el resultado antes de este guardado.
+  function ixAfterSave(sc, st, prev, r) {
+    if (!ixEnabled() || !sc.interaction || !r) return;
+    var id = sc.interaction.type + ':' + sc.interaction.id;
+    var lat = (Date.now() - screenEnter) / 1000;
+    var att = st && typeof st.attempts === 'number' ? st.attempts : null;
+    if (att != null) {
+      if (att > (IX.lastAttempts[sc.interaction.id] || 0)) {
+        IX.lastAttempts[sc.interaction.id] = att;
+        ixRecord(id, r.correct ? 'correct' : 'wrong', st, lat);
+      }
+    } else if (r.completed && !(prev && prev.completed)) {
+      ixRecord(id, r.scored ? (r.correct ? 'correct' : 'wrong') : 'neutral', st, lat);
+    }
+  }
+
   function flatten() {
     SCREENS = [];
     // Pantallas sueltas de introducción del paquete SCORM, antes de cualquier
@@ -604,13 +676,22 @@
       renderFinalTest(content, entry.screen);
     } else {
       var sc = entry.screen;
+      // Intentos ya consumidos (sesión anterior o visita previa): no se
+      // vuelven a registrar en cmi.interactions al restaurar la pantalla.
+      if (sc.interaction) {
+        var savedSt = STATE.interactions[sc.interaction.id];
+        var savedAtt = savedSt && typeof savedSt.attempts === 'number' ? savedSt.attempts : 0;
+        if (savedAtt > (IX.lastAttempts[sc.interaction.id] || 0)) IX.lastAttempts[sc.interaction.id] = savedAtt;
+      }
       var ctx = {
         state: (STATE.interactions[sc.interaction ? sc.interaction.id : ''] || null),
         save: function (st) {
           if (!sc.interaction) return;
+          var prevResult = STATE.results[sc.interaction.id];
           STATE.interactions[sc.interaction.id] = st;
           var r = activeController ? activeController.result() : null;
           if (r) STATE.results[sc.interaction.id] = r;
+          ixAfterSave(sc, st, prevResult, r);
           recomputeAndPersist();
           refreshNavState();
         },
@@ -1604,6 +1685,9 @@
       STATE.finalAnswers = answers;
       dirty = false;
       STATE.results.__final__ = { completed: true, scored: true, correct: res.pass, score: res.got, maxScore: res.max };
+      // Una entrada por pregunta y envío (cmi.interactions, si está activado).
+      var lat = (Date.now() - screenEnter) / 1000;
+      questions.forEach(function (q) { ixRecord('final_test:' + q.id, verdicts[q.id] ? 'correct' : 'wrong', answers[q.id], lat); });
       A11Y.announce('Puntuación ' + res.score + ' por ciento.' + (showVerdict ? (res.pass ? ' Apto.' : ' No apto.') : ''));
 
       // Al comprobar, el test paginado aterriza en la vista de resultado (estado,
