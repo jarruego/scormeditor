@@ -29,6 +29,11 @@ luego decide el `lesson_status` según `rules.completion_mode`:
   **resolverse** (acertar o agotar intentos): cuenta para la finalización **responderla**,
   no acertarla (salvo intentos ilimitados, donde hay que acertar). `SCORM.setStatus`:
   `incomplete` / `passed` / `failed` / `completed` (sin contenido calificable).
+- `require_interactions` tiene **dos efectos**: cuenta para completar (solo en
+  `evaluation`) y es el **gating de navegación** (`interactionOk`: «Siguiente» no avanza
+  hasta resolver la interacción de una pantalla `required`) en **ambos** modos. Por eso la
+  casilla de Ajustes sigue activa en `screens` («…para avanzar»): sin ella, en ese modo
+  el alumno podía saltarse todas las actividades.
 - **`screens`**: completado con solo llegar al final (`min_required_screens_pct`),
   **ignora** a propósito `require_interactions` y `rules.min_score` para el `lesson_status`
   (`incomplete` / `completed`, nunca `passed`/`failed`). Pensado para cursos con

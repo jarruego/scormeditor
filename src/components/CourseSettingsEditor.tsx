@@ -285,10 +285,15 @@ export function CourseSettingsSection() {
             <input type="number" min={0} max={100} value={r.min_required_screens_pct}
               onChange={(e) => setRule({ min_required_screens_pct: Number(e.target.value) })} />
           </label>
-          <label className="ed-check" title={r.completion_mode === 'screens' ? 'No aplica: en modo «Por llegar al final» las interacciones no son obligatorias para completar' : undefined}>
-            <input type="checkbox" checked={r.require_interactions} disabled={r.completion_mode === 'screens'}
+          {/* Además de contar para completar (solo en «Por evaluación»), la regla bloquea
+              «Siguiente» hasta resolver la interacción de cada pantalla obligatoria
+              (interactionOk en app.js): por eso sigue activa en «Por llegar al final». */}
+          <label className="ed-check" title={r.completion_mode === 'screens'
+            ? 'No deja avanzar hasta resolver la actividad de cada pantalla obligatoria. En este modo no cuenta para completar el curso.'
+            : 'No deja avanzar hasta resolver la actividad de cada pantalla obligatoria, y hace falta para completar el curso.'}>
+            <input type="checkbox" checked={r.require_interactions}
               onChange={(e) => setRule({ require_interactions: e.target.checked })} />
-            <span>Exigir completar las interacciones</span>
+            <span>Exigir completar las interacciones{r.completion_mode === 'screens' ? ' para avanzar' : ''}</span>
           </label>
           <label className="ed-check">
             <input type="checkbox" checked={r.allow_resume}
