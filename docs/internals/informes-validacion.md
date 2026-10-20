@@ -39,6 +39,9 @@ Reglas por pantalla / unidad / curso, p. ej.:
   (final_test sin preguntas, `screenId '__final__'`), `SCORM_NO_ACTIVITIES` (unit_tests sin
   interacciones puntuadas), `SCORM_MIXED_EMPTY`/`SCORM_MIXED_NO_FINAL`/
   `SCORM_MIXED_NO_ACTIVITIES` (mixed sin uno u otro bloque), y
+  `SCORM_UNGRADED` (info: `completion_mode: 'screens'` sin test final ni interacciones
+  puntuadas — paquete sin nota, p. ej. una bienvenida; sustituye a los errores anteriores,
+  que en ese caso no tienen sentido), y
   `SCORM_ACTIVITIES_IGNORED` (aviso: hay interacciones `scored` pero
   `score_source: 'final_test'` → no contarán; hace visible que «puntúa o no» se decide
   en Ajustes, no en la pantalla). El curso de ejemplo usa `score_source: 'mixed'`

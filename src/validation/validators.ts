@@ -403,7 +403,13 @@ function checkGlobal(ctx: Ctx) {
   const rules = c.scorm.rules
   const finalQuestions = c.assessments.final_test?.questions.length ?? 0
   const scoredActivities = allScreens(c).filter((s) => s.interaction?.scored).length
-  if (rules.score_source === 'final_test' && finalQuestions === 0)
+  // Paquete sin nada evaluable que se completa con solo llegar al final (una
+  // bienvenida, un vídeo de presentación…): es legítimo, no hay nota que sacar
+  // de ningún sitio. El runtime no envía nota al LMS en ese caso.
+  const ungraded = (rules.completion_mode ?? 'evaluation') === 'screens' && finalQuestions === 0 && scoredActivities === 0
+  if (ungraded)
+    ctx.push({ code: 'SCORM_UNGRADED', severity: 'info', message: 'Sin test ni actividades evaluables: se completa al llegar al final y no envía nota al LMS.', location: 'SCORM' })
+  else if (rules.score_source === 'final_test' && finalQuestions === 0)
     ctx.push({ code: 'SCORM_NO_FINAL', severity: 'error', message: 'La nota sale del test final pero no hay preguntas en el test final.', location: 'SCORM', screenId: '__final__' })
   if (rules.score_source === 'final_test' && scoredActivities > 0)
     ctx.push({
@@ -411,9 +417,9 @@ function checkGlobal(ctx: Ctx) {
       message: `Hay ${scoredActivities} actividad${scoredActivities === 1 ? '' : 'es'} marcada${scoredActivities === 1 ? '' : 's'} como evaluable${scoredActivities === 1 ? '' : 's'}, pero la nota sale solo del test final: no contarán para la nota.`,
       location: 'SCORM',
     })
-  if (rules.score_source === 'unit_tests' && scoredActivities === 0)
+  if (!ungraded && rules.score_source === 'unit_tests' && scoredActivities === 0)
     ctx.push({ code: 'SCORM_NO_ACTIVITIES', severity: 'error', message: 'La nota sale de las actividades evaluables pero ninguna interacción puntúa.', location: 'SCORM' })
-  if (rules.score_source === 'mixed') {
+  if (!ungraded && rules.score_source === 'mixed') {
     if (finalQuestions === 0 && scoredActivities === 0)
       ctx.push({ code: 'SCORM_MIXED_EMPTY', severity: 'error', message: 'La nota es mixta pero no hay ni test final ni actividades evaluables.', location: 'SCORM' })
     else if (finalQuestions === 0)

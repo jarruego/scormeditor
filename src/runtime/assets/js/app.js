@@ -1026,7 +1026,11 @@
     // mostrar el APTO/NO APTO informativo, sea cual sea el modo de finalización).
     var score = computeScore();
     STATE.finalScore = score;
-    SCORM.setScore(score, 0, 100);
+    // Un paquete sin nada evaluable (una bienvenida, un vídeo de presentación…)
+    // no envía nota: si no, el LMS mostraría un 0 en el libro de calificaciones.
+    var gradable = !!(COURSE.assessments && COURSE.assessments.final_test && (COURSE.assessments.final_test.questions || []).length) ||
+      SCREENS.some(function (e) { return e.screen.interaction && e.screen.interaction.scored; });
+    if (gradable) SCORM.setScore(score, 0, 100);
 
     // Modo «screens»: completa con solo llegar al final. Ignora a propósito
     // interacciones obligatorias y nota mínima para el lesson_status — pero

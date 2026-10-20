@@ -100,6 +100,7 @@ export const ELEVENLABS_MODELS = ['eleven_multilingual_v2', 'eleven_v3', 'eleven
  *  voices_read en la clave) o se pegan por ID: el proyecto guarda solo el ID. */
 export const ELEVENLABS_VOICES: { id: string; name: string }[] = [
   { id: 'SDVJaMLoJa7wc3s2sn7d', name: 'Lydia - Warm, Energetic and Confident' },
+  { id: 'KHCvMklQZZo0O30ERnVn', name: 'Sara Martin - Gentle and Layered' },
 ]
 const ENV_EL = typeof __ELEVENLABS_ENV__ !== 'undefined' ? __ELEVENLABS_ENV__ : { key: '', voice: '', model: '' }
 const EL_DEFAULT_VOICE = ENV_EL.voice || ELEVENLABS_VOICES[0].id

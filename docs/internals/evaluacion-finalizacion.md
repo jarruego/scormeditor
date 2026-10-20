@@ -20,7 +20,9 @@ Depende de `scorm.rules.score_source`:
 
 ## Finalización (completado)
 `evaluateCompletion()` calcula y persiste la nota SIEMPRE (`computeScore`, `SCORM.setScore`)
-y luego decide el `lesson_status` según `rules.completion_mode`:
+— salvo en un paquete **sin nada evaluable** (ni test final ni interacciones `scored`: una
+bienvenida, un vídeo de presentación), que no envía nota para que el LMS no anote un 0 — y
+luego decide el `lesson_status` según `rules.completion_mode`:
 - **`evaluation`** (por defecto, comportamiento clásico): completado si se ve el
   `min_required_screens_pct` de pantallas requeridas Y (si `require_interactions`) se han
   **completado** las interacciones evaluables. Una evaluable se marca `completed` al
