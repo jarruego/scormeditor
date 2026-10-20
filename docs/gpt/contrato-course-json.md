@@ -875,6 +875,10 @@ preguntas.
 
 - `glossary[]`: `{ term, definition, source_refs[] }` (NO uses `id`/`source_ref`).
 - `bibliography[]`: `{ ref, url? }` (el campo es **`ref`**, NO `reference`).
+- `attachments[]` y `attachments_title` (documentos PDF adjuntos): **no los generes**.
+  Los PDF los adjunta el autor en el editor (Materiales → Documentos), porque el binario
+  tiene que viajar dentro del proyecto. Si el fuente cita un PDF descargable, ponlo como
+  referencia en `bibliography[]` y deja una nota editorial para que el autor lo adjunte.
 - `glossary_title` y `bibliography_title` (opcionales, junto a sus arrays): rótulo
   personalizado que la carcasa usa en el botón de la barra y en el título del modal.
   Por defecto «Glosario» y «Recursos y bibliografía»; normalmente **omítelos** (el

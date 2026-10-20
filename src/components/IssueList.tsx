@@ -50,6 +50,8 @@ export function useIssueTarget(): (i: Issue) => IssueTarget | null {
       return { label: 'Abrir glosario', go: () => goToScreen('__glossary__') }
     if (i.code === 'BIBLIO_EMPTY')
       return { label: 'Abrir bibliografía', go: () => goToScreen('__bibliography__') }
+    if (i.code.startsWith('ATTACHMENT'))
+      return { label: 'Abrir documentos', go: () => goToScreen('__documents__') }
     return null
   }
 }

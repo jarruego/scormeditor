@@ -9,7 +9,7 @@ import { allScreens } from '../schema/traverse'
 
 // Ids de pantalla sintéticos (no viven en el árbol de screens del curso, ver
 // `traverse.ts`): válidos como `selectedScreenId` igual que uno real.
-const SYNTHETIC_SCREEN_IDS = new Set(['__final__', '__glossary__', '__bibliography__'])
+const SYNTHETIC_SCREEN_IDS = new Set(['__final__', '__glossary__', '__bibliography__', '__documents__'])
 
 /**
  * Persistencia en dos niveles:
@@ -110,7 +110,7 @@ const MIME_BY_EXT: Record<string, string> = {
   gif: 'image/gif', webp: 'image/webp', avif: 'image/avif',
   mp4: 'video/mp4', webm: 'video/webm', ogv: 'video/ogg',
   mp3: 'audio/mpeg', m4a: 'audio/mp4', ogg: 'audio/ogg', wav: 'audio/wav',
-  vtt: 'text/vtt',
+  vtt: 'text/vtt', pdf: 'application/pdf',
 }
 
 /** Devuelve el blob con su MIME según la extensión de `name` (si le falta). */

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Course, Screen, ScreenInput, ScreenType, InteractionType, UnitTest, ScormConfig, ShellConfig, GlossaryTerm, BibliographyEntry, Module } from '../schema/course.schema'
+import type { Course, Screen, ScreenInput, ScreenType, InteractionType, UnitTest, ScormConfig, ShellConfig, GlossaryTerm, BibliographyEntry, Attachment, Module } from '../schema/course.schema'
 import { Course as CourseSchema, Screen as ScreenSchema, Interaction as InteractionSchema } from '../schema/course.schema'
 import { interactionRecipe, migrateInteractionData } from '../schema/interactionRecipes'
 import { migrate } from '../schema/migrations'
@@ -253,6 +253,10 @@ interface CourseState {
   /** Reemplaza la bibliografía completa (panel Recursos y bibliografía). */
   setBibliography: (entries: BibliographyEntry[]) => void
   setBibliographyTitle: (title: string) => void
+  /** Reemplaza la lista de documentos PDF adjuntos (panel Documentos). Los binarios
+   *  se gestionan aparte con addAsset/removeAsset. */
+  setAttachments: (docs: Attachment[]) => void
+  setAttachmentsTitle: (title: string) => void
   /** Rótulo por el que se llama a los módulos/unidades en la UI del editor y en
    *  la portada de módulo (por defecto «Módulo»/«Unidad»); no cambia la estructura. */
   setModuleLabel: (label: string) => void
@@ -818,6 +822,20 @@ export const useCourseStore = create<CourseState>((set, get) => {
     snapshot('bibliography-title')
     const course = clone(get().course)
     course.bibliography_title = title
+    set({ course })
+  },
+
+  setAttachments: (docs) => {
+    snapshot('attachments')
+    const course = clone(get().course)
+    course.attachments = docs
+    set({ course })
+  },
+
+  setAttachmentsTitle: (title) => {
+    snapshot('attachments-title')
+    const course = clone(get().course)
+    course.attachments_title = title
     set({ course })
   },
 

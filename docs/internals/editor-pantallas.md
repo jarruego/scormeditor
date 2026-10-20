@@ -428,6 +428,19 @@ los avisos de `validators.ts`):
   contrato, con default «Glosario»/«Recursos y bibliografía»), que la carcasa usa como
   rótulo del botón de la barra y título del modal (con el default, el botón conserva el
   corto «Recursos»). El árbol refleja el título personalizado en las filas de Materiales.
+- **Documentos PDF adjuntos** (`DocumentsEditor`, Materiales → Documentos): el autor
+  adjunta PDF que el alumno abre o descarga desde el menú lateral de la carcasa.
+  `course.attachments[]` = `{ title, description, src, size? }` con el binario en el
+  `AssetMap` bajo `assets/docs/<nombre>.pdf` (`uniqueAttachmentPath`, sin acentos ni
+  espacios); `attachments_title` (default «Documentos») rotula entrada y modal. **Límites
+  de sentido común** (`schema/attachments.ts`, compartidos con los validadores): solo PDF,
+  comprobado por la firma `%PDF-` y no por la extensión; máximo **10 MB** por documento
+  (bloquea la subida), aviso desde 5 MB, máximo **10 documentos** y aviso del validador si
+  entre todos pasan de **25 MB** — un PDF más pesado suele ser un escaneado o un libro
+  entero, mejor enlazado desde Recursos. Quitar un documento de la lista **no** borra el
+  binario (así Deshacer lo recupera): queda huérfano, no viaja en el SCORM exportado
+  (`collectAssetPaths` solo recoge rutas referenciadas) y se purga desde el informe. El
+  exportador `.elpx` no los incluye.
 - Las secciones usan el helper `Fold` (details **no controlado**: `defaultOpen` solo
   aplica al montar; la `key` por `id`+`type` remonta la sección al cambiar de pantalla o
   de tipo para re-aplicar el énfasis sin pisar lo que el autor pliegue a mano).

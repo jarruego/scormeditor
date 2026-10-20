@@ -47,6 +47,11 @@ informe de revisión.
 | `EDITOR_NOTE` | ℹ | Nota editorial — es el **canal previsto** para dejar tareas al humano | No es un defecto: no corregir. Solo actúa si el usuario aporta el material que la nota pide | Editor |
 | `GLOSSARY_EMPTY` | ⚠ | `glossary` vacío | Extrae términos y definiciones del texto fuente (`{term, definition, source_refs}`) | GPT |
 | `BIBLIO_EMPTY` | ⚠ | `bibliography` vacía | Vuelca las referencias del fuente: una entrada por referencia, formato homogéneo (`Autor/Entidad (año). Título. Fuente.`) | GPT |
+| `ATTACHMENT_NOT_PDF` | ✖ | Un documento de `attachments` no apunta a un PDF del proyecto (`assets/…pdf`) | No generes `attachments`: los PDF los adjunta el autor en el editor (Materiales → Documentos) | Editor |
+| `ATTACHMENT_NO_TITLE` | ⚠ | Documento adjunto sin título | Lo pone el autor en el editor | Editor |
+| `ATTACHMENT_TOO_BIG` | ✖ | Documento adjunto de más de 10 MB | El autor lo reduce o lo enlaza desde `bibliography` | Editor |
+| `ATTACHMENTS_TOO_MANY` | ✖ | Más de 10 documentos adjuntos | El autor quita los menos necesarios o los enlaza desde `bibliography` | Editor |
+| `ATTACHMENTS_HEAVY` | ⚠ | Los documentos adjuntos suman más de 25 MB | El autor reduce los PDF o enlaza los más pesados | Editor |
 
 ## Accesibilidad y medios
 

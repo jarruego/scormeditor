@@ -365,6 +365,7 @@ export function CourseTree() {
   const finalSelected = useCourseStore((s) => s.selectedScreenId === '__final__')
   const glossarySelected = useCourseStore((s) => s.selectedScreenId === '__glossary__')
   const biblioSelected = useCourseStore((s) => s.selectedScreenId === '__bibliography__')
+  const docsSelected = useCourseStore((s) => s.selectedScreenId === '__documents__')
   const updateModule = useCourseStore((s) => s.updateModule)
   const updateUnit = useCourseStore((s) => s.updateUnit)
   const addModule = useCourseStore((s) => s.addModule)
@@ -860,6 +861,14 @@ export function CourseTree() {
                     {course.bibliography.length
                       ? `${course.bibliography.length} referencia${course.bibliography.length === 1 ? '' : 's'}`
                       : 'Sin referencias'}
+                  </span>
+                </SyntheticItem>
+                <SyntheticItem selected={docsSelected} onSelect={() => select('__documents__')}>
+                  <span className="ed-screen-type"><Icon name="file-text" size={12} color={TYPE_COLORS.materiales} /> {course.attachments_title.trim() || 'Documentos'}</span>
+                  <span className="ed-screen-title">
+                    {course.attachments.length
+                      ? `${course.attachments.length} PDF`
+                      : 'Sin documentos'}
                   </span>
                 </SyntheticItem>
               </ul>

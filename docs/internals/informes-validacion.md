@@ -16,6 +16,11 @@ Reglas por pantalla / unidad / curso, p. ej.:
 - `type` distinto de `cover`/`summary` **sin** `objective` → aviso (por eso el editor
   rellena `objective` aunque no se muestre como banner; ver `arquitectura-runtime.md`).
 - Imagen sin `alt`, vídeo sin `transcript`, etc.
+- **Documentos PDF adjuntos** (`attachments`): `ATTACHMENT_NOT_PDF` y `ATTACHMENT_TOO_BIG`
+  (> 10 MB) y `ATTACHMENTS_TOO_MANY` (> 10) son `error`; `ATTACHMENT_NO_TITLE` y
+  `ATTACHMENTS_HEAVY` (> 25 MB entre todos) son `warning`. Los límites viven en
+  `schema/attachments.ts`, compartidos con `DocumentsEditor`, que ya los aplica al subir:
+  estas reglas cubren proyectos editados a mano o generados por script.
 - **Preguntas de tests** (final y de unidad): mismas exigencias que las interacciones de
   pantalla — enunciado, respuesta correcta y feedback (`checkQuizQuestions`). Las del test
   final llevan `screenId: '__final__'`; las de tests de unidad llevan `unitId`.

@@ -290,6 +290,15 @@
   function bibliographyTitle() {
     return (COURSE.bibliography_title || '').trim() || 'Recursos y bibliografía';
   }
+  function attachmentsTitle() {
+    return (COURSE.attachments_title || '').trim() || 'Documentos';
+  }
+  // Peso legible de un documento adjunto (coma decimal, como en el editor).
+  function fmtBytes(n) {
+    if (!n) return '';
+    if (n >= 1048576) return (n / 1048576).toFixed(1).replace('.', ',') + ' MB';
+    return Math.max(1, Math.round(n / 1024)) + ' KB';
+  }
 
   // Etiqueta de una pantalla en el menú lateral: mismo criterio y prefijo
   // «Actividad: » que el título de la propia diapositiva (renderer.js, .me-screen-scored)
@@ -433,6 +442,10 @@
     if ((COURSE.bibliography || []).length) {
       materialsHtml += '<li><button type="button" class="me-menu-material" data-modal="resources">' +
         '<span data-icon="paperclip" aria-hidden="true"></span>' + esc(bibliographyTitle()) + '</button></li>';
+    }
+    if ((COURSE.attachments || []).length) {
+      materialsHtml += '<li><button type="button" class="me-menu-material" data-modal="documents">' +
+        '<span data-icon="file-text" aria-hidden="true"></span>' + esc(attachmentsTitle()) + '</button></li>';
     }
     if (materialsHtml) html += '<div class="me-menu-materials"><ul>' + materialsHtml + '</ul></div>';
     nav.innerHTML = html;
@@ -1266,6 +1279,23 @@
         return '<li>' + esc(e.ref) + (e.url ? ' — <a href="' + esc(e.url) + '" target="_blank" rel="noopener">enlace</a>' : '') + '</li>';
       }).join('');
       openModalHtml(bibliographyTitle(), b ? '<ul>' + b + '</ul>' : '<p>Sin recursos.</p>');
+    } else if (which === 'documents') {
+      // Documentos PDF adjuntos: solo rutas assets/…pdf (el editor y los
+      // validadores ya lo garantizan; aquí se filtra por si el JSON se editó a
+      // mano). La ruta se resuelve con Interactions.asset: blob URL en la Vista
+      // estudiante, ruta relativa dentro del paquete SCORM.
+      var d = (COURSE.attachments || []).filter(function (a) { return /^assets\/[^"'<>]+\.pdf$/i.test(a.src || ''); }).map(function (a) {
+        var href = esc(global.Interactions.asset(a.src));
+        var name = esc((a.src.split('/').pop()) || 'documento.pdf');
+        var meta = 'PDF' + (a.size ? ' · ' + fmtBytes(a.size) : '');
+        return '<li class="me-doc"><span class="me-doc-ico" data-icon="file-text" aria-hidden="true"></span><div class="me-doc-body">' +
+          '<a class="me-doc-title" href="' + href + '" target="_blank" rel="noopener">' + esc(a.title || a.src.split('/').pop()) + '</a>' +
+          (a.description ? '<p class="me-doc-desc">' + esc(a.description) + '</p>' : '') +
+          '<p class="me-doc-meta">' + meta + ' · <a href="' + href + '" target="_blank" rel="noopener">Abrir</a> · <a href="' + href + '" download="' + name + '">Descargar</a></p>' +
+          '</div></li>';
+      }).join('');
+      openModalHtml(attachmentsTitle(), d ? '<ul class="me-docs">' + d + '</ul>' : '<p>Sin documentos.</p>');
+      global.MEIcons.hydrate(document.getElementById('me-modal'));
     } else if (which === 'help') {
       openModalHtml('Ayuda', '<ul><li><strong>Alt + →</strong> Siguiente</li><li><strong>Alt + ←</strong> Anterior</li><li><strong>Alt + M</strong> Menú</li><li><strong>Alt + T</strong> Transcripción</li></ul><p>Usa Tab para navegar por los controles.</p><p>Con los botones <strong>A−</strong> y <strong>A+</strong> de la barra superior puedes cambiar el tamaño del texto; se recuerda en este dispositivo.</p>');
     }

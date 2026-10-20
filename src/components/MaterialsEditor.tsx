@@ -1,6 +1,8 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useCourseStore } from '../store/courseStore'
-import type { GlossaryTerm, BibliographyEntry } from '../schema/course.schema'
+import type { GlossaryTerm, BibliographyEntry, Attachment } from '../schema/course.schema'
+import { toBlob, sizeOf as assetSize } from '../media/probeDuration'
+import { MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES, WARN_ATTACHMENT_BYTES, MAX_ATTACHMENTS_TOTAL_BYTES, fmtBytes, isPdfBlob, uniqueAttachmentPath } from '../schema/attachments'
 import { confirmDialog } from '../store/confirm'
 import { Icon, type IconName } from './Icon'
 import { TYPE_COLORS } from '../schema/labels'
@@ -175,6 +177,143 @@ export function BibliographyEditor() {
           <button type="button" className="ed-danger" onClick={() => void removeAll()}>Vaciar recursos</button>
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * Documentos PDF adjuntos (Materiales → Documentos). Solo PDF y con límites de
+ * tamaño y número (`schema/attachments.ts`). Quitar un documento de la lista no
+ * borra el binario del proyecto (así Deshacer lo recupera): queda como recurso
+ * huérfano, que no viaja en el SCORM exportado y se puede purgar desde el informe.
+ */
+export function DocumentsEditor() {
+  const docs = useCourseStore((s) => s.course.attachments)
+  const setDocs = useCourseStore((s) => s.setAttachments)
+  const docsTitle = useCourseStore((s) => s.course.attachments_title)
+  const setDocsTitle = useCourseStore((s) => s.setAttachmentsTitle)
+  const assets = useCourseStore((s) => s.assets)
+  const addAsset = useCourseStore((s) => s.addAsset)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+
+  const sizeOf = (d: Attachment) => d.size ?? (assets[d.src] != null ? assetSize(assets[d.src]) : 0)
+  const update = (i: number, patch: Partial<Attachment>) =>
+    setDocs(docs.map((d, j) => (j === i ? { ...d, ...patch } : d)))
+  const move = (i: number, delta: number) => {
+    const j = i + delta
+    if (j < 0 || j >= docs.length) return
+    const next = [...docs]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    setDocs(next)
+  }
+  const remove = async (i: number) => {
+    if (!(await confirmDialog({
+      title: 'Quitar documento',
+      message: `Se quitará «${docs[i].title.trim() || docs[i].src}» de los documentos del curso. Puedes recuperarlo con Deshacer.`,
+      confirmLabel: 'Quitar',
+      danger: true,
+    }))) return
+    setDocs(docs.filter((_, j) => j !== i))
+  }
+  const open = (src: string) => {
+    const blob = assets[src]
+    if (!blob) return
+    const url = URL.createObjectURL(toBlob(blob))
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  }
+
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    e.target.value = ''
+    if (!files.length) return
+    setBusy(true)
+    setMsg(null)
+    const added: Attachment[] = []
+    const rejected: string[] = []
+    try {
+      for (const file of files) {
+        if (docs.length + added.length >= MAX_ATTACHMENTS) {
+          rejected.push(`«${file.name}»: el curso ya tiene el máximo de ${MAX_ATTACHMENTS} documentos.`)
+          continue
+        }
+        if (!(await isPdfBlob(file))) {
+          rejected.push(`«${file.name}» no es un PDF: solo se pueden adjuntar documentos PDF.`)
+          continue
+        }
+        if (file.size > MAX_ATTACHMENT_BYTES) {
+          rejected.push(`«${file.name}» pesa ${fmtBytes(file.size)} y el máximo es ${fmtBytes(MAX_ATTACHMENT_BYTES)}: redúcelo (por ejemplo, guardándolo de nuevo como PDF optimizado) o enlázalo desde Recursos.`)
+          continue
+        }
+        if (file.size > WARN_ATTACHMENT_BYTES && !(await confirmDialog({
+          title: 'Documento pesado',
+          message: `«${file.name}» pesa ${fmtBytes(file.size)} (recomendado: menos de ${fmtBytes(WARN_ATTACHMENT_BYTES)}). Un PDF pesado engorda el paquete SCORM y tarda en abrirse en el móvil. ¿Lo adjuntas igualmente?`,
+          confirmLabel: 'Adjuntar igualmente',
+          cancelLabel: 'Cancelar',
+        }))) continue
+        const taken = (p: string) => p in assets || added.some((d) => d.src === p)
+        const src = uniqueAttachmentPath(file.name, taken)
+        addAsset(src, new Blob([file], { type: 'application/pdf' }))
+        added.push({ title: file.name.replace(/\.pdf$/i, ''), description: '', src, size: file.size })
+      }
+      if (added.length) setDocs([...docs, ...added])
+      if (rejected.length) setMsg(rejected.join(' '))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const total = docs.reduce((n, d) => n + sizeOf(d), 0)
+  const full = docs.length >= MAX_ATTACHMENTS
+
+  return (
+    <div className="ed-form">
+      <EditableHead value={docsTitle} placeholder="Documentos" ariaLabel="Título de los documentos"
+        chipIcon="file-text" chipLabel="Documentos" onChange={setDocsTitle} />
+      <p className="ed-hint">
+        Documentos PDF que el estudiante puede abrir o descargar desde el menú lateral del curso
+        (con este título; sin documentos, la entrada no se muestra). Solo PDF: hasta {MAX_ATTACHMENTS} documentos
+        de {fmtBytes(MAX_ATTACHMENT_BYTES)} como máximo cada uno (recomendado: menos de {fmtBytes(WARN_ATTACHMENT_BYTES)} cada
+        uno y menos de {fmtBytes(MAX_ATTACHMENTS_TOTAL_BYTES)} entre todos). Para documentos más pesados, mejor un enlace en Recursos.
+      </p>
+
+      {docs.length === 0 && <p className="ed-empty">Sin documentos. Adjunta el primer PDF.</p>}
+
+      {docs.map((d, i) => (
+        <div key={d.src} className="ed-term-row">
+          <div className="ed-term-fields">
+            <label className="ed-field">
+              <span>Título (lo ve el estudiante)</span>
+              <input value={d.title} placeholder="p. ej. Ficha de ejercicios" onChange={(e) => update(i, { title: e.target.value })} />
+            </label>
+            <label className="ed-field">
+              <span>Descripción (opcional)</span>
+              <input value={d.description} placeholder="Para qué sirve o cuándo consultarlo" onChange={(e) => update(i, { description: e.target.value })} />
+            </label>
+            <p className="ed-hint">
+              <Icon name="file-text" size={12} /> {d.src.replace(/^assets\/docs\//, '')} · {fmtBytes(sizeOf(d))}
+              {assets[d.src]
+                ? <> · <button type="button" className="ed-link" onClick={() => open(d.src)}>Abrir</button></>
+                : <strong> · Falta el archivo en el proyecto</strong>}
+            </p>
+          </div>
+          <span className="ed-row">
+            <button type="button" className="ed-icobtn" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Subir documento" title="Subir"><Icon name="arrow-up" size={14} /></button>
+            <button type="button" className="ed-icobtn" disabled={i === docs.length - 1} onClick={() => move(i, 1)} aria-label="Bajar documento" title="Bajar"><Icon name="arrow-down" size={14} /></button>
+            <button type="button" className="ed-icobtn ed-icobtn-danger" onClick={() => void remove(i)} aria-label={`Quitar documento ${d.title || i + 1}`} title="Quitar documento"><Icon name="trash" size={14} /></button>
+          </span>
+        </div>
+      ))}
+
+      <div className="ed-row">
+        <label className="ed-file-btn" aria-busy={busy} aria-disabled={full} title={full ? `Máximo ${MAX_ATTACHMENTS} documentos` : undefined}>
+          <Icon name="plus" size={13} /> {busy ? 'Procesando…' : 'Adjuntar PDF…'}
+          <input type="file" accept="application/pdf,.pdf" multiple hidden disabled={busy || full} onChange={(e) => void onPick(e)} />
+        </label>
+        {docs.length > 0 && <span className="ed-hint">{docs.length} de {MAX_ATTACHMENTS} · {fmtBytes(total)} en total</span>}
+      </div>
+      {msg && <p className="ed-hint-warn" role="alert">{msg}</p>}
     </div>
   )
 }

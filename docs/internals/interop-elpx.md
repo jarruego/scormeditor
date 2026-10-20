@@ -19,6 +19,10 @@ es error). El resultado pasa el
 errores** (probado con el proyecto demo completo: 57 páginas, 80 componentes,
 todos los tipos de interacción).
 
+Los **documentos PDF adjuntos** del curso (`attachments`, Materiales → Documentos) no se
+exportan: eXe no tiene un equivalente directo de ese bloque de materiales, y el autor
+puede añadirlos allí como recurso si los necesita.
+
 ## Formato ODE 2.0 (lo esencial)
 - Raíz `<!DOCTYPE ode SYSTEM "content.dtd">` + `<ode
   xmlns="http://www.intef.es/xsd/ode" version="2.0">`; hijos **en orden**:

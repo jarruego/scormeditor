@@ -17,6 +17,9 @@ El panel central (`App.tsx`) muestra `ScreenEditor` salvo cuando el nodo selecci
   historial). Eliminar una entrada con contenido pide confirmación (`confirmDialog`). Los
   avisos `GLOSSARY_EMPTY`/`BIBLIO_EMPTY` de Validación enlazan a estos editores
   (`useIssueTarget`). En la carcasa se ven en los modales «Glosario»/«Recursos».
+- **`__documents__`** (también en «Materiales») → `DocumentsEditor`: PDF adjuntos
+  (`course.attachments`, ver «Documentos PDF adjuntos» en `editor-pantallas.md`); los
+  avisos `ATTACHMENT*` enlazan aquí.
 
 ## Sistema de iconos propio (`Icon.tsx`)
 Toda la iconografía del **editor** sale de `src/components/Icon.tsx`: SVG inline

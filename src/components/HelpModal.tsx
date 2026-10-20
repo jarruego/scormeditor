@@ -238,8 +238,8 @@ const SECTIONS: Section[] = [
         </ul>
         <p>
           Al final del árbol hay dos secciones fijas: <strong>Evaluación</strong> (el
-          test final del curso) y <strong>Materiales</strong> (glosario y
-          bibliografía), que se editan como cualquier otra pantalla al seleccionarlas.
+          test final del curso) y <strong>Materiales</strong> (glosario,
+          bibliografía y documentos PDF), que se editan como cualquier otra pantalla al seleccionarlas.
         </p>
         <p>
           El separador entre el árbol y el editor se <strong>arrastra</strong> para
@@ -501,9 +501,11 @@ const SECTIONS: Section[] = [
         <p>
           En <strong>Materiales</strong> viven el <strong>glosario</strong>{' '}
           (término + definición, con ordenación alfabética A→Z) y la{' '}
-          <strong>bibliografía</strong> (cita + enlace opcional). El alumno los abre en
-          cualquier momento desde la barra del curso; sus títulos («Glosario»,
-          «Recursos») se pueden personalizar en la cabecera del editor.
+          <strong>bibliografía</strong> (cita + enlace opcional) y los{' '}
+          <strong>documentos</strong>: PDF que el alumno puede abrir o descargar (solo PDF,
+          hasta 10 documentos de 10 MB como máximo cada uno). El alumno los abre en
+          cualquier momento desde el menú lateral del curso; sus títulos («Glosario»,
+          «Recursos», «Documentos») se pueden personalizar en la cabecera del editor.
         </p>
       </>
     ),

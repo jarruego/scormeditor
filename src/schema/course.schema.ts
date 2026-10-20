@@ -349,6 +349,19 @@ export const BibliographyEntry = z.object({
 })
 export type BibliographyEntry = z.infer<typeof BibliographyEntry>
 
+/** Documento PDF adjunto al curso (Materiales → Documentos). El binario vive en el
+ *  `AssetMap` bajo `src` (`assets/docs/…pdf`) y viaja en el ZIP como cualquier asset.
+ *  Límites de tamaño y número en `schema/attachments.ts` (los comprueban el editor
+ *  al subir y `validators.ts`). */
+export const Attachment = z.object({
+  title: z.string().default(''),
+  description: z.string().default(''),
+  src: z.string(),
+  /** Peso en bytes, informativo (lo rellena el editor al subir; la carcasa lo muestra). */
+  size: z.number().int().nonnegative().optional(),
+})
+export type Attachment = z.infer<typeof Attachment>
+
 // ----------------------------------------------------------------------------
 // Configuración SCORM y carcasa
 // ----------------------------------------------------------------------------
@@ -519,6 +532,11 @@ export const Course = z.object({
     .string()
     .default('Recursos y bibliografía')
     .describe('Rótulo de recursos/bibliografía en la carcasa (título del modal; el botón lo abrevia si es el valor por defecto)'),
+  attachments: z.array(Attachment).default([]),
+  attachments_title: z
+    .string()
+    .default('Documentos')
+    .describe('Rótulo de los documentos adjuntos (PDF) en la carcasa (entrada del menú lateral y título del modal)'),
   quality_checklist: z.record(z.boolean()).default({}),
 })
 export type Course = z.infer<typeof Course>

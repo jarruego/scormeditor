@@ -3,6 +3,7 @@ import { allScreens, screenContainers, containerLabel } from '../schema/traverse
 import { normalizeObjective } from './objectives'
 import { buildTranscript, contentHash, itemsOf } from '../tts/buildTranscript'
 import { countFlaggedForReview } from '../schema/review'
+import { MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_TOTAL_BYTES, fmtBytes } from '../schema/attachments'
 import { getStateCodec } from '../scorm/stateCodec'
 
 export type Severity = 'error' | 'warning' | 'info'
@@ -376,6 +377,25 @@ function checkGlobal(ctx: Ctx) {
     ctx.push({ code: 'GLOSSARY_EMPTY', severity: 'warning', message: 'Glosario vacío.', location: 'Curso' })
   if (c.bibliography.length === 0)
     ctx.push({ code: 'BIBLIO_EMPTY', severity: 'warning', message: 'Bibliografía vacía.', location: 'Curso' })
+
+  // Documentos PDF adjuntos (límites en schema/attachments.ts; el editor ya los
+  // aplica al subir, esto cubre proyectos editados a mano o generados por script).
+  const docs = c.attachments
+  if (docs.length > MAX_ATTACHMENTS)
+    ctx.push({ code: 'ATTACHMENTS_TOO_MANY', severity: 'error', message: `Hay ${docs.length} documentos adjuntos: el máximo es ${MAX_ATTACHMENTS}.`, location: 'Documentos' })
+  let docsTotal = 0
+  docs.forEach((d, i) => {
+    const where = `Documentos › ${d.title.trim() || `documento ${i + 1}`}`
+    if (!/^assets\/.+\.pdf$/i.test(d.src))
+      ctx.push({ code: 'ATTACHMENT_NOT_PDF', severity: 'error', message: `El documento no es un PDF del proyecto (${d.src || 'sin archivo'}): solo se pueden adjuntar PDF.`, location: where })
+    if (!d.title.trim())
+      ctx.push({ code: 'ATTACHMENT_NO_TITLE', severity: 'warning', message: 'Documento sin título: el estudiante solo vería el nombre del archivo.', location: where })
+    if ((d.size ?? 0) > MAX_ATTACHMENT_BYTES)
+      ctx.push({ code: 'ATTACHMENT_TOO_BIG', severity: 'error', message: `El documento pesa ${fmtBytes(d.size ?? 0)}: el máximo es ${fmtBytes(MAX_ATTACHMENT_BYTES)}.`, location: where })
+    docsTotal += d.size ?? 0
+  })
+  if (docsTotal > MAX_ATTACHMENTS_TOTAL_BYTES)
+    ctx.push({ code: 'ATTACHMENTS_HEAVY', severity: 'warning', message: `Los documentos adjuntos suman ${fmtBytes(docsTotal)} (recomendado: menos de ${fmtBytes(MAX_ATTACHMENTS_TOTAL_BYTES)}): el paquete SCORM pesará más y tardará en subirse al LMS.`, location: 'Documentos' })
 
   // Origen de la nota. Ojo a la semántica real del runtime (`computeScore` en
   // app.js): 'unit_tests' significa «actividades evaluables» (interacciones de

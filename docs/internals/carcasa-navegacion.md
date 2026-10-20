@@ -85,10 +85,14 @@
   .me-menu-module`).
 - **Materiales en el menú lateral**: `buildMenu()` (app.js) añade, tras los
   módulos/unidades y las pantallas sintéticas, un bloque `.me-menu-materials` (filete
-  superior, además del fondo de bloque) con hasta dos entradas `.me-menu-material` — «📖
-  Glosario» y «🔗 Recursos» (icono + rótulo, `esc(glossaryTitle())`/
-  `esc(bibliographyTitle())`) — que abren el modal correspondiente
-  (`data-modal="glossary|resources"`) en vez de navegar. Clase propia (no
+  superior, además del fondo de bloque) con hasta tres entradas `.me-menu-material` — «📖
+  Glosario», «🔗 Recursos» y «📄 Documentos» (icono + rótulo, `esc(glossaryTitle())`/
+  `esc(bibliographyTitle())`/`esc(attachmentsTitle())`) — que abren el modal correspondiente
+  (`data-modal="glossary|resources|documents"`) en vez de navegar. El modal de Documentos
+  lista los PDF de `course.attachments` (`.me-docs`: título enlazado, descripción, «PDF ·
+  peso» y enlaces Abrir/Descargar); la ruta se resuelve con `Interactions.asset` (blob URL
+  en Vista estudiante, ruta relativa en el paquete) y solo se aceptan rutas
+  `assets/…pdf` (filtro defensivo además de los validadores). Clase propia (no
   `.me-menu-link`): así `refreshMenuChecks()` no las confunde con pantallas (no tienen
   `data-idx` ni cuentan para el progreso). `glossary_title`/`bibliography_title` de
   `course.json` (defaults «Glosario» / «Recursos y bibliografía») rotulan estas

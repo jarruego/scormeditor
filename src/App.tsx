@@ -14,7 +14,7 @@ import { Toolbar, EditTools, SettingsModals } from './components/Toolbar'
 import { CourseTree } from './components/CourseTree'
 import { ScreenEditor } from './components/ScreenEditor'
 import { FinalTestEditor } from './components/FinalTestEditor'
-import { GlossaryEditor, BibliographyEditor } from './components/MaterialsEditor'
+import { GlossaryEditor, BibliographyEditor, DocumentsEditor } from './components/MaterialsEditor'
 import { ValidationPanel } from './components/ValidationPanel'
 import { StudentPreview } from './components/StudentPreview'
 import { ReportPanel } from './components/ReportPanel'
@@ -35,7 +35,7 @@ export function App() {
   const val = useMemo(() => validateCourse(course), [course])
   // Entradas sintéticas del árbol (no son pantallas): test final y materiales.
   const selectedSynthetic = useCourseStore((s) =>
-    s.selectedScreenId === '__final__' || s.selectedScreenId === '__glossary__' || s.selectedScreenId === '__bibliography__'
+    s.selectedScreenId === '__final__' || s.selectedScreenId === '__glossary__' || s.selectedScreenId === '__bibliography__' || s.selectedScreenId === '__documents__'
       ? s.selectedScreenId
       : null)
 
@@ -250,6 +250,7 @@ export function App() {
             selectedSynthetic === '__final__' ? <FinalTestEditor />
             : selectedSynthetic === '__glossary__' ? <GlossaryEditor />
             : selectedSynthetic === '__bibliography__' ? <BibliographyEditor />
+            : selectedSynthetic === '__documents__' ? <DocumentsEditor />
             : <ScreenEditor />
           )}
           {tab === 'preview' && <StudentPreview />}

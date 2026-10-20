@@ -2484,5 +2484,7 @@ export const sampleCourse: Course = {
     }
   ],
   "bibliography_title": "Recursos y bibliografía",
+  "attachments": [],
+  "attachments_title": "Documentos",
   "quality_checklist": {}
 }

@@ -26,7 +26,8 @@ guardado: confundía.)
 - **MIME por extensión al abrir**: JSZip devuelve los blobs de las entradas **sin tipo**,
   y los object URLs de la vista previa (`StudentPreview`, `useObjectUrl`, `ImageFigureNode`)
   heredan ese vacío. PNG/JPEG sobreviven porque el navegador los detecta por contenido,
-  pero **SVG y VTT no** (un `<img>` con SVG sin `image/svg+xml` no se pinta).
+  pero **SVG y VTT no** (un `<img>` con SVG sin `image/svg+xml` no se pinta), y un PDF sin
+  `application/pdf` se descarga en vez de abrirse.
   `typedBlob()` (autosave.ts, mapa `MIME_BY_EXT`) reenvuelve cada blob con el MIME de su
   extensión al importar; extensión desconocida → blob tal cual. Subir con `FileButton` no
   lo necesita (el `File` trae tipo del SO), pero el ciclo guardar→reabrir lo perdía.

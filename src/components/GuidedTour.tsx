@@ -56,7 +56,7 @@ const STEPS: TourStep[] = [
     target: '[data-tour="tree"]',
     tab: 'editor',
     title: 'El árbol del curso',
-    body: 'Módulos → unidades → pantallas. Arrastra las pantallas para reordenarlas, usa «+ Añadir pantalla…» para crear (con recetas ya preparadas) y el filtro para buscar. Al final están el test final y los materiales (glosario y bibliografía).',
+    body: 'Módulos → unidades → pantallas. Arrastra las pantallas para reordenarlas, usa «+ Añadir pantalla…» para crear (con recetas ya preparadas) y el filtro para buscar. Al final están el test final y los materiales (glosario, bibliografía y documentos PDF).',
   },
   {
     target: '[data-tour="content"]',

@@ -725,6 +725,15 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-modal-head h2 { margin: 0; font-size: 1.15rem; }
 .me-modal-body { padding: 1rem; }
 .me-glossary dt { font-weight: 700; margin-top: .5rem; }
+/* Documentos PDF adjuntos (Materiales → Documentos) */
+.me-docs { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; }
+.me-doc { display: flex; gap: .75rem; align-items: flex-start; padding: .75rem; border: 1px solid var(--me-border); border-radius: var(--me-radius); }
+.me-doc-ico { flex: none; color: var(--me-primary); display: inline-flex; }
+.me-doc-ico svg { width: 28px; height: 28px; }
+.me-doc-body { min-width: 0; }
+.me-doc-title { font-weight: 700; color: var(--me-primary); overflow-wrap: anywhere; }
+.me-doc-desc { margin: .2rem 0 0; }
+.me-doc-meta { margin: .25rem 0 0; font-size: .875rem; color: var(--me-muted, #5d6b73); }
 
 /* Confeti de celebración (canvas efímero al aprobar en Resultados) */
 .me-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 300; }
