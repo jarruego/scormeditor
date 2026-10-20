@@ -165,6 +165,9 @@
   }
 
   // ---- Estructura del curso: mismo orden que flatten() en app.js ---------
+  // Única diferencia deliberada: en modo «screens» sin nada calificable app.js
+  // añade igualmente `__results__` (cierre «¡Enhorabuena!»), y aquí no entra,
+  // para no cambiar la huella de los paquetes ya publicados (ver app.js).
 
   function flattenScreens(course) {
     var out = [];

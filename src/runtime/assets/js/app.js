@@ -201,7 +201,13 @@
     // interacciones evaluables). Muestra la nota, APTO/NO APTO y el desglose.
     var hasFinal = COURSE.assessments && COURSE.assessments.final_test && (COURSE.assessments.final_test.questions || []).length;
     var hasScoredInter = SCREENS.some(function (e) { return !e.isFinalTest && e.screen.interaction && e.screen.interaction.scored; });
-    if (hasFinal || hasScoredInter) {
+    // En modo «screens» la pantalla existe SIEMPRE, aunque no haya nada que
+    // calificar: es el cierre («¡Enhorabuena!» o qué falta) de un paquete sin
+    // test. Ese caso NO entra en la estructura de state_codec.js (flattenScreens),
+    // a propósito: no es obligatoria, su visita no importa (el codec mapea por id)
+    // y así no cambia la huella de los paquetes ya publicados en ese modo.
+    var screensMode = ((COURSE.scorm && COURSE.scorm.rules) || {}).completion_mode === 'screens';
+    if (hasFinal || hasScoredInter || screensMode) {
       SCREENS.push({ unit: null, module: null, screen: { id: '__results__', type: 'results', title: 'Resultados', required: false }, isResults: true });
     }
     // Pantallas sueltas de cierre del paquete SCORM (COURSE.closing_screens):

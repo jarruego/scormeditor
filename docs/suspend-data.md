@@ -31,7 +31,9 @@ prueba de troceado ciego).
   interacciones (con su tipo) y preguntas del test final tal como está
   empaquetado el curso.
 - **`visited`**: mapa de bits sobre el índice de pantalla (mismo orden que
-  `flatten()` en `app.js`), en base64url.
+  `flatten()` en `app.js`), en base64url. Única excepción: el `__results__` que
+  `app.js` añade en modo `screens` sin nada calificable no está en `flattenScreens`
+  (no es obligatorio; así no cambia la huella de lo ya publicado).
 - **`results`**: un carácter por interacción — `.` pendiente, `d` completada
   sin nota, `c` acierto (nota = la máxima, no hace falta guardarla, se deriva
   de `interaction.points`), `f` completada evaluable sin acierto pleno

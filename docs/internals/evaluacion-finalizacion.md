@@ -190,8 +190,15 @@ Resultados (ver `arquitectura-runtime.md`). Añade:
   0–1 preguntas no se pagina.
   Al **cambiar una respuesta** (paginado o no) se retira el feedback de esa pregunta y
   el banner de nota del envío anterior (los intentos siguientes parten limpios).
-- **Resultados** `__results__` (si hay algo que calificar): `renderResults()` muestra
-  nota, **APTO/NO APTO** (o «Curso incompleto») y desglose (test final y/o actividades).
+- **Resultados** `__results__` (si hay algo que calificar, y **siempre** en
+  `completion_mode: 'screens'`): `renderResults()` muestra nota, **APTO/NO APTO** (o
+  «Curso incompleto») y desglose (test final y/o actividades); en `screens`, solo el
+  «¡Enhorabuena!» con confeti o las pantallas que faltan. Que en `screens` exista aunque
+  no haya test ni actividades evaluables es para que un paquete sin test (el test se hace
+  fuera, en Moodle; o una bienvenida) no acabe en una diapositiva con «Fin»
+  deshabilitado y sin cierre. Ese caso **no** entra en `flattenScreens` de
+  `state_codec.js`: así no cambia la huella `suspend_data` de los paquetes ya publicados
+  (la pantalla no es obligatoria y el codec mapea por id).
   Estilos `.me-result-*` en `styles.css`.
 
 Ambas se excluyen del postMessage de sync con el editor y no son editables como pantalla
