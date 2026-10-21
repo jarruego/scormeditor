@@ -29,8 +29,9 @@
   (app.js) — la misma lógica que el botón «Salir del curso» de la pantalla de
   Resultados: si `evaluateCompletion()` da `incomplete`, pide confirmación
   (`confirmExitIncomplete`, progreso guardado, se puede seguir luego); si no, cierra la
-  sesión SCORM directamente (`exitCourse`). Disponible en cualquier pantalla, no solo
-  en Resultados.
+  sesión SCORM directamente (`exitCourse`: sale de la pantalla completa y ofrece «Volver
+  al curso» de Moodle, ver `evaluacion-finalizacion.md`). Disponible en cualquier
+  pantalla, no solo en Resultados.
 
 ## Menú lateral
 - **Pantallas de introducción del paquete SCORM (`course.intro_screens`) sueltas al

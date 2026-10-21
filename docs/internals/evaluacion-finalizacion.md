@@ -94,12 +94,24 @@ puntuación) y el botón Salir — confeti si está completo, nada de desglose n
 (ver «Finalización» arriba). El resto de esta sección es el modo `evaluation`.
 
 `renderResults()` añade acciones al pie:
-- **Salir del curso** (siempre visible; botón centrado con el color de acento):
-  `finishSession()` (nota/tiempo/exit registrados) + intento de `window.close()`; si el
-  navegador no deja cerrar (ventana no abierta por script), se muestra una **despedida
-  a pantalla completa** (`.me-exit-done`: «Sesión finalizada… cierra la pestaña») que
-  cubre la carcasa — la sesión SCORM ya está cerrada (LMSFinish) y navegar detrás no
-  persistiría nada. Con el curso **incompleto** pide confirmación primero
+- **Salir del curso** (siempre visible; botón centrado con el color de acento) y el botón
+  Cerrar de la topbar acaban en `exitCourse()`: `finishSession()` (nota/tiempo/exit
+  registrados), **salida de la pantalla completa** si el alumno la había activado (quien no
+  sepa restaurar la ventana, sobre todo en móvil, no se queda atrapado en la despedida) e
+  intento de `window.close()`; si el navegador no deja cerrar, se muestra una **despedida
+  a pantalla completa** (`.me-exit-done`) que cubre la carcasa — la sesión SCORM ya está
+  cerrada (LMSFinish) y navegar detrás no persistiría nada.
+  - **«Volver al curso»**: `lmsCourseUrl()` busca la página del curso en las ventanas que
+    contienen la carcasa (Moodle la sirve desde su mismo dominio): primero `M.cfg`
+    (`wwwroot` + `courseId`), si no, un enlace a `course/view.php?id=`. Si la encuentra, la
+    despedida muestra un botón que lleva ahí la ventana superior (`top.location`); si no
+    (otro LMS, otro dominio, Vista estudiante del editor), el mensaje «ya puedes cerrar
+    esta pestaña». No contempla la apertura de Moodle en ventana emergente (decisión del
+    usuario: no la usan).
+  - **Vuelta automática** (`rules.auto_return`, casilla «Al cerrar, volver solo al curso de
+    Moodle» en Ajustes del curso, apagada por defecto): cuenta atrás de 5 s con «Quedarme
+    aquí» para cancelarla. Apagada por defecto porque a algunos alumnos los desorienta que
+    la página cambie sola. Con el curso **incompleto** pide confirmación primero
   (`confirmExitIncomplete`, modal propia con clases `.me-modal`): avisa de que no habrá
   calificación y de que el progreso queda guardado para reanudar (mensaje adaptado si
   `allow_resume: false`).

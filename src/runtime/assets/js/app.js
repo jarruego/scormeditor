@@ -2048,19 +2048,81 @@
     else exitCourse();
   }
 
+  // Página del curso en Moodle, para el botón «Volver al curso» de la despedida.
+  // Moodle sirve el paquete desde su propio dominio, así que la carcasa puede
+  // mirar en las ventanas que la contienen: primero M.cfg (wwwroot + courseId),
+  // y si no, cualquier enlace a course/view.php (migas, «Salir de la
+  // actividad»). Fuera de Moodle, con otro dominio o en la Vista estudiante del
+  // editor, no encuentra nada y la despedida se queda con el mensaje de siempre.
+  function lmsCourseUrl() {
+    var w = global, seen = 0;
+    while (w && seen++ < 10) {
+      try {
+        var M = w.M;
+        if (M && M.cfg && M.cfg.wwwroot && M.cfg.courseId && M.cfg.courseId > 1) {
+          return M.cfg.wwwroot + '/course/view.php?id=' + M.cfg.courseId;
+        }
+        var a = w.document.querySelector('a[href*="/course/view.php?id="]');
+        if (a && /\/course\/view\.php\?id=\d+/.test(a.href)) return a.href;
+      } catch (e) { /* ventana de otro dominio: se sigue subiendo */ }
+      if (w === w.parent) break;
+      w = w.parent;
+    }
+    return '';
+  }
+  function goToLmsCourse(url) {
+    try { global.top.location.href = url; } catch (e) { global.location.href = url; }
+  }
+
   function exitCourse() {
     finishSession();
+    // Si el alumno amplió la carcasa a pantalla completa, se sale antes de la
+    // despedida: quien no sepa restaurar la ventana (sobre todo en móvil) no
+    // se queda atrapado en ella.
+    if (fullscreenElement()) {
+      try {
+        var p = (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        if (p && p.catch) p.catch(function () {});
+      } catch (e) {}
+    }
     global.close();
     setTimeout(function () {
+      var url = AUTHOR ? '' : lmsCourseUrl();
+      var auto = !!(url && (COURSE.scorm.rules || {}).auto_return);
       var bye = document.createElement('div');
       bye.className = 'me-exit-done';
       bye.setAttribute('role', 'status');
       bye.innerHTML = '<div class="me-exit-done-card">' +
         '<div class="me-exit-done-icon" aria-hidden="true">✔</div>' +
         '<h1>Sesión finalizada</h1>' +
-        '<p>Tu progreso ha quedado registrado.<br>Ya puedes cerrar esta pestaña para volver al campus.</p>' +
+        (url
+          ? '<p>Tu progreso ha quedado registrado.</p>' +
+            '<button type="button" class="me-btn me-primary me-exit-return">Volver al curso</button>' +
+            (auto ? '<p class="me-exit-auto">Volviendo al curso en <span class="me-exit-count">5</span> s · ' +
+              '<button type="button" class="me-exit-keep">Quedarme aquí</button></p>' : '')
+          : '<p>Tu progreso ha quedado registrado.<br>Ya puedes cerrar esta pestaña para volver al campus.</p>') +
         '</div>';
       document.body.appendChild(bye);
+      if (!url) return;
+      var timer = null;
+      bye.querySelector('.me-exit-return').addEventListener('click', function () {
+        if (timer) clearInterval(timer);
+        goToLmsCourse(url);
+      });
+      bye.querySelector('.me-exit-return').focus();
+      if (!auto) return;
+      var left = 5;
+      timer = setInterval(function () {
+        left--;
+        var n = bye.querySelector('.me-exit-count');
+        if (n) n.textContent = String(left);
+        if (left <= 0) { clearInterval(timer); goToLmsCourse(url); }
+      }, 1000);
+      bye.querySelector('.me-exit-keep').addEventListener('click', function () {
+        clearInterval(timer);
+        var line = bye.querySelector('.me-exit-auto');
+        if (line) line.parentNode.removeChild(line);
+      });
     }, 400);
   }
 

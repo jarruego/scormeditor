@@ -945,6 +945,9 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-exit-done-icon { width: 64px; height: 64px; margin: 0 auto .9rem; display: grid; place-items: center; border-radius: 50%; background: var(--me-ok); color: #fff; font-size: 1.9rem; }
 .me-exit-done h1 { margin: 0 0 .5rem; }
 .me-exit-done p { color: var(--me-muted); line-height: 1.6; margin: 0; }
+.me-exit-return { margin-top: 1.4rem; font-size: 1.1rem; padding: .75rem 1.6rem; }
+.me-exit-done .me-exit-auto { margin-top: 1rem; font-size: .9rem; }
+.me-exit-keep { background: none; border: none; padding: 0; font: inherit; color: var(--me-primary); text-decoration: underline; cursor: pointer; }
 /* Modal de tarjeta: texto a la izquierda, imagen a la derecha (apilada en móvil) */
 .me-icmodal-card { max-width: 860px; }
 .me-icmodal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; padding: 1rem; align-items: start; }

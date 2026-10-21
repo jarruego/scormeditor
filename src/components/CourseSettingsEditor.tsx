@@ -300,6 +300,11 @@ export function CourseSettingsSection() {
               onChange={(e) => setRule({ allow_resume: e.target.checked })} />
             <span>Permitir reanudar donde lo dejó</span>
           </label>
+          <label className="ed-check" title="Tras pulsar Cerrar, la pantalla «Sesión finalizada» vuelve sola a la página del curso en Moodle a los 5 segundos (el alumno puede quedarse). Sin marcar, solo se muestra el botón «Volver al curso».">
+            <input type="checkbox" checked={r.auto_return}
+              onChange={(e) => setRule({ auto_return: e.target.checked })} />
+            <span>Al cerrar, volver solo al curso de Moodle</span>
+          </label>
         </div>
         {r.completion_mode === 'screens' && (
           <p className="ed-hint">

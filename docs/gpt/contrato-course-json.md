@@ -115,6 +115,8 @@ Reglas que NO se pueden romper:
   propio total (no por suma de puntos). También editable en «Ajustes del curso».
 - `navigation`: `"free"` | `"sequential"` | `"mixed"` (usa el nombre en inglés).
 - `attempts_allowed`: `0` = ilimitados.
+- `auto_return` (opcional, def. `false`): **omítelo**. Es un ajuste del editor humano
+  (volver solo a la página del curso en Moodle al cerrar la sesión).
 - `completion_mode` (opcional, def. `"evaluation"`): `"evaluation"` = completado clásico
   (pantallas + interacciones obligatorias si `require_interactions` + nota mínima).
   `"screens"` = completa con solo llegar al final (`min_required_screens_pct`), ignorando

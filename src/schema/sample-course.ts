@@ -35,7 +35,8 @@ export const sampleCourse: Course = {
       "score_source": "mixed",
       "mixed_final_weight": 60,
       "navigation": "free",
-      "allow_resume": true
+      "allow_resume": true,
+      "auto_return": false
     },
     "layouts": []
   },

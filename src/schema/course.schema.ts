@@ -405,6 +405,10 @@ export const ScormConfig = z.object({
       .describe('En score_source="mixed", peso (%) del test final; la práctica pesa el resto'),
     navigation: NavigationMode.default('mixed'),
     allow_resume: z.boolean().default(true),
+    auto_return: z
+      .boolean()
+      .default(false)
+      .describe('Al cerrar la sesión, volver solo a la página del curso en el LMS (Moodle) tras una cuenta atrás de 5 s'),
   }).default({}),
   layouts: z.array(CourseLayout).default([]).describe('Historial de estructuras publicadas (suspend_data v2)'),
 })
