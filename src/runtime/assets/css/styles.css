@@ -420,6 +420,9 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 /* Reproductor de la narración: play/pause · seek+tiempo · 🔊/🔇+volumen ·
    velocidad. Oculto entero si la pantalla no tiene audio_src (app.js). */
 .me-audio-player { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
+/* El `display` de arriba anularía el atributo `hidden` (regla de autor gana al
+   user-agent): sin esto el reproductor salía también en pantallas sin audio. */
+.me-audio-player[hidden] { display: none; }
 /* Seek y volumen en gris neutro y algo más finos, para que se lean como
    controles secundarios (no compiten con el turquesa/azul de progreso y nav). */
 .me-audio-player input[type=range] { accent-color: var(--me-muted); height: 3px; }
