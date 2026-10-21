@@ -343,6 +343,27 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-placeholder { border: 2px dashed #d09a00; background: #fff8e6; padding: 1rem; border-radius: 6px; }
 .me-forum-tag { display: inline-block; background: var(--me-primary); color: #fff; padding: .1rem .5rem; border-radius: 99px; font-size: .8rem; }
 
+/* Instrucciones de uso (`type: 'guide'`): secciones en rejilla; cada control
+   se dibuja como una «tecla» que imita el botón real (solo dibujo, no
+   clicable) junto a su explicación. En rem para escalar con A−/A+. */
+.me-guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 1rem; margin-top: 1rem; }
+.me-guide-section { border: 1px solid var(--me-border); border-radius: var(--me-radius); background: var(--me-surface); padding: .85rem 1rem; box-shadow: var(--me-shadow-1); }
+.me-guide-section h2 { margin: 0 0 .6rem; font-size: 1.02rem; color: var(--me-primary); }
+.me-guide-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .65rem; }
+.me-guide-item { display: grid; grid-template-columns: 6.6rem 1fr; gap: .7rem; align-items: start; }
+.me-guide-keys { display: flex; flex-wrap: wrap; gap: .25rem; }
+.me-guide-text { font-size: .93rem; line-height: 1.45; }
+.me-guide-note { font-size: .88rem; color: var(--me-muted); border-top: 1px dashed var(--me-border); padding-top: .55rem; }
+.me-guide-key { display: inline-flex; align-items: center; justify-content: center; gap: .25rem; min-width: 2rem; height: 2rem; padding: 0 .4rem; border: 1px solid var(--me-border); border-radius: 6px; background: var(--me-bg); color: var(--me-text); font-size: .82rem; font-weight: 600; white-space: nowrap; }
+.me-guide-key .me-ico { width: 1.05rem; height: 1.05rem; }
+.me-guide-key-nav { background: var(--me-primary); border-color: var(--me-primary); color: #fff; font-size: .72rem; padding: 0 .35rem; }
+.me-guide-key-progress { min-width: 5.5rem; border-radius: 99px; background: color-mix(in srgb, var(--me-accent) 45%, white); border-color: transparent; }
+.me-guide-key-close { color: var(--me-error); }
+.me-guide-key-check { background: var(--me-surface); }
+.me-guide-key-scored { border-radius: 99px; border-color: transparent; font-size: .66rem; letter-spacing: .03em; text-transform: uppercase; background: color-mix(in srgb, var(--me-primary) 12%, white); color: var(--me-primary); }
+.me-guide-a-s { font-size: .7em; }
+.me-guide-footer { grid-column: 1 / -1; margin: 0; font-size: .9rem; color: var(--me-muted); text-align: center; }
+
 /* Toolbar */
 /* Grid de 3 columnas (no flex): con flex, un único hijo con margin:auto absorbe
    el espacio libre pero NO queda centrado respecto al conjunto — el ancho de

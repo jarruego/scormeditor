@@ -13,7 +13,7 @@ Reglas por pantalla / unidad / curso, p. ej.:
   (`STATE.results[interaction.id]`, `STATE.visited[screen.id]`): un id repetido mezcla
   progreso y nota. El preflight del GPT (`validate_course`, contrato §11) ya lo bloqueaba;
   esto iguala la paridad en el editor.
-- `type` distinto de `cover`/`summary` **sin** `objective` → aviso (por eso el editor
+- `type` distinto de `cover`/`summary`/`guide` **sin** `objective` → aviso (por eso el editor
   rellena `objective` aunque no se muestre como banner; ver `arquitectura-runtime.md`).
 - Imagen sin `alt`, vídeo sin `transcript`, etc.
 - **Documentos PDF adjuntos** (`attachments`): `ATTACHMENT_NOT_PDF` y `ATTACHMENT_TOO_BIG`

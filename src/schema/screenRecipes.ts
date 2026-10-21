@@ -111,6 +111,21 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     uniquePerUnit: true,
   },
   {
+    // Opcional (no viene en el curso de serie): la carcasa genera sola el
+    // contenido con los controles reales del paquete (ver template `guide` en
+    // renderer.js); el texto del autor, si lo hay, va como entradilla.
+    key: 'guide',
+    icon: 'help-circle',
+    label: 'Instrucciones de uso',
+    description: 'Explica al alumno que llega por primera vez los controles del curso: navegación, audio, transcripción, imprimir… Se coloca tras la portada.',
+    group: 'estructura',
+    type: 'guide',
+    scope: 'course',
+    defaultTitle: 'Cómo usar este curso',
+    place: (ss) => afterLast(ss, ['cover']),
+    uniquePerUnit: true,
+  },
+  {
     key: 'cover',
     icon: 'home',
     label: 'Portada unidad',

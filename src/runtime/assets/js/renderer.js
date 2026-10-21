@@ -291,7 +291,109 @@
     unit_quiz: function (s) {
       return '<h1>' + esc(s.title) + '</h1>' + mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text));
     },
+    // Instrucciones de uso: el texto del autor (opcional) como entradilla y,
+    // debajo, la guía de controles que genera la propia carcasa con los mismos
+    // iconos que los botones reales. Solo lista lo que existe en ESTE paquete
+    // (ctx.guide, ver guideInfo en app.js): sin audio no explica el
+    // reproductor, sin glosario no lo menciona… Así no se desfasa nunca con el
+    // curso ni con la carcasa, y el autor no tiene que escribirla.
+    guide: function (s, ctx) {
+      var intro = (s.student_text || '').trim() || (s.visual_resource && s.visual_resource.kind !== 'none')
+        ? mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) : '';
+      return '<h1>' + esc(s.title) + '</h1>' + intro + guideHtml((ctx && ctx.guide) || {});
+    },
   };
+
+  // ---- Guía de controles (template `guide`) --------------------------------
+  function ico(name) {
+    return global.MEIcons ? global.MEIcons.svg(name) : '';
+  }
+  // «Tecla» que imita el botón real de la carcasa (solo dibujo, no clicable).
+  function gKey(inner, cls) {
+    return '<span class="me-guide-key' + (cls ? ' ' + cls : '') + '" aria-hidden="true">' + inner + '</span>';
+  }
+  function gItem(keys, label, text) {
+    return '<li class="me-guide-item"><div class="me-guide-keys">' + keys + '</div>' +
+      '<div class="me-guide-text"><strong>' + label + '</strong> ' + text + '</div></li>';
+  }
+  function gSection(title, items) {
+    return '<section class="me-guide-section"><h2>' + title + '</h2><ul class="me-guide-list">' + items + '</ul></section>';
+  }
+  function guideHtml(g) {
+    var nav = g.navigation || 'mixed';
+    var navNote = nav === 'free'
+      ? 'Puedes recorrer las pantallas en el orden que prefieras.'
+      : nav === 'sequential'
+        ? 'Las pantallas se recorren en orden: para avanzar tienes que completar la actual.'
+        : 'Puedes volver atrás cuando quieras; para saltar más adelante, antes tienes que completar las pantallas obligatorias.';
+    if (g.hasMinTime) navNote += ' Algunas pantallas piden un tiempo mínimo antes de dejarte continuar.';
+
+    var html = '<div class="me-guide">';
+
+    html += gSection('Moverte por el curso',
+      gItem(gKey(ico('arrow-left') + 'Anterior', 'me-guide-key-nav') + gKey('Siguiente' + ico('arrow-right'), 'me-guide-key-nav'),
+        'Anterior / Siguiente.', 'Pasan a la pantalla anterior o a la siguiente. Están en la barra inferior.') +
+      gItem(gKey('3 / 12', 'me-guide-key-progress'),
+        'Barra de progreso.', 'Indica en qué pantalla estás y cuántas hay; puedes deslizarla para ir a otra.') +
+      gItem(gKey(ico('menu')),
+        'Índice.', 'Abre y cierra el menú con todas las pantallas del curso; las que ya has completado aparecen marcadas.') +
+      '<li class="me-guide-note">' + navNote + '</li>');
+
+    var audio = '';
+    if (g.hasAudio) {
+      audio +=
+        gItem(gKey(ico('play')) + gKey(ico('pause')),
+          'Reproducir / pausar.', 'La narración empieza sola al entrar en cada pantalla; aquí la pausas o la reanudas. Arrastra la barra del reproductor para avanzar o retroceder.') +
+        gItem(gKey(ico('volume-on')),
+          'Sonido.', 'Silencia la narración o ajusta su volumen con el control deslizante.') +
+        gItem(gKey('1×', 'me-guide-key-text'),
+          'Velocidad.', 'Escucha la narración más deprisa (1,25×, 1,5× o 2×).');
+    }
+    audio += gItem(gKey(ico('file-text')),
+      'Transcripción.', g.hasAudio
+        ? 'Muestra por escrito lo que dice la narración o el vídeo de la pantalla, por si no puedes o no quieres escucharlo.'
+        : 'Muestra el texto completo del vídeo o del audio de la pantalla, cuando lo tiene.');
+    html += gSection(g.hasAudio ? 'Audio y transcripción' : 'Transcripción', audio);
+
+    html += gSection('Herramientas',
+      gItem(gKey('<span class="me-guide-a-s">A</span>−', 'me-guide-key-text') + gKey('A+', 'me-guide-key-text'),
+        'Tamaño del texto.', 'Reduce o amplía la letra de todo el curso. Se recuerda en este dispositivo.') +
+      gItem(gKey(ico('printer')),
+        'Imprimir.', 'Imprime la pantalla que estás viendo o guárdala como PDF.') +
+      gItem(gKey(ico('maximize')),
+        'Pantalla completa.', 'Aprovecha toda la pantalla para el curso (si tu navegador lo permite). Vuelve a pulsarlo para salir.') +
+      gItem(gKey(ico('help-circle')),
+        'Ayuda.', 'Recuerda los atajos de teclado.') +
+      gItem(gKey(ico('log-out'), 'me-guide-key-close'),
+        'Cerrar.', 'Termina la sesión. Tu progreso se guarda y podrás continuar donde lo dejaste.'));
+
+    if (g.materials && g.materials.length) {
+      html += gSection('Materiales de consulta', g.materials.map(function (m) {
+        return gItem(gKey(ico(m.icon)), esc(m.title) + '.', 'Al final del índice; puedes consultarlo en cualquier momento.');
+      }).join(''));
+    }
+
+    var act = gItem(gKey('Comprobar', 'me-guide-key-check'),
+      'Actividades.', 'Resuelve la actividad y pulsa Comprobar para ver si has acertado y leer la explicación.');
+    if (g.hasScored) {
+      act += gItem(gKey('Evaluable', 'me-guide-key-scored'),
+        'Actividades evaluables.', 'Las que llevan esta etiqueta cuentan para tu nota.');
+    }
+    if (g.hasFinalTest) {
+      act += gItem(gKey('✓', 'me-guide-key-text'),
+        'Test final.', 'Al terminar el contenido encontrarás un test de evaluación; tu resultado aparece al final.');
+    }
+    html += gSection('Actividades', act);
+
+    html += gSection('Con el teclado',
+      gItem(gKey('Alt') + gKey('→') + gKey('←'), 'Siguiente / anterior.', '') +
+      gItem(gKey('Alt') + gKey('M'), 'Índice.', '') +
+      gItem(gKey('Alt') + gKey('T'), 'Transcripción.', '') +
+      gItem(gKey('Tab'), 'Recorrer los controles.', 'Pulsa Intro o Espacio para activarlos.'));
+
+    html += '<p class="me-guide-footer">Tu progreso se guarda automáticamente.</p>';
+    return html + '</div>';
+  }
 
   // Locución de la diapositiva (si la hay). El reproductor NO es visible: el
   // audio se controla desde app.js (reproducción automática al entrar y botón de

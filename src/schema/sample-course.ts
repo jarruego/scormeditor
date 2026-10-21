@@ -107,6 +107,46 @@ export const sampleCourse: Course = {
       }
     },
     {
+      "id": "s000g",
+      "type": "guide",
+      "title": "Cómo usar este curso",
+      "objective": "",
+      "student_text": "Esta es la pantalla opcional de **Instrucciones de uso** (receta «Instrucciones de uso» de la introducción). La guía de controles de abajo la genera sola la carcasa y solo muestra lo que existe en el paquete: si el curso no tiene locución, no explica el reproductor; si no hay glosario, no lo menciona. Este párrafo es la entradilla opcional del autor.",
+      "source_refs": [],
+      "visual_resource": {
+        "kind": "none",
+        "src": "",
+        "alt": "",
+        "tracks": [],
+        "has_voice": false,
+        "layout": "top",
+        "media_width": "50",
+        "media_align": "left",
+        "media_full": false,
+        "media_ratio": "16x9"
+      },
+      "interaction": null,
+      "interaction_layout": "bottom",
+      "required": true,
+      "min_time_seconds": 0,
+      "audio_src": "",
+      "transcript": "",
+      "accessibility": {
+        "alt_text_ok": true,
+        "keyboard_ok": true,
+        "contrast_ok": true
+      },
+      "scorm": {
+        "counts_for_completion": true
+      },
+      "editor_notes": [],
+      "status": "ok",
+      "review": {
+        "flagged": false,
+        "note": ""
+      }
+    },
+    {
       "id": "s001",
       "type": "content",
       "title": "Antes de empezar",

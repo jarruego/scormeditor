@@ -209,3 +209,24 @@ contenido, topbar se compacta, y la barra inferior apila navegación/audio (ver 
 Es un único punto de corte para todo el chrome de navegación — no confundir con los
 `@media (max-width: 640px)` sueltos de widgets concretos (drag&drop, buscaminas de
 palabras, navegación de preguntas…), que son ajustes de detalle independientes de este.
+
+## Pantalla de instrucciones de uso (`type: 'guide'`)
+Pantalla opcional (receta «Instrucciones de uso» de la introducción, ver
+`editor-pantallas.md`) que explica el chrome de la carcasa a quien llega por primera vez.
+- **La guía la genera la carcasa, no el autor** (template `guide` + `guideHtml()` en
+  `renderer.js`): así nunca se desfasa si cambia un botón de la carcasa, y no hay que
+  reescribirla en cada curso. El `student_text` (y recurso visual) del autor, si existe,
+  va como entradilla encima. Consecuencia aceptada: la guía no entra en la transcripción
+  automática ni en la locución (si se quiere narrar, el autor escribe la transcripción),
+  y el exportador `.elpx` solo lleva la entradilla (los controles de eXe son otros).
+- **Solo explica lo que existe en ESTE paquete**: `guideInfo()` (app.js) deduce del curso
+  si hay locución (algún `audio_src` → sección del reproductor), materiales
+  (glosario/recursos/documentos), actividades evaluables (y `score_source` ≠
+  `final_test`), test final, tiempos mínimos y el modo de `navigation` (frase de
+  navegación libre/mixta/secuencial). Llega al template por `ctx.guide`.
+- **Cada control se dibuja como una «tecla»** (`.me-guide-key`, solo dibujo, `aria-hidden`)
+  con el mismo icono de `icons.js` que el botón real, junto a su explicación. Todo en
+  `rem` para escalar con A−/A+. Si cambia un botón de la topbar/barra inferior, revisar
+  también `guideHtml()`.
+- `estimateDuration.ts` le suma `GUIDE_SECONDS` (la guía no está en `student_text`).
+

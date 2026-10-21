@@ -299,6 +299,11 @@ desplegable «Tipo de pantalla» queda como ajuste avanzado). Decisiones:
   quedan fuera de ahí porque su hero anuncia un nivel concreto que la introducción no
   tiene (la de `scope: 'course'` sí vale ahí, es la suya).
 
+- **Instrucciones de uso** (receta `guide`, `scope: 'course'`, tipo propio `guide`): opcional,
+  no viene en el curso de serie; se coloca tras la portada del SCORM. El contenido no lo
+  escribe el autor: lo genera la carcasa (ver «Pantalla de instrucciones de uso» en
+  `carcasa-navegacion.md`); su `student_text` es solo una entradilla opcional. Sin
+  objetivo (`hideObjective`, exenta de `NO_OBJECTIVE`).
 - Las recetas **no** rellenan `student_text` (acabaría exportado) ni `min_time_seconds`
   (ya hay ajuste masivo en Ajustes).
 - Tras crear, el foco salta al input de Título (`data-field="screen-title"` en

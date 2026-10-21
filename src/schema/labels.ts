@@ -20,6 +20,7 @@ export const SCREEN_TYPE_LABELS: Record<ScreenType, string> = {
   forum_prompt: 'Debate (foro)',
   unit_quiz: 'Test de unidad',
   content_placeholder: 'Pendiente de desarrollo',
+  guide: 'Instrucciones de uso',
 }
 
 export const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
@@ -60,6 +61,7 @@ export const SCREEN_TYPE_ICONS: Record<ScreenType, IconName> = {
   forum_prompt: 'forum',
   unit_quiz: 'clipboard-check',
   content_placeholder: 'placeholder',
+  guide: 'help-circle',
 }
 
 /** Nivel de una portada (`type: 'cover'`) según el contenedor donde vive la
@@ -114,6 +116,7 @@ export const SCREEN_TYPE_COLORS: Record<ScreenType, string> = {
   forum_prompt: TYPE_COLORS.practica,
   unit_quiz: TYPE_COLORS.evaluacion,
   content_placeholder: TYPE_COLORS.otros,
+  guide: TYPE_COLORS.estructura,
 }
 
 export function screenTypeColor(t: string): string {

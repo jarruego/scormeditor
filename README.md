@@ -266,7 +266,7 @@ formación e-learning.
 ## Tipos soportados
 
 **Pantallas:** cover, objectives, route, content, summary, video, reflection,
-forum_prompt, unit_quiz, content_placeholder.
+forum_prompt, unit_quiz, content_placeholder, guide (instrucciones de uso, opcional en la introducción).
 
 **Interacciones:** accordion, tabs, flip_cards, match_pairs, sort_steps,
 single_choice, true_false, classification, scenario_decision, case_practice,

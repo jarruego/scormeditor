@@ -24,6 +24,7 @@ export const ScreenType = z.enum([
   'forum_prompt',
   'unit_quiz',
   'content_placeholder',
+  'guide',
 ])
 export type ScreenType = z.infer<typeof ScreenType>
 

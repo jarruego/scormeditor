@@ -290,6 +290,28 @@
     // entradas del menú lateral (ya no son botones propios de la topbar).
   }
 
+  // Datos de la pantalla «Instrucciones de uso» (template `guide` en
+  // renderer.js): se deducen del propio curso, no los escribe el autor, para
+  // que la guía no se desfase al añadir/quitar audio, materiales o test.
+  function guideInfo() {
+    var rules = COURSE.scorm.rules || {};
+    var screens = SCREENS.filter(function (e) { return e.screen && !e.isFinalTest && !e.isResults; })
+      .map(function (e) { return e.screen; });
+    var materials = [];
+    if ((COURSE.glossary || []).length) materials.push({ icon: 'book-open', title: glossaryTitle() });
+    if ((COURSE.bibliography || []).length) materials.push({ icon: 'paperclip', title: bibliographyTitle() });
+    if ((COURSE.attachments || []).length) materials.push({ icon: 'file-text', title: attachmentsTitle() });
+    return {
+      navigation: rules.navigation || 'mixed',
+      hasAudio: screens.some(function (s) { return !!s.audio_src; }),
+      hasTranscripts: screens.some(function (s) { return !!s.transcript; }),
+      hasMinTime: screens.some(function (s) { return (s.min_time_seconds || 0) > 0; }),
+      hasScored: rules.score_source !== 'final_test' && screens.some(function (s) { return s.interaction && s.interaction.scored; }),
+      hasFinalTest: SCREENS.some(function (e) { return e.isFinalTest; }),
+      materials: materials,
+    };
+  }
+
   function glossaryTitle() {
     return (COURSE.glossary_title || '').trim() || 'Glosario';
   }
@@ -734,6 +756,9 @@
           module: entry.module ? (entry.module.title || '') : '',
           unit: entry.unit ? (entry.unit.title || '') : '',
         },
+        // Pantalla «Instrucciones de uso» (`type: 'guide'`): qué controles
+        // tiene ESTE paquete, para que la guía solo explique lo que existe.
+        guide: sc.type === 'guide' ? guideInfo() : null,
       };
       var rendered = Renderer.render(content, sc, ctx);
       activeController = rendered.interaction;

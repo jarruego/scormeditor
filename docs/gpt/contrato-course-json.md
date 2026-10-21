@@ -283,7 +283,13 @@ Reglas que NO se pueden romper:
 ```
 
 - `type` (enum cerrado): `cover`, `objectives`, `route`, `content`,
-  `summary`, `video`, `reflection`, `forum_prompt`, `unit_quiz`, `content_placeholder`.
+  `summary`, `video`, `reflection`, `forum_prompt`, `unit_quiz`, `content_placeholder`,
+  `guide`.
+- **`guide` = instrucciones de uso** del paquete (opcional; **no la generes salvo que el
+  usuario la pida**). Solo en `intro_screens`, tras la `cover`. La app pinta sola la guía
+  de controles (navegación, audio, transcripción, imprimir…): **no escribas** esos
+  controles en `student_text`; como mucho una entradilla breve, o déjalo vacío. Sin
+  `objective`.
 - **`cover` = portada** — de unidad o de módulo, **el mismo tipo en los dos casos**: la
   app decide sola el peso visual (banda más saturada, título mayor) según **dónde la
   coloques**, no según ningún otro campo. Dentro de `units[].screens` es la portada de
@@ -1016,7 +1022,8 @@ def validate_course(course: dict) -> list:
 
     # Enums cerrados del esquema (§3 y §6): un valor fuera de lista rompe la carga.
     SCREEN_TYPES = {"cover", "objectives", "route", "content", "summary",
-                    "video", "reflection", "forum_prompt", "unit_quiz", "content_placeholder"}
+                    "video", "reflection", "forum_prompt", "unit_quiz", "content_placeholder",
+                    "guide"}
     INTERACTION_TYPES = {"accordion", "tabs", "flip_cards", "match_pairs", "sort_steps",
                          "single_choice", "true_false", "classification",
                          "scenario_decision", "case_practice", "hotspots", "video",

@@ -42,7 +42,7 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
     add('SKELETON', 'warning', 'Pantalla marcada como esqueleto / pendiente de desarrollo.')
   }
   if (!s.title.trim()) add('NO_TITLE', 'error', 'Pantalla sin título.')
-  if (s.type !== 'cover' && s.type !== 'summary' && !s.objective.trim())
+  if (s.type !== 'cover' && s.type !== 'summary' && s.type !== 'guide' && !s.objective.trim())
     add('NO_OBJECTIVE', 'warning', 'Pantalla sin objetivo de aprendizaje.')
 
   // Congruencia tipo ↔ recurso ↔ interacción: avisos (no bloquean) para
