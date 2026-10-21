@@ -211,22 +211,48 @@ Es un único punto de corte para todo el chrome de navegación — no confundir 
 palabras, navegación de preguntas…), que son ajustes de detalle independientes de este.
 
 ## Pantalla de instrucciones de uso (`type: 'guide'`)
-Pantalla opcional (receta «Instrucciones de uso» de la introducción, ver
-`editor-pantallas.md`) que explica el chrome de la carcasa a quien llega por primera vez.
-- **La guía la genera la carcasa, no el autor** (template `guide` + `guideHtml()` en
-  `renderer.js`): así nunca se desfasa si cambia un botón de la carcasa, y no hay que
-  reescribirla en cada curso. El `student_text` (y recurso visual) del autor, si existe,
-  va como entradilla encima. Consecuencia aceptada: la guía no entra en la transcripción
-  automática ni en la locución (si se quiere narrar, el autor escribe la transcripción),
-  y el exportador `.elpx` solo lleva la entradilla (los controles de eXe son otros).
+Pantalla opcional (receta «Instrucciones de uso», solo en la introducción del paquete, ver
+`editor-pantallas.md`) para quien llega por primera vez. Título por defecto «Cómo moverte
+por esta unidad»: el paquete SCORM suele ser **una unidad dentro de un curso de Moodle**
+con otras actividades (cuestionarios, foros), así que los textos hablan de «la unidad» y
+remiten al aula virtual, no al «curso».
+- **Arriba, el vídeo demo** (~1 min, 1280×720, con subtítulos VTT, póster y transcripción)
+  que la receta trae consigo como assets del proyecto (ver «Vídeo demo» abajo). Es un
+  `visual_resource` normal: el autor puede quitarlo o cambiarlo.
+- **Debajo, el resumen de controles, que genera la carcasa, no el autor** (template
+  `guide` + `guideHtml()` en `renderer.js`): así nunca se desfasa si cambia un botón, y no
+  hay que reescribirlo en cada curso. Va en **desplegables por sección** con el marcado de
+  `.me-fold` (el mismo de `foldHtml`, app.js los engancha con `wireFolds` y `setupPrint`
+  los abre al imprimir): plegados si hay vídeo (son un repaso), abiertos si no lo hay (son
+  el contenido). El `student_text` del autor, si existe, va como entradilla. El resumen no
+  entra en la transcripción ni en la locución (la transcripción de la pantalla es la del
+  vídeo), y el exportador `.elpx` no lo lleva (los controles de eXe son otros).
 - **Solo explica lo que existe en ESTE paquete**: `guideInfo()` (app.js) deduce del curso
   si hay locución (algún `audio_src` → sección del reproductor), materiales
   (glosario/recursos/documentos), actividades evaluables (y `score_source` ≠
   `final_test`), test final, tiempos mínimos y el modo de `navigation` (frase de
-  navegación libre/mixta/secuencial). Llega al template por `ctx.guide`.
+  navegación libre/mixta/secuencial). Llega al template por `ctx.guide`. El vídeo, en
+  cambio, es fijo y enseña todos los controles (por eso dice «muchas pantallas tienen
+  narración», no «todas»).
 - **Cada control se dibuja como una «tecla»** (`.me-guide-key`, solo dibujo, `aria-hidden`)
-  con el mismo icono de `icons.js` que el botón real, junto a su explicación. Todo en
-  `rem` para escalar con A−/A+. Si cambia un botón de la topbar/barra inferior, revisar
-  también `guideHtml()`.
-- `estimateDuration.ts` le suma `GUIDE_SECONDS` (la guía no está en `student_text`).
+  con el mismo icono de `icons.js` que el botón real. Todo en `rem` para escalar con
+  A−/A+. Si cambia un botón de la topbar/barra inferior, revisar también `guideHtml()` y
+  regenerar el vídeo.
+- `estimateDuration.ts` le suma `GUIDE_SECONDS` (60 s sin vídeo; 15 s con él, que ya se
+  mide aparte).
 
+### Vídeo demo (`scripts/video-instrucciones/`)
+Se genera con scripts, no a mano, para poder rehacerlo cuando cambie la carcasa:
+1. `capturar.mjs` exporta un curso de ejemplo (`demo-course.ts`, validado con
+   `parseCourse`) con `build-scorm.mjs` y captura la **carcasa real** en cada estado
+   (escritorio 1280×720 a 2,25×, móvil 390×844 a 3×) más la posición de cada control.
+2. `montar.mjs` sintetiza la voz con ElevenLabs (clave y voz del `.env`, frase a frase
+   con el instante de cada palabra; caché en `_tmp/voz`), anima las capturas en
+   `anim.html` (cámara con zoom, foco atenuando el resto, rótulo y cursor con clic,
+   sincronizados con `W('palabra')`) fotograma a fotograma, y escribe en
+   `src/assets/instrucciones/` el MP4 (CRF 27, ~3,6 MB), el póster, el VTT (trozos
+   cortados en la puntuación, tiempos reales de la voz) y `transcripcion.txt`.
+   El guion está en `guion.mjs`.
+La receta importa esos ficheros con `?url`/`?raw` y, al usarse, los descarga y los añade
+al proyecto (`ScreenRecipe.assets`) antes de crear la pantalla. Rutas fijas
+(`assets/instrucciones-uso.*`): dos pantallas de instrucciones comparten el mismo vídeo.

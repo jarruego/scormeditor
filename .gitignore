@@ -15,3 +15,6 @@ dist
 docs/curso-*/
 scripts/curso-*/
 __pycache__/
+
+# Intermedios del vídeo de «Instrucciones de uso» (capturas, voz, fotogramas)
+scripts/video-instrucciones/_tmp/

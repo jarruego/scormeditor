@@ -229,6 +229,15 @@ export function itemsOf(it: Interaction): NarratableItem[] {
   })
 }
 
+/** Pantalla cuyo vídeo ya trae su propia voz (`has_voice`, p. ej. el vídeo demo
+ *  de «Instrucciones de uso»): su `transcript` es la del vídeo, no un guion de
+ *  locución, y narrarla encima sonaría a la vez que el vídeo. La narración
+ *  masiva y los avisos de narración pendiente la dejan fuera. */
+export function hasOwnVoiceVideo(s: Screen): boolean {
+  const k = s.visual_resource.kind
+  return (k === 'video_file' || k === 'video_youtube') && !!s.visual_resource.has_voice
+}
+
 /** Transcripción completa de la pantalla (título + texto + interacción).
  *  El título va siempre primero, como haría un narrador real anunciando la
  *  pantalla — es lo único que garantiza que una portada de módulo/unidad (solo

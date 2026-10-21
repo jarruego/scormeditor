@@ -300,10 +300,13 @@ desplegable «Tipo de pantalla» queda como ajuste avanzado). Decisiones:
   tiene (la de `scope: 'course'` sí vale ahí, es la suya).
 
 - **Instrucciones de uso** (receta `guide`, `scope: 'course'`, tipo propio `guide`): opcional,
-  no viene en el curso de serie; se coloca tras la portada del SCORM. El contenido no lo
-  escribe el autor: lo genera la carcasa (ver «Pantalla de instrucciones de uso» en
-  `carcasa-navegacion.md`); su `student_text` es solo una entradilla opcional. Sin
-  objetivo (`hideObjective`, exenta de `NO_OBJECTIVE`).
+  no viene en el curso de serie; se coloca tras la portada del SCORM. Es la única receta
+  con **`assets`**: trae el vídeo demo (MP4 + póster + VTT, empaquetados en el editor) y su
+  transcripción; `AddScreenModal.create` los añade al proyecto antes de crear la pantalla.
+  El resumen de controles no lo escribe el autor: lo genera la carcasa (ver «Pantalla de
+  instrucciones de uso» en `carcasa-navegacion.md`); su `student_text` es solo una
+  entradilla opcional. Sin objetivo (`hideObjective`, exenta de `NO_OBJECTIVE`). El curso
+  demo la incluye sin vídeo (no tiene `AssetMap`).
 - Las recetas **no** rellenan `student_text` (acabaría exportado) ni `min_time_seconds`
   (ya hay ajuste masivo en Ajustes).
 - Tras crear, el foco salta al input de Título (`data-field="screen-title"` en

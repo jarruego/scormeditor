@@ -36,9 +36,11 @@ const READING_WPM = 130
 /** Duración asumida de un vídeo de YouTube cuando no se puede saber la real. */
 const YOUTUBE_DEFAULT_SECONDS = 4 * 60
 
-/** Lectura de la guía de controles que la carcasa genera en la pantalla
- *  `guide` (no está en `student_text`, así que no la cuenta `readingSeconds`). */
+/** Lectura del resumen de controles que la carcasa genera en la pantalla
+ *  `guide` (no está en `student_text`, así que no la cuenta `readingSeconds`).
+ *  Con el vídeo demo (que se mide aparte) el resumen es un repaso: menos. */
 const GUIDE_SECONDS = 60
+const GUIDE_WITH_VIDEO_SECONDS = 15
 
 /** `html_embed`: contenido a medida, sin forma genérica de estimarlo. */
 const HTML_EMBED_SECONDS = 30
@@ -182,7 +184,8 @@ export function estimateScreensSync(course: Course): ScreenTimeEstimate[] {
 
 function estimateScreen(s: Screen): ScreenTimeEstimate {
   const textSeconds = readingSeconds(inlinePlain(s.title)) + readingSeconds(plainText(s.student_text))
-  let seconds = textSeconds + (s.type === 'guide' ? GUIDE_SECONDS : 0)
+  let seconds = textSeconds
+  if (s.type === 'guide') seconds += s.visual_resource.kind === 'none' ? GUIDE_SECONDS : GUIDE_WITH_VIDEO_SECONDS
   const videoPaths: string[] = []
   if (s.visual_resource) {
     if (s.visual_resource.kind === 'video_file' && s.visual_resource.src) videoPaths.push(s.visual_resource.src)

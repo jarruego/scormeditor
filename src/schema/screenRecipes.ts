@@ -1,6 +1,10 @@
 import type { InteractionType, Screen, ScreenInput, ScreenType } from './course.schema'
 import { Interaction } from './course.schema'
 import type { IconName } from '../components/Icon'
+import guideVideoUrl from '../assets/instrucciones/instrucciones-uso.mp4?url'
+import guidePosterUrl from '../assets/instrucciones/instrucciones-uso.jpg?url'
+import guideVttUrl from '../assets/instrucciones/instrucciones-uso.vtt?url'
+import guideTranscript from '../assets/instrucciones/transcripcion.txt?raw'
 
 /**
  * Recetas de creación de pantallas: presets con nombre didáctico que fijan de
@@ -19,6 +23,18 @@ import type { IconName } from '../components/Icon'
  * `html_embed` y Verdadero/Falso no tienen tarjeta a propósito: el primero es
  * la interacción avanzada (sandbox) y el segundo es una variante de Pregunta.
  */
+
+/** Vídeo demo de «Instrucciones de uso» (scripts/video-instrucciones/): rutas
+ *  que ocupa en el proyecto. */
+const GUIDE_VIDEO = 'assets/instrucciones-uso.mp4'
+const GUIDE_POSTER = 'assets/instrucciones-uso.jpg'
+const GUIDE_VTT = 'assets/instrucciones-uso.vtt'
+
+async function fetchBlob(url: string, type: string): Promise<Blob> {
+  const r = await fetch(url)
+  if (!r.ok) throw new Error(`No se pudo cargar ${url} (${r.status})`)
+  return new Blob([await r.arrayBuffer()], { type })
+}
 
 function newId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 8)}`
@@ -79,6 +95,10 @@ export type ScreenRecipe = {
   type: ScreenType
   /** Preset adicional sobre el tipo (recurso visual, interacción…). */
   extras?: () => Partial<ScreenInput>
+  /** Archivos que la receta trae consigo (ruta `assets/…` → contenido), que se
+   *  añaden al proyecto antes de crear la pantalla. Asíncrono: se descargan
+   *  del propio editor al usar la receta, no viajan en el bundle principal. */
+  assets?: () => Promise<Record<string, Blob>>
   /** Título inicial; si falta, el del store («Nueva pantalla»). Recibe el
    *  contenedor (unidad o módulo: solo se usa su título). */
   defaultTitle?: string | ((container: { title: string }) => string)
@@ -117,11 +137,23 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     key: 'guide',
     icon: 'help-circle',
     label: 'Instrucciones de uso',
-    description: 'Explica al alumno que llega por primera vez los controles del curso: navegación, audio, transcripción, imprimir… Se coloca tras la portada.',
+    description: 'Vídeo demo de 1 min y resumen de los controles (navegación, audio, transcripción, imprimir…) para quien llega por primera vez. Se coloca tras la portada.',
     group: 'estructura',
     type: 'guide',
     scope: 'course',
-    defaultTitle: 'Cómo usar este curso',
+    extras: () => ({
+      visual_resource: {
+        kind: 'video_file', src: GUIDE_VIDEO, poster: GUIDE_POSTER, alt: '', has_voice: true, layout: 'top',
+        tracks: [{ kind: 'subtitles', src: GUIDE_VTT, lang: 'es', label: 'Español' }],
+      },
+      transcript: guideTranscript.trim(),
+    }),
+    assets: async () => ({
+      [GUIDE_VIDEO]: await fetchBlob(guideVideoUrl, 'video/mp4'),
+      [GUIDE_POSTER]: await fetchBlob(guidePosterUrl, 'image/jpeg'),
+      [GUIDE_VTT]: await fetchBlob(guideVttUrl, 'text/vtt'),
+    }),
+    defaultTitle: 'Cómo moverte por esta unidad',
     place: (ss) => afterLast(ss, ['cover']),
     uniquePerUnit: true,
   },

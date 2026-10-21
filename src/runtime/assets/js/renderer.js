@@ -291,16 +291,20 @@
     unit_quiz: function (s) {
       return '<h1>' + esc(s.title) + '</h1>' + mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text));
     },
-    // Instrucciones de uso: el texto del autor (opcional) como entradilla y,
-    // debajo, la guía de controles que genera la propia carcasa con los mismos
-    // iconos que los botones reales. Solo lista lo que existe en ESTE paquete
+    // Instrucciones de uso: el recurso visual (normalmente el vídeo demo que
+    // trae la receta) y el texto del autor arriba y, debajo, el resumen de
+    // controles que genera la propia carcasa con los mismos iconos que los
+    // botones reales, en desplegables. Solo lista lo que existe en ESTE paquete
     // (ctx.guide, ver guideInfo en app.js): sin audio no explica el
     // reproductor, sin glosario no lo menciona… Así no se desfasa nunca con el
     // curso ni con la carcasa, y el autor no tiene que escribirla.
     guide: function (s, ctx) {
-      var intro = (s.student_text || '').trim() || (s.visual_resource && s.visual_resource.kind !== 'none')
-        ? mediaTextLayout(s, mediaBlock(s.visual_resource), mdToHtml(s.student_text)) : '';
-      return '<h1>' + esc(s.title) + '</h1>' + intro + guideHtml((ctx && ctx.guide) || {});
+      var media = mediaBlock(s.visual_resource);
+      var intro = (s.student_text || '').trim() || media
+        ? mediaTextLayout(s, media, mdToHtml(s.student_text)) : '';
+      // Con vídeo, el resumen es un repaso: plegado. Sin vídeo es el contenido
+      // principal: abierto.
+      return '<h1>' + esc(s.title) + '</h1>' + intro + guideHtml((ctx && ctx.guide) || {}, s.id, !media);
     },
   };
 
@@ -316,10 +320,24 @@
     return '<li class="me-guide-item"><div class="me-guide-keys">' + keys + '</div>' +
       '<div class="me-guide-text"><strong>' + label + '</strong> ' + text + '</div></li>';
   }
+  // Cada sección es un desplegable con el mismo marcado que las secciones
+  // plegables de la carcasa (`foldHtml` en app.js): app.js los engancha con
+  // wireFolds y setupPrint los abre al imprimir.
+  var gFoldN = 0;
+  var gFoldPrefix = '';
+  var gFoldOpen = false;
   function gSection(title, items) {
-    return '<section class="me-guide-section"><h2>' + title + '</h2><ul class="me-guide-list">' + items + '</ul></section>';
+    var id = 'me-guide-' + gFoldPrefix + '-' + (gFoldN++);
+    return '<div class="me-fold me-acc-item me-guide-section">' +
+      '<button class="me-acc-head" type="button" aria-expanded="' + gFoldOpen + '" aria-controls="' + id + '">' +
+      '<span class="me-acc-title">' + title + '</span></button>' +
+      '<div class="me-acc-body" id="' + id + '" role="region"' + (gFoldOpen ? '' : ' hidden') + '>' +
+      '<ul class="me-guide-list">' + items + '</ul></div></div>';
   }
-  function guideHtml(g) {
+  function guideHtml(g, screenId, open) {
+    gFoldN = 0;
+    gFoldPrefix = String(screenId || 'g').replace(/[^\w-]/g, '');
+    gFoldOpen = !!open;
     var nav = g.navigation || 'mixed';
     var navNote = nav === 'free'
       ? 'Puedes recorrer las pantallas en el orden que prefieras.'
@@ -328,15 +346,16 @@
         : 'Puedes volver atrás cuando quieras; para saltar más adelante, antes tienes que completar las pantallas obligatorias.';
     if (g.hasMinTime) navNote += ' Algunas pantallas piden un tiempo mínimo antes de dejarte continuar.';
 
-    var html = '<div class="me-guide">';
+    var html = '<div class="me-guide">' +
+      '<p class="me-guide-lead">' + (open ? 'Resumen de los controles:' : 'Resumen de los controles (pulsa cada apartado para desplegarlo):') + '</p>';
 
-    html += gSection('Moverte por el curso',
+    html += gSection('Moverte por la unidad',
       gItem(gKey(ico('arrow-left') + 'Anterior', 'me-guide-key-nav') + gKey('Siguiente' + ico('arrow-right'), 'me-guide-key-nav'),
         'Anterior / Siguiente.', 'Pasan a la pantalla anterior o a la siguiente. Están en la barra inferior.') +
       gItem(gKey('3 / 12', 'me-guide-key-progress'),
         'Barra de progreso.', 'Indica en qué pantalla estás y cuántas hay; puedes deslizarla para ir a otra.') +
       gItem(gKey(ico('menu')),
-        'Índice.', 'Abre y cierra el menú con todas las pantallas del curso; las que ya has completado aparecen marcadas.') +
+        'Índice.', 'Abre y cierra el menú con todas las pantallas de la unidad; las que ya has completado aparecen marcadas.') +
       '<li class="me-guide-note">' + navNote + '</li>');
 
     var audio = '';
@@ -357,15 +376,15 @@
 
     html += gSection('Herramientas',
       gItem(gKey('<span class="me-guide-a-s">A</span>−', 'me-guide-key-text') + gKey('A+', 'me-guide-key-text'),
-        'Tamaño del texto.', 'Reduce o amplía la letra de todo el curso. Se recuerda en este dispositivo.') +
+        'Tamaño del texto.', 'Reduce o amplía la letra. Se recuerda en este dispositivo.') +
       gItem(gKey(ico('printer')),
         'Imprimir.', 'Imprime la pantalla que estás viendo o guárdala como PDF.') +
       gItem(gKey(ico('maximize')),
-        'Pantalla completa.', 'Aprovecha toda la pantalla para el curso (si tu navegador lo permite). Vuelve a pulsarlo para salir.') +
+        'Pantalla completa.', 'Aprovecha toda la pantalla (si tu navegador lo permite). Vuelve a pulsarlo para salir.') +
       gItem(gKey(ico('help-circle')),
         'Ayuda.', 'Recuerda los atajos de teclado.') +
       gItem(gKey(ico('log-out'), 'me-guide-key-close'),
-        'Cerrar.', 'Termina la sesión. Tu progreso se guarda y podrás continuar donde lo dejaste.'));
+        'Cerrar.', 'Termina la sesión y vuelves al aula virtual. Tu progreso se guarda y podrás continuar donde lo dejaste.'));
 
     if (g.materials && g.materials.length) {
       html += gSection('Materiales de consulta', g.materials.map(function (m) {
@@ -383,6 +402,7 @@
       act += gItem(gKey('✓', 'me-guide-key-text'),
         'Test final.', 'Al terminar el contenido encontrarás un test de evaluación; tu resultado aparece al final.');
     }
+    act += '<li class="me-guide-note">Esta unidad es una parte de tu curso: los cuestionarios, foros y demás actividades están en el aula virtual.</li>';
     html += gSection('Actividades', act);
 
     html += gSection('Con el teclado',
@@ -391,7 +411,7 @@
       gItem(gKey('Alt') + gKey('T'), 'Transcripción.', '') +
       gItem(gKey('Tab'), 'Recorrer los controles.', 'Pulsa Intro o Espacio para activarlos.'));
 
-    html += '<p class="me-guide-footer">Tu progreso se guarda automáticamente.</p>';
+    html += '<p class="me-guide-footer">Tu progreso se guarda automáticamente: puedes salir y volver cuando quieras.</p>';
     return html + '</div>';
   }
 

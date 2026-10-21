@@ -109,9 +109,9 @@ export const sampleCourse: Course = {
     {
       "id": "s000g",
       "type": "guide",
-      "title": "Cómo usar este curso",
+      "title": "Cómo moverte por esta unidad",
       "objective": "",
-      "student_text": "Esta es la pantalla opcional de **Instrucciones de uso** (receta «Instrucciones de uso» de la introducción). La guía de controles de abajo la genera sola la carcasa y solo muestra lo que existe en el paquete: si el curso no tiene locución, no explica el reproductor; si no hay glosario, no lo menciona. Este párrafo es la entradilla opcional del autor.",
+      "student_text": "Esta es la pantalla opcional de **Instrucciones de uso** (receta «Instrucciones de uso» de la introducción). Al añadirla desde el editor trae arriba un **vídeo demo de un minuto**; aquí no aparece porque este curso de ejemplo no lleva archivos adjuntos. El resumen de controles de abajo lo genera sola la carcasa y solo muestra lo que existe en el paquete: si el curso no tiene locución, no explica el reproductor; si no hay glosario, no lo menciona. Este párrafo es la entradilla opcional del autor.",
       "source_refs": [],
       "visual_resource": {
         "kind": "none",

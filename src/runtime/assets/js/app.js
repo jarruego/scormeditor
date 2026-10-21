@@ -762,6 +762,7 @@
       };
       var rendered = Renderer.render(content, sc, ctx);
       activeController = rendered.interaction;
+      if (sc.type === 'guide') wireFolds(content); // desplegables del resumen de controles
       applyReveal(sc.id, content);
       // Captura el estado inicial. Las de exploración (accordion, tabs,
       // flip_cards, timeline, flashcards) devuelven completed solo cuando se ha

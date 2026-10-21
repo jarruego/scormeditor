@@ -343,12 +343,13 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-placeholder { border: 2px dashed #d09a00; background: #fff8e6; padding: 1rem; border-radius: 6px; }
 .me-forum-tag { display: inline-block; background: var(--me-primary); color: #fff; padding: .1rem .5rem; border-radius: 99px; font-size: .8rem; }
 
-/* Instrucciones de uso (`type: 'guide'`): secciones en rejilla; cada control
+/* Instrucciones de uso (`type: 'guide'`): resumen de controles en
+   desplegables (marcado de `.me-fold`, ver foldHtml en app.js); cada control
    se dibuja como una «tecla» que imita el botón real (solo dibujo, no
    clicable) junto a su explicación. En rem para escalar con A−/A+. */
-.me-guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 1rem; margin-top: 1rem; }
-.me-guide-section { border: 1px solid var(--me-border); border-radius: var(--me-radius); background: var(--me-surface); padding: .85rem 1rem; box-shadow: var(--me-shadow-1); }
-.me-guide-section h2 { margin: 0 0 .6rem; font-size: 1.02rem; color: var(--me-primary); }
+.me-guide { margin-top: 1.25rem; display: grid; gap: .5rem; }
+.me-guide-lead { margin: 0 0 .25rem; font-weight: 600; }
+.me-guide-section .me-acc-body { padding: .85rem .9rem .4rem; }
 .me-guide-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .65rem; }
 .me-guide-item { display: grid; grid-template-columns: 6.6rem 1fr; gap: .7rem; align-items: start; }
 .me-guide-keys { display: flex; flex-wrap: wrap; gap: .25rem; }
@@ -362,7 +363,7 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-guide-key-check { background: var(--me-surface); }
 .me-guide-key-scored { border-radius: 99px; border-color: transparent; font-size: .66rem; letter-spacing: .03em; text-transform: uppercase; background: color-mix(in srgb, var(--me-primary) 12%, white); color: var(--me-primary); }
 .me-guide-a-s { font-size: .7em; }
-.me-guide-footer { grid-column: 1 / -1; margin: 0; font-size: .9rem; color: var(--me-muted); text-align: center; }
+.me-guide-footer { margin: .4rem 0 0; font-size: .9rem; color: var(--me-muted); text-align: center; }
 
 /* Toolbar */
 /* Grid de 3 columnas (no flex): con flex, un único hijo con margin:auto absorbe

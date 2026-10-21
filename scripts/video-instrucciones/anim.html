@@ -1,0 +1,195 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#dfe5ee}
+body{font-family:'Segoe UI Variable Display','Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;color:#1b1f24}
+#cam{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+#cam img{position:absolute;left:0;top:0;width:1920px;height:1080px}
+/* Foco: hueco redondeado y el resto atenuado */
+#spot{position:absolute;border-radius:14px;box-shadow:0 0 0 6000px rgba(15,23,42,.34);pointer-events:none}
+#ring{position:absolute;border-radius:16px;border:4px solid #f59e0b;box-shadow:0 0 0 6px rgba(245,158,11,.25),0 0 26px rgba(245,158,11,.55)}
+#label{position:absolute;padding:12px 26px;border-radius:999px;background:#1e293b;color:#fff;font-size:34px;font-weight:700;white-space:nowrap;
+  box-shadow:0 12px 30px rgba(15,23,42,.35);transform-origin:50% 50%}
+#cursor{position:absolute;width:46px;height:46px;transform-origin:0 0;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))}
+#ripple{position:absolute;width:80px;height:80px;margin:-40px 0 0 -40px;border-radius:50%;border:5px solid #f59e0b}
+/* Escena del móvil */
+#phoneLayer{position:absolute;inset:0;background:rgba(223,229,238,.92)}
+#phone{position:absolute;left:50%;top:50%;width:456px;height:944px;margin:-472px 0 0 -228px;border-radius:58px;padding:16px;
+  background:linear-gradient(150deg,#3a4656,#0b1017 60%);box-shadow:0 50px 100px rgba(15,23,42,.45),inset 0 0 0 2px rgba(255,255,255,.14)}
+#phone .scr{position:relative;width:424px;height:912px;border-radius:44px;overflow:hidden;background:#fff}
+#phone .scr img{width:424px;height:912px;display:block}
+#phoneSpot{position:absolute;border-radius:10px;box-shadow:0 0 0 3000px rgba(15,23,42,.42);border:4px solid #f59e0b}
+#phoneText{position:absolute;top:50%;width:520px;font-size:46px;font-weight:800;line-height:1.2;color:#1e293b}
+/* Rótulos de apertura y cierre */
+.card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:56px 84px;border-radius:32px;background:rgba(255,255,255,.94);
+  box-shadow:0 40px 90px rgba(15,23,42,.28);text-align:center}
+.card h1{font-size:76px;font-weight:800;letter-spacing:-.01em;color:#1e293b}
+.card p{margin-top:16px;font-size:36px;color:#5265c4;font-weight:600}
+#veil{position:absolute;inset:0;background:#fff;pointer-events:none}
+</style></head><body>
+<div id="cam"></div>
+<div id="phoneLayer"><div id="phone"><div class="scr"><img id="phoneImg"><div id="phoneSpot"></div></div></div><div id="phoneText"></div></div>
+<div class="card" id="intro"><h1>Cómo moverte por esta unidad</h1><p>Guía rápida · 1 minuto</p></div>
+<div class="card" id="outro"><h1>¡Empecemos!</h1></div>
+<div id="veil"></div>
+<script>
+// Todo es función PURA de t (segundos): montar.mjs llama a __go(datos) una vez y luego a
+// __frame(t) por fotograma, así cada fotograma es reproducible.
+const E = { out: (t) => 1 - Math.pow(1 - t, 3), io: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2), lin: (t) => t }
+const cl = (x) => Math.max(0, Math.min(1, x))
+const P = (t, a, d = 0.6, e = E.out) => e(cl((t - a) / d))
+const lerp = (a, b, k) => a + (b - a) * k
+const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '')
+const K = 1.5 // px CSS de la captura de escritorio (1280×720) → px del vídeo (1920×1080)
+let S, R, BEATS, IMGS = {}
+const A = (i) => S.s[i].a
+function W (pal, n = 1) {
+  const k = norm(pal); let c = 0
+  for (const f of S.s) for (const w of f.words) if (norm(w.w).startsWith(k) && ++c === n) return w.t
+  throw new Error('Palabra no encontrada en la voz: ' + pal)
+}
+// Rectángulo de un control en una captura (px de vídeo); varios nombres = su unión.
+function rect (img, ...names) {
+  const rs = names.map((n) => { const r = R[img][n]; if (!r) throw new Error(`Sin rect ${n} en ${img}`); return r })
+  const x = Math.min(...rs.map((r) => r.x)), y = Math.min(...rs.map((r) => r.y))
+  const x2 = Math.max(...rs.map((r) => r.x + r.w)), y2 = Math.max(...rs.map((r) => r.y + r.h))
+  return { x: x * K, y: y * K, w: (x2 - x) * K, h: (y2 - y) * K }
+}
+// Guion visual. Cada «beat» desde t: captura visible, control enfocado, zoom, rótulo y
+// si el cursor hace clic (el clic es el instante del cambio de captura).
+function guion () {
+  const b = []
+  const add = (t, img, foco, o = {}) => b.push({ t, img, foco: foco ? rect(img, ...[].concat(foco)) : null, z: o.z ?? (foco ? 1.6 : 1), label: o.label || '', click: !!o.click, cx: o.cx, cy: o.cy, phone: !!o.phone })
+  add(0, 'portada', null)
+  add(A(1) - 0.35, 'contenido', null)
+  add(W('siguiente'), 'siguiente', 'next', { label: 'Siguiente', click: true, z: 1.35 })
+  add(W('anterior'), 'contenido', 'prev', { label: 'Anterior', click: true, z: 1.35 })
+  add(W('barra'), 'contenido', 'progreso', { label: 'Barra de progreso', z: 1.35 })
+  add(W('boton'), 'menu', 'menu', { label: 'Índice', click: true, z: 1.5 })
+  add(W('pantallas'), 'menu', 'indice', { z: 1.15 })
+  add(W('glosario') - 0.2, 'menu', 'materiales', { label: 'Materiales', z: 1.45 })
+  add(A(4) - 0.15, 'contenido', 'menu', { click: true, z: 1.3 })
+  add(W('narracion'), 'contenido', ['play', 'seek', 'sonido', 'volumen', 'velocidad'], { label: 'Narración', z: 1.5 })
+  add(W('pausarla'), 'contenido', 'play', { label: 'Pausar / reproducir', z: 1.75 })
+  add(W('volumen'), 'contenido', ['sonido', 'volumen'], { label: 'Volumen', z: 1.75 })
+  add(W('rapido'), 'contenido', 'velocidad', { label: 'Velocidad', z: 1.75 })
+  add(W('transcripcion'), 'transcripcion', 'transcripcion', { label: 'Transcripción', click: true, z: 1.6 })
+  add(W('transcripcion') + 1.1, 'transcripcion', 'modal', { z: 1.15 })
+  add(A(6) - 0.2, 'contenido', 'topbar', { z: 1.5 })
+  add(W('agrandar'), 'letra', 'mas', { label: 'Tamaño del texto', click: true, z: 1.55 })
+  add(W('imprimir'), 'letra', 'imprimir', { label: 'Imprimir', z: 1.55 })
+  add(W('ayuda'), 'letra', 'ayuda', { label: 'Ayuda', z: 1.55 })
+  add(A(7) - 0.3, 'actividad', null)
+  add(W('elige'), 'actividad-marcada', 'opcion', { click: true, z: 1.35 })
+  add(W('comprobar'), 'actividad-comprobada', 'comprobar', { label: 'Comprobar', click: true, z: 1.5 })
+  add(W('comprobar') + 1.0, 'actividad-comprobada', null, { z: 1.25, cx: 960, cy: 560 })
+  add(A(8) - 0.3, 'actividad-comprobada', null, { phone: true })
+  add(A(9) - 0.25, 'contenido', null)
+  add(W('cerrar'), 'contenido', 'cerrar', { label: 'Cerrar', z: 1.5 })
+  add(W('aula'), 'contenido', null)
+  return b
+}
+function camOf (b) {
+  const z = b.z
+  let cx = b.cx ?? (b.foco ? b.foco.x + b.foco.w / 2 : 960), cy = b.cy ?? (b.foco ? b.foco.y + b.foco.h / 2 : 540)
+  const hw = 960 / z, hh = 540 / z
+  cx = Math.max(hw, Math.min(1920 - hw, cx)); cy = Math.max(hh, Math.min(1080 - hh, cy))
+  return { z, cx, cy }
+}
+window.__go = (datos) => {
+  S = datos; R = datos.rects
+  const cam = document.getElementById('cam')
+  for (const n of Object.keys(R)) {
+    if (n === 'movil') continue
+    const im = document.createElement('img'); im.src = S.capturas + n + '.png'; im.style.opacity = 0
+    cam.appendChild(im); IMGS[n] = im
+  }
+  cam.insertAdjacentHTML('beforeend', '<div id="spot"></div><div id="ring"></div><div id="ripple"></div><div id="label"></div>' +
+    '<svg id="cursor" viewBox="0 0 24 24"><path d="M4 2 L4 19 L8.6 14.8 L11.6 21.6 L14.6 20.3 L11.7 13.6 L18 13.6 Z" fill="#fff" stroke="#111827" stroke-width="1.4" stroke-linejoin="round"/></svg>')
+  document.getElementById('phoneImg').src = S.capturas + 'movil.png'
+  BEATS = guion()
+}
+window.__frame = (t) => {
+  // Cámara: cada beat arrastra suavemente la anterior hacia su encuadre.
+  let cam = camOf(BEATS[0])
+  let foco = null, focoO = 0, cur = { x: 1500, y: 760 }
+  const opac = {}; Object.keys(IMGS).forEach((n) => { opac[n] = n === BEATS[0].img ? 1 : 0 })
+  let phoneO = 0
+  let actual = BEATS[0]
+  BEATS.forEach((b, i) => {
+    const k = P(t, b.t - 0.5, 0.9, E.io)
+    const c = camOf(b)
+    cam = { z: lerp(cam.z, c.z, k), cx: lerp(cam.cx, c.cx, k), cy: lerp(cam.cy, c.cy, k) }
+    // Cambio de captura: en el clic (o al empezar el beat), fundido corto.
+    const kf = P(t, b.t - 0.05, 0.25, E.lin)
+    Object.keys(opac).forEach((n) => { opac[n] = lerp(opac[n], n === b.img ? 1 : 0, kf) })
+    // Foco: se desliza de un control al siguiente; sin foco, se apaga.
+    const kfo = P(t, b.t - 0.35, 0.45, E.io)
+    if (b.foco) { foco = foco ? { x: lerp(foco.x, b.foco.x, kfo), y: lerp(foco.y, b.foco.y, kfo), w: lerp(foco.w, b.foco.w, kfo), h: lerp(foco.h, b.foco.h, kfo) } : (kfo > 0 ? b.foco : null) }
+    focoO = lerp(focoO, b.foco ? 1 : 0, kfo)
+    // Cursor: llega al control un poco antes del clic.
+    if (b.foco) {
+      const kc = P(t, b.t - 0.8, 0.7, E.io)
+      const dest = { x: b.foco.x + b.foco.w * 0.55, y: b.foco.y + b.foco.h * 0.6 }
+      cur = { x: lerp(cur.x, dest.x, kc), y: lerp(cur.y, dest.y, kc) }
+    }
+    phoneO = lerp(phoneO, b.phone ? 1 : 0, P(t, b.t, 0.5, E.io))
+    if (t >= b.t) actual = b
+  })
+  Object.entries(IMGS).forEach(([n, im]) => { im.style.opacity = opac[n] })
+  const camEl = document.getElementById('cam')
+  camEl.style.transform = `translate(${960 - cam.cx * cam.z}px,${540 - cam.cy * cam.z}px) scale(${cam.z})`
+  const inv = 1 / cam.z
+  const pad = 8 * inv
+  const spot = document.getElementById('spot'), ring = document.getElementById('ring')
+  if (foco && focoO > 0.01) {
+    for (const el of [spot, ring]) Object.assign(el.style, { left: (foco.x - pad) + 'px', top: (foco.y - pad) + 'px', width: (foco.w + 2 * pad) + 'px', height: (foco.h + 2 * pad) + 'px', display: 'block' })
+    spot.style.opacity = focoO; ring.style.opacity = focoO
+    ring.style.borderWidth = (4 * inv) + 'px'; ring.style.borderRadius = (14 * inv) + 'px'; spot.style.borderRadius = (14 * inv) + 'px'
+  } else { spot.style.display = 'none'; ring.style.display = 'none' }
+  // Rótulo del control actual, encima o debajo según dónde esté.
+  const lab = document.getElementById('label')
+  if (actual.label && actual.foco) {
+    const f = actual.foco
+    const arriba = f.y > 540
+    const lo = P(t, actual.t - 0.1, 0.35) * focoO
+    lab.textContent = actual.label
+    lab.style.opacity = lo
+    const lx = f.x + f.w / 2, ly = arriba ? f.y - 34 * inv : f.y + f.h + 34 * inv
+    lab.style.left = lx + 'px'; lab.style.top = ly + 'px'
+    lab.style.transform = `translate(-50%,${arriba ? '-100%' : '0'}) scale(${inv * (0.9 + 0.1 * lo)})`
+    lab.style.transformOrigin = arriba ? '50% 100%' : '50% 0'
+  } else lab.style.opacity = 0
+  // Cursor y clic
+  const cursor = document.getElementById('cursor'), rip = document.getElementById('ripple')
+  let pulsa = 1, ro = 0, rs = 0
+  if (actual.click && actual.foco) {
+    const d = t - actual.t
+    if (d >= 0 && d < 0.25) pulsa = 1 - 0.18 * Math.sin(d / 0.25 * Math.PI)
+    if (d >= 0 && d < 0.6) { ro = 1 - d / 0.6; rs = 0.4 + d / 0.6 * 0.9 }
+  }
+  cursor.style.left = cur.x + 'px'; cursor.style.top = cur.y + 'px'
+  cursor.style.transform = `scale(${inv * 1.25 * pulsa})`
+  cursor.style.opacity = (foco ? Math.max(focoO, 0.0) : 0) * (1 - phoneO)
+  rip.style.left = cur.x + 'px'; rip.style.top = cur.y + 'px'
+  rip.style.opacity = ro; rip.style.transform = `scale(${rs * inv})`
+  // Escena del móvil: el teléfono entra desde abajo y se destaca su barra inferior.
+  const pl = document.getElementById('phoneLayer')
+  pl.style.opacity = phoneO; pl.style.display = phoneO > 0.001 ? 'block' : 'none'
+  const ph = document.getElementById('phone')
+  ph.style.transform = `translateX(-260px) translateY(${(1 - phoneO) * 160}px)`
+  const m = R.movil.barra, ks = 424 / 390
+  const pbO = P(t, W('barra', 2) - 0.3, 0.5)
+  Object.assign(document.getElementById('phoneSpot').style, { left: (m.x * ks - 4) + 'px', top: (m.y * ks - 4) + 'px', width: (m.w * ks + 8) + 'px', height: (m.h * ks + 8) + 'px', opacity: pbO })
+  const pt = document.getElementById('phoneText')
+  pt.style.left = '1060px'; pt.style.transform = `translateY(-50%) translateX(${(1 - phoneO) * 40}px)`
+  pt.textContent = 'En el móvil, los mismos controles en la barra de abajo.'
+  // Rótulos de apertura y cierre + fundido desde/hacia blanco
+  const intro = document.getElementById('intro')
+  intro.style.opacity = P(t, 0.15, 0.5) * (1 - P(t, A(1) - 0.7, 0.45, E.lin))
+  const outro = document.getElementById('outro')
+  outro.style.opacity = P(t, A(10) - 0.25, 0.5)
+  outro.style.transform = `translate(-50%,-50%) scale(${0.94 + 0.06 * P(t, A(10) - 0.25, 0.6)})`
+  document.getElementById('veil').style.opacity = Math.max(1 - P(t, 0, 0.4, E.lin), P(t, S.dur - 0.45, 0.45, E.lin))
+}
+</script></body></html>

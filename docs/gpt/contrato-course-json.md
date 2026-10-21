@@ -285,11 +285,11 @@ Reglas que NO se pueden romper:
 - `type` (enum cerrado): `cover`, `objectives`, `route`, `content`,
   `summary`, `video`, `reflection`, `forum_prompt`, `unit_quiz`, `content_placeholder`,
   `guide`.
-- **`guide` = instrucciones de uso** del paquete (opcional; **no la generes salvo que el
-  usuario la pida**). Solo en `intro_screens`, tras la `cover`. La app pinta sola la guía
-  de controles (navegación, audio, transcripción, imprimir…): **no escribas** esos
-  controles en `student_text`; como mucho una entradilla breve, o déjalo vacío. Sin
-  `objective`.
+- **`guide` = instrucciones de uso** del paquete (opcional; **no la generes**: el autor la
+  añade desde el editor, que le pone el vídeo demo). Si el usuario la pide expresamente:
+  solo en `intro_screens`, tras la `cover`, con `visual_resource.kind: "none"` y
+  `student_text` vacío o una entradilla breve — la app pinta sola el resumen de controles
+  (navegación, audio, transcripción, imprimir…), **no los escribas**. Sin `objective`.
 - **`cover` = portada** — de unidad o de módulo, **el mismo tipo en los dos casos**: la
   app decide sola el peso visual (banda más saturada, título mayor) según **dónde la
   coloques**, no según ningún otro campo. Dentro de `units[].screens` es la portada de

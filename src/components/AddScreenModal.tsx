@@ -1,3 +1,4 @@
+import { confirmDialog } from '../store/confirm'
 import { useCourseStore } from '../store/courseStore'
 import type { ScreenInput } from '../schema/course.schema'
 import { INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId } from '../schema/traverse'
@@ -20,6 +21,7 @@ import { Icon } from './Icon'
 export function AddScreenModal({ containerId, atIndex, onClose }: { containerId: string; atIndex?: number; onClose: () => void }) {
   const course = useCourseStore((s) => s.course)
   const addScreen = useCourseStore((s) => s.addScreen)
+  const addAsset = useCourseStore((s) => s.addAsset)
 
   const isIntro = containerId === INTRO_CONTAINER_ID
   const isOutro = containerId === OUTRO_CONTAINER_ID
@@ -56,8 +58,18 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
     return r.label
   }
 
-  function create(r: ScreenRecipe) {
+  async function create(r: ScreenRecipe) {
     if (!container) return
+    // Archivos que trae la receta (p. ej. el vídeo de «Instrucciones de uso»):
+    // al proyecto antes de crear la pantalla que los referencia.
+    if (r.assets) {
+      try {
+        for (const [path, blob] of Object.entries(await r.assets())) addAsset(path, blob)
+      } catch (e) {
+        void confirmDialog({ title: r.label, message: `No se pudieron cargar los archivos de la receta: ${(e as Error).message}`, hideCancel: true })
+        return
+      }
+    }
     const preset: Partial<ScreenInput> = { type: r.type, ...(r.extras ? r.extras() : {}) }
     const title = typeof r.defaultTitle === 'function' ? r.defaultTitle(container) : r.defaultTitle
     if (title) preset.title = title
@@ -99,7 +111,7 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
                     key={r.key}
                     className={`ed-recipe${dup ? ' is-dup' : ''}${r.subtle ? ' ed-recipe-blank' : ''}`}
                     title={dup ? 'Ya existe una pantalla de este tipo aquí' : undefined}
-                    onClick={() => create(r)}
+                    onClick={() => void create(r)}
                   >
                     <span className="ed-recipe-ico" aria-hidden="true"
                       style={{ '--ico-c': RECIPE_GROUP_COLORS[r.group] } as React.CSSProperties}>

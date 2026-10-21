@@ -1,7 +1,7 @@
 import type { Course, QuizQuestion, Screen, Unit, UnitTest } from '../schema/course.schema'
 import { allScreens, screenContainers, containerLabel } from '../schema/traverse'
 import { normalizeObjective } from './objectives'
-import { buildTranscript, contentHash, itemsOf } from '../tts/buildTranscript'
+import { buildTranscript, contentHash, hasOwnVoiceVideo, itemsOf } from '../tts/buildTranscript'
 import { countFlaggedForReview } from '../schema/review'
 import { MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_TOTAL_BYTES, fmtBytes } from '../schema/attachments'
 import { getStateCodec } from '../scorm/stateCodec'
@@ -78,7 +78,7 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
   // placeholders ya cargan con SKELETON y los casos con vídeo/audio sin
   // transcripción ya son errores arriba: aquí solo el flujo de trabajo.
   const skeleton = s.type === 'content_placeholder' || s.status === 'esqueleto_pendiente_desarrollo'
-  if (ctx.narrated && !skeleton && !s.audio_src.trim()) {
+  if (ctx.narrated && !skeleton && !s.audio_src.trim() && !hasOwnVoiceVideo(s)) {
     if (!s.transcript.trim()) {
       // «Debería tenerla» = tiene contenido narrable (mismo criterio que el
       // botón «Generar transcripción desde el contenido»). El caso isVideo ya
