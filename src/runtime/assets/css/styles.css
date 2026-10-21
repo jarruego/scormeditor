@@ -493,8 +493,8 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-textsize-btn { gap: 1px; font-weight: 700; font-size: 13px; line-height: 1; }
 .me-textsize-a { font-size: 17px; }
 .me-textsize-a-s { font-size: 12px; }
-.me-textsize-btn:disabled { opacity: .35; cursor: default; }
-.me-textsize-btn:disabled:hover { background: none; }
+.me-textsize-btn:disabled, #me-btn-transcript:disabled { opacity: .35; cursor: default; }
+.me-textsize-btn:disabled:hover, #me-btn-transcript:disabled:hover { background: none; }
 .me-btn:focus-visible, .me-icon-btn:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--me-primary); outline-offset: 2px; }
 
 /* Interacciones */

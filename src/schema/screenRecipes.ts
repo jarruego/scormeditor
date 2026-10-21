@@ -147,6 +147,9 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
         tracks: [{ kind: 'subtitles', src: GUIDE_VTT, lang: 'es', label: 'Español' }],
       },
       transcript: guideTranscript.trim(),
+      // El vídeo ya lleva subtítulos y el resumen de controles está debajo: el
+      // botón «Transcripción» no aporta nada aquí.
+      transcript_hidden: true,
     }),
     assets: async () => ({
       [GUIDE_VIDEO]: await fetchBlob(guideVideoUrl, 'video/mp4'),

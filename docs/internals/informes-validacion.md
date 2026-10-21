@@ -59,6 +59,11 @@ Reglas por pantalla / unidad / curso, p. ej.:
   falta el audio. No se duplican: el info solo salta con la transcripción ya resuelta,
   creando el flujo «primero transcripciones (warnings), luego narrar (infos como lista de
   pendientes del TTS)».
+- **Transcripción oculta** (`screen.transcript_hidden`, casilla «Sin transcripción para el
+  alumno»): la carcasa desactiva el botón «Transcripción» en esa pantalla, así que no se
+  exige (`VIDEO_NO_TRANSCRIPT`/`AUDIO_NO_TRANSCRIPT` no saltan). Con locución salta
+  `TRANSCRIPT_HIDDEN_AUDIO` (`warning`): quien no pueda oírla se queda sin alternativa
+  textual. `NARR_NO_TRANSCRIPT` sigue igual, porque el texto oculto es la entrada del TTS.
 - **Congruencia tipo ↔ recurso ↔ interacción** (complemento de las recetas de creación;
   ver `editor-pantallas.md`): avisos —nunca errores— para combinaciones que casi siempre
   son un despiste. `COVER_INTERACTION` (portada con actividad), `VIDEO_NO_MEDIA`

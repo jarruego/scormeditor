@@ -58,8 +58,9 @@ informe de revisión.
 | Código | Sev | Causa raíz | Corrección canónica | Quién |
 |---|:-:|---|---|:-:|
 | `IMG_NO_ALT` | ⛔ | Imagen sin texto alternativo (en `visual_resource`, `image_cards`, `before_after`, `hidden_image` o `puzzle`) | Si la imagen la incluiste tú: redacta un `alt` que describa lo que muestra. Si la subió el editor humano (no puedes verla): déjala y díselo — **no inventes** qué muestra | Según |
-| `VIDEO_NO_TRANSCRIPT` | ⛔ | Vídeo sin `transcript` | Si el fuente da la información, redáctala; si no, deja `editor_note` pidiéndola | Según |
-| `AUDIO_NO_TRANSCRIPT` | ⛔ | Pantalla con locución (`audio_src`) sin `transcript` | Duplica el contenido de la pantalla en `transcript` (Regla Nº1: el texto ya existe) | GPT |
+| `VIDEO_NO_TRANSCRIPT` | ⛔ | Vídeo sin `transcript` (salvo `transcript_hidden: true`) | Si el fuente da la información, redáctala; si no, deja `editor_note` pidiéndola | Según |
+| `AUDIO_NO_TRANSCRIPT` | ⛔ | Pantalla con locución (`audio_src`) sin `transcript` (salvo `transcript_hidden: true`) | Duplica el contenido de la pantalla en `transcript` (Regla Nº1: el texto ya existe) | GPT |
+| `TRANSCRIPT_HIDDEN_AUDIO` | ⚠ | Pantalla con locución (`audio_src`) y `transcript_hidden: true` | No pongas `transcript_hidden` (es decisión del editor humano); si ya estaba, déjalo | Editor |
 | `MEDIA_NO_SUBS` | ⛔ | Medio con `has_voice:true` sin `tracks` VTT | Si no tienes el VTT no marques `has_voice:true`; el fichero de subtítulos lo aporta el editor humano (deja `editor_note`) | Según |
 | `NARR_NO_TRANSCRIPT` | ⚠ | Curso narrado y pantalla sin `transcript` | Duplica el contenido de la pantalla en `transcript` (es la entrada del TTS) | GPT |
 | `NARR_NO_AUDIO` | ℹ | Hay transcripción pero falta el audio de locución (no aplica a pantallas con vídeo con voz, `has_voice`) | Pendiente del TTS: lo genera el editor humano en SCORMEditor. **No tocar** | Editor |

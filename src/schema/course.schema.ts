@@ -215,6 +215,10 @@ export const Screen = z.object({
     .string()
     .default('')
     .describe('Transcripción de la diapositiva: se muestra SOLO en el botón «Transcripción» y sirve de alternativa textual del audio/vídeo'),
+  transcript_hidden: z
+    .boolean()
+    .default(false)
+    .describe('Ocultar la transcripción al alumno en esta pantalla: el botón «Transcripción» queda desactivado. El texto de `transcript` se conserva (sigue siendo la entrada del TTS).'),
   transcript_content_hash: z
     .string()
     .optional()

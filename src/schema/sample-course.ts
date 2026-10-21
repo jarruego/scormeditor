@@ -91,6 +91,7 @@ export const sampleCourse: Course = {
       "min_time_seconds": 0,
       "audio_src": "",
       "transcript": "",
+      "transcript_hidden": false,
       "accessibility": {
         "alt_text_ok": true,
         "keyboard_ok": true,
@@ -131,6 +132,7 @@ export const sampleCourse: Course = {
       "min_time_seconds": 0,
       "audio_src": "",
       "transcript": "",
+      "transcript_hidden": true,
       "accessibility": {
         "alt_text_ok": true,
         "keyboard_ok": true,
@@ -171,6 +173,7 @@ export const sampleCourse: Course = {
       "min_time_seconds": 0,
       "audio_src": "",
       "transcript": "",
+      "transcript_hidden": false,
       "accessibility": {
         "alt_text_ok": true,
         "keyboard_ok": true,
@@ -221,6 +224,7 @@ export const sampleCourse: Course = {
           "min_time_seconds": 0,
           "audio_src": "",
           "transcript": "",
+          "transcript_hidden": false,
           "accessibility": {
             "alt_text_ok": true,
             "keyboard_ok": true,
@@ -270,6 +274,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -310,6 +315,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -350,6 +356,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -390,6 +397,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -487,6 +495,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "Cortometraje de animación «Big Buck Bunny» (Blender Foundation, licencia Creative Commons): un gran conejo se despierta en el bosque y, tras ser molestado por tres roedores, acaba gastándoles una broma. Sin diálogos.",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -556,6 +565,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -596,6 +606,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -636,6 +647,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -704,6 +716,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -744,6 +757,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -834,6 +848,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -906,6 +921,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -974,6 +990,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -1054,6 +1071,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -1132,6 +1150,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -1196,6 +1215,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -1288,6 +1308,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -1379,6 +1400,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -1451,6 +1473,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -1514,6 +1537,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -1612,6 +1636,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -1700,6 +1725,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -1789,6 +1815,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -1871,6 +1898,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -1943,6 +1971,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -2023,6 +2052,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -2115,6 +2145,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -2177,6 +2208,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -2245,6 +2277,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,
@@ -2306,6 +2339,7 @@ export const sampleCourse: Course = {
               "min_time_seconds": 0,
               "audio_src": "",
               "transcript": "",
+              "transcript_hidden": false,
               "accessibility": {
                 "alt_text_ok": true,
                 "keyboard_ok": true,

@@ -124,6 +124,11 @@ La estructura (`index.html`): `.me-toolbar` → `.me-toolbar-center` (960px, cen
 dos grupos, `.me-toolbar-audio` (Transcripción, reproductor de audio, Pantalla completa
 al final) y `.me-toolbar-nav` (Anterior, progreso, Siguiente).
 
+- **Transcripción desactivable por pantalla** (`screen.transcript_hidden`): el botón se
+  desactiva (atenuado, como A−/A+ en su extremo; título «Transcripción no disponible en
+  esta pantalla») en vez de esconderse, para que la barra no cambie de forma al navegar
+  (`refreshTranscriptButton`, app.js, en cada `goTo`); Alt+T anuncia que no hay. El texto
+  de `transcript` se conserva en el proyecto (es la entrada del TTS).
 - **Centrado clásico, no grid**: `.me-toolbar` es `display:flex; justify-content:center`
   con un único hijo flexible (`.me-toolbar-center`, `width:100%; max-width:960px`) — el
   centrado de un solo elemento dentro de un padre `justify-content:center` es exacto
@@ -226,7 +231,9 @@ remiten al aula virtual, no al «curso».
   los abre al imprimir): plegados si hay vídeo (son un repaso), abiertos si no lo hay (son
   el contenido). El `student_text` del autor, si existe, va como entradilla. El resumen no
   entra en la transcripción ni en la locución (la transcripción de la pantalla es la del
-  vídeo), y el exportador `.elpx` no lo lleva (los controles de eXe son otros).
+  vídeo), y el exportador `.elpx` no lo lleva (los controles de eXe son otros). La receta
+  la crea con `transcript_hidden: true`: el vídeo ya lleva subtítulos y el resumen está
+  debajo, así que el botón «Transcripción» no aporta nada ahí.
 - **Solo explica lo que existe en ESTE paquete**: `guideInfo()` (app.js) deduce del curso
   si hay locución (algún `audio_src` → sección del reproductor), materiales
   (glosario/recursos/documentos), actividades evaluables (y `score_source` ≠

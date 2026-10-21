@@ -304,7 +304,7 @@
     return {
       navigation: rules.navigation || 'mixed',
       hasAudio: screens.some(function (s) { return !!s.audio_src; }),
-      hasTranscripts: screens.some(function (s) { return !!s.transcript; }),
+      hasTranscripts: screens.some(function (s) { return !!s.transcript && !s.transcript_hidden; }),
       hasMinTime: screens.some(function (s) { return (s.min_time_seconds || 0) > 0; }),
       hasScored: rules.score_source !== 'final_test' && screens.some(function (s) { return s.interaction && s.interaction.scored; }),
       hasFinalTest: SCREENS.some(function (e) { return e.isFinalTest; }),
@@ -781,6 +781,7 @@
     markVisited(idx);
     playCurrentNarration();
     refreshAudioPlayer();
+    refreshTranscriptButton();
     updateProgress();
     refreshMenuChecks();
     refreshNavState();
@@ -1170,9 +1171,22 @@
     btn.setAttribute('aria-label', label);
   }
 
+  // Transcripción oculta por el autor (`screen.transcript_hidden`): el botón se
+  // desactiva en esa pantalla (como A−/A+ en su extremo) en vez de esconderse,
+  // para que la barra no cambie de forma al navegar.
+  function refreshTranscriptButton() {
+    var btn = document.getElementById('me-btn-transcript');
+    var entry = SCREENS[current];
+    var off = !!(entry && entry.screen && !entry.isFinalTest && entry.screen.transcript_hidden);
+    btn.disabled = off;
+    var label = off ? 'Transcripción no disponible en esta pantalla' : 'Transcripción (Alt+T)';
+    btn.title = label;
+    btn.setAttribute('aria-label', off ? label : 'Transcripción');
+  }
+
   function toggleTranscript() {
     var entry = SCREENS[current];
-    var t = entry && !entry.isFinalTest ? entry.screen.transcript : '';
+    var t = entry && !entry.isFinalTest && !entry.screen.transcript_hidden ? entry.screen.transcript : '';
     if (!t) { A11Y.announce('Esta pantalla no tiene transcripción.'); return; }
     openModalHtml('Transcripción', '<div class="me-prose">' + Renderer.mdToHtml(t) + '</div>');
   }

@@ -67,10 +67,14 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
     add('IMG_NO_ALT', 'error', 'Imagen sin texto alternativo (alt).')
 
   const isVideo = vr.kind === 'video_file' || vr.kind === 'video_youtube' || s.type === 'video'
-  if (isVideo && !s.transcript.trim() && !(s.interaction?.config?.transcript))
+  // Transcripción oculta a propósito (`transcript_hidden`): no se exige; si hay
+  // locución, se avisa de que el alumno se queda sin alternativa textual.
+  if (isVideo && !s.transcript_hidden && !s.transcript.trim() && !(s.interaction?.config?.transcript))
     add('VIDEO_NO_TRANSCRIPT', 'error', 'Vídeo sin transcripción.')
-  if (s.audio_src.trim() && !s.transcript.trim())
+  if (s.audio_src.trim() && !s.transcript_hidden && !s.transcript.trim())
     add('AUDIO_NO_TRANSCRIPT', 'error', 'Audio de locución sin transcripción.')
+  if (s.audio_src.trim() && s.transcript_hidden)
+    add('TRANSCRIPT_HIDDEN_AUDIO', 'warning', 'La pantalla tiene locución y la transcripción está oculta: quien no pueda oírla no tiene alternativa textual.')
   if ((vr.kind === 'video_file' || vr.kind === 'audio') && vr.has_voice && (vr.tracks || []).length === 0)
     add('MEDIA_NO_SUBS', 'error', 'Medio con voz sin subtítulos (VTT).')
 

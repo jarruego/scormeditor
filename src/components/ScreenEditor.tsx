@@ -523,6 +523,10 @@ export function ScreenEditor() {
               patch({ transcript: e.target.value })
             }} />
         </label>
+        <label className="ed-check" title="El texto se conserva (sigue sirviendo para generar el audio); solo deja de mostrarse al alumno">
+          <input type="checkbox" checked={screen.transcript_hidden} onChange={(e) => patch({ transcript_hidden: e.target.checked })} />
+          <span>Sin transcripción para el alumno (desactiva el botón «Transcripción» en esta pantalla)</span>
+        </label>
         {transcriptStale && (
           <p className="ed-hint-warn">
             <Icon name="alert-triangle" size={13} /> El contenido de la pantalla cambió desde que se escribió/regeneró
