@@ -7,7 +7,7 @@ import { allScreens, INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContai
 import { sampleCourse } from '../schema/sample-course'
 import { isAssetReferenced, orphanAssetPaths } from '../schema/assetRefs'
 import { normalizeObjective } from '../validation/objectives'
-import { buildTranscript, contentHash } from '../tts/buildTranscript'
+import { buildTranscript, contentHash, skipsScreenNarration } from '../tts/buildTranscript'
 import type { AssetMap } from '../export/exportScorm'
 
 function clone<T>(x: T): T {
@@ -703,6 +703,9 @@ export const useCourseStore = create<CourseState>((set, get) => {
     let refreshed = 0
     for (const s of allScreens(course)) {
       if (s.type === 'content_placeholder' || s.status === 'esqueleto_pendiente_desarrollo') continue
+      // Vídeo con voz (su transcripción es la del vídeo) o «Sin transcripción
+      // para el alumno»: fuera del relleno masivo, ni siquiera con `force`.
+      if (skipsScreenNarration(s)) continue
       if (s.transcript.trim()) {
         if (!force) {
           // Ya tiene texto: solo se toca si está PROBADAMENTE desactualizada

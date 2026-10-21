@@ -128,8 +128,9 @@ al final) y `.me-toolbar-nav` (Anterior, progreso, Siguiente).
 - **Transcripción desactivable por pantalla** (`screen.transcript_hidden`): el botón se
   desactiva (atenuado, como A−/A+ en su extremo; título «Transcripción no disponible en
   esta pantalla») en vez de esconderse, para que la barra no cambie de forma al navegar
-  (`refreshTranscriptButton`, app.js, en cada `goTo`); Alt+T anuncia que no hay. El texto
-  de `transcript` se conserva en el proyecto (es la entrada del TTS).
+  (`refreshTranscriptButton`, app.js, en cada `goTo`); Alt+T anuncia que no hay. En el
+  editor, la casilla además saca la pantalla de la narración automática (ver
+  `tts-narracion.md`).
 - **Centrado clásico, no grid**: `.me-toolbar` es `display:flex; justify-content:center`
   con un único hijo flexible (`.me-toolbar-center`, `width:100%; max-width:960px`) — el
   centrado de un solo elemento dentro de un padre `justify-content:center` es exacto

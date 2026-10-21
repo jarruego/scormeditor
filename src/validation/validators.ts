@@ -1,7 +1,7 @@
 import type { Course, QuizQuestion, Screen, Unit, UnitTest } from '../schema/course.schema'
 import { allScreens, screenContainers, containerLabel } from '../schema/traverse'
 import { normalizeObjective } from './objectives'
-import { buildTranscript, contentHash, hasOwnVoiceVideo, itemsOf } from '../tts/buildTranscript'
+import { buildTranscript, contentHash, itemsOf, skipsItemNarration, skipsScreenNarration } from '../tts/buildTranscript'
 import { countFlaggedForReview } from '../schema/review'
 import { MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_TOTAL_BYTES, fmtBytes } from '../schema/attachments'
 import { getStateCodec } from '../scorm/stateCodec'
@@ -82,7 +82,7 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
   // placeholders ya cargan con SKELETON y los casos con vídeo/audio sin
   // transcripción ya son errores arriba: aquí solo el flujo de trabajo.
   const skeleton = s.type === 'content_placeholder' || s.status === 'esqueleto_pendiente_desarrollo'
-  if (ctx.narrated && !skeleton && !s.audio_src.trim() && !hasOwnVoiceVideo(s)) {
+  if (ctx.narrated && !skeleton && !s.audio_src.trim() && !skipsScreenNarration(s)) {
     if (!s.transcript.trim()) {
       // «Debería tenerla» = tiene contenido narrable (mismo criterio que el
       // botón «Generar transcripción desde el contenido»). El caso isVideo ya
@@ -100,7 +100,7 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
   // por última vez (ver `updateScreen` en courseStore.ts). Sin huella sellada
   // (proyecto/pantalla de antes de esta función, o nunca tocados desde el
   // editor) no se avisa: no hay con qué comparar.
-  if (ctx.narrated && !skeleton && s.transcript.trim()) {
+  if (ctx.narrated && !skeleton && !skipsScreenNarration(s) && s.transcript.trim()) {
     if (s.transcript_content_hash && s.transcript_content_hash !== contentHash(buildTranscript(s)))
       add('NARR_TRANSCRIPT_STALE', 'info', 'El contenido cambió desde que se escribió/regeneró esta transcripción: revísala y regenérala si hace falta.')
     if (s.audio_src.trim() && s.audio_transcript_hash && s.audio_transcript_hash !== contentHash(s.transcript))
@@ -118,7 +118,7 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
     // «NARR_ITEM_NO_TRANSCRIPT» porque el guion es el propio texto visible
     // (siempre "existe" si el ítem no está vacío — ya cubierto por TL_EMPTY,
     // FC_EMPTY, etc.).
-    if (ctx.narrated) {
+    if (ctx.narrated && !skipsItemNarration(s)) {
       itemsOf(it).forEach((item, i) => {
         if (item.text.trim() && !item.audioSrc.trim())
           add('NARR_ITEM_NO_AUDIO', 'info', `Pendiente de narrar: el ítem ${i + 1} de la interacción no tiene audio propio.`)

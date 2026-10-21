@@ -1,7 +1,7 @@
 import { useCourseStore } from '../store/courseStore'
 import type { Course, Screen } from '../schema/course.schema'
 import { allScreens } from '../schema/traverse'
-import { buildTranscript, contentHash, hasOwnVoiceVideo, itemsOf, itemsKeyOf } from './buildTranscript'
+import { buildTranscript, contentHash, itemsOf, itemsKeyOf, skipsItemNarration, skipsScreenNarration } from './buildTranscript'
 
 /**
  * Narración por voz (TTS) integrada en el editor.
@@ -630,7 +630,7 @@ export interface NarratableScreen {
 
 /** Lista las pantallas con datos relevantes para narración. */
 export function listNarratable(): NarratableScreen[] {
-  return eachScreen().filter((s) => !hasOwnVoiceVideo(s)).map((s) => ({
+  return eachScreen().filter((s) => !skipsScreenNarration(s)).map((s) => ({
     id: s.id,
     title: s.title || s.id,
     hasTranscript: s.transcript.trim().length > 0,
@@ -649,8 +649,8 @@ export function pendingNarrationChars(onlyMissing: boolean): number {
   let chars = 0
   for (const s of eachScreen()) {
     const t = s.transcript.trim()
-    if (t && !hasOwnVoiceVideo(s) && !(onlyMissing && s.audio_src.trim())) chars += t.length
-    if (!s.interaction) continue
+    if (t && !skipsScreenNarration(s) && !(onlyMissing && s.audio_src.trim())) chars += t.length
+    if (!s.interaction || skipsItemNarration(s)) continue
     for (const item of itemsOf(s.interaction)) {
       const tx = item.text.trim()
       if (tx && !(onlyMissing && item.audioSrc.trim())) chars += tx.length
@@ -684,7 +684,7 @@ export interface NarratableItemEntry {
 export function listNarratableItems(): NarratableItemEntry[] {
   const out: NarratableItemEntry[] = []
   for (const s of eachScreen()) {
-    if (!s.interaction) continue
+    if (!s.interaction || skipsItemNarration(s)) continue
     for (const item of itemsOf(s.interaction)) {
       out.push({
         screenId: s.id,
@@ -825,7 +825,7 @@ export async function generateAll(opts: BulkOptions): Promise<BulkResult> {
   const cfg = getTtsConfig()
   if (!keyFor(cfg)) throw new Error('Falta la clave de API. Configúrala en «Narración por voz».')
 
-  const targets = eachScreen().filter((s) => s.transcript.trim().length > 0 && !hasOwnVoiceVideo(s))
+  const targets = eachScreen().filter((s) => s.transcript.trim().length > 0 && !skipsScreenNarration(s))
   const result: BulkResult = { done: 0, skipped: 0, errors: [] }
   let index = 0
   for (const s of targets) {

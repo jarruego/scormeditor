@@ -285,7 +285,8 @@ Reglas que NO se pueden romper:
 ```
 
 - `transcript_hidden` (opcional, por defecto `false`): **no lo pongas**. Es una decisión del
-  editor humano (desactiva el botón «Transcripción» de esa pantalla).
+  editor humano (desactiva el botón «Transcripción» de esa pantalla y la saca de la
+  narración automática).
 - `type` (enum cerrado): `cover`, `objectives`, `route`, `content`,
   `summary`, `video`, `reflection`, `forum_prompt`, `unit_quiz`, `content_placeholder`,
   `guide`.

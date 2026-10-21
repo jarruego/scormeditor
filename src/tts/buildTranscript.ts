@@ -231,11 +231,26 @@ export function itemsOf(it: Interaction): NarratableItem[] {
 
 /** Pantalla cuyo vídeo ya trae su propia voz (`has_voice`, p. ej. el vídeo demo
  *  de «Instrucciones de uso»): su `transcript` es la del vídeo, no un guion de
- *  locución, y narrarla encima sonaría a la vez que el vídeo. La narración
- *  masiva y los avisos de narración pendiente la dejan fuera. */
+ *  locución, y narrarla encima sonaría a la vez que el vídeo. */
 export function hasOwnVoiceVideo(s: Screen): boolean {
   const k = s.visual_resource.kind
   return (k === 'video_file' || k === 'video_youtube') && !!s.visual_resource.has_voice
+}
+
+/** Pantalla fuera de la narración automática a nivel de PANTALLA (rellenar
+ *  transcripciones y generar audios en bloque, contadores y avisos NARR_*):
+ *  vídeo con voz propia, o marcada «Sin transcripción para el alumno»
+ *  (`transcript_hidden`). Los botones de la propia pantalla siguen funcionando. */
+export function skipsScreenNarration(s: Screen): boolean {
+  return s.transcript_hidden || hasOwnVoiceVideo(s)
+}
+
+/** Pantalla fuera también de la narración por ítem (audios propios de los
+ *  ítems de accordion/tabs/…): solo la marcada «Sin transcripción», que el
+ *  autor ha sacado entera de la narración. Un vídeo con voz no impide narrar
+ *  los ítems de su interacción. */
+export function skipsItemNarration(s: Screen): boolean {
+  return s.transcript_hidden
 }
 
 /** Transcripción completa de la pantalla (título + texto + interacción).

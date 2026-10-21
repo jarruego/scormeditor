@@ -218,7 +218,7 @@ export const Screen = z.object({
   transcript_hidden: z
     .boolean()
     .default(false)
-    .describe('Ocultar la transcripción al alumno en esta pantalla: el botón «Transcripción» queda desactivado. El texto de `transcript` se conserva (sigue siendo la entrada del TTS).'),
+    .describe('Pantalla sin transcripción para el alumno: el botón «Transcripción» queda desactivado y la pantalla queda fuera de la narración automática en bloque (rellenar transcripciones, generar audios de pantalla y de ítems, avisos NARR_*). El texto de `transcript`, si lo hay, se conserva.'),
   transcript_content_hash: z
     .string()
     .optional()

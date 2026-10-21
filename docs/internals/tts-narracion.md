@@ -68,10 +68,16 @@ más abajo para el indicador persistente.
 En cursos **narrados**, la validación señala el trabajo pendiente por pantalla:
 `NARR_NO_TRANSCRIPT` (aviso), `NARR_NO_AUDIO` (info, lista de «pendientes de narrar») y
 `NARR_ITEM_NO_AUDIO` (info, mismo criterio pero por ítem de una interacción revelable).
-Las pantallas cuyo vídeo ya trae voz (`hasOwnVoiceVideo`: `video_file`/`video_youtube` con
-`has_voice`, como el vídeo demo de «Instrucciones de uso») quedan fuera de la narración
-masiva, del contador del panel y de `NARR_NO_AUDIO`: su `transcript` es la del vídeo, y
-una locución encima sonaría a la vez que él.
+**Pantallas fuera de la narración automática** (`buildTranscript.ts`), en «Rellenar
+transcripciones» (incluso con forzar), «Generar audios» en bloque, los contadores del
+panel y los avisos `NARR_*`; los botones de la propia pantalla siguen funcionando:
+- `skipsScreenNarration`: vídeo con voz propia (`hasOwnVoiceVideo`: `video_file`/
+  `video_youtube` con `has_voice`, como el vídeo demo de «Instrucciones de uso» — su
+  `transcript` es la del vídeo y una locución encima sonaría a la vez) **o** casilla «Sin
+  transcripción para el alumno» (`transcript_hidden`).
+- `skipsItemNarration`: solo `transcript_hidden` — el autor ha sacado la pantalla entera
+  de la narración, incluidos los audios por ítem; un vídeo con voz no impide narrar los
+  ítems de su interacción.
 «Narrado» lo decide el ajuste **«Curso narrado»** de Ajustes → Narración
 (`course.narration.mode`: `auto` = si alguna pantalla tiene `audio_src` | `on` | `off`;
 se guarda en el proyecto, no en localStorage; helper compartido `isNarrated()` en

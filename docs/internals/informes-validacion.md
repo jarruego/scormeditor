@@ -63,7 +63,8 @@ Reglas por pantalla / unidad / curso, p. ej.:
   alumno»): la carcasa desactiva el botón «Transcripción» en esa pantalla, así que no se
   exige (`VIDEO_NO_TRANSCRIPT`/`AUDIO_NO_TRANSCRIPT` no saltan). Con locución salta
   `TRANSCRIPT_HIDDEN_AUDIO` (`warning`): quien no pueda oírla se queda sin alternativa
-  textual. `NARR_NO_TRANSCRIPT` sigue igual, porque el texto oculto es la entrada del TTS.
+  textual. Además la pantalla queda fuera de la narración automática, así que tampoco
+  saltan sus avisos `NARR_*` (de pantalla ni de ítems) — ver `tts-narracion.md`.
 - **Congruencia tipo ↔ recurso ↔ interacción** (complemento de las recetas de creación;
   ver `editor-pantallas.md`): avisos —nunca errores— para combinaciones que casi siempre
   son un despiste. `COVER_INTERACTION` (portada con actividad), `VIDEO_NO_MEDIA`

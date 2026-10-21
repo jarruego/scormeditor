@@ -523,7 +523,7 @@ export function ScreenEditor() {
               patch({ transcript: e.target.value })
             }} />
         </label>
-        <label className="ed-check" title="El texto se conserva (sigue sirviendo para generar el audio); solo deja de mostrarse al alumno">
+        <label className="ed-check" title="Desactiva el botón «Transcripción» en esta pantalla y la deja fuera de la narración automática en bloque (rellenar transcripciones y generar audios). Los botones de aquí abajo siguen funcionando si quieres hacerlo a mano.">
           <input type="checkbox" checked={screen.transcript_hidden} onChange={(e) => patch({ transcript_hidden: e.target.checked })} />
           <span>Sin transcripción para el alumno (desactiva el botón «Transcripción» en esta pantalla)</span>
         </label>
