@@ -130,6 +130,10 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
     lenguaje sin jerga JSON): `docs/guia-marcas-para-autores.md`, con el mismo
     catálogo de alias en prosa pedagógica — mantener los dos sincronizados si cambia
     un alias o se añade un tipo.
+- **Títulos generados** (contrato §4, «Títulos: criterio editorial», y su línea en
+  `referencia-rapida.md`): descriptivos sin `¿?` por defecto, pregunta directa solo con
+  función pedagógica real, variedad de estructuras, tilde en las interrogativas
+  indirectas; los títulos del fuente se conservan.
 - **Criterios de contenido acordados, viven en esos docs:** (1) **Regla Nº1** —
   conservar el texto de origen **casi al 100%** (ratio ≥0.95), sin resumir ni reescribir;
   extraer **con formato** (negritas, cajas→callouts) vía PyMuPDF `get_text("dict")`, no en

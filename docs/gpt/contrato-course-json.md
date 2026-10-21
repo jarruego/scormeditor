@@ -339,6 +339,27 @@ Reglas que NO se pueden romper:
   `{ "doc": "...", "locator": "p.8" , "quote": "...", "transform": "resumen|reescritura|..." }`
   (solo `doc` es obligatorio).
 
+### Títulos: criterio editorial
+Aplica a los `title` que **generes o reformules** tú (curso, módulos, unidades,
+pantallas, apartados `## `/`### `, ítems de interacciones). Si el título viene del
+documento fuente y no se ha autorizado cambiarlo, **consérvalo tal cual** (Regla Nº1).
+Antes de escribirlo, decide su función:
+- **Presenta, describe u organiza contenido → título descriptivo, sin signos de
+  interrogación** (es lo normal: se lee mejor en índice, menú y miga de pan):
+  «Cómo utilizar esta unidad», «Por qué es importante comunicarse bien», «Qué es la
+  escucha activa», «Estrategias para mejorar la comunicación».
+- **Plantea una pregunta real** al alumno (reflexión, curiosidad, problema,
+  participación) → **pregunta directa con sus signos**: «¿Qué harías ante una caída?»,
+  «¿Cómo actuarías en esta situación?».
+- **No conviertas títulos en preguntas solo para hacerlos atractivos**: para exponer un
+  procedimiento, «Cómo prevenir las úlceras por presión», no «¿Cómo podemos prevenir
+  las úlceras por presión?».
+- **Varía las estructuras**: no abuses de «Cómo…», «Qué…», «Por qué…»; altérnalas con
+  títulos nominales («La comunicación no verbal», «Factores de riesgo y prevención»).
+- **Ortografía**: las interrogativas indirectas sin signos **conservan la tilde**
+  («qué», «cómo», «cuándo», «dónde», «por qué»).
+- No cambies títulos que ya sean correctos y adecuados.
+
 ### 4.1 Markdown ligero y bloques destacados (callouts) en `student_text`
 
 `student_text` se escribe en **texto plano con markdown ligero** (NO HTML). El

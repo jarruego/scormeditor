@@ -83,6 +83,11 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   vacíos; `quality_checklist` es objeto de booleanos.
 - Imágenes con `alt`; audio/vídeo con `transcript` y subtítulos; `scorm.identifier` no
   vacío.
+- **Títulos** (contrato §4, «Títulos: criterio editorial»): los del fuente se conservan;
+  los que generes, **descriptivos sin `¿?`** («Qué es la escucha activa»); pregunta
+  directa con signos solo si interpela de verdad al alumno («¿Qué harías ante una
+  caída?»); varía las estructuras (no todo «Cómo…/Qué…»); tilde en «qué/cómo/por qué»
+  también sin signos.
 - **Formato**: sin rótulos por diapositiva (`Idea clave:`, `Claves:`, `Objetivo:`,
   `Resumen:`, `Actividad práctica`, `Resolución propuesta:`); sin `…`/`...` de
   truncado; listas con `- ` (un ítem por línea, **sin línea en blanco entre ítems**);
