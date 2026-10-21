@@ -136,7 +136,12 @@ function interactionSeconds(it: Interaction): { seconds: number; filePath?: stri
       // `interactionPlain` YA incluye el enunciado, así que se resta el que
       // se sumó arriba para no contarlo dos veces.
       seconds += readingSeconds(interactionPlain(it)) - readingSeconds(inlinePlain(it.prompt))
-      if (it.type === 'case_practice') seconds += 90 // pensar/escribir en papel antes de autoevaluarse
+      if (it.type === 'case_practice') {
+        seconds += 90 // pensar/escribir en papel antes de autoevaluarse
+        // La rúbrica (plegada, fuera de `interactionPlain`) también se lee al abrirla.
+        const rubric = (((it.config || {}) as Record<string, any>).rubric || []) as any[]
+        seconds += rubric.reduce((a, r) => a + readingSeconds(inlinePlain(r?.label || '')), 0)
+      }
       else if (it.type === 'scenario_decision') seconds += 15 // decidir entre las opciones
       else if (it.type === 'before_after') seconds += 10 // comparar las dos caras
     }

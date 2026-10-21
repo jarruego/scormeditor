@@ -38,8 +38,10 @@ otro tipo — `single_choice`, `fill_blanks`, `hotspots`, crucigrama…):
     junto al `prompt`: funciona como un índice hablado de lo que hay para explorar, sin
     desvelar el contenido.
   - *No revelable* no oculta nada tras un gesto, así que entra entera sin esperar: 
-    `before_after` (etiqueta + alt de cada cara), `case_practice` (los criterios de la
-    rúbrica de autoevaluación — no tiene «correcta», así que narrarlos no desvela nada) y
+    `before_after` (etiqueta + alt de cada cara), `case_practice` (solo el `prompt`: la
+    rúbrica de autoevaluación va plegada y el alumno la abre cuando ya ha pensado su
+    respuesta, así que leerla antes de desplegarla no tiene sentido — ni se narra ni entra
+    en la transcripción; sí cuenta en la duración estimada) y
     `scenario_decision` (la situación inicial, que es contexto, no una opción a adivinar;
     las opciones y su feedback sí quedan fuera, como cualquier evaluable).
 

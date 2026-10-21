@@ -25,9 +25,11 @@ import type { Screen, Interaction, InteractionType } from '../schema/course.sche
  * para explorar, sin desvelar el contenido.
  *
  * `case_practice` y `scenario_decision` son informativas pero NO revelables:
- * nada de lo que narran da la respuesta (la rúbrica de autoevaluación no
- * tiene «correcta», la situación de un escenario es contexto, no una opción
- * a adivinar), así que su contenido entra entero, sin esperar a ningún gesto.
+ * nada de lo que narran da la respuesta (la situación de un escenario es
+ * contexto, no una opción a adivinar), así que su contenido entra sin esperar
+ * a ningún gesto. Excepción: la rúbrica de `case_practice` NO entra — en la
+ * carcasa va plegada («Autoevalúate según la rúbrica») y el alumno la abre
+ * cuando ya ha pensado su respuesta; leerla antes no tiene sentido.
  *
  * El resultado es texto plano pensado para el botón «Transcripción» de la
  * carcasa y como entrada del TTS (sin marcas ** * [], sin fences :::).
@@ -161,13 +163,6 @@ export function interactionPlain(it: Interaction): string {
     }
     face(cfg.before_label, 'Antes', cfg.before_alt)
     face(cfg.after_label, 'Después', cfg.after_alt)
-  } else if (it.type === 'case_practice') {
-    // Rúbrica de autoevaluación: no tiene «criterio correcto», así que narrar
-    // los criterios no desvela ninguna respuesta — entran todos.
-    for (const r of (cfg.rubric || []) as any[]) {
-      const t = inlinePlain(r?.label || '')
-      if (t) parts.push(t)
-    }
   } else if (it.type === 'scenario_decision') {
     // La situación es el contexto de la decisión, no una opción a adivinar.
     // Las opciones y su feedback (eso sí daría la respuesta) quedan fuera.
