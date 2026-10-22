@@ -1,4 +1,6 @@
+import { useRef, useState } from 'react'
 import { confirmDialog } from '../store/confirm'
+import { importScreenPackage, readScreenPackage, SCREEN_PKG_EXT } from '../store/screenPackage'
 import { useCourseStore } from '../store/courseStore'
 import type { ScreenInput } from '../schema/course.schema'
 import { INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId } from '../schema/traverse'
@@ -22,6 +24,8 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
   const course = useCourseStore((s) => s.course)
   const addScreen = useCourseStore((s) => s.addScreen)
   const addAsset = useCourseStore((s) => s.addAsset)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [importing, setImporting] = useState(false)
 
   const isIntro = containerId === INTRO_CONTAINER_ID
   const isOutro = containerId === OUTRO_CONTAINER_ID
@@ -83,6 +87,30 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
     }, 0)
   }
 
+  // Pantallas de un paquete `.scormscreen` exportado desde otro curso (o este):
+  // se insertan todas, en su orden, donde iría la receta (punto de inserción o
+  // al final del contenedor).
+  async function importFile(file: File) {
+    setImporting(true)
+    try {
+      const pkg = await readScreenPackage(file)
+      if (!pkg.screens.length) throw new Error('El paquete no contiene pantallas.')
+      const res = await importScreenPackage(pkg, containerId, atIndex)
+      onClose()
+      if (res.glossary) {
+        void confirmDialog({
+          title: 'Pantallas importadas',
+          message: `Se han importado ${res.screens} ${res.screens === 1 ? 'pantalla' : 'pantallas'} y se han añadido ${res.glossary} ${res.glossary === 1 ? 'término' : 'términos'} al glosario.`,
+          hideCancel: true,
+        })
+      }
+    } catch (e) {
+      void confirmDialog({ title: 'Importar pantallas', message: (e as Error).message, hideCancel: true })
+    } finally {
+      setImporting(false)
+    }
+  }
+
   // Navegación con flechas entre tarjetas (además del orden natural de Tab).
   function onKeyDown(e: React.KeyboardEvent) {
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return
@@ -126,6 +154,24 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
             </div>
           </section>
         ))}
+        <section className="ed-recipe-group">
+          <h3>
+            Reutilizar
+            <span className="ed-recipe-group-hint"> — pantallas exportadas desde otro curso</span>
+          </h3>
+          <div className="ed-recipe-grid">
+            <button className="ed-recipe" disabled={importing} onClick={() => fileRef.current?.click()}>
+              <span className="ed-recipe-ico" aria-hidden="true" style={{ '--ico-c': 'var(--c-primary)' } as React.CSSProperties}>
+                <Icon name="folder" size={18} /></span>
+              <span className="ed-recipe-text">
+                <span className="ed-recipe-name">{importing ? 'Importando…' : 'Importar pantallas…'}</span>
+                <span className="ed-recipe-desc">Desde un archivo {SCREEN_PKG_EXT} (botón «Exportar» de la cabecera de cada pantalla).</span>
+              </span>
+            </button>
+          </div>
+          <input ref={fileRef} type="file" accept={SCREEN_PKG_EXT} hidden
+            onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void importFile(f) }} />
+        </section>
         <p className="ed-recipes-note">
           La receta solo preconfigura la pantalla: el tipo, el recurso, la actividad y si puntúa se pueden cambiar después.
         </p>

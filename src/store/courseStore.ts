@@ -206,6 +206,12 @@ interface CourseState {
    *  `atIndex` fija la posición en el contenedor (si falta: tras `afterId` o al final). */
   addScreen: (containerId: string, afterId?: string, preset?: Partial<ScreenInput>, atIndex?: number) => void
   duplicateScreen: (id: string) => void
+  /** Inserta copias de pantallas importadas (paquete `.scormscreen`) en
+   *  `containerId`, en `atIndex` o al final, con ids de pantalla/interacción
+   *  nuevos, y añade al glosario los términos `glossary` (ya filtrados por el
+   *  llamante). Un solo paso de historial. Devuelve el id de la primera
+   *  pantalla insertada (queda seleccionada), o `null` si no hay contenedor. */
+  insertScreens: (containerId: string, screens: Screen[], atIndex?: number, glossary?: GlossaryTerm[]) => string | null
   deleteScreen: (id: string) => void
   /** Reordena dentro del contenedor o mueve a otro (unidad o módulo). */
   moveScreen: (id: string, toContainerId: string, toIndex: number) => void
@@ -880,6 +886,23 @@ export const useCourseStore = create<CourseState>((set, get) => {
     if (copy.interaction) copy.interaction.id = newId('i')
     screens.splice(loc.si + 1, 0, copy)
     set({ course, selectedScreenId: copy.id })
+  },
+
+  insertScreens: (containerId, screens, atIndex, glossary = []) => {
+    if (!screens.length || !containerScreens(get().course, containerId)) return null
+    snapshot()
+    const course = clone(get().course)
+    const target = containerScreens(course, containerId)!
+    const copies = clone(screens).map((s) => {
+      s.id = newId('s')
+      if (s.interaction) s.interaction.id = newId('i')
+      return s
+    })
+    const idx = atIndex != null ? Math.max(0, Math.min(atIndex, target.length)) : target.length
+    target.splice(idx, 0, ...copies)
+    course.glossary.push(...clone(glossary))
+    set({ course, selectedScreenId: copies[0].id })
+    return copies[0].id
   },
 
   deleteScreen: (id) => {

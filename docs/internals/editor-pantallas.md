@@ -307,6 +307,11 @@ desplegable «Tipo de pantalla» queda como ajuste avanzado). Decisiones:
   instrucciones de uso» en `carcasa-navegacion.md`); su `student_text` es solo una
   entradilla opcional. Sin objetivo (`hideObjective`, exenta de `NO_OBJECTIVE`). El curso
   demo la incluye sin vídeo (no tiene `AssetMap`).
+- **Grupo «Reutilizar»** (al final, fuera de `SCREEN_RECIPES`): tarjeta «Importar
+  pantallas…» que inserta en el contenedor (y en `atIndex`, si lo hay) las pantallas de un
+  paquete `.scormscreen`; su contraparte es el botón de exportar de la cabecera del
+  `ScreenEditor` (formato y reglas en «Paquete de pantallas reutilizables» de
+  `persistencia-scormproj.md`).
 - Las recetas **no** rellenan `student_text` (acabaría exportado) ni `min_time_seconds`
   (ya hay ajuste masivo en Ajustes).
 - Tras crear, el foco salta al input de Título (`data-field="screen-title"` en

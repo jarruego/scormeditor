@@ -227,6 +227,12 @@ const SECTIONS: Section[] = [
             algo con contenido pide confirmación, y siempre puedes deshacer).
           </li>
           <li>
+            <strong>Reutilizar pantallas entre cursos</strong>: el botón de descarga de la
+            cabecera de una pantalla la exporta (a ella u otras que marques) a un archivo
+            <code>.scormscreen</code> con sus imágenes, audios y términos de glosario; en otro
+            curso, «Añadir pantalla…» › <em>Importar pantallas…</em> las inserta ahí.
+          </li>
+          <li>
             El <strong>filtro</strong> de la parte superior busca por título o tipo de
             pantalla.
           </li>

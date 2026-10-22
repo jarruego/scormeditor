@@ -114,7 +114,7 @@ const MIME_BY_EXT: Record<string, string> = {
 }
 
 /** Devuelve el blob con su MIME según la extensión de `name` (si le falta). */
-function typedBlob(name: string, blob: Blob): Blob {
+export function typedBlob(name: string, blob: Blob): Blob {
   if (blob.type) return blob
   const ext = name.split('.').pop()?.toLowerCase() || ''
   const mime = MIME_BY_EXT[ext]
@@ -282,7 +282,7 @@ export async function downloadProjectCopy(): Promise<void> {
   downloadBlob(blob, `${courseId()}${PROJECT_EXT}`)
 }
 
-function downloadBlob(blob: Blob, name: string) {
+export function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

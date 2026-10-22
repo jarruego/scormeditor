@@ -16,6 +16,7 @@ import { buildTranscript, contentHash, INFORMATIVE } from '../tts/buildTranscrip
 import { confirmDialog, confirmDialogTri } from '../store/confirm'
 import type { AssetMap } from '../export/exportScorm'
 import { Icon } from './Icon'
+import { ExportScreensModal } from './ExportScreensModal'
 
 // Controles compactos con iconos (title/aria-label describen la acción) en vez de selects.
 const KIND_ICONS = [
@@ -142,6 +143,7 @@ export function ScreenEditor() {
   // cambia el tipo de la existente (con migración/confirmación).
   const [typePicker, setTypePicker] = useState<null | 'add' | 'change'>(null)
   const titleRef = useRef<HTMLInputElement>(null)
+  const [exporting, setExporting] = useState(false)
   // Rutas/ID por tipo de recurso y pantalla (clave `id:kind`), para que cambiar
   // de tipo no arrastre el valor de otro. Solo vive durante la sesión de edición.
   // OJO: debe declararse ANTES del return temprano de «sin pantalla» — un hook
@@ -569,7 +571,12 @@ export function ScreenEditor() {
           <Icon name="pencil" size={14} />
         </button>
         <span className="ed-form-type"><Icon name={screenTypeIcon(screen.type)} size={12} color={screenTypeColor(screen.type)} /> {screenTypeLabel(screen.type, { level: coverLevel, module: course.module_label, unit: course.unit_label })}</span>
+        <button type="button" className="ed-icobtn ed-export-btn" title="Exportar esta pantalla (u otras) para reutilizarla en otro curso"
+          aria-label="Exportar pantallas" onClick={() => setExporting(true)}>
+          <Icon name="download" size={15} />
+        </button>
       </h2>
+      {exporting && <ExportScreensModal initialId={screen.id} onClose={() => setExporting(false)} />}
 
       {screenIssues.length > 0 && (
         <ul className="ed-inline-issues" aria-label="Avisos de validación de esta pantalla">

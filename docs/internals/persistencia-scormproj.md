@@ -72,6 +72,32 @@ una versión anterior como `.scormproj` en `docs/internals/`: se retiró en favo
 que al vivir en el propio arranque de la app es la que de verdad se ve —y por tanto se
 nota si queda desactualizada— y además tipa en compilación.)
 
+### Paquete de pantallas reutilizables (`.scormscreen`, `src/store/screenPackage.ts`)
+Para llevar material de un curso a otro sin abrir dos proyectos: ZIP con `screens.json`
+(`format: 'scormeditor-screens'`, `schema_version`, `screens[]`, `glossary[]`) + los
+`assets/…` que esas pantallas referencian (`collectAssetPaths`, mismas rutas literales que
+en el `.scormproj`). **No cambia el formato del proyecto**: es un documento aparte.
+- **Exportar** (`ExportScreensModal`, botón de descarga en la cabecera del
+  `ScreenEditor`): checklist de todas las pantallas por contenedor (`screenContainers`), la
+  abierta premarcada. Viajan tal cual (narración `audio_src` y sus huellas incluidas, marca
+  de revisión incluida) más los términos del glosario de origen que aparecen como palabra
+  completa en su texto (sin acentos ni mayúsculas) — el glosario es de curso, no de
+  pantalla, y sin esto la pantalla llegaría «hablando» de términos que el destino no define.
+- **Importar** (tarjeta «Importar pantallas…» del grupo «Reutilizar» de `AddScreenModal`):
+  inserta todas las pantallas del paquete, en su orden, donde iría la receta (punto de
+  inserción o al final del contenedor), en un solo paso de historial
+  (`courseStore.insertScreens`), con **ids nuevos** de pantalla e interacción (importar dos
+  veces no duplica ids ni choca con la huella de `suspend_data`). Las pantallas se envuelven
+  en un curso mínimo y pasan por `migrate()` + `safeParseCourse`, así que un paquete de un
+  esquema antiguo se lee igual que un proyecto antiguo.
+- **Colisión de assets**: misma ruta y mismos bytes → se reutiliza el del destino; misma
+  ruta con contenido distinto → el del paquete entra con sufijo aleatorio y se reescriben
+  sus referencias en las pantallas importadas. Nunca se pisa un binario del curso de destino
+  (las rutas nacen de ids locales, p. ej. `assets/img/<itemId>-img.png`, y pueden repetirse
+  entre cursos).
+- **Glosario al importar**: solo se añaden los términos que el destino aún no tiene (misma
+  normalización); si se añade alguno, un aviso lo dice.
+
 ### Ciclo de vida de los assets (limpieza / peso)
 El `AssetMap` del store puede acumular **huérfanos**: `addAsset` indexa por ruta, así que
 reemplazar en el mismo hueco con **otra extensión**, cambiar el **tipo** de recurso o
