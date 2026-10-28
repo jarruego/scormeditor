@@ -456,6 +456,18 @@ const SECTIONS: Section[] = [
             pregunta más.
           </li>
           <li>
+            <strong>Rellenar huecos</strong> tiene dos modos: elegir cada palabra en un
+            desplegable (con distractores) o <strong>escribirla</strong>. Al escribir, un
+            hueco puede admitir varias respuestas separadas por barras, como{' '}
+            <code>[[Moodle|campus]]</code>, y no cuentan mayúsculas, tildes ni espacios de
+            más; al agotar los intentos, el alumno ve la respuesta esperada.
+          </li>
+          <li>
+            En <strong>Ordenar pasos</strong> cada paso admite una explicación opcional.
+            Cuando la actividad queda resuelta, cada paso se marca como bien o mal colocado,
+            con la posición en que lo puso el alumno, la correcta y esa explicación.
+          </li>
+          <li>
             <strong>Caso por decisiones</strong> encadena varias decisiones sobre la misma
             situación: el alumno ve una cada vez, responde una sola vez y lee el comentario
             de su opción antes de seguir. Al final ve un resumen de aciertos; si puntúa, la

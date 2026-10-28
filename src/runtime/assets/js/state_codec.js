@@ -464,9 +464,18 @@
     });
     return { answers: answers, pool: pool };
   }
+  // Modo escrito (config.mode === 'type'): detalle = { ok: [acierto por hueco],
+  // correct, attempts } — nunca el texto del alumno. Primer trozo '!' + un
+  // '1'/'0' por hueco, para distinguirlo sin ambigüedad del formato de
+  // desplegables: si el autor cambia de modo, el detalle del otro se descarta.
+  function fillBlanksTyped(it) { return (it.config || {}).mode === 'type'; }
   TYPE_CODECS.fill_blanks = {
     encode: function (detail, it) {
       var meta = fillBlanksMeta(it);
+      if (fillBlanksTyped(it)) {
+        if (!detail || !detail.ok || detail.ok.length !== meta.answers.length) return null;
+        return packChunks(['!' + detail.ok.map(function (x) { return x ? '1' : '0'; }).join(''), b36(detail.attempts || 0)]);
+      }
       if (!detail || !detail.values || detail.values.length !== meta.answers.length) return null;
       if (meta.pool.length > 35) return null;
       var digits = '';
@@ -479,7 +488,16 @@
     decode: function (payload, it) {
       var meta = fillBlanksMeta(it);
       var p = unpackChunks(payload);
-      if (!p || p.length !== 2 || p[0].length !== meta.answers.length) return null;
+      if (!p || p.length !== 2) return null;
+      var isTyped = p[0].charAt(0) === '!'; // '!' nunca es dígito base36 ni '.'
+      if (isTyped !== fillBlanksTyped(it)) return null;
+      if (isTyped) {
+        var bits = p[0].slice(1);
+        if (bits.length !== meta.answers.length || /[^01]/.test(bits)) return null;
+        var ok = bits.split('').map(function (c) { return c === '1'; });
+        return { ok: ok, attempts: fromB36(p[1]), correct: ok.length > 0 && ok.every(Boolean) };
+      }
+      if (p[0].length !== meta.answers.length) return null;
       var values = [];
       var correct = meta.answers.length > 0;
       for (var i = 0; i < p[0].length; i++) {
@@ -1236,7 +1254,9 @@
       }
       case 'fill_blanks': {
         var meta = fillBlanksMeta(it);
-        return meta.answers.length ? { values: meta.answers.slice(), attempts: 999 } : null;
+        if (!meta.answers.length) return null;
+        if (fillBlanksTyped(it)) return { ok: meta.answers.map(function () { return true; }), attempts: 999 };
+        return { values: meta.answers.slice(), attempts: 999 };
       }
       case 'video': case 'hidden_image': {
         var qs = filteredQuestions(it);

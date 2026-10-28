@@ -542,6 +542,30 @@
       list.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
       list.querySelectorAll('.me-sort-item').forEach(function (li) { li.setAttribute('draggable', 'false'); });
       var cb = el.querySelector('.me-check'); if (cb) cb.disabled = true;
+      markSorted();
+    }
+    // Ya resuelta (acierto o intentos agotados, nunca antes: desvelaría el
+    // orden): cada paso queda ✔/✖ y el mal colocado dice dónde lo puso el
+    // alumno y dónde va, más la explicación del paso si el autor la escribió.
+    function markSorted() {
+      var expected = steps.slice().sort(function (a, b) { return a.order - b.order; }).map(function (s) { return s.id; });
+      [].slice.call(list.children).forEach(function (li, i) {
+        var id = li.getAttribute('data-id');
+        var want = expected.indexOf(id);
+        var ok = want === i;
+        var step = steps.filter(function (s) { return s.id === id; })[0] || {};
+        li.classList.remove('is-right', 'is-wrong');
+        li.classList.add(ok ? 'is-right' : 'is-wrong');
+        var old = li.querySelector('.me-sort-why'); if (old) old.remove();
+        var why = (ok ? '' : 'Lo pusiste en la posición ' + (i + 1) + '; va en la ' + (want + 1) + '. ') +
+          (step.explanation ? rich(step.explanation) : '');
+        if (why) {
+          var p = el.ownerDocument.createElement('p');
+          p.className = 'me-sort-why';
+          p.innerHTML = why;
+          li.appendChild(p);
+        }
+      });
     }
     if (ctx.state && typeof ctx.state.correct === 'boolean') {
       correct = ctx.state.correct; showFeedback(el, correct, data);
@@ -1594,7 +1618,19 @@
   // config.text contiene huecos [[respuesta correcta]]; cada hueco se renderiza
   // como <select> cuyo pool de opciones son todas las respuestas + distractores
   // (config.distractors), barajadas de forma determinista.
+  // Con config.mode === 'type' el hueco es un campo de texto: el alumno escribe
+  // la respuesta y vale cualquiera de las alternativas [[a|b]] (sin distinguir
+  // mayúsculas, tildes ni espacios de más). Sin `mode` (proyectos antiguos y
+  // nuevos por defecto) todo sigue como siempre: desplegables, y un «|» dentro
+  // del hueco es texto literal. Estado escrito: { ok: [acierto por hueco],
+  // correct, attempts } — nunca el texto del alumno (al restaurar, un hueco
+  // acertado muestra la respuesta del autor y uno fallado queda vacío).
+  function normAnswer(s) {
+    return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, ' ').trim();
+  }
   register('fill_blanks', function (el, data, ctx) {
+    var typed = (data.config || {}).mode === 'type';
     var text = String((data.config || {}).text || '');
     var answers = [];
     // Trocea el texto: parte fija escapada + un select por hueco.
@@ -1618,10 +1654,19 @@
     pool = shuffle(pool.map(function (t) { return { id: t }; }), data.id).map(function (x) { return x.id; });
 
     var optionsHtml = pool.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + '</option>'; }).join('');
+    // Alternativas válidas por hueco (solo en modo escrito se trocea por «|»).
+    var alts = answers.map(function (a) {
+      var l = typed ? a.split('|').map(function (x) { return x.trim(); }).filter(Boolean) : [a];
+      return l.length ? l : [a];
+    });
     answers.forEach(function (_, i) {
-      body = body.replace('@@BLANK' + i + '@@',
-        '<select class="me-blank" data-i="' + i + '" aria-label="Hueco ' + (i + 1) + '">' +
-        '<option value="">…</option>' + optionsHtml + '</select>');
+      var longest = alts[i].reduce(function (n, a) { return Math.max(n, a.length); }, 4);
+      body = body.replace('@@BLANK' + i + '@@', typed
+        ? '<input type="text" class="me-blank me-blank-input" data-i="' + i + '" aria-label="Hueco ' + (i + 1) + '"' +
+          ' autocomplete="off" spellcheck="false" maxlength="' + Math.min(80, longest + 20) + '" size="' + Math.min(30, longest + 2) + '">' +
+          '<span class="me-blank-sol" hidden></span>'
+        : '<select class="me-blank" data-i="' + i + '" aria-label="Hueco ' + (i + 1) + '">' +
+          '<option value="">…</option>' + optionsHtml + '</select>');
     });
 
     var maxAtt = attemptsOf(data);
@@ -1632,11 +1677,19 @@
     var attempts = 0, done = false, correct = false;
     var updateAttempts = attemptsHint(el, maxAtt);
     var refreshCheck = wireCheck(el, function () {
-      return selects.every(function (s) { return !!s.value; });
+      return selects.every(function (s) { return !!s.value.trim(); });
     });
-    el.addEventListener('change', function (e) {
-      if (!done && e.target.closest('.me-blank')) refreshCheck(true);
+    el.addEventListener(typed ? 'input' : 'change', function (e) {
+      if (!done && e.target.closest('.me-blank')) {
+        if (typed) e.target.classList.remove('is-right', 'is-wrong');
+        refreshCheck(true);
+      }
     });
+    function isRight(i, v) {
+      return typed
+        ? alts[i].some(function (a) { return normAnswer(a) === normAnswer(v); })
+        : v === answers[i];
+    }
 
     function lock() {
       selects.forEach(function (s) { s.disabled = true; });
@@ -1644,10 +1697,16 @@
     }
     function markBlanks() {
       selects.forEach(function (s, i) {
-        var ok = s.value === answers[i];
+        var ok = isRight(i, s.value);
         s.classList.remove('is-right', 'is-wrong');
         s.classList.add(ok ? 'is-right' : 'is-wrong');
         replay(s);
+        // Modo escrito, ya resuelto: el hueco fallado muestra la respuesta esperada.
+        var sol = typed && s.nextElementSibling;
+        if (sol && sol.classList.contains('me-blank-sol')) {
+          sol.hidden = !(done && !ok);
+          sol.textContent = alts[i][0];
+        }
       });
     }
     function hasAnswer() {
@@ -1655,31 +1714,36 @@
     }
     function check() {
       if (done) return { resolved: true, correct: correct };
-      if (selects.some(function (s) { return !s.value; })) {
+      if (selects.some(function (s) { return !s.value.trim(); })) {
         ctx.announce('Completa todos los huecos.');
         return { resolved: false, correct: false };
       }
       attempts++;
-      correct = selects.every(function (s, i) { return s.value === answers[i]; });
+      correct = selects.every(function (s, i) { return isRight(i, s.value); });
       showFeedbackModal(el, correct, data, el.querySelector('.me-check'));
-      markBlanks();
       done = correct || (maxAtt > 0 && attempts >= maxAtt);
+      markBlanks();
       if (done) lock();
       updateAttempts(attempts, correct);
-      ctx.save({ values: selects.map(function (s) { return s.value; }), correct: correct, attempts: attempts });
+      ctx.save(typed
+        ? { ok: selects.map(function (s, i) { return isRight(i, s.value); }), correct: correct, attempts: attempts }
+        : { values: selects.map(function (s) { return s.value; }), correct: correct, attempts: attempts });
       ctx.announce(correct ? 'Todos los huecos correctos.' : (done ? 'Hay huecos incorrectos. Sin más intentos.' : 'Hay huecos incorrectos. Inténtalo de nuevo.'));
       return { resolved: done, correct: correct };
     }
     el.querySelector('.me-check').addEventListener('click', check);
 
-    if (ctx.state && ctx.state.values) {
-      ctx.state.values.forEach(function (v, i) { if (selects[i]) selects[i].value = v; });
+    var restored = ctx.state && (typed ? ctx.state.ok : ctx.state.values);
+    if (restored) {
+      if (typed) restored.forEach(function (ok, i) { if (selects[i]) selects[i].value = ok ? alts[i][0] : ''; });
+      else restored.forEach(function (v, i) { if (selects[i]) selects[i].value = v; });
       attempts = ctx.state.attempts || 0;
       if (typeof ctx.state.correct === 'boolean') {
         correct = ctx.state.correct;
+        if (correct || (maxAtt > 0 && attempts >= maxAtt)) done = true;
         showFeedback(el, correct, data);
         markBlanks();
-        if (correct || (maxAtt > 0 && attempts >= maxAtt)) { done = true; lock(); }
+        if (done) lock();
       }
     }
     updateAttempts(attempts, correct);

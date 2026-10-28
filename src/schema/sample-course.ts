@@ -1949,6 +1949,67 @@ export const sampleCourse: Course = {
                 "flagged": false,
                 "note": ""
               }
+            },
+            {
+              "id": "s303b",
+              "type": "content",
+              "title": "Rellenar huecos escribiendo",
+              "objective": "Reconocer las interacciones que preguntan y corrigen automáticamente.",
+              "student_text": "**Rellenar huecos** también puede pedir que el alumno **escriba** la respuesta. Se admiten alternativas, y al corregir no cuentan mayúsculas, tildes ni espacios de más.",
+              "source_refs": [],
+              "visual_resource": {
+                "kind": "none",
+                "src": "",
+                "alt": "",
+                "tracks": [],
+                "has_voice": false,
+                "layout": "top",
+                "media_width": "50",
+                "media_align": "left",
+                "media_full": false,
+                "media_ratio": "16x9"
+              },
+              "interaction": {
+                "id": "s303b_i",
+                "type": "fill_blanks",
+                "prompt": "",
+                "instructions": "Escribe la palabra que falta en cada hueco y pulsa Comprobar.",
+                "options": [],
+                "config": {
+                  "mode": "type",
+                  "text": "Para subir el curso al campus se exporta un paquete [[SCORM|SCORM ZIP]]; el archivo de trabajo, en cambio, es el [[.scormproj|scormproj]]."
+                },
+                "feedback": {
+                  "correct": "Todos los huecos correctos.",
+                  "incorrect": "Repasa la sección «Primeros pasos» del manual.",
+                  "explanation": ""
+                },
+                "scored": true,
+                "points": 1,
+                "attempts": 2,
+                "retries": 0,
+                "source_refs": []
+              },
+              "interaction_layout": "bottom",
+              "required": true,
+              "min_time_seconds": 0,
+              "audio_src": "",
+              "transcript": "",
+              "transcript_hidden": false,
+              "accessibility": {
+                "alt_text_ok": true,
+                "keyboard_ok": true,
+                "contrast_ok": true
+              },
+              "scorm": {
+                "counts_for_completion": true
+              },
+              "editor_notes": [],
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
             }
           ],
           "status": "ok"
@@ -1998,21 +2059,25 @@ export const sampleCourse: Course = {
                     {
                       "id": "p1",
                       "text": "Editas el curso en el árbol y el formulario",
+                      "explanation": "Todo empieza por el contenido: sin pantallas no hay nada que guardar ni revisar.",
                       "order": 1
                     },
                     {
                       "id": "p2",
                       "text": "Guardas con Ctrl+S (o el indicador de estado)",
+                      "explanation": "Guardar antes de revisar evita perder cambios si algo falla.",
                       "order": 2
                     },
                     {
                       "id": "p3",
                       "text": "Validación revisa errores y avisos",
+                      "explanation": "La Validación va antes de exportar: así el paquete no sale con errores.",
                       "order": 3
                     },
                     {
                       "id": "p4",
                       "text": "Exportas el SCORM ZIP y lo subes al LMS",
+                      "explanation": "Exportar es lo último: el ZIP es lo que recibe el campus.",
                       "order": 4
                     }
                   ]

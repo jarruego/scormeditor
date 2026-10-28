@@ -178,6 +178,10 @@ ASCII; sobrestimaba el peor caso real varias veces):
   incorrectas al límite de su `maxlength` (`Math.min(120, Math.max(40,
   respuesta.length + 10))`, nunca por debajo de la propia respuesta
   correcta).
+- **`fill_blanks` en modo escrito**: solo un bit de acierto por hueco, nunca
+  el texto (primer trozo `!` + `1`/`0` por hueco; `!` no es dígito base36, así
+  que no se confunde con el formato de desplegables, y si el autor cambia de
+  modo el detalle del otro se descarta).
 - **`calculator`** (reto): cada valor escrito ya llega saneado a `[0-9.,+-]`
   y recortado a 16 caracteres — peor caso, 16 por resultado. La calculadora
   libre solo guarda `{used: true}`.

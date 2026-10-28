@@ -293,7 +293,7 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
   {
     type: 'fill_blanks',
     icon: 'fill-blanks',
-    description: 'Completa los huecos del texto eligiendo la palabra correcta.',
+    description: 'Completa los huecos del texto, eligiendo o escribiendo la palabra correcta.',
     group: 'preguntar',
     gradable: true,
     supportsAttempts: true,

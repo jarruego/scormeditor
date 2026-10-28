@@ -251,7 +251,10 @@ function synthDetail(type: string, it: AnyRec): AnyRec | null {
       const re = /\[\[(.+?)\]\]/g
       let m: RegExpExecArray | null
       while ((m = re.exec(text))) answers.push(m[1].trim())
-      return answers.length ? { values: answers.slice(), attempts: 1 } : null
+      if (!answers.length) return null
+      // Modo escrito: solo se guarda el acierto por hueco (nunca el texto).
+      if (cfg.mode === 'type') return { ok: answers.map((_, i) => i === 0), attempts: 1 }
+      return { values: answers.slice(), attempts: 1 }
     }
     case 'video':
     case 'hidden_image': {
@@ -373,6 +376,10 @@ interactions.forEach((it, i) => {
       ok(d.correct === true, `round-trip [${it.type}]: se sintetizó una asignación correcta, debería derivarse correct=true`)
       break
     case 'fill_blanks':
+      if (it.interaction.config.mode === 'type') {
+        ok(deepEqual(d.ok, [true, false]) && d.correct === false, `round-trip [${it.type} escrito]: ok/correct no coinciden`)
+        break
+      }
       ok(Array.isArray(d.values), `round-trip [${it.type}]: values debería ser un array`)
       ok(d.correct === true, `round-trip [${it.type}]: se sintetizaron las respuestas correctas, debería derivarse correct=true`)
       break
@@ -435,6 +442,11 @@ interactions.forEach((it, i) => {
       const first = it.interaction.config.steps[0]
       ok(dec.picks[0] === first.options[1].id && dec.picks[1] === null && dec.idx === 1 && dec.done === false,
         `codec directo [${it.type}]: picks/idx/done no coinciden`)
+    }
+    if (it.type === 'fill_blanks') {
+      // El detalle de un modo no se lee con la config del otro (el autor cambió de modo).
+      const other = { ...it.interaction, config: { ...it.interaction.config, mode: it.interaction.config.mode === 'type' ? undefined : 'type' } }
+      ok(decodeDetail(it.type, enc, other) === null, `codec directo [${it.type}]: el detalle de un modo se cuela en el otro`)
     }
     if (it.type === 'decision_tree') {
       // Un recorrido que ya no encaja con el grafo actual conserva su prefijo válido.

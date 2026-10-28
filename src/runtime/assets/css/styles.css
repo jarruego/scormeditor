@@ -656,6 +656,14 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-sort-item { display: flex; align-items: center; gap: .5rem; padding: .5rem .6rem; border: 1px solid var(--me-border); border-radius: 6px; background: var(--me-surface); cursor: grab; }
 .me-sort-item:active { cursor: grabbing; }
 .me-sort-item.is-dragging { opacity: .5; border-style: dashed; border-color: var(--me-primary); }
+.me-sort-item.is-right, .me-sort-item.is-wrong { flex-wrap: wrap; cursor: default; }
+.me-sort-item.is-right { border-color: var(--me-ok); background: #e7f6ec; }
+.me-sort-item.is-wrong { border-color: var(--me-error); background: #fdecea; }
+.me-sort-item.is-right .me-sort-text::after { content: ' ✔'; color: var(--me-ok); font-weight: 700; }
+.me-sort-item.is-wrong .me-sort-text::after { content: ' ✖'; color: var(--me-error); font-weight: 700; }
+.me-sort-item.is-right :is(.me-sort-ctrl, .me-sort-grip), .me-sort-item.is-wrong :is(.me-sort-ctrl, .me-sort-grip) { display: none; }
+/* Al resolverse: dónde lo puso el alumno y la explicación del paso. */
+.me-sort-why { flex-basis: 100%; margin: .15rem 0 0; font-size: .88rem; color: var(--me-text); }
 .me-sort-text { flex: 1; }
 .me-sort-grip { color: var(--me-muted); cursor: grab; }
 .me-sort-ctrl { margin-left: auto; display: flex; gap: .2rem; }
@@ -782,6 +790,11 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-blank:hover:not(:disabled) { border-color: var(--me-primary); }
 .me-blank.is-right { border-color: var(--me-ok); background: #e7f6ec; }
 .me-blank.is-wrong { border-color: var(--me-error); background: #fdecea; animation: me-shake .3s ease; }
+.me-blank-input { min-width: 5rem; }
+.me-blank-input:focus-visible { outline: 3px solid var(--me-primary); outline-offset: 1px; }
+/* Modo escrito, ya resuelto: la respuesta esperada junto al hueco fallado. */
+.me-blank-sol { margin: 0 .3rem 0 .1rem; font-size: .88em; font-weight: 600; color: var(--me-ok); }
+.me-blank-sol::before { content: "→ "; color: var(--me-muted); }
 
 /* Línea de tiempo (timeline) */
 .me-tl { list-style: none; margin: .75rem 0 0; padding: 0 0 0 1.1rem; border-left: 3px solid color-mix(in srgb, var(--me-accent) 55%, white); display: grid; gap: .5rem; }

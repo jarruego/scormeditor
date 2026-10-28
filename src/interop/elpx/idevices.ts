@@ -234,7 +234,10 @@ function toCompleteText(text: string, distractors: string[]): string {
 
 export function completeIdevice(it: Interaction, id: string): ElpxComponent {
   const raw = String(it.config?.text || '')
-  const distractors = ((it.config?.distractors as string[]) || []).map((d) => String(d || '').trim())
+  // Modo escrito: «[[a|b]]» ya son alternativas válidas, que es justo lo que
+  // «@@a|b@@» significa en eXe al escribir; no lleva distractores.
+  const typed = it.config?.mode === 'type'
+  const distractors = typed ? [] : ((it.config?.distractors as string[]) || []).map((d) => String(d || '').trim())
   const completeText = toCompleteText(raw, distractors)
   const htmlText = '<p>' + esc(completeText).replace(/@@(.+?)@@/g, (m) => m) + '</p>'
   const data = {
@@ -615,7 +618,7 @@ export function degradeToTextHtml(
       body += `<ol>${((cfg.steps as Array<Record<string, unknown>>) || [])
         .slice()
         .sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0))
-        .map((s) => `<li>${rich(String(s.text || ''))}</li>`)
+        .map((s) => `<li>${rich(String(s.text || ''))}${s.explanation ? ` — <em>${rich(String(s.explanation))}</em>` : ''}</li>`)
         .join('')}</ol>`
       break
     case 'az_quiz':

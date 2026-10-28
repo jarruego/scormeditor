@@ -232,17 +232,22 @@ export function InteractionConfigEditor({
 
     // ---- Ordenar pasos -----------------------------------------------------
     case 'sort_steps': {
-      const steps: { id: string; text: string; order: number }[] = cfg.steps || []
+      type SortStep = { id: string; text: string; order: number; explanation?: string }
+      const steps: SortStep[] = cfg.steps || []
       // El orden correcto es la posición actual en la lista (1..n)
       const commit = (next: any[]) => setConfig({ steps: next.map((s, i) => ({ ...s, order: i + 1 })) })
       return (
-        <ListEditor
+        <ListEditor<SortStep>
           title="Pasos (en el ORDEN CORRECTO; se barajan en el SCORM)"
           items={steps}
           onChange={commit}
           create={() => ({ id: rid('p'), text: '', order: steps.length + 1 })}
           render={(s, update) => (
-            <input value={s.text} placeholder="Texto del paso" onChange={(e) => update({ ...s, text: e.target.value })} />
+            <div className="ed-stack">
+              <input value={s.text} placeholder="Texto del paso" onChange={(e) => update({ ...s, text: e.target.value })} />
+              <input value={s.explanation || ''} placeholder="Por qué va en esta posición (opcional; el alumno lo ve al resolver)"
+                onChange={(e) => update({ ...s, explanation: e.target.value })} />
+            </div>
           )}
         />
       )
@@ -435,10 +440,20 @@ export function InteractionConfigEditor({
       const fbText: string = cfg.text || ''
       const fbParts = fbText.split(/\[\[(.+?)\]\]/g)
       const fbBlanks = (fbParts.length - 1) / 2
+      const fbTyped = cfg.mode === 'type'
       return (
         <>
+          <label className="ed-field"><span>El alumno responde…</span>
+            <select value={fbTyped ? 'type' : 'select'} onChange={(e) => setConfig({ mode: e.target.value === 'type' ? 'type' : undefined })}>
+              <option value="select">Eligiendo en un desplegable (respuestas + distractores)</option>
+              <option value="type">Escribiendo la respuesta (admite alternativas)</option>
+            </select>
+          </label>
           <label className="ed-field">
-            <span>Texto con huecos — escribe la respuesta correcta entre dobles corchetes: [[respuesta]]</span>
+            <span>
+              Texto con huecos — escribe la respuesta correcta entre dobles corchetes: [[respuesta]]
+              {fbTyped && '. Si vale más de una, sepáralas con barras: [[Moodle|campus]]'}
+            </span>
             <textarea rows={4} value={fbText}
               placeholder="El SCORM exportado se sube a [[Moodle]] como paquete [[ZIP]]."
               onChange={(e) => setConfig({ text: e.target.value })} />
@@ -446,16 +461,18 @@ export function InteractionConfigEditor({
           {fbText.trim() !== '' && (
             <>
               <div className="ed-fb-preview" aria-label="Vista previa de los huecos">
-                {fbParts.map((p, i) => (i % 2 ? <mark key={i}>{p}</mark> : <span key={i}>{p}</span>))}
+                {fbParts.map((p, i) => (i % 2 ? <mark key={i}>{fbTyped ? p.split('|').map((x) => x.trim()).join(' / ') : p}</mark> : <span key={i}>{p}</span>))}
               </div>
               <p className="ed-hint">
-                {fbBlanks === 1 ? '1 hueco' : `${fbBlanks} huecos`} ·{' '}
-                {distractors.length === 1 ? '1 distractor' : `${distractors.length} distractores`}
+                {fbBlanks === 1 ? '1 hueco' : `${fbBlanks} huecos`}
+                {fbTyped
+                  ? ' · al corregir no cuentan mayúsculas, tildes ni espacios de más'
+                  : ` · ${distractors.length === 1 ? '1 distractor' : `${distractors.length} distractores`}`}
                 {fbBlanks === 0 && ' — escribe al menos un [[hueco]] para que haya ejercicio.'}
               </p>
             </>
           )}
-          <ListEditor
+          {!fbTyped && <ListEditor
             title="Distractores (opciones falsas añadidas a los desplegables; opcional)"
             items={distractors.map((t) => ({ text: t }))}
             onChange={(next) => setConfig({ distractors: next.map((d) => d.text) })}
@@ -463,7 +480,7 @@ export function InteractionConfigEditor({
             render={(d, update) => (
               <input value={d.text} placeholder="Opción falsa" onChange={(e) => update({ text: e.target.value })} />
             )}
-          />
+          />}
         </>
       )
     }

@@ -192,6 +192,24 @@ que suena solo **al clicarla** — nunca al restaurar estado ni por adelantado.
 select `.is-right`/`.is-wrong`; intentos y restauración como `choiceFactory`
 (`{values, correct, attempts}`). Validadores: `FB_NO_BLANKS` (sin huecos) y feedback
 obligatorio. Campo Intentos visible en el editor.
+- **Modo escrito** (`config.mode: 'type'`; ausente = desplegables, así que los proyectos
+  existentes no cambian): cada hueco es un `<input>` y vale cualquiera de las
+  alternativas `[[a|b]]` comparadas con `normAnswer` (minúsculas, sin tildes, espacios
+  colapsados). El «|» solo es separador en este modo; en desplegables sigue siendo texto
+  literal. Sin distractores (el editor los oculta). Resuelto, el hueco fallado muestra
+  «→ respuesta» (`.me-blank-sol`). El estado **no guarda el texto del alumno**: `{ok:
+  [acierto por hueco], correct, attempts}`; al restaurar, el hueco acertado muestra la
+  primera alternativa del autor y el fallado queda vacío (con intentos, se reescribe).
+  Así no hay texto libre en `suspend_data`. En `.elpx` va al iDevice «Completa» sin
+  distractores: allí `@@a|b@@` también son alternativas al escribir.
+
+### `sort_steps` — corrección explicada
+Cada paso admite `explanation` opcional. **Solo cuando la actividad queda resuelta**
+(acierto o intentos agotados; antes desvelaría el orden), `markSorted()` marca cada paso
+✔/✖, añade al mal colocado «Lo pusiste en la posición N; va en la M» y la explicación
+del paso, y oculta asa y flechas. Se repinta al restaurar (el orden guardado basta: no
+cambia el estado ni el codec). Aplica también a proyectos antiguos al re-exportar (sin
+explicaciones, solo posición), mismo criterio que las marcas de `match_pairs`.
 
 ### `timeline` (informativa)
 `config.milestones` `[{label, title, body}]` → `<ol class="me-tl">` con línea/puntos de
