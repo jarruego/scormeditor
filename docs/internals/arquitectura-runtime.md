@@ -63,6 +63,15 @@ pendiente»).
 - **Independiente de `suspend_data`**: no consume su presupuesto de 4096 ni interviene en la
   reanudación (en SCORM 1.2 las interacciones son de solo escritura). Al restaurar una
   pantalla se toman los `attempts` ya guardados como consumidos, para no duplicar.
+- **Ids estables entre versiones del curso** (para qué se registra: ver en qué falla y
+  dónde se atasca el alumno, corregir el curso y comparar antes/después). El análisis casa
+  los registros con el `course.json` por el id de la interacción, así que corregir una
+  actividad debe hacerse **editándola**, no borrándola y creándola de nuevo. El id se
+  conserva al editar e incluso al cambiar de tipo (`changeInteractionType`), aunque
+  entonces cambia el prefijo `<tipo>:` del registro: compárese por la parte tras los dos
+  puntos. El id es nuevo al duplicar una pantalla, al insertar pantallas copiadas y en
+  toda interacción creada desde cero (`newId('i')` en `courseStore`/`screenRecipes`).
+  No regenerar ids en otras operaciones: rompería la comparación entre versiones.
 - **Nunca bloquea al alumno**: sin LMS (Vista estudiante), en modo repaso o con la opción
   apagada no hace nada; todo va en try/catch, y si el LMS rechaza el `id` deja de
   intentarlo en esa sesión. **Límite de volumen** por sesión: 10 entradas por
