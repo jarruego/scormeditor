@@ -58,3 +58,9 @@
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
 }
+
+/* Conversación ramificada: el chat entero, sin su altura máxima con scroll. */
+@media print {
+  .me-dt-chat { max-height: none !important; overflow: visible !important; }
+  .me-dt-phone { box-shadow: none; }
+}

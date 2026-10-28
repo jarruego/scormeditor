@@ -441,8 +441,16 @@ la respuesta (`buildTranscript` los trata como evaluables). Los tres degradan a 
 - **`decision_tree`** — conversación ramificada. `config: { characters: [{id, name,
   role}], nodes: [{id, speaker?, text, choices: [{id, text, to}], outcome?, feedback?}] }`.
   Empieza en el **primer nodo**; un nodo sin respuestas válidas (las que apuntan a un nodo
-  inexistente no cuentan) es un **final** `good`/`bad`/`neutral` con su comentario. Chat
-  de burbujas (personaje · papel a la izquierda, «Tú» a la derecha). Antes del final se
+  inexistente no cuentan) es un **final** `good`/`bad`/`neutral` con su comentario.
+  **Aspecto de app de mensajería** genérica (sin marcas ni logos; colores propios del chat,
+  no de la paleta del curso, para que se reconozca al instante): cabecera con avatar de
+  iniciales y papel; burbujas con colita (personaje en blanco a la izquierda, alumno en
+  verde a la derecha con ✓✓); un momento sin personaje es narración (aviso centrado);
+  finales como aviso de color; respuestas como sugerencias en la zona del teclado. Con
+  varios personajes es un grupo: nombre en su color sobre cada burbuja. Al responder,
+  «escribiendo…» 0,9 s antes de la réplica (no al restaurar, ni con `me-motion-none` o
+  `prefers-reduced-motion`). El chat tiene altura máxima con scroll al último mensaje;
+  `print.css` la quita para imprimir la conversación entera. Antes del final se
   puede **deshacer** la última respuesta; al llegar, «Volver a empezar» deja explorar otros
   caminos, pero **la nota la fija el primer final alcanzado** (`first`), como un intento
   único — sin esto, deshacer/repetir permitiría acertar por fuerza bruta. `correct` =

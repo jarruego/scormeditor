@@ -718,24 +718,71 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 .me-summary-msg { margin: 0; font-weight: 700; }
 .me-summary-sub { margin: 0; color: var(--me-muted); font-size: .9rem; }
 
-/* Conversación ramificada (decision_tree): burbujas tipo chat. */
-.me-dt-chat { list-style: none; margin: 0 0 .7rem; padding: 0; display: grid; gap: .5rem; }
-.me-dt-msg { max-width: 85%; padding: .55rem .8rem; border-radius: 12px 12px 12px 4px; background: var(--me-bg);
-  animation: me-reveal .25s ease-out; }
-.me-dt-msg.is-me { justify-self: end; border-radius: 12px 12px 4px 12px;
-  background: color-mix(in srgb, var(--me-primary) 10%, white); }
-.me-dt-who { display: block; font-size: .78rem; font-weight: 700; color: var(--me-muted); }
-.me-dt-who small { font-weight: 400; font-size: inherit; }
+/* Conversación ramificada (decision_tree): aspecto de app de mensajería
+   genérica (sin marcas). Colores propios del chat, independientes de la paleta
+   del curso, para que se reconozca al instante como «una conversación». */
+.me-dt-phone { max-width: 34rem; margin: 0 auto; border-radius: 18px; overflow: hidden;
+  box-shadow: var(--me-shadow-2); border: 1px solid #d6d1c4; background: #efeae2; }
+.me-dt-bar { display: flex; align-items: center; gap: .65rem; padding: .6rem .9rem; background: #075e54; color: #fff; }
+.me-dt-avatar { flex: none; width: 2.4rem; height: 2.4rem; border-radius: 50%; display: grid; place-items: center;
+  background: var(--av, #00897b); color: #fff; font-weight: 700; font-size: .95rem; box-shadow: 0 0 0 2px rgba(255, 255, 255, .35); }
+.me-dt-avatar.is-group { background: #546e7a; }
+.me-dt-bar-txt { display: grid; line-height: 1.25; min-width: 0; }
+.me-dt-bar-txt strong { font-size: 1rem; }
+.me-dt-bar-txt small { opacity: .85; font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Fondo del chat: tono crema con un punteado suave (CSS puro, sin imágenes). */
+.me-dt-chat { list-style: none; margin: 0; padding: .9rem .8rem; display: flex; flex-direction: column; gap: .35rem;
+  max-height: 28rem; overflow-y: auto; scroll-behavior: smooth;
+  background-color: #efeae2; background-image: radial-gradient(rgba(0, 0, 0, .045) 1px, transparent 1.2px); background-size: 14px 14px; }
+.me-dt-msg { position: relative; align-self: flex-start; max-width: 82%; padding: .4rem .65rem .45rem; border-radius: 0 10px 10px 10px;
+  background: #fff; color: #111b21; box-shadow: 0 1px .5px rgba(11, 20, 26, .13); animation: me-dt-in .22s ease-out; }
+.me-dt-msg::before { content: ''; position: absolute; top: 0; left: -7px; border: 7px solid transparent;
+  border-top-color: #fff; border-right-color: #fff; border-width: 0 7px 9px 0; }
+.me-dt-msg.is-me { align-self: flex-end; border-radius: 10px 0 10px 10px; background: #d9fdd3; }
+.me-dt-msg.is-me::before { left: auto; right: -7px; border-color: transparent; border-top-color: #d9fdd3; border-left-color: #d9fdd3;
+  border-width: 0 0 9px 7px; }
+.me-dt-who { display: block; font-size: .8rem; font-weight: 700; }
+.me-dt-who small { font-weight: 400; color: #667781; font-size: inherit; }
 .me-dt-text > :first-child { margin-top: 0; }
 .me-dt-text > :last-child { margin-bottom: 0; }
-.me-dt-end { padding: .7rem .9rem; border-radius: var(--me-radius); border: 1px solid; animation: me-pop .2s ease-out; }
+.me-dt-text p { margin: .25rem 0; }
+.me-dt-ticks { float: right; margin: .35rem 0 0 .6rem; font-size: .72rem; letter-spacing: -.2em; color: #53bdeb; }
+/* Narración (momento sin personaje) y finales: avisos centrados del sistema. */
+.me-dt-sys { align-self: center; max-width: 90%; margin: .3rem 0; padding: .3rem .75rem; border-radius: 8px;
+  background: #fff6c5; color: #54656f; font-size: .88rem; text-align: center; box-shadow: 0 1px .5px rgba(11, 20, 26, .13); }
+.me-dt-sys p { margin: 0; }
+.me-dt-end { align-self: center; width: 92%; margin: .5rem 0 .2rem; padding: .65rem .85rem; border-radius: 10px; border: 1px solid;
+  text-align: center; box-shadow: 0 1px .5px rgba(11, 20, 26, .13); animation: me-pop .25s ease-out; }
 .me-dt-end.is-good { border-color: var(--me-ok); background: #e7f6ec; color: #0c5a26; }
 .me-dt-end.is-bad { border-color: var(--me-error); background: #fdecea; color: #7a1a14; }
-.me-dt-end.is-neutral { border-color: var(--me-border); background: var(--me-surface); }
-.me-dt-end .me-dt-text { color: var(--me-text); margin-top: .3rem; }
-.me-dt-choices { display: grid; gap: .1rem; }
-.me-dt-foot { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.me-dt-end.is-neutral { border-color: #d1d7db; background: #fff; color: #111b21; }
+.me-dt-end .me-dt-text { color: #111b21; margin-top: .3rem; text-align: left; }
+/* «Escribiendo…»: tres puntos que laten. */
+.me-dt-typing { display: flex; gap: .25rem; padding: .7rem .8rem; }
+.me-dt-typing span { width: .45rem; height: .45rem; border-radius: 50%; background: #8696a0; animation: me-dt-dot 1s infinite ease-in-out; }
+.me-dt-typing span:nth-child(2) { animation-delay: .15s; }
+.me-dt-typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes me-dt-dot { 0%, 60%, 100% { opacity: .35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+@keyframes me-dt-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+/* Zona del teclado: las respuestas posibles como sugerencias. */
+.me-dt-reply { padding: .55rem .7rem .7rem; background: #f0f2f5; border-top: 1px solid #e1e4e8; }
+.me-dt-reply-label { margin: 0 0 .4rem; font-size: .78rem; font-weight: 600; color: #54656f; text-align: center; }
+.me-dt-choices { display: grid; gap: .4rem; }
+.me-dt-choice { font: inherit; display: flex; align-items: center; justify-content: space-between; gap: .6rem; width: 100%;
+  padding: .55rem .5rem .55rem .9rem; text-align: left; border: 1px solid #d1d7db; border-radius: 22px; background: #fff;
+  color: #111b21; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+.me-dt-choice:hover { border-color: #00a884; background: #f7fffb; }
+.me-dt-choice:focus-visible { outline: 3px solid var(--me-primary); outline-offset: 2px; }
+.me-dt-send { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center;
+  background: #00a884; color: #fff; font-size: .85rem; }
+.me-dt-reply .me-dt-restart { display: block; margin: 0 auto; }
+.me-dt-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .6rem; margin-top: .6rem; }
+.me-dt-foot:empty { display: none; }
 .me-dt-note { font-size: .85rem; color: var(--me-muted); }
+@media (max-width: 640px) {
+  .me-dt-phone { border-radius: 12px; }
+  .me-dt-msg { max-width: 90%; }
+}
 
 /* Reto numérico (calculator). */
 .me-calc { display: grid; gap: .8rem; }

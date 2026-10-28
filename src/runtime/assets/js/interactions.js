@@ -968,12 +968,54 @@
       neutral: { cls: 'is-neutral', icon: '●', label: 'Fin de la conversación' },
     };
     function outcomeOf(nd) { return OUTCOME[nd.outcome] ? nd.outcome : 'neutral'; }
+    // Aspecto de app de mensajería (genérico, sin marcas): cabecera con avatar,
+    // burbujas con colita (personaje a la izquierda en blanco, alumno a la
+    // derecha en verde con ✓✓), narración y finales como avisos centrados, y
+    // las respuestas como sugerencias en la zona del teclado. Con un solo
+    // personaje es un chat individual; con varios, un grupo que pone el nombre
+    // (en su color) encima de cada burbuja.
+    var people = (cfg.characters || []).filter(function (c) { return c && c.id; });
+    var group = people.length > 1;
+    var AV_COLORS = ['#00897b', '#5e35b1', '#d81b60', '#f4511e', '#3949ab', '#7cb342'];
+    function colorOf(id) {
+      var k = people.map(function (c) { return c.id; }).indexOf(id);
+      return AV_COLORS[(k < 0 ? 0 : k) % AV_COLORS.length];
+    }
+    function initials(name) {
+      var w = String(name || '').trim().split(/\s+/).filter(Boolean);
+      return w.length ? (w[0].charAt(0) + (w.length > 1 ? w[w.length - 1].charAt(0) : '')).toUpperCase() : '?';
+    }
+    function topBar() {
+      var main = people[0];
+      var title = group ? 'Conversación' : (main && main.name ? main.name : 'Conversación');
+      var sub = group ? people.map(function (c) { return c.name; }).concat(['tú']).join(', ')
+        : (main && main.role ? main.role : 'en línea');
+      var avatar = group ? '<span class="me-dt-avatar is-group" aria-hidden="true">' + (people.length + 1) + '</span>'
+        : '<span class="me-dt-avatar" style="--av:' + colorOf(main ? main.id : '') + '" aria-hidden="true">' + esc(initials(main ? main.name : '')) + '</span>';
+      return '<div class="me-dt-bar">' + avatar + '<div class="me-dt-bar-txt"><strong>' + esc(title) +
+        '</strong><small>' + esc(sub) + '</small></div></div>';
+    }
     function bubble(nd) {
       if (!String(nd.text || '').trim()) return '';
       var who = chars[nd.speaker];
-      return '<li class="me-dt-msg">' + (who ? '<span class="me-dt-who">' + esc(who.name || '') +
-        (who.role ? ' <small>· ' + esc(who.role) + '</small>' : '') + '</span>' : '') +
+      if (!who) return '<li class="me-dt-sys">' + block(nd.text) + '</li>'; // narración
+      return '<li class="me-dt-msg">' +
+        (group ? '<span class="me-dt-who" style="color:' + colorOf(who.id) + '">' + esc(who.name || '') +
+          (who.role ? ' <small>· ' + esc(who.role) + '</small>' : '') + '</span>'
+          : '<span class="sr-only">' + esc(who.name || '') + ': </span>') +
         '<div class="me-dt-text">' + block(nd.text) + '</div></li>';
+    }
+    function myBubble(text) {
+      return '<li class="me-dt-msg is-me"><span class="sr-only">Tú: </span><div class="me-dt-text">' + rich(text) +
+        '<span class="me-dt-ticks" aria-hidden="true">✓✓</span></div></li>';
+    }
+    // «Escribiendo…» entre la respuesta del alumno y la del personaje: solo al
+    // responder (nunca al restaurar ni con las animaciones desactivadas).
+    var typing = false;
+    function motionOff() {
+      var doc = el.ownerDocument, win = doc.defaultView;
+      return (doc.body && doc.body.classList.contains('me-motion-none')) ||
+        !!(win && win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);
     }
 
     function paint() {
@@ -982,46 +1024,62 @@
       var t = trail();
       var cur = t[t.length - 1];
       var atEnd = !choicesOf(cur).length;
-      html += '<ol class="me-dt-chat" aria-live="polite">';
+      html += '<div class="me-dt-phone">' + topBar() + '<ol class="me-dt-chat" aria-live="polite">';
       t.forEach(function (nd, i) {
+        if (typing && i === t.length - 1) return; // aún «escribiendo»
         html += bubble(nd);
-        if (i < path.length) html += '<li class="me-dt-msg is-me"><span class="me-dt-who">Tú</span><div class="me-dt-text">' + rich(choicesOf(nd)[path[i]].text) + '</div></li>';
+        if (i < path.length) html += myBubble(choicesOf(nd)[path[i]].text);
       });
-      if (atEnd) {
+      if (typing) {
+        var whoT = chars[cur.speaker];
+        html += '<li class="me-dt-msg me-dt-typing" aria-label="' + esc((whoT && whoT.name) || 'El personaje') + ' está escribiendo">' +
+          '<span></span><span></span><span></span></li>';
+      } else if (atEnd) {
         var oc = OUTCOME[outcomeOf(cur)];
         html += '<li class="me-dt-end ' + oc.cls + '" role="status"><strong>' + oc.icon + ' ' + oc.label + '</strong>' +
           (cur.feedback ? '<div class="me-dt-text">' + block(cur.feedback) + '</div>' : '') + '</li>';
       }
-      html += '</ol>';
-      if (!atEnd) {
-        html += '<div class="me-dt-choices" role="group" aria-label="¿Qué respondes?">';
+      html += '</ol><div class="me-dt-reply">';
+      if (typing) {
+        html += '<p class="me-dt-reply-label">…</p>';
+      } else if (!atEnd) {
+        html += '<p class="me-dt-reply-label" id="dt-q-' + esc(data.id) + '">Elige tu respuesta</p>' +
+          '<div class="me-dt-choices" role="group" aria-labelledby="dt-q-' + esc(data.id) + '">';
         choicesOf(cur).forEach(function (ch, k) {
-          html += '<button type="button" class="me-btn me-option me-dt-choice" data-k="' + k + '">' + rich(ch.text) + '</button>';
+          html += '<button type="button" class="me-dt-choice" data-k="' + k + '">' + rich(ch.text) +
+            '<span class="me-dt-send" aria-hidden="true">➤</span></button>';
         });
         html += '</div>';
+      } else {
+        html += '<button type="button" class="me-btn me-dt-restart">↺ Volver a empezar</button>';
       }
-      html += '<div class="me-dt-foot">' +
-        (!atEnd && path.length ? '<button type="button" class="me-btn me-dt-undo">↶ Deshacer la última respuesta</button>' : '') +
-        (atEnd ? '<button type="button" class="me-btn me-dt-restart">↺ Volver a empezar</button>' : '') +
-        (atEnd && first && t.length > 1 && data.scored ? '<span class="me-dt-note">Cuenta el primer final al que llegaste.</span>' : '') +
+      html += '</div></div><div class="me-dt-foot">' +
+        (!typing && !atEnd && path.length ? '<button type="button" class="me-btn me-dt-undo">↶ Deshacer la última respuesta</button>' : '') +
+        (atEnd && !typing && first && t.length > 1 && data.scored ? '<span class="me-dt-note">Cuenta el primer final al que llegaste.</span>' : '') +
         '</div>';
       el.innerHTML = html;
+      var chat = el.querySelector('.me-dt-chat');
+      chat.scrollTop = chat.scrollHeight; // como en una app de chat: lo último, abajo
     }
 
+    function afterReply() {
+      var t = trail(), cur = t[t.length - 1];
+      if (!choicesOf(cur).length) ctx.announce(OUTCOME[outcomeOf(cur)].label + '.');
+      var nextBtn = el.querySelector('.me-dt-choice') || el.querySelector('.me-dt-restart');
+      if (nextBtn) nextBtn.focus({ preventScroll: true });
+    }
     el.addEventListener('click', function (e) {
       var b = e.target.closest('.me-dt-choice');
-      if (b && el.contains(b)) {
+      if (b && el.contains(b) && !typing) {
         path.push(+b.getAttribute('data-k'));
         var t = trail(), cur = t[t.length - 1];
-        var ended = !choicesOf(cur).length;
-        if (ended && !first) first = outcomeOf(cur);
-        paint();
+        if (!choicesOf(cur).length && !first) first = outcomeOf(cur);
         ctx.save({ path: path.slice(), first: first });
-        if (ended) ctx.announce(OUTCOME[outcomeOf(cur)].label + '.');
-        var last = el.querySelector('.me-dt-chat').lastElementChild;
-        if (last && last.scrollIntoView) last.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        var nextBtn = el.querySelector('.me-dt-choice') || el.querySelector('.me-dt-restart');
-        if (nextBtn) nextBtn.focus({ preventScroll: true });
+        // Solo «escribe» un personaje que va a decir algo.
+        typing = !motionOff() && !!chars[cur.speaker] && !!String(cur.text || '').trim();
+        paint();
+        if (typing) setTimeout(function () { typing = false; paint(); afterReply(); }, 900);
+        else afterReply();
         return;
       }
       if (e.target.closest('.me-dt-undo')) {

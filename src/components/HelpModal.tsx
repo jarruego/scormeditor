@@ -481,7 +481,10 @@ const SECTIONS: Section[] = [
             bueno, mejorable o neutro, con su comentario. El alumno puede deshacer su última
             respuesta antes de llegar a un final; después puede volver a empezar para
             explorar otros caminos, pero la nota la fija el primer final al que llegó. La
-            conversación empieza siempre en el primer momento y no admite bucles.
+            conversación empieza siempre en el primer momento y no admite bucles. El alumno
+            la ve como un chat de una app de mensajería: burbujas, avatar del personaje,
+            «escribiendo…» antes de cada réplica y sus respuestas como sugerencias abajo
+            (con varios personajes, como un grupo).
           </li>
           <li>
             <strong>Reto numérico</strong> pide calcular resultados a partir de unos datos.
