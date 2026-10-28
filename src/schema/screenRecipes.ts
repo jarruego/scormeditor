@@ -329,7 +329,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   // bloque de ejemplo en `student_text`; luego se edita en la caja de texto.
   {
     key: 'stats',
-    icon: 'stats',
+    icon: 'chart',
     label: 'Cifras destacadas',
     description: 'Datos clave en tarjetas, con la cifra en grande.',
     group: 'contenido',
@@ -339,7 +339,7 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
   },
   {
     key: 'compare',
-    icon: 'compare',
+    icon: 'columns',
     label: 'Comparativa',
     description: 'Dos o tres opciones en columnas, frente a frente.',
     group: 'contenido',

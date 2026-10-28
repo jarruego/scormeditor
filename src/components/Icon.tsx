@@ -377,7 +377,7 @@ const PATHS = {
       <path d="M8 7h8M8.5 11.5h1M11.5 11.5h1M14.5 11.5h1M8.5 15h1M11.5 15h1M14.5 15v3M8.5 18h1M11.5 18h1" />
     </>
   ),
-  stats: (
+  columns: (
     <>
       <rect x="3.5" y="5" width="7.5" height="14" rx="1.5" />
       <rect x="13" y="5" width="7.5" height="14" rx="1.5" />
