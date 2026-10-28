@@ -325,6 +325,38 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     type: 'content',
     extras: () => ({ interaction: makeInteraction('before_after') }),
   },
+  // Bloques con estructura del texto (renderer.js): la pantalla nace con el
+  // bloque de ejemplo en `student_text`; luego se edita en la caja de texto.
+  {
+    key: 'stats',
+    icon: 'stats',
+    label: 'Cifras destacadas',
+    description: 'Datos clave en tarjetas, con la cifra en grande.',
+    group: 'contenido',
+    type: 'content',
+    extras: () => ({ student_text: '::: stats\n- **80 %** de …\n- **3 de cada 10** …\n- **24 h** …\n:::' }),
+    since: '2026-10-28',
+  },
+  {
+    key: 'compare',
+    icon: 'compare',
+    label: 'Comparativa',
+    description: 'Dos o tres opciones en columnas, frente a frente.',
+    group: 'contenido',
+    type: 'content',
+    extras: () => ({ student_text: '::: compare\n### Opción A\n- …\n- …\n### Opción B\n- …\n- …\n:::' }),
+    since: '2026-10-28',
+  },
+  {
+    key: 'do-dont',
+    icon: 'do-dont',
+    label: 'Qué hacer y qué evitar',
+    description: 'Dos columnas: buenas prácticas con ✓ y errores con ✗.',
+    group: 'contenido',
+    type: 'content',
+    extras: () => ({ student_text: '::: dodont\n### Qué hacer\n- …\n- …\n### Qué evitar\n- …\n- …\n:::' }),
+    since: '2026-10-28',
+  },
 
   // --- Práctica (hacer y recibir corrección; scored:false de serie) ------------
   {

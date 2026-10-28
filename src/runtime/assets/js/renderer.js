@@ -25,7 +25,12 @@
     important: { cls: 'me-callout-important', icon: '📌', label: 'Importante' },
     fact:      { cls: 'me-callout-fact',      icon: '🧠', label: '¿Sabías que…?' },
     reflect:   { cls: 'me-callout-reflect',   icon: '💭', label: 'Reflexiona' },
-    case:      { cls: 'me-callout-case',      icon: '🧪', label: 'Caso práctico' }
+    case:      { cls: 'me-callout-case',      icon: '🧪', label: 'Caso práctico' },
+    // Bloques con estructura (ver renderStats/renderColumns): solo se pintan
+    // así, como callout, si les falta la estructura que necesitan.
+    stats:     { cls: 'me-callout-info',      icon: '📊', label: 'Cifras destacadas' },
+    compare:   { cls: 'me-callout-info',      icon: '⚖️', label: 'Comparativa' },
+    dodont:    { cls: 'me-callout-info',      icon: '✅', label: 'Qué hacer y qué evitar' }
   };
   function renderCallout(type, innerHtml) {
     var c = CALLOUTS[type] || CALLOUTS.info;
@@ -56,6 +61,60 @@
     return '<aside class="me-callout me-callout-custom" role="note" style="' + style + '">' +
       titleHtml +
       '<div class="me-callout-body">' + innerHtml + '</div></aside>';
+  }
+
+  // Bloques con estructura (::: stats | compare | dodont): el autor escribe
+  // markdown normal dentro del bloque (lista, encabezados) y la carcasa lo
+  // presenta como tarjetas o columnas, sin sintaxis propia. Si falta la
+  // estructura que necesitan, devuelven null y el bloque se pinta como un
+  // callout normal: nunca se pierde contenido.
+  var STRUCTURED = { stats: 'Cifras destacadas', compare: 'Comparativa', dodont: 'Qué hacer y qué evitar' };
+  var RE_LIST_ITEM = /^\s*(?:[-*•·–—]|\d+[.)])\s+(.*)$/;
+  // Encabezado de columna: "## …"/"### …" o una línea que es solo negrita.
+  function headingOf(ln) {
+    var m = /^\s*#{2,3}\s+(.*)$/.exec(ln) || /^\s*\*\*(.+?)\*\*\s*:?\s*$/.exec(ln);
+    return m ? m[1] : null;
+  }
+  // Cifras: cada punto de la lista es «**cifra** texto» (la negrita inicial es
+  // la cifra grande). Las líneas que no son de la lista van como entradilla.
+  function renderStats(lines) {
+    var intro = [], items = [];
+    lines.forEach(function (ln) {
+      var li = RE_LIST_ITEM.exec(ln);
+      if (li) items.push(li[1]); else intro.push(ln);
+    });
+    if (!items.length) return null;
+    var html = '<div class="me-block me-block-stats" role="group" aria-label="' + STRUCTURED.stats + '">' +
+      blocksToHtml(intro) + '<ul class="me-stats">';
+    items.forEach(function (t) {
+      var m = /^\*\*(.+?)\*\*\s*[:–—-]?\s*(.*)$/.exec(t);
+      html += '<li class="me-stat">' + (m ? '<strong class="me-stat-value">' + inline(m[1]) + '</strong>' : '') +
+        '<span class="me-stat-label">' + inline(m ? m[2] : t) + '</span></li>';
+    });
+    return html + '</ul></div>';
+  }
+  // Comparativa / qué hacer-qué evitar: cada encabezado abre una columna con
+  // lo que haya debajo. En dodont la 1.ª columna es «sí» (✓) y el resto «no» (✗).
+  function renderColumns(type, lines) {
+    var intro = [], cols = [];
+    lines.forEach(function (ln) {
+      var h = headingOf(ln);
+      if (h !== null) cols.push({ title: h, lines: [] });
+      else if (cols.length) cols[cols.length - 1].lines.push(ln);
+      else intro.push(ln);
+    });
+    if (cols.length < 2) return null;
+    var dodont = type === 'dodont';
+    var html = '<div class="me-block me-block-' + type + '" role="group" aria-label="' + STRUCTURED[type] + '">' +
+      blocksToHtml(intro) + '<div class="me-cols" style="--n:' + cols.length + '">';
+    cols.forEach(function (c, k) {
+      var tone = dodont ? (k === 0 ? ' is-do' : ' is-dont') : '';
+      html += '<section class="me-col' + tone + '"><h3 class="me-col-title">' +
+        (dodont ? '<span class="me-col-ico" aria-hidden="true">' + (k === 0 ? '✓' : '✗') + '</span>' : '') +
+        inline(c.title) + '</h3>' + blocksToHtml(c.lines) + '</section>';
+      if (!dodont && cols.length === 2 && k === 0) html += '<span class="me-cols-vs" aria-hidden="true">vs</span>';
+    });
+    return html + '</div></div>';
   }
 
   // Id de un vídeo de YouTube a partir de una URL completa (watch, youtu.be,
@@ -93,6 +152,9 @@
         var rest = open[2] || '';
         var inner = [];
         for (i++; i < lines.length && !/^\s*:::\s*$/.test(lines[i]); i++) inner.push(lines[i]);
+        var structured = type === 'stats' ? renderStats(inner)
+          : (type === 'compare' || type === 'dodont') ? renderColumns(type, inner) : null;
+        if (structured) { html += structured; continue; }
         var innerHtml = blocksToHtml(inner);
         html += type === 'custom' ? renderCustomCallout(rest, innerHtml) : renderCallout(type, innerHtml);
         continue;

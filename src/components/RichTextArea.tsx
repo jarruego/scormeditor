@@ -7,6 +7,7 @@ import type { Editor } from '@tiptap/core'
 import { TextSelection } from '@tiptap/pm/state'
 import { mdToJson, jsonToMd } from '../text/mdDialect'
 import { CalloutNode } from './tiptap/CalloutNode'
+import { CALLOUT_META, STRUCTURED_BLOCKS, STRUCTURED_ORDER } from './tiptap/calloutMeta'
 import { ImageFigureNode } from './tiptap/ImageFigureNode'
 import { TextAlignExtension } from './tiptap/TextAlignExtension'
 import { CustomBlockPanel, type CustomBlockDraft } from './tiptap/CustomBlockPanel'
@@ -153,6 +154,12 @@ function RichTextAreaBody({ editor, rows }: { editor: Editor; rows: number }) {
     const { state } = editor
     const { from, to, empty } = state.selection
     const text = empty ? '' : state.doc.textBetween(from, to, ' ')
+    // Bloques con estructura: nacen con su plantilla (lista/encabezados de ejemplo).
+    const structured = STRUCTURED_BLOCKS[ctype]
+    if (structured) {
+      editor.chain().focus().insertContent({ type: 'callout', attrs: { ctype, color: '', icon: '', title: '' }, content: structured.template() }).run()
+      return
+    }
     editor
       .chain()
       .focus()
@@ -307,6 +314,13 @@ function RichTextAreaBody({ editor, rows }: { editor: Editor; rows: number }) {
         <span className="ed-rta-sep" aria-hidden="true" />
         {CALLOUT_TYPES.map((c) => (
           <button key={c.value} type="button" onClick={() => insertCallout(c.value)} title={`Bloque: ${c.label.replace(/^\S+\s/, '')}`}>{c.label}</button>
+        ))}
+        <span className="ed-rta-sep" aria-hidden="true" />
+        {STRUCTURED_ORDER.map((ct) => (
+          <button key={ct} type="button" onClick={() => insertCallout(ct)}
+            title={`Bloque: ${CALLOUT_META[ct].label}. ${STRUCTURED_BLOCKS[ct].hint}`}>
+            {CALLOUT_META[ct].icon} {CALLOUT_META[ct].label}
+          </button>
         ))}
         <span className="ed-rta-sep" aria-hidden="true" />
         <button type="button" onClick={() => (showCustom ? setShowCustom(false) : openCustomNew())}

@@ -350,6 +350,33 @@ const SECTIONS: Section[] = [
           con una ✕ para borrarlo cuando ya no lo necesites; los presets son atajos
           personales y no viajan dentro del curso.
         </p>
+        <h4>Bloques con estructura</h4>
+        <p>
+          Tres botones más de la barra insertan bloques que el alumno ve como tarjetas o
+          columnas. Dentro se escribe con la lista y los encabezados de siempre; cada
+          bloque recuerda en su cabecera cómo rellenarlo:
+        </p>
+        <ul>
+          <li>
+            <strong>📊 Cifras destacadas</strong>: cada punto de la lista es una tarjeta, y
+            la parte en negrita del principio sale como cifra grande («**80 %** de los
+            casos…»).
+          </li>
+          <li>
+            <strong>⚖️ Comparativa</strong>: cada encabezado H3 abre una columna con lo que
+            tenga debajo; con dos columnas aparece un «vs» entre ellas.
+          </li>
+          <li>
+            <strong>✅ Qué hacer y qué evitar</strong>: dos encabezados H3; la lista del
+            primero sale con ✓ en verde y la del segundo con ✗ en rojo.
+          </li>
+        </ul>
+        <p>
+          Si a un bloque le falta su estructura (una comparativa con un solo encabezado,
+          por ejemplo), el alumno lo ve como un bloque destacado normal: nunca se pierde
+          el texto. En el móvil, las columnas se apilan. También hay recetas de pantalla
+          con cada bloque ya puesto, en el grupo Contenido de «Añadir pantalla».
+        </p>
         <h4>Imágenes en el texto</h4>
         <p>
           El botón <strong>🖼 Imagen</strong> de la barra sube una imagen y la inserta

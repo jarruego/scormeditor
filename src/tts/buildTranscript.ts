@@ -80,6 +80,9 @@ const CALLOUT_LABELS: Record<string, string> = {
   fact: '¿Sabías que…?',
   reflect: 'Reflexiona',
   case: 'Caso práctico',
+  stats: 'Cifras destacadas',
+  compare: 'Comparativa',
+  dodont: 'Qué hacer y qué evitar',
 }
 
 /** Quita las marcas inline del markdown ligero (negrita, cursiva, enlaces).

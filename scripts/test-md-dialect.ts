@@ -5,7 +5,7 @@
  * Garantías que comprueba (la red de seguridad del editor WYSIWYG):
  *  1) CORPUS CANÓNICO: jsonToMd(mdToJson(x)) === x, byte a byte.
  *  2) IDEMPOTENCIA: una segunda pasada no cambia nada.
- *  3) EQUIVALENCIA DE RENDER: para TODOS los strings del proyecto demo,
+ *  3) EQUIVALENCIA DE RENDER: para TODOS los strings del curso demo (sampleCourse),
  *     el mdToHtml REAL de la carcasa (evaluado desde src/runtime) produce el
  *     mismo HTML antes y después del round-trip. Si esto pasa, editar un texto
  *     con el nuevo editor no puede cambiar lo que ve el alumno.
@@ -14,8 +14,8 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import vm from 'node:vm'
-import JSZip from 'jszip'
 import { mdToJson, jsonToMd } from '../src/text/mdDialect'
+import { sampleCourse } from '../src/schema/sample-course'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -84,6 +84,10 @@ const CANONICAL: string[] = [
   '{center}## Título centrado',
   '{right}### Subtítulo a la derecha',
   '{center}Uno\nSin marca\n{right}Otro',
+  '::: stats\n- **80 %** de los casos\n- **3 de cada 10** personas\n:::',
+  '::: compare\n### Opción A\n- uno\n- dos\n### Opción B\n- tres\n:::',
+  '::: dodont\nEntradilla\n### Qué hacer\n- Lavarse las manos\n### Qué evitar\n- Tocarse la cara\n:::',
+  '::: compare\nSolo una columna\n### Única\n- sin pareja\n:::',
 ]
 // La cabecera del custom vacío lleva espacios finales que el corpus de arriba
 // no puede expresar sin que el editor los recorte: se comprueba aparte.
@@ -113,13 +117,11 @@ for (const src of [...CANONICAL, ...NORMALIZED]) {
   if (rt2 !== rt) fail('idempotencia (normalizados)', `1ª:\n${JSON.stringify(rt)}\n2ª:\n${JSON.stringify(rt2)}`)
 }
 
-// --- 3) Proyecto demo completo: render igual para TODOS los strings --------
+// --- 3) Curso demo completo: render igual para TODOS los strings ---------
+// El demo es `sampleCourse` (src/schema/sample-course.ts), el que abre el
+// editor; el antiguo docs/internals/demo-scormeditor.scormproj se retiró.
 async function testDemo() {
-  const demoPath = join(root, 'docs', 'internals', 'demo-scormeditor.scormproj')
-  const zip = await JSZip.loadAsync(readFileSync(demoPath))
-  const entry = zip.file('course.json') ?? zip.file('data/course.json')
-  if (!entry) throw new Error('El demo no contiene course.json')
-  const course = JSON.parse(await entry.async('string'))
+  const course = sampleCourse
 
   let checked = 0
   const walk = (v: unknown, path: string) => {

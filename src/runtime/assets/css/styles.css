@@ -289,6 +289,46 @@ body {
 .me-callout-reflect { border-left-color: #f4c910; background: color-mix(in srgb, #f4c910 22%, white); }
 .me-callout-case { border-left-color: #f4c910; background: color-mix(in srgb, #f4c910 22%, white); }
 .me-callout-info { border-left-color: #7787bf; background: color-mix(in srgb, #7787bf 16%, white); }
+/* Bloques con estructura (renderer.js: ::: stats | compare | dodont) */
+.me-block { margin: 1.1rem 0; }
+.me-block > p:first-child { margin-top: 0; }
+.me-stats { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .7rem;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); }
+.me-prose .me-stats li { margin: 0; }
+.me-stat { display: grid; align-content: start; gap: .25rem; padding: .9rem 1rem; border-radius: var(--me-radius);
+  background: var(--me-surface); box-shadow: var(--me-shadow-1); border-top: 4px solid #6dc3c0;
+  animation: me-pop .3s ease-out both; }
+.me-stat:nth-child(2) { animation-delay: .08s; }
+.me-stat:nth-child(3) { animation-delay: .16s; }
+.me-stat:nth-child(n+4) { animation-delay: .24s; }
+.me-stat-value { font-size: 1.9rem; line-height: 1.1; font-weight: 800; letter-spacing: -.02em;
+  color: color-mix(in srgb, #6dc3c0 55%, #1b1f24); }
+.me-stat-label { font-size: .95rem; }
+.me-cols { position: relative; display: grid; gap: .9rem; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
+.me-col { padding: .8rem 1rem; border-radius: var(--me-radius); background: var(--me-surface);
+  box-shadow: var(--me-shadow-1); border-top: 4px solid #7787bf; }
+.me-col + .me-col { border-top-color: #6dc3c0; }
+.me-col + .me-col + .me-col { border-top-color: #f4c910; }
+.me-prose .me-col-title { margin: 0 0 .4rem; display: flex; align-items: center; gap: .4rem; }
+.me-col > :last-child { margin-bottom: 0; }
+/* «vs» entre dos columnas, centrado en el hueco. */
+.me-cols-vs { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1;
+  width: 2.1rem; height: 2.1rem; border-radius: 50%; display: grid; place-items: center;
+  background: var(--me-text); color: #fff; font-size: .8rem; font-weight: 800; text-transform: uppercase; }
+/* Qué hacer (✓ verde) / qué evitar (✗ rojo): color + icono, nunca solo color. */
+.me-col.is-do { border-top-color: var(--me-ok); background: color-mix(in srgb, var(--me-ok) 6%, white); }
+.me-col.is-dont { border-top-color: var(--me-error); background: color-mix(in srgb, var(--me-error) 5%, white); }
+.me-col.is-do .me-col-ico { color: var(--me-ok); }
+.me-col.is-dont .me-col-ico { color: var(--me-error); }
+.me-col.is-do ul, .me-col.is-dont ul { list-style: none; padding-left: 0; }
+.me-col.is-do li, .me-col.is-dont li { position: relative; padding-left: 1.5rem; }
+.me-col.is-do li::before, .me-col.is-dont li::before { position: absolute; left: 0; font-weight: 800; }
+.me-col.is-do li::before { content: '✓'; color: var(--me-ok); }
+.me-col.is-dont li::before { content: '✗'; color: var(--me-error); }
+@media (max-width: 640px) {
+  .me-cols { grid-template-columns: 1fr; }
+  .me-cols-vs { position: static; transform: none; justify-self: center; margin: -.4rem 0; }
+}
 /* Disposición media + texto */
 .me-layout { display: flex; gap: 1.25rem; }
 .me-layout-top, .me-layout-bottom { flex-direction: column; }

@@ -514,6 +514,7 @@ details.ed-fold[open] > summary { border-bottom: 1px solid var(--c-border); }
   padding: .5rem .6rem; margin: .5rem 0; background: color-mix(in srgb, var(--cm-callout-color, #7787bf) 12%, white); }
 .ed-callout-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; margin-bottom: .3rem; }
 .ed-callout-title { font-weight: 700; font-size: .92rem; color: color-mix(in srgb, var(--cm-callout-color, var(--c-text)) 75%, black); }
+.ed-callout-hint { margin: 0 0 .35rem; font-size: .78rem; color: var(--c-muted); }
 .ed-callout-controls { display: flex; align-items: center; gap: .3rem; opacity: .55; transition: opacity .12s ease; }
 .ed-callout-node:hover .ed-callout-controls, .ed-callout-node:focus-within .ed-callout-controls { opacity: 1; }
 .ed-callout-controls select { width: auto; font-size: .78rem; padding: .1rem .3rem; }

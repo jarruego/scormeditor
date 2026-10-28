@@ -12,7 +12,7 @@ import { TextSelection } from '@tiptap/pm/state'
 import { useState } from 'react'
 import { Icon } from '../Icon'
 import { loadPresets, savePresets, PALETTE, type CustomBlockPreset } from '../../store/customBlocks'
-import { CALLOUT_META, CALLOUT_ORDER, HEX_RE, calloutColor } from './calloutMeta'
+import { CALLOUT_META, CALLOUT_ORDER, HEX_RE, STRUCTURED_BLOCKS, STRUCTURED_ORDER, calloutColor } from './calloutMeta'
 import { CustomBlockPanel } from './CustomBlockPanel'
 
 export interface CalloutAttrs {
@@ -98,6 +98,11 @@ function CalloutView({ node, updateAttributes, editor, getPos }: NodeViewProps) 
                 <option key={t} value={t}>{`${CALLOUT_META[t].icon} ${CALLOUT_META[t].label}`}</option>
               ))}
             </optgroup>
+            <optgroup label="Con estructura">
+              {STRUCTURED_ORDER.map((t) => (
+                <option key={t} value={t}>{`${CALLOUT_META[t].icon} ${CALLOUT_META[t].label}`}</option>
+              ))}
+            </optgroup>
             {presets.length > 0 && (
               <optgroup label="Personalizados guardados">
                 {presets.map((p) => (
@@ -117,6 +122,10 @@ function CalloutView({ node, updateAttributes, editor, getPos }: NodeViewProps) 
           </button>
         </div>
       </div>
+
+      {STRUCTURED_BLOCKS[attrs.ctype] && (
+        <p className="ed-callout-hint" contentEditable={false}>{STRUCTURED_BLOCKS[attrs.ctype].hint}</p>
+      )}
 
       {editingCustom && (
         <div contentEditable={false}>

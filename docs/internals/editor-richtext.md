@@ -26,8 +26,8 @@ scripts/test-md-dialect.ts`):
   cierre, imágenes con/sin ancho…). Algunos casos de entrada se **normalizan** de forma
   aceptada (viñetas con `*`/`•`/`–` → `-`, `1)` → `1.`…): para esos solo se exige
   equivalencia de render, no igualdad byte a byte.
-- **Equivalencia de render**: para todos los strings del proyecto demo
-  (`docs/internals/demo-scormeditor.scormproj`), el `mdToHtml` **real** de la carcasa
+- **Equivalencia de render**: para todos los strings del curso demo
+  (`sampleCourse`, `src/schema/sample-course.ts`), el `mdToHtml` **real** de la carcasa
   (evaluado en un sandbox `vm` de Node, cargando los `.js` del runtime tal cual) produce
   el mismo HTML antes y después del round-trip. Si esto se cumple, abrir un texto con el
   editor y guardarlo sin tocar nada no puede cambiar lo que ve el alumno.
@@ -122,6 +122,16 @@ tocar el markdown a mano. Tras los botones estándar, «＋ Personalizado» abre
 por cada **preset guardado** (`customBlocks.ts`, localStorage) con su icono y una ✕ para
 borrarlo (`deletePreset`) — los presets son atajos de autor, no se serializan en el
 documento.
+
+### Bloques con estructura (`STRUCTURED_BLOCKS` en `calloutMeta.ts`)
+Tras los callouts estándar, tres botones insertan `stats`/`compare`/`dodont` (render en
+`arquitectura-runtime.md`). Son el mismo `CalloutNode` (`content: 'block+'`, admite
+listas y H3 dentro), con dos añadidos: nacen con una **plantilla** de ejemplo (JSON de
+ProseMirror en `template()`, en vez de la selección como párrafo) y su cabecera muestra
+una **pista** de cómo rellenarlos (`.ed-callout-hint`). En el `<select>` de cabecera van
+en su propio grupo «Con estructura». El editor los muestra como un callout con su
+contenido tal cual (lista, encabezados), no maquetados: la maqueta se ve en Vista
+estudiante. El corpus de `test-md-dialect.ts` incluye los tres (y uno sin estructura).
 
 ## Imágenes y vídeo de YouTube en el texto
 Botón **🖼 Imagen** en la barra: `<label>` con `<input type="file">` oculto vestido de

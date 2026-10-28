@@ -415,6 +415,47 @@ export const sampleCourse: Course = {
               }
             },
             {
+              "id": "s104b",
+              "type": "content",
+              "title": "Cifras, comparativas y qué hacer y qué evitar",
+              "objective": "Reconocer los tipos de pantalla del editor y cuándo usar cada uno.",
+              "student_text": "Además de los bloques destacados, la caja de texto tiene tres **bloques con estructura**: escribes una lista o unos encabezados normales dentro del bloque y la carcasa los presenta como tarjetas o columnas.\n\n::: stats\n- **3** bloques con estructura nuevos\n- **0** líneas de HTML: todo es texto con formato ligero\n- **1** clic para insertarlos desde la barra\n:::\n\n::: compare\n### Bloque destacado\n- Un recuadro de color con icono\n- Para un consejo, un aviso o un dato curioso\n### Bloque con estructura\n- Tarjetas o columnas a partir de una lista\n- Para cifras, comparativas o buenas prácticas\n:::\n\n::: dodont\n### Qué hacer\n- Una idea corta por punto de la lista\n- Encabezados breves en cada columna\n### Qué evitar\n- Párrafos largos dentro de una tarjeta\n- Más de tres columnas en una comparativa\n:::",
+              "source_refs": [],
+              "visual_resource": {
+                "kind": "none",
+                "src": "",
+                "alt": "",
+                "tracks": [],
+                "has_voice": false,
+                "layout": "top",
+                "media_width": "50",
+                "media_align": "left",
+                "media_full": false,
+                "media_ratio": "16x9"
+              },
+              "interaction": null,
+              "interaction_layout": "bottom",
+              "required": true,
+              "min_time_seconds": 0,
+              "audio_src": "",
+              "transcript": "",
+              "transcript_hidden": false,
+              "accessibility": {
+                "alt_text_ok": true,
+                "keyboard_ok": true,
+                "contrast_ok": true
+              },
+              "scorm": {
+                "counts_for_completion": true
+              },
+              "editor_notes": [],
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
+            },
+            {
               "id": "s105",
               "type": "video",
               "title": "Vídeo interactivo: pausa y pregunta",

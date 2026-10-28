@@ -26,6 +26,11 @@ const CALLOUTS: Record<string, { color: string; icon: string; label: string }> =
   fact: { color: '#0f9490', icon: '🧠', label: '¿Sabías que…?' },
   reflect: { color: '#7787bf', icon: '💭', label: 'Reflexiona' },
   case: { color: '#c2570b', icon: '🧪', label: 'Caso práctico' },
+  // Bloques con estructura de la carcasa (tarjetas/columnas): en eXe van como
+  // callout con su lista y encabezados, sin la maqueta.
+  stats: { color: '#0f9490', icon: '📊', label: 'Cifras destacadas' },
+  compare: { color: '#5265c4', icon: '⚖️', label: 'Comparativa' },
+  dodont: { color: '#1a7f37', icon: '✅', label: 'Qué hacer y qué evitar' },
 }
 
 export function esc(s: string): string {

@@ -101,6 +101,7 @@ Sintaxis soportada:
   igual patrón que la extensión oficial pero sin la dependencia nueva).
 - Bloques destacados (callouts): `::: tipo` … `:::`
 - Bloque personalizado: `::: custom | #color | icono | título` … `:::`
+- Bloques con estructura: `::: stats`, `::: compare`, `::: dodont` (ver abajo).
 - Imagen en línea propia: `![alt](assets/img/… | https://…)` → `<figure class="me-md-img">`
   ampliable con el lightbox. Ancho opcional en % con `![alt|50](ruta)` (clamp 10–100,
   `style="width:NN%"`). Solo bloque (no inline) y solo rutas `assets/` o http(s).
@@ -168,6 +169,23 @@ que lo etiquete).
   dentro): **✎ Editar** reabre el diálogo precargado y reescribe **solo la cabecera** (respeta
   el contenido); **⤯ Quitar formato** (`unwrapBlock`) borra cabecera y cierre y deja el texto
   plano, sin borrar contenido. Detalle en `editor-richtext.md`.
+
+### Bloques con estructura (`stats`, `compare`, `dodont`)
+Tres tipos de bloque que el autor rellena con markdown normal y la carcasa maqueta
+(`renderStats`/`renderColumns` en `renderer.js`), sin sintaxis nueva — así el dialecto,
+`mdDialect.ts`, el TTS y el `.elpx` los tratan como un callout más:
+- **`stats`** (cifras destacadas): cada punto de lista es una tarjeta; la negrita inicial
+  (`- **80 %** de los casos`) es la cifra grande. Lo que no es lista va de entradilla.
+- **`compare`** (comparativa): cada encabezado (`##`/`###` o línea solo-negrita) abre una
+  columna con lo que haya debajo; con exactamente dos, un «vs» entre ellas.
+- **`dodont`** (qué hacer y qué evitar): igual que `compare`, pero la primera columna es
+  «sí» (verde, ✓ en título y viñetas) y el resto «no» (rojo, ✗). Color + icono, nunca
+  solo color.
+- **Sin su estructura** (sin lista en `stats`, menos de dos encabezados en las otras) se
+  pintan como un callout normal con su icono y etiqueta: nunca se pierde texto. En móvil
+  (≤640px) las columnas se apilan y el «vs» queda entre ellas.
+- Recetas de pantalla «Cifras destacadas», «Comparativa» y «Qué hacer y qué evitar»
+  (grupo Contenido) crean una pantalla con el bloque de ejemplo en `student_text`.
 
 ## Recursos visuales
 - `visual_resource` admite `layout` (`top`/`bottom`/`left`/`right`, def. `top`) y
