@@ -8,8 +8,22 @@ import { ListEditor } from './ListEditor'
 import { SegIcons } from './SegIcons'
 import { Icon } from './Icon'
 import { generateForItem, hasApiKey } from '../tts/tts'
+import { computeResults, type CalcResult, type CalcVariable } from '../calc/formula'
 
 const rid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 7)}`
+
+/** Primera línea de un texto en markdown ligero, sin marcas (resúmenes de listas plegadas). */
+const plainLine = (s: string) => (s || '').split('\n').find((l) => l.trim())?.replace(/[*#>]/g, '').trim() ?? ''
+
+type StepItem = { id: string; text: string; options: { id: string; text: string; correct?: boolean; feedback?: string }[] }
+type TreeNode = {
+  id: string
+  speaker?: string
+  text: string
+  choices?: { id: string; text: string; to: string }[]
+  outcome?: 'good' | 'bad' | 'neutral'
+  feedback?: string
+}
 
 /** Ítem narrable (accordion/tabs/flip_cards/timeline/image_cards/flashcards):
  *  botón para generar/regenerar el audio de UN ítem a partir de su propio
@@ -703,6 +717,209 @@ export function InteractionConfigEditor({
           <p className="ed-hint">
             El alumno escribe la respuesta o pasa palabra (la letra vuelve en la siguiente
             vuelta). Mayúsculas, acentos y espacios extra no cuentan al corregir.
+          </p>
+        </>
+      )
+    }
+
+    // ---- Caso por decisiones -------------------------------------------------------
+    case 'scenario_steps': {
+      const steps: StepItem[] = cfg.steps || []
+      return (
+        <>
+          <div className="ed-field"><span>Planteamiento del caso (opcional; se ve encima de todas las decisiones)</span>
+            <RichTextArea rows={3} value={cfg.scenario || ''} onChange={(v) => setConfig({ scenario: v })} /></div>
+          <ListEditor
+            title="Decisiones (en orden; el alumno las ve una a una y responde una vez cada una)"
+            items={steps}
+            onChange={(next) => setConfig({ steps: next })}
+            summary={(s) => plainLine(s.text) || '(sin situación)'}
+            create={(): StepItem => ({ id: rid('st'), text: '', options: [{ id: rid('o'), text: '', correct: true }, { id: rid('o'), text: '' }] })}
+            clone={(s) => ({ ...s, id: rid('st'), options: s.options.map((o) => ({ ...o, id: rid('o') })) })}
+            render={(s, update) => (
+              <div className="ed-stack">
+                <div className="ed-field"><span>Situación o pregunta de este paso</span>
+                  <RichTextArea rows={2} value={s.text} onChange={(v) => update({ ...s, text: v })} /></div>
+                <ListEditor<StepItem['options'][number]>
+                  title="Opciones"
+                  items={s.options}
+                  onChange={(options) => update({ ...s, options })}
+                  create={() => ({ id: rid('o'), text: '', correct: false, feedback: '' })}
+                  render={(o, upd) => (
+                    <>
+                      <input value={o.text} placeholder="Texto de la opción" onChange={(e) => upd({ ...o, text: e.target.value })} />
+                      <label className="ed-check" title="Puede haber varias correctas en un paso"><input type="checkbox" checked={!!o.correct} onChange={(e) => upd({ ...o, correct: e.target.checked })} /><span>Correcta</span></label>
+                      <input value={o.feedback || ''} placeholder="Comentario al elegirla" onChange={(e) => upd({ ...o, feedback: e.target.value })} />
+                    </>
+                  )}
+                />
+              </div>
+            )}
+          />
+          <p className="ed-hint">
+            Si puntúa, la nota es proporcional a las decisiones acertadas. Sin nota, el alumno puede repetir el caso.
+          </p>
+        </>
+      )
+    }
+
+    // ---- Conversación ramificada ---------------------------------------------------
+    case 'decision_tree': {
+      const chars: { id: string; name: string; role?: string }[] = cfg.characters || []
+      const nodes: TreeNode[] = cfg.nodes || []
+      const nodeName = (n: TreeNode, i: number) =>
+        `${i + 1}. ${plainLine(n.text).slice(0, 48) || ((n.choices || []).length ? '(sin texto)' : '(final sin texto)')}`
+      const OUTCOMES = { good: '✔ Buen final', bad: '✖ Final mejorable', neutral: '● Final neutro' } as const
+      // «Lleva a → momento nuevo»: crea el nodo al final y apunta la respuesta a él.
+      const pointToNew = (i: number, choiceId: string) => {
+        const fresh: TreeNode = { id: rid('n'), speaker: chars[0]?.id || '', text: '', choices: [], outcome: 'neutral' }
+        setConfig({
+          nodes: [
+            ...nodes.map((n, j) => (j !== i ? n : { ...n, choices: (n.choices || []).map((c) => (c.id === choiceId ? { ...c, to: fresh.id } : c)) })),
+            fresh,
+          ],
+        })
+      }
+      return (
+        <>
+          <ListEditor
+            title="Personajes"
+            items={chars}
+            onChange={(next) => setConfig({ characters: next })}
+            create={() => ({ id: rid('p'), name: '', role: '' })}
+            render={(c, update) => (
+              <>
+                <input value={c.name} placeholder="Nombre (p. ej. Marta)" onChange={(e) => update({ ...c, name: e.target.value })} />
+                <input value={c.role || ''} placeholder="Papel (opcional, p. ej. hija del residente)" onChange={(e) => update({ ...c, role: e.target.value })} />
+              </>
+            )}
+          />
+          <ListEditor
+            title="Momentos de la conversación (empieza por el primero; un momento sin respuestas es un final)"
+            items={nodes}
+            onChange={(next) => setConfig({ nodes: next })}
+            summary={(n, i) => nodeName(n, i) + ((n.choices || []).length ? '' : ` — ${OUTCOMES[n.outcome || 'neutral']}`)}
+            collapseFrom={3}
+            create={(): TreeNode => ({ id: rid('n'), speaker: chars[0]?.id || '', text: '', choices: [], outcome: 'neutral' })}
+            clone={(n) => ({ ...n, id: rid('n'), choices: (n.choices || []).map((c) => ({ ...c, id: rid('c') })) })}
+            confirmRemove={(n) =>
+              nodes.some((x) => (x.choices || []).some((c) => c.to === n.id))
+                ? 'Hay respuestas que llevan a este momento y se quedarán sin destino. ¿Eliminarlo?'
+                : null}
+            render={(n, update, i) => (
+              <div className="ed-stack">
+                <div className="ed-row">
+                  <select value={n.speaker || ''} onChange={(e) => update({ ...n, speaker: e.target.value })}>
+                    <option value="">— Sin personaje (narración) —</option>
+                    {chars.map((c) => <option key={c.id} value={c.id}>{c.name || '(personaje sin nombre)'}</option>)}
+                  </select>
+                </div>
+                <RichTextArea rows={2} value={n.text} onChange={(v) => update({ ...n, text: v })} />
+                <ListEditor
+                  title="Respuestas del alumno"
+                  items={n.choices || []}
+                  onChange={(choices) => update({ ...n, choices })}
+                  create={() => ({ id: rid('c'), text: '', to: '' })}
+                  render={(c, upd) => (
+                    <>
+                      <input value={c.text} placeholder="Lo que responde el alumno" onChange={(e) => upd({ ...c, text: e.target.value })} />
+                      <select value={c.to} onChange={(e) => (e.target.value === '__new__' ? pointToNew(i, c.id) : upd({ ...c, to: e.target.value }))}>
+                        <option value="">— Lleva a… —</option>
+                        {nodes.map((m, j) => j !== i && <option key={m.id} value={m.id}>{nodeName(m, j)}</option>)}
+                        <option value="__new__">＋ Un momento nuevo</option>
+                      </select>
+                    </>
+                  )}
+                />
+                {!(n.choices || []).length && (
+                  <>
+                    <label className="ed-field"><span>Este momento es un final</span>
+                      <select value={n.outcome || 'neutral'} onChange={(e) => update({ ...n, outcome: e.target.value as TreeNode['outcome'] })}>
+                        {Object.entries(OUTCOMES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                      </select>
+                    </label>
+                    <div className="ed-field"><span>Comentario del final (por qué acaba así)</span>
+                      <RichTextArea rows={2} value={n.feedback || ''} onChange={(v) => update({ ...n, feedback: v })} /></div>
+                  </>
+                )}
+              </div>
+            )}
+          />
+          <p className="ed-hint">
+            Si puntúa, acierta quien llega a un «Buen final». Cuenta el primer final alcanzado: después el alumno puede
+            volver a empezar para explorar otros caminos, pero la nota no cambia. No se puede volver a un momento anterior
+            (sin bucles).
+          </p>
+        </>
+      )
+    }
+
+    // ---- Reto numérico -------------------------------------------------------------
+    case 'calculator': {
+      const vars: CalcVariable[] = cfg.variables || []
+      const results: CalcResult[] = cfg.results || []
+      const tool = cfg.mode === 'tool'
+      const preview = computeResults(vars, results)
+      const num = (s: string) => (s.trim() === '' ? undefined : Number(s.replace(',', '.')))
+      return (
+        <>
+          <label className="ed-field"><span>Modo</span>
+            <select value={tool ? 'tool' : 'challenge'} onChange={(e) => setConfig({ mode: e.target.value })}>
+              <option value="challenge">Reto: el curso da los datos y el alumno calcula el resultado (puede puntuar)</option>
+              <option value="tool">Calculadora: el alumno escribe los datos y ve el resultado (no puntúa)</option>
+            </select>
+          </label>
+          <ListEditor
+            title={tool ? 'Datos que escribe el alumno (el valor es opcional: sale ya relleno)' : 'Datos del enunciado'}
+            items={vars}
+            onChange={(next) => setConfig({ variables: next })}
+            create={() => ({ id: '', label: '', unit: '' })}
+            clone={(v) => ({ ...v, id: '' })}
+            render={(v, update) => (
+              <>
+                <input className="ed-mono" style={{ maxWidth: 120 }} value={v.id} placeholder="nombre"
+                  title="Nombre corto para usarlo en las fórmulas: letras sin tilde, números y _ (p. ej. peso)"
+                  onChange={(e) => update({ ...v, id: e.target.value.replace(/\s+/g, '_') })} />
+                <input value={v.label || ''} placeholder="Texto para el alumno (p. ej. Peso del paciente)" onChange={(e) => update({ ...v, label: e.target.value })} />
+                <input style={{ maxWidth: 110 }} inputMode="decimal" value={v.value ?? ''} placeholder="Valor"
+                  onChange={(e) => update({ ...v, value: num(e.target.value) })} />
+                <input style={{ maxWidth: 80 }} value={v.unit || ''} placeholder="Unidad" onChange={(e) => update({ ...v, unit: e.target.value })} />
+              </>
+            )}
+          />
+          <ListEditor
+            title="Resultados (en orden; cada fórmula puede usar los datos y los resultados anteriores)"
+            items={results}
+            onChange={(next) => setConfig({ results: next })}
+            create={() => ({ id: `r${results.length + 1}`, label: '', formula: '', unit: '', decimals: 2 })}
+            render={(r, update, i) => (
+              <div className="ed-stack">
+                <div className="ed-row-tight">
+                  <input className="ed-mono ed-fixed" style={{ width: 120 }} value={r.id} placeholder="nombre"
+                    onChange={(e) => update({ ...r, id: e.target.value.replace(/\s+/g, '_') })} />
+                  <input value={r.label || ''} placeholder="Qué se pide (p. ej. Dosis diaria)" onChange={(e) => update({ ...r, label: e.target.value })} />
+                  <input className="ed-fixed" style={{ width: 80 }} value={r.unit || ''} placeholder="Unidad" onChange={(e) => update({ ...r, unit: e.target.value })} />
+                </div>
+                <div className="ed-row-tight">
+                  <input className="ed-mono" value={r.formula} placeholder="Fórmula, p. ej. peso * 0.5"
+                    onChange={(e) => update({ ...r, formula: e.target.value })} />
+                  <label className="ed-check ed-fixed" title="Decimales con los que se muestra la solución; al corregir se admite un pequeño margen de redondeo">
+                    <span>Decimales</span>
+                    <input type="number" min={0} max={6} style={{ width: 56 }} value={r.decimals ?? 2}
+                      onChange={(e) => update({ ...r, decimals: Math.max(0, Math.min(6, Number(e.target.value) || 0)) })} />
+                  </label>
+                </div>
+                {preview[i]?.error
+                  // En la calculadora libre los datos sin valor los pone el alumno: no es un error.
+                  ? !(tool && preview[i].error!.startsWith('Falta el valor')) && <p className="ed-hint-warn">{preview[i].error}</p>
+                  : preview[i] && <p className="ed-hint">= {preview[i].value!.toLocaleString('es-ES', { maximumFractionDigits: r.decimals ?? 2 })} {r.unit}</p>}
+              </div>
+            )}
+          />
+          <p className="ed-hint">
+            Fórmulas: + − * / ^ y paréntesis, con punto decimal (0.5), y las funciones round(x, decimales), min, max,
+            abs, sqrt, floor y ceil. El alumno puede responder con coma decimal; se acepta media unidad del último
+            decimal o un 0,5 % de desviación.
           </p>
         </>
       )

@@ -26,6 +26,6 @@ export const SCREEN_TYPE_UI: Partial<Record<ScreenType, ScreenTypeUI>> = {
   video: { mediaFirst: true, recommended: ['video'] },
   unit_quiz: {
     interactionOpen: true,
-    recommended: ['single_choice', 'true_false', 'classification', 'match_pairs', 'sort_steps', 'fill_blanks', 'scenario_decision'],
+    recommended: ['single_choice', 'true_false', 'classification', 'match_pairs', 'sort_steps', 'fill_blanks', 'scenario_decision', 'scenario_steps', 'calculator'],
   },
 }

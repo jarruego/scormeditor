@@ -19,8 +19,8 @@ ese contrato; no conoce el tipo concreto.
   pulso-glow** (en sort, «responder» = primer movimiento). El pulso se apaga al clicar y
   vuelve si se cambia la respuesta; al restaurar respuesta sin resolver se activa sin
   pulso. `move()` de sort ignora el teclado cuando la interacción está resuelta.
-  **Las 5 factories con `attempts`** (`choiceFactory`, `sort_steps`, `dragAssignFactory`,
-  `fill_blanks`, `crossword`) restauran igual: `done = correct || (maxAtt > 0 && attempts
+  **Las 6 factories con `attempts`** (`choiceFactory`, `sort_steps`, `dragAssignFactory`,
+  `fill_blanks`, `crossword`, `calculator` en modo reto) restauran igual: `done = correct || (maxAtt > 0 && attempts
   >= maxAtt)`, y si no está `done`, `refreshCheck(false)` reactiva Comprobar. `sort_steps`
   y `dragAssignFactory` daban por resuelta CUALQUIER interacción con un `correct` guardado
   (aunque quedaran intentos): un fallo, salir de la pantalla y volver la dejaba bloqueada
@@ -404,6 +404,61 @@ para restaurar desde `suspend_data`). Inspirados en el catálogo de eXeLearning.
   criterio accesible del drag&drop). `completed` solo al resolverlo (persistido
   `{order, solved}`). Validador: `PZ_NO_IMAGE`.
 
+### Prácticas de varios pasos (`scenario_steps`, `decision_tree`, `calculator`)
+Tres tipos evaluables pensados para casos aplicados (inspirados en visores comerciales de
+teleformación). Ninguno se narra más allá del enunciado: sus opciones/nodos desvelarían
+la respuesta (`buildTranscript` los trata como evaluables). Los tres degradan a texto en
+`.elpx` y tienen codec compacto propio en `state_codec.js`.
+- **`scenario_steps`** — caso por decisiones. `config: { scenario?, steps: [{id, text,
+  options: [{id, text, correct, feedback}]}] }`. Una decisión cada vez (puntos de progreso
+  arriba), opciones barajadas por `data.id + step.id`; al elegir se marca la opción y su
+  comentario sale **en línea** (no en modal: el paso siguiente necesita el contexto) con
+  «Siguiente decisión». Una respuesta por paso, sin `attempts`. Al terminar, resumen común
+  `summaryCard()` (anillo `conic-gradient` con `--pct`, «X/N», mensaje por tramos).
+  **Crédito parcial**: `score = points × aciertos/pasos`; `correct` solo con todo acertado.
+  Sin nota, «Repetir el caso» reinicia, pero `done` persiste para no volver a bloquear
+  la navegación. Estado `{picks: [id|null por paso], idx (== nº pasos: resumen), done}`.
+  Validadores: `SS_EMPTY`, `SS_STEP_NO_TEXT`, `SS_STEP_FEW_OPTIONS`, `SS_STEP_NO_CORRECT`
+  (errores) y `SS_NO_FEEDBACK` (aviso: el comentario por opción es el sentido del tipo).
+- **`decision_tree`** — conversación ramificada. `config: { characters: [{id, name,
+  role}], nodes: [{id, speaker?, text, choices: [{id, text, to}], outcome?, feedback?}] }`.
+  Empieza en el **primer nodo**; un nodo sin respuestas válidas (las que apuntan a un nodo
+  inexistente no cuentan) es un **final** `good`/`bad`/`neutral` con su comentario. Chat
+  de burbujas (personaje · papel a la izquierda, «Tú» a la derecha). Antes del final se
+  puede **deshacer** la última respuesta; al llegar, «Volver a empezar» deja explorar otros
+  caminos, pero **la nota la fija el primer final alcanzado** (`first`), como un intento
+  único — sin esto, deshacer/repetir permitiría acertar por fuerza bruta. `correct` =
+  `first === 'good'`. Estado `{path: [índice de respuesta por nodo], first}`; al restaurar
+  se rehace el recorrido contra la config actual y se conserva el prefijo válido. **Sin
+  ciclos** (`DT_CYCLE`): el peor caso de `suspend_data` es el camino más largo y el runtime
+  corta igualmente a nº de nodos pasos. Editor: «Lleva a…» lista los momentos y ofrece «＋
+  Un momento nuevo» (crea el nodo y lo enlaza de una vez). Validadores (`checkDecisionTree`):
+  `DT_EMPTY`, `DT_NO_TEXT`, `DT_CHOICE_NO_TEXT`, `DT_DANGLING`, `DT_START_END`, `DT_CYCLE`,
+  `DT_NO_GOOD_END` (solo si puntúa) — errores —; `DT_UNREACHABLE` y `DT_SPEAKER_MISSING`,
+  avisos.
+- **`calculator`** — reto numérico. `config: { mode: 'challenge'|'tool', variables: [{id,
+  label, unit, value}], results: [{id, label, formula, unit, decimals}] }`. Fórmulas con
+  un **evaluador propio de descenso recursivo** (`evalFormula`: `+ - * / ^`, paréntesis,
+  identificadores, `round(x[,d]) min max abs sqrt floor ceil`) — nunca `eval`/`Function`
+  (invariante anti-XSS), y solo funciones **propias** de la tabla (`hasOwnProperty`:
+  `constructor(…)` no llega a `Function`). Copia deliberada en `src/calc/formula.ts` para
+  el editor (vista previa «= 87 min» y `CALC_FORMULA`): si cambia la gramática, cambiar
+  las dos. Cada resultado puede usar los anteriores.
+  - *Reto* (evaluable, Comprobar + `attempts`, feedback en modal): datos a la vista, el
+    alumno escribe cada resultado. `parseUserNumber` admite coma decimal (y entonces el
+    punto es de miles), espacios, € y %. Acierta si se desvía ≤ media unidad del último
+    decimal pedido **o** ≤ 0,5 % (lo mayor: redondear a menos decimales no penaliza).
+    Resuelto, los fallados muestran «Solución: …». Todo o nada, como el resto de tipos con
+    intentos. Estado `{values, correct, attempts}` con cada valor saneado a `[0-9.,+-]`
+    (máx. 16): ASCII acotado, sin factor de escape en el medidor.
+  - *Calculadora* (informativa): el alumno escribe los datos (prerrellenos si el autor da
+    valor) y ve los resultados al momento; completa al calcularlo todo una vez
+    (`{used: true}`). `CALC_TOOL_SCORED` avisa si se marca evaluable.
+  - Filas en rejilla etiqueta | caja | unidad (la celda de unidad existe siempre, vacía si
+    no hay, para que las cajas queden alineadas). Validadores: `CALC_EMPTY`, `CALC_BAD_ID`
+    (nombre no válido, reservado o repetido), `CALC_NO_VALUE` (reto con dato sin valor),
+    `CALC_FORMULA`.
+
 > El desglose de actividades con su estado, puntos y peso en la nota **no es una
 > interacción**: es el informe de la pantalla de resultados (`renderResults` en
 > `app.js`), ver `evaluacion-finalizacion.md`.
@@ -466,9 +521,9 @@ típico», no ítems de lista ni cajas destacadas). Editor: tres botones en la b
 modal porque la caja `.me-feedback` inferior puede quedar fuera de la vista. Se cierra con
 «Cerrar», clicando fuera o Esc, y devuelve el foco al control que lo provocó. Se usa en
 `single_choice`, `true_false`, `scenario_decision`, `sort_steps`, `fill_blanks`,
-`hotspots`, `match_pairs` y `classification`. Al abrirse **oculta** la caja en línea (no se
+`hotspots`, `match_pairs`, `classification` y `calculator`. Al abrirse **oculta** la caja en línea (no se
 duplica el mensaje); esa caja solo se pinta al **restaurar** estado, para que al volver a
 una pantalla resuelta siga viéndose el resultado (el modal nunca se reabre al restaurar).
 Tras cerrar el modal en Emparejar/Clasificar quedan visibles las piezas marcadas en
 rojo/verde. **No** se usa en `crossword`, `word_search` ni `puzzle` (siguen con la caja en
-línea).
+línea), ni en `scenario_steps`/`decision_tree`, cuyo comentario va dentro del propio paso.

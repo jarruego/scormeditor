@@ -82,6 +82,24 @@ const EVALUABLE: Partial<Record<InteractionType, { base: number; perUnit: number
       return cols * rows
     },
   },
+  // Cada decisión: leer la situación, elegir y leer el comentario.
+  scenario_steps: { base: 10, perUnit: 25, unit: (it) => ((it.config as Record<string, unknown>)?.steps as unknown[] || []).length },
+  // El alumno recorre UN camino: se cuentan los momentos con respuestas (puntos
+  // de decisión) como cota de ese camino, más leer el final.
+  decision_tree: {
+    base: 15, perUnit: 15,
+    unit: (it) => (((it.config as Record<string, unknown>)?.nodes as { choices?: unknown[] }[]) || [])
+      .filter((n) => (n?.choices || []).length > 0).length,
+  },
+  // Reto: calcular cada resultado (con papel o calculadora). Calculadora libre:
+  // probar unos datos, sin nada que resolver.
+  calculator: {
+    base: 20, perUnit: 40,
+    unit: (it) => {
+      const cfg = (it.config as Record<string, unknown>) || {}
+      return cfg.mode === 'tool' ? 0 : ((cfg.results as unknown[]) || []).length
+    },
+  },
   // Contenido a medida del autor: imposible de estimar por tamaño. Usa el tiempo
   // que declara el autor (`config.est_seconds`, 0-3600 s) o, si no, un tiempo
   // fijo (ver HTML_EMBED_SECONDS).

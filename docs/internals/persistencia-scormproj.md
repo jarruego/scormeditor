@@ -53,7 +53,7 @@ guardado: confundía.)
 ### Curso demo por defecto (`src/schema/sample-course.ts`)
 `sampleCourse` (el curso con el que arranca el editor sin nada que retomar, y que carga
 «Nuevo (demo)») es el proyecto de referencia exhaustivo: ejercita los **10 tipos de
-pantalla** y las **23 interacciones**, autorreferencial a propósito (no trata de ningún
+pantalla** y las **26 interacciones**, autorreferencial a propósito (no trata de ningún
 tema ajeno: cada pantalla demuestra en vivo el tipo de pantalla o de interacción del que
 habla). Test final, glosario y bibliografía también son de ejemplo. Sus imágenes son SVG
 sencillos incrustados como `data:image/svg+xml;base64,…` directamente en `src`/`config`

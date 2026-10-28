@@ -8,6 +8,7 @@ import {
   INTERACTION_RECIPES,
   type InteractionRecipe,
 } from '../schema/interactionRecipes'
+import { isNewSince } from '../schema/newBadge'
 import { SettingsWindow } from './SettingsModal'
 import { Icon } from './Icon'
 
@@ -63,6 +64,7 @@ export function InteractionTypeModal({
               <Icon name="star" size={12} />
             </span>
           )}
+          {isNewSince(r.since) && <span className="ed-new-badge">Nueva</span>}
         </span>
         <span className="ed-recipe-desc">{r.description}</span>
       </span>

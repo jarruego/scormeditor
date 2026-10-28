@@ -649,6 +649,66 @@ video.me-video, .me-audio { width: 100%; height: auto; aspect-ratio: auto; }
 }
 .me-scenario { background: var(--me-bg); padding: .75rem; border-radius: 6px; margin-bottom: .75rem; }
 .me-option { display: block; width: 100%; text-align: left; margin-bottom: .4rem; }
+/* Caso por decisiones (scenario_steps): puntos de progreso, paso actual y resumen. */
+.me-steps-dots { list-style: none; display: flex; gap: .35rem; margin: 0 0 .6rem; padding: 0; }
+.me-steps-dots li { width: .7rem; height: .7rem; border-radius: 50%; background: var(--me-border); }
+.me-steps-dots li.is-ok { background: var(--me-ok); }
+.me-steps-dots li.is-bad { background: var(--me-error); }
+.me-steps-dots li.is-current { box-shadow: 0 0 0 2px var(--me-surface), 0 0 0 4px var(--me-primary); }
+.me-step { animation: me-reveal .25s ease-out; }
+.me-step-count { margin: 0 0 .3rem; font-size: .8rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--me-muted); }
+.me-step-text { margin-bottom: .6rem; }
+.me-step-text > :first-child { margin-top: 0; }
+.me-steps-next { display: block; margin: .8rem 0 0 auto; }
+.me-steps-restart { margin-top: .6rem; }
+.me-summary { display: flex; align-items: center; gap: 1rem; padding: .9rem 1rem; border-radius: var(--me-radius);
+  background: var(--me-surface); box-shadow: var(--me-shadow-1); animation: me-pop .2s ease-out; }
+.me-summary-ring { flex: none; width: 4.4rem; height: 4.4rem; border-radius: 50%; display: grid; place-items: center;
+  background: conic-gradient(var(--me-ok) calc(var(--pct) * 1%), var(--me-border) 0); }
+.me-summary-ring strong { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: 50%;
+  background: var(--me-surface); font-size: 1.05rem; }
+.me-summary-msg { margin: 0; font-weight: 700; }
+.me-summary-sub { margin: 0; color: var(--me-muted); font-size: .9rem; }
+
+/* Conversación ramificada (decision_tree): burbujas tipo chat. */
+.me-dt-chat { list-style: none; margin: 0 0 .7rem; padding: 0; display: grid; gap: .5rem; }
+.me-dt-msg { max-width: 85%; padding: .55rem .8rem; border-radius: 12px 12px 12px 4px; background: var(--me-bg);
+  animation: me-reveal .25s ease-out; }
+.me-dt-msg.is-me { justify-self: end; border-radius: 12px 12px 4px 12px;
+  background: color-mix(in srgb, var(--me-primary) 10%, white); }
+.me-dt-who { display: block; font-size: .78rem; font-weight: 700; color: var(--me-muted); }
+.me-dt-who small { font-weight: 400; font-size: inherit; }
+.me-dt-text > :first-child { margin-top: 0; }
+.me-dt-text > :last-child { margin-bottom: 0; }
+.me-dt-end { padding: .7rem .9rem; border-radius: var(--me-radius); border: 1px solid; animation: me-pop .2s ease-out; }
+.me-dt-end.is-good { border-color: var(--me-ok); background: #e7f6ec; color: #0c5a26; }
+.me-dt-end.is-bad { border-color: var(--me-error); background: #fdecea; color: #7a1a14; }
+.me-dt-end.is-neutral { border-color: var(--me-border); background: var(--me-surface); }
+.me-dt-end .me-dt-text { color: var(--me-text); margin-top: .3rem; }
+.me-dt-choices { display: grid; gap: .1rem; }
+.me-dt-foot { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.me-dt-note { font-size: .85rem; color: var(--me-muted); }
+
+/* Reto numérico (calculator). */
+.me-calc { display: grid; gap: .8rem; }
+.me-calc-data { padding: .7rem .9rem; border-radius: var(--me-radius); background: var(--me-bg); }
+.me-calc-title { margin: 0 0 .3rem; font-weight: 700; }
+.me-calc-data dl { margin: 0; display: grid; gap: .2rem; }
+.me-calc-data dl > div { display: flex; flex-wrap: wrap; gap: .4rem; }
+@media (max-width: 640px) { .me-calc-row { grid-template-columns: minmax(0, 1fr) auto 2.5rem; } .me-calc-input { width: 6.5rem; } }
+.me-calc-data dt::after { content: ':'; }
+.me-calc-data dd { margin: 0; font-weight: 700; }
+.me-calc-in, .me-calc-out { display: grid; gap: .45rem; }
+/* Rejilla etiqueta | caja | unidad: las cajas quedan alineadas aunque las unidades midan distinto. */
+.me-calc-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 3.5rem; align-items: center; gap: .3rem .5rem; }
+.me-calc-input { font: inherit; width: 8.5rem; padding: .4rem .55rem; border: 1px solid var(--me-border); border-radius: 6px; text-align: right; }
+.me-calc-input:focus-visible { outline: 3px solid var(--me-primary); outline-offset: 1px; }
+.me-calc-input.is-right { border-color: var(--me-ok); background: #e7f6ec; }
+.me-calc-input.is-wrong { border-color: var(--me-error); background: #fdecea; animation: me-shake .3s ease; }
+.me-calc-unit { color: var(--me-muted); }
+.me-calc-sol { grid-column: 1 / -1; justify-self: end; font-size: .9rem; color: #7a1a14; }
+.me-calc.is-tool .me-calc-out { padding: .7rem .9rem; border-radius: var(--me-radius); background: var(--me-bg); }
+.me-calc-value { display: inline-block; min-width: 8.5rem; text-align: right; font-weight: 700; font-size: 1.1rem; }
 .me-case-hint { color: var(--me-muted); font-style: italic; }
 .me-rubric { margin-top: .6rem; border: 1px solid var(--me-border); border-radius: 8px; background: var(--me-surface); }
 .me-rubric .me-acc-head { border: none; border-radius: 8px; }

@@ -360,6 +360,33 @@ const PATHS = {
       <path d="M12 7.5V12l3.2 2" />
     </>
   ),
+  steps: (
+    <>
+      <circle cx="5" cy="6" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="19" cy="18" r="2" />
+      <path d="M6.6 7.4l3.8 3.2M13.6 13.4l3.8 3.2" />
+    </>
+  ),
+  chat: (
+    <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v5a1.5 1.5 0 0 1-1.5 1.5H9l-3 2.5V12h-.5A1.5 1.5 0 0 1 4 10.5zM18.5 9h.2A1.3 1.3 0 0 1 20 10.3v4.4a1.3 1.3 0 0 1-1.3 1.3H18v2.5L15 16h-3.7a1.3 1.3 0 0 1-1.3-1.3V14.5" />
+  ),
+  calculator: (
+    <>
+      <rect x="5" y="3" width="14" height="18" rx="2" />
+      <path d="M8 7h8M8.5 11.5h1M11.5 11.5h1M14.5 11.5h1M8.5 15h1M11.5 15h1M14.5 15v3M8.5 18h1M11.5 18h1" />
+    </>
+  ),
+  stats: (
+    <>
+      <rect x="3.5" y="5" width="7.5" height="14" rx="1.5" />
+      <rect x="13" y="5" width="7.5" height="14" rx="1.5" />
+      <path d="M5.8 10h3M15.3 10h3M5.8 14.5h3M15.3 14.5h3" />
+    </>
+  ),
+  'do-dont': (
+    <path d="M4 7.5l2 2 3.5-4M4 17.5l4-4M8 17.5l-4-4M12 7.5h8M12 15.5h8" />
+  ),
 } as const
 
 export type IconName = keyof typeof PATHS

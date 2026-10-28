@@ -826,6 +826,133 @@
     },
   };
 
+  // scenario_steps: detalle = { picks: [id de opción | null por paso], idx, done }.
+  // Pasos filtrados igual que interactions.js (solo los que tienen opciones);
+  // un carácter por paso con el índice de la opción en orden de autor ('.' sin
+  // responder), luego idx y done.
+  function stepsOf(it) {
+    return ((it.config || {}).steps || []).filter(function (s) { return s && (s.options || []).length; });
+  }
+  TYPE_CODECS.scenario_steps = {
+    encode: function (detail, it) {
+      var steps = stepsOf(it);
+      if (!detail || !detail.picks || detail.picks.length !== steps.length) return null;
+      var digits = '';
+      for (var i = 0; i < steps.length; i++) {
+        if (detail.picks[i] == null) { digits += '.'; continue; }
+        var k = indexOfById(steps[i].options, detail.picks[i]);
+        if (k < 0 || k > 35) return null;
+        digits += b36(k);
+      }
+      return packChunks([digits, b36(detail.idx || 0), detail.done ? '1' : '0']);
+    },
+    decode: function (payload, it) {
+      var steps = stepsOf(it);
+      var p = unpackChunks(payload);
+      if (!p || p.length !== 3 || p[0].length !== steps.length) return null;
+      var picks = [];
+      for (var i = 0; i < steps.length; i++) {
+        var c = p[0].charAt(i);
+        if (c === '.') { picks.push(null); continue; }
+        var o = steps[i].options[fromB36(c)];
+        if (!o) return null;
+        picks.push(o.id);
+      }
+      var idx = fromB36(p[1]);
+      if (!(idx >= 0 && idx <= steps.length)) return null;
+      return { picks: picks, idx: idx, done: p[2] === '1' };
+    },
+  };
+
+  // decision_tree: detalle = { path: [índice de respuesta en cada nodo], first }.
+  // Respuestas filtradas igual que interactions.js (solo las que llevan a un nodo
+  // existente). Al decodificar se rehace el recorrido contra la config ACTUAL y
+  // se conserva el prefijo válido. first: g/b/n o vacío.
+  function treeOf(it) {
+    var nodes = (it.config || {}).nodes || [];
+    var byId = {};
+    nodes.forEach(function (nd) { if (nd && nd.id) byId[nd.id] = nd; });
+    return {
+      nodes: nodes, byId: byId,
+      choicesOf: function (nd) { return (nd.choices || []).filter(function (c) { return c && byId[c.to]; }); },
+    };
+  }
+  var TREE_FIRST = { good: 'g', bad: 'b', neutral: 'n' };
+  TYPE_CODECS.decision_tree = {
+    encode: function (detail, it) {
+      if (!detail || !detail.path) return null;
+      var digits = '';
+      for (var i = 0; i < detail.path.length; i++) {
+        var k = detail.path[i];
+        if (!(k >= 0 && k <= 35)) return null;
+        digits += b36(k);
+      }
+      return packChunks([digits, TREE_FIRST[detail.first] || '']);
+    },
+    decode: function (payload, it) {
+      var t = treeOf(it);
+      var p = unpackChunks(payload);
+      if (!p || p.length !== 2) return null;
+      var cur = t.nodes[0], path = [];
+      for (var i = 0; i < p[0].length && cur && path.length < t.nodes.length; i++) {
+        var k = fromB36(p[0].charAt(i));
+        var ch = t.choicesOf(cur)[k];
+        if (!ch) break;
+        path.push(k);
+        cur = t.byId[ch.to];
+      }
+      var first = null;
+      Object.keys(TREE_FIRST).forEach(function (key) { if (TREE_FIRST[key] === p[1]) first = key; });
+      return { path: path, first: first };
+    },
+  };
+  // Recorrido más largo desde el primer nodo (nº de respuestas): peor caso de
+  // `path`. Un ciclo (proyecto mal formado, DT_CYCLE) se corta como el runtime.
+  function treeLongestPath(it) {
+    var t = treeOf(it);
+    if (!t.nodes.length) return 0;
+    var memo = {}, onStack = {};
+    function depth(nd) {
+      if (memo[nd.id] != null) return memo[nd.id];
+      if (onStack[nd.id]) return t.nodes.length;
+      onStack[nd.id] = true;
+      var best = 0;
+      t.choicesOf(nd).forEach(function (c) { best = Math.max(best, 1 + depth(t.byId[c.to])); });
+      onStack[nd.id] = false;
+      memo[nd.id] = Math.min(best, t.nodes.length);
+      return memo[nd.id];
+    }
+    return depth(t.nodes[0]);
+  }
+
+  // calculator: reto = { values: [texto por resultado], correct, attempts };
+  // calculadora libre = { used: true }. El runtime ya sanea cada valor a
+  // dígitos y , . + - (máx. 16), así que es ASCII acotado. Payload del reto:
+  // packChunks([flag correct ('1'/'0'/'' si no se ha comprobado), attempts,
+  // ...valores]); el de la calculadora libre es 'u'.
+  function calcResults(it) {
+    return ((it.config || {}).results || []).filter(function (r) { return r && r.id; });
+  }
+  TYPE_CODECS.calculator = {
+    encode: function (detail, it) {
+      if (!detail) return null;
+      if (detail.used) return 'u';
+      if (!detail.values || detail.values.length !== calcResults(it).length) return null;
+      var vals = detail.values.map(function (v) { return String(v || '').replace(/[^0-9.,+-]/g, '').slice(0, 16); });
+      var flag = typeof detail.correct === 'boolean' ? (detail.correct ? '1' : '0') : '';
+      return packChunks([flag, b36(detail.attempts || 0)].concat(vals));
+    },
+    decode: function (payload, it) {
+      if (payload === 'u') return { used: true };
+      var p = unpackChunks(payload);
+      var n = calcResults(it).length;
+      if (!p || p.length !== n + 2) return null;
+      var out = { values: p.slice(2), attempts: fromB36(p[1]) };
+      if (p[0] === '1' || p[0] === '0') out.correct = p[0] === '1';
+      return out;
+    },
+  };
+
   // ---- Envoltorio de detalle: compacto por tipo, con fallback JSON --------
   // Cada segmento empieza por un carácter de modo: '' (vacío) = sin detalle,
   // '0' = codec compacto del tipo, '1' = JSON genérico (escapado a ASCII).
@@ -1166,6 +1293,22 @@
         var order = []; for (var p = 0; p < n2; p++) order.push(p);
         return { order: order, solved: false };
       }
+      case 'scenario_steps': {
+        var ss = stepsOf(it);
+        if (!ss.length) return null;
+        return { picks: ss.map(function (x) { return x.options[0].id; }), idx: ss.length, done: true };
+      }
+      case 'decision_tree': {
+        var len = treeLongestPath(it);
+        var path = []; for (var d = 0; d < len; d++) path.push(0);
+        return { path: path, first: 'neutral' };
+      }
+      case 'calculator': {
+        if (cfg.mode === 'tool') return { used: true };
+        var rs = calcResults(it);
+        if (!rs.length) return null;
+        return { values: rs.map(function () { return '-000000000000000'; }), correct: false, attempts: 999 };
+      }
       default:
         return undefined; // tipo sin estimador: lo distingue de null (sin detalle aplicable)
     }
@@ -1228,6 +1371,13 @@
         var rows = Math.min(5, Math.max(2, +cfg.rows || 3));
         return 'puzzle: ' + (cols * rows) + ' piezas';
       }
+      case 'scenario_steps':
+        return 'scenario_steps: ' + stepsOf(it.interaction).length + ' decisiones';
+      case 'decision_tree':
+        return 'decision_tree: recorrido de hasta ' + treeLongestPath(it.interaction) + ' respuestas';
+      case 'calculator':
+        return cfg.mode === 'tool' ? 'calculator: calculadora libre (sin datos)'
+          : 'calculator: ' + calcResults(it.interaction).length + ' resultados × hasta 16 caracteres';
       default:
         return type + ': tipo sin estimador preciso (cota conservadora)';
     }
@@ -1474,6 +1624,8 @@
       collectInteractions: collectInteractions,
       finalQuestions: finalQuestions,
       fingerprint: fingerprint,
+      encodeDetail: encodeDetail,
+      decodeDetail: decodeDetail,
       hasCodec: function (type) { return !!TYPE_CODECS[type]; },
       isExploratoryType: function (type) { return !!EXPLORATORY_TYPES[type]; },
       hasEstimator: function (type) { return worstCaseDetail(type, { config: {}, options: [] }) !== undefined; },

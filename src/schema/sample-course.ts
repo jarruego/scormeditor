@@ -5,7 +5,7 @@ import type { Course } from './course.schema'
  * arranque en frío). Autorreferencial a propósito: no trata de ningún tema
  * ajeno, sino del propio editor — cada pantalla demuestra en vivo el tipo de
  * pantalla o de interacción del que habla. Cubre los 10 tipos de pantalla y
- * las 23 interacciones. Generado con un script de validación (parseCourse +
+ * las 26 interacciones. Generado con un script de validación (parseCourse +
  * validateCourse reales) para garantizar que respeta el esquema; al editarlo
  * a mano, mantener esa cobertura completa.
  */
@@ -1466,6 +1466,361 @@ export const sampleCourse: Course = {
                 "scored": true,
                 "points": 1,
                 "attempts": 1,
+                "retries": 0,
+                "source_refs": []
+              },
+              "interaction_layout": "bottom",
+              "required": true,
+              "min_time_seconds": 0,
+              "audio_src": "",
+              "transcript": "",
+              "transcript_hidden": false,
+              "accessibility": {
+                "alt_text_ok": true,
+                "keyboard_ok": true,
+                "contrast_ok": true
+              },
+              "scorm": {
+                "counts_for_completion": true
+              },
+              "editor_notes": [],
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
+            },
+            {
+              "id": "s302a",
+              "type": "content",
+              "title": "Caso por decisiones",
+              "objective": "Reconocer las interacciones que preguntan y corrigen automáticamente.",
+              "student_text": "Un **caso por decisiones** encadena varias decisiones sobre la misma situación. Cada respuesta tiene su comentario y, al final, un resumen con los aciertos. Si puntúa, la nota es proporcional.",
+              "source_refs": [],
+              "visual_resource": {
+                "kind": "none",
+                "src": "",
+                "alt": "",
+                "tracks": [],
+                "has_voice": false,
+                "layout": "top",
+                "media_width": "50",
+                "media_align": "left",
+                "media_full": false,
+                "media_ratio": "16x9"
+              },
+              "interaction": {
+                "id": "s302a_i",
+                "type": "scenario_steps",
+                "prompt": "Te toca publicar un curso nuevo en el campus.",
+                "instructions": "Elige una opción en cada paso; verás el comentario antes de seguir.",
+                "options": [],
+                "config": {
+                  "scenario": "Has terminado un curso en SCORMEditor y hay que subirlo hoy al campus Moodle.",
+                  "steps": [
+                    {
+                      "id": "st-1",
+                      "text": "Antes de exportar, abres **Validación** y ves un error rojo: una pregunta sin respuesta correcta. ¿Qué haces?",
+                      "options": [
+                        {
+                          "id": "st1-a",
+                          "text": "Lo corrijo antes de exportar.",
+                          "correct": true,
+                          "feedback": "Bien: los errores rojos son fallos reales que el alumno notaría."
+                        },
+                        {
+                          "id": "st1-b",
+                          "text": "Exporto igual, ya lo arreglaré.",
+                          "correct": false,
+                          "feedback": "Un error rojo llega al alumno tal cual: esa pregunta no se podría acertar."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "st-2",
+                      "text": "Ya sin errores, ¿qué botón usas para el campus?",
+                      "options": [
+                        {
+                          "id": "st2-a",
+                          "text": "Exportar SCORM ZIP.",
+                          "correct": true,
+                          "feedback": "Exacto: es el paquete que entiende Moodle."
+                        },
+                        {
+                          "id": "st2-b",
+                          "text": "Guardar el proyecto .scormproj.",
+                          "correct": false,
+                          "feedback": "El .scormproj es tu archivo de trabajo, no un paquete para el campus."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "st-3",
+                      "text": "En Moodle, ¿cómo lo añades al curso?",
+                      "options": [
+                        {
+                          "id": "st3-a",
+                          "text": "Como actividad «Paquete SCORM».",
+                          "correct": true,
+                          "feedback": "Correcto: así Moodle registra el progreso y la nota."
+                        },
+                        {
+                          "id": "st3-b",
+                          "text": "Como recurso «Archivo».",
+                          "correct": false,
+                          "feedback": "Como archivo se descargaría, pero no se registraría ni el progreso ni la nota."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "feedback": {
+                  "correct": "Correcto.",
+                  "incorrect": "Revisa el comentario de esta decisión.",
+                  "explanation": ""
+                },
+                "scored": true,
+                "points": 3,
+                "attempts": 1,
+                "retries": 0,
+                "source_refs": []
+              },
+              "interaction_layout": "bottom",
+              "required": true,
+              "min_time_seconds": 0,
+              "audio_src": "",
+              "transcript": "",
+              "transcript_hidden": false,
+              "accessibility": {
+                "alt_text_ok": true,
+                "keyboard_ok": true,
+                "contrast_ok": true
+              },
+              "scorm": {
+                "counts_for_completion": true
+              },
+              "editor_notes": [],
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
+            },
+            {
+              "id": "s302b",
+              "type": "content",
+              "title": "Conversación ramificada",
+              "objective": "Reconocer las interacciones que preguntan y corrigen automáticamente.",
+              "student_text": "Una **conversación ramificada** simula un diálogo: cada respuesta lleva a una situación distinta y a un final bueno, mejorable o neutro. Cuenta el primer final al que llega el alumno.",
+              "source_refs": [],
+              "visual_resource": {
+                "kind": "none",
+                "src": "",
+                "alt": "",
+                "tracks": [],
+                "has_voice": false,
+                "layout": "top",
+                "media_width": "50",
+                "media_align": "left",
+                "media_full": false,
+                "media_ratio": "16x9"
+              },
+              "interaction": {
+                "id": "s302b_i",
+                "type": "decision_tree",
+                "prompt": "Una compañera te pide ayuda con su primer curso.",
+                "instructions": "Elige qué responder en cada momento. Puedes deshacer la última respuesta antes de llegar al final.",
+                "options": [],
+                "config": {
+                  "characters": [
+                    {
+                      "id": "p-lucia",
+                      "name": "Lucía",
+                      "role": "coordinadora de formación"
+                    }
+                  ],
+                  "nodes": [
+                    {
+                      "id": "n1",
+                      "speaker": "p-lucia",
+                      "text": "Tengo el temario en un PDF y quiero convertirlo en un curso para el campus. ¿Por dónde empiezo?",
+                      "choices": [
+                        {
+                          "id": "c1",
+                          "text": "Créalo desde cero en el editor, pantalla a pantalla.",
+                          "to": "n2"
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Pásaselo al GPT generador y luego revisa el borrador en el editor.",
+                          "to": "n3"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "n2",
+                      "speaker": "p-lucia",
+                      "text": "Son 80 páginas… ¿no hay una forma más rápida?",
+                      "choices": [
+                        {
+                          "id": "c3",
+                          "text": "Sí: el GPT genera un borrador que luego importas y revisas.",
+                          "to": "n3"
+                        },
+                        {
+                          "id": "c4",
+                          "text": "No, toca hacerlo a mano.",
+                          "to": "n4"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "n3",
+                      "speaker": "p-lucia",
+                      "text": "¡Perfecto! Y al importarlo, ¿lo subo ya al campus?",
+                      "choices": [
+                        {
+                          "id": "c5",
+                          "text": "Primero repasa la Validación y la Vista estudiante.",
+                          "to": "n5"
+                        },
+                        {
+                          "id": "c6",
+                          "text": "Sí, el GPT ya lo deja listo.",
+                          "to": "n6"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "n4",
+                      "speaker": "p-lucia",
+                      "text": "Vaya, entonces no llegaré a tiempo.",
+                      "choices": [],
+                      "outcome": "bad",
+                      "feedback": "El GPT generador existe justo para esto: convierte el documento fuente en un borrador de curso."
+                    },
+                    {
+                      "id": "n5",
+                      "speaker": "p-lucia",
+                      "text": "Entendido, lo reviso y te aviso.",
+                      "choices": [],
+                      "outcome": "good",
+                      "feedback": "El borrador del GPT ahorra horas, pero la revisión humana sigue siendo imprescindible."
+                    },
+                    {
+                      "id": "n6",
+                      "speaker": "p-lucia",
+                      "text": "Lo subo ya, ¡gracias!",
+                      "choices": [],
+                      "outcome": "bad",
+                      "feedback": "El borrador puede traer erratas o pantallas pendientes de revisión: hay que repasarlo antes de publicar."
+                    }
+                  ]
+                },
+                "feedback": {
+                  "correct": "Correcto.",
+                  "incorrect": "Revisa el comentario del final.",
+                  "explanation": ""
+                },
+                "scored": true,
+                "points": 1,
+                "attempts": 1,
+                "retries": 0,
+                "source_refs": []
+              },
+              "interaction_layout": "bottom",
+              "required": true,
+              "min_time_seconds": 0,
+              "audio_src": "",
+              "transcript": "",
+              "transcript_hidden": false,
+              "accessibility": {
+                "alt_text_ok": true,
+                "keyboard_ok": true,
+                "contrast_ok": true
+              },
+              "scorm": {
+                "counts_for_completion": true
+              },
+              "editor_notes": [],
+              "status": "ok",
+              "review": {
+                "flagged": false,
+                "note": ""
+              }
+            },
+            {
+              "id": "s302c",
+              "type": "content",
+              "title": "Reto numérico",
+              "objective": "Reconocer las interacciones que preguntan y corrigen automáticamente.",
+              "student_text": "Un **reto numérico** da unos datos y pide calcular uno o varios resultados. Se corrige con un pequeño margen de redondeo y admite coma decimal. También existe un modo de calculadora libre, sin nota.",
+              "source_refs": [],
+              "visual_resource": {
+                "kind": "none",
+                "src": "",
+                "alt": "",
+                "tracks": [],
+                "has_voice": false,
+                "layout": "top",
+                "media_width": "50",
+                "media_align": "left",
+                "media_full": false,
+                "media_ratio": "16x9"
+              },
+              "interaction": {
+                "id": "s302c_i",
+                "type": "calculator",
+                "prompt": "Calcula cuánto dura el curso a partir de estos datos.",
+                "instructions": "Escribe el resultado (puedes usar coma decimal) y pulsa Comprobar.",
+                "options": [],
+                "config": {
+                  "mode": "challenge",
+                  "variables": [
+                    {
+                      "id": "pantallas",
+                      "label": "Pantallas de contenido",
+                      "unit": "",
+                      "value": 24
+                    },
+                    {
+                      "id": "min_pantalla",
+                      "label": "Minutos por pantalla",
+                      "unit": "min",
+                      "value": 3
+                    },
+                    {
+                      "id": "test",
+                      "label": "Duración del test final",
+                      "unit": "min",
+                      "value": 15
+                    }
+                  ],
+                  "results": [
+                    {
+                      "id": "total",
+                      "label": "Duración total",
+                      "formula": "pantallas * min_pantalla + test",
+                      "unit": "min",
+                      "decimals": 0
+                    },
+                    {
+                      "id": "horas",
+                      "label": "En horas",
+                      "formula": "total / 60",
+                      "unit": "h",
+                      "decimals": 2
+                    }
+                  ]
+                },
+                "feedback": {
+                  "correct": "¡Cuentas exactas!",
+                  "incorrect": "Revisa la operación: pantallas × minutos, más el test.",
+                  "explanation": ""
+                },
+                "scored": true,
+                "points": 1,
+                "attempts": 2,
                 "retries": 0,
                 "source_refs": []
               },

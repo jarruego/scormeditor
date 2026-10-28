@@ -214,6 +214,17 @@ details.ed-tree-unit[open] > summary .ed-unit-name::before { transform: rotate(4
 .ed-recipe.is-dup { opacity: .55; }
 .ed-recipe.is-current { border-color: var(--c-primary); box-shadow: 0 0 0 1px var(--c-primary) inset; background: #f6f8ff; }
 .ed-recipe-flag { color: #d09a00; margin-left: .25rem; }
+/* Nombres y fórmulas del reto numérico (calculator) */
+.ed-mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+/* Fila compacta en una sola línea (resultados del reto numérico): los inputs
+   reparten el ancho en vez de ocupar cada uno el 100 % y saltar de línea. */
+.ed-row-tight { display: flex; gap: .5rem; align-items: center; }
+.ed-row-tight > input { flex: 1 1 0; min-width: 0; width: auto; }
+.ed-row-tight > .ed-fixed { flex: 0 0 auto; }
+/* Etiqueta «Nueva» (recetas con `since` reciente, ver schema/newBadge.ts) */
+.ed-new-badge { display: inline-block; margin-left: .35rem; padding: 0 .4rem; border-radius: 999px;
+  background: #e6f6ee; color: #137a45; border: 1px solid #9fd8b8; font-size: .66rem; font-weight: 700;
+  letter-spacing: .02em; text-transform: uppercase; vertical-align: 1px; }
 /* Tarjeta discreta («En blanco», «Pendiente»): chip neutro. */
 .ed-recipe-blank .ed-recipe-ico { background: var(--c-bg); color: var(--c-muted); }
 /* Cabecera de la interacción: tipo actual · Cambiar tipo… · posición · eliminar */

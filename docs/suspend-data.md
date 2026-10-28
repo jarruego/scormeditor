@@ -178,6 +178,12 @@ ASCII; sobrestimaba el peor caso real varias veces):
   incorrectas al límite de su `maxlength` (`Math.min(120, Math.max(40,
   respuesta.length + 10))`, nunca por debajo de la propia respuesta
   correcta).
+- **`calculator`** (reto): cada valor escrito ya llega saneado a `[0-9.,+-]`
+  y recortado a 16 caracteres — peor caso, 16 por resultado. La calculadora
+  libre solo guarda `{used: true}`.
+- **`decision_tree`**: el peor caso de `path` es el camino más largo desde el
+  primer nodo (`treeLongestPath`, DFS con memo); el grafo no admite ciclos
+  (`DT_CYCLE`) y aun así se acota a nº de nodos.
 - **`crossword`**: el número de casillas es EXACTO, no una cota aproximada —
   `crosswordFilledCells` reproduce el mismo algoritmo de colocación
   determinista de `interactions.js` (sin PRNG: ordena por longitud
@@ -241,10 +247,12 @@ las claves que falten — sin pérdida de progreso.
 
 ## Verificación
 `scripts/test-state-codec.ts` (`npx tsx scripts/test-state-codec.ts`) comprueba,
-contra el curso demo (`sample-course.ts`, que cubre los 23 tipos de
+contra el curso demo (`sample-course.ts`, que cubre los 26 tipos de
 interacción):
 - Troceado ciego y round-trip completo por tipo (incluidas las interacciones
-  sin resolver todavía).
+  sin resolver todavía). Como ese round-trip deja una de cada tres pendientes,
+  además cada interacción del demo pasa sola por `encodeDetail`/`decodeDetail`
+  (expuestos en `_internal`): debe usar su codec compacto, no el JSON genérico.
 - Migración del formato antiguo (JSON por ids), sin pérdida.
 - Descarte seguro ante huella desconocida (sin entrada en `layouts`).
 - Remapeo real contra `layouts`: reordenar e insertar pantallas sin perder

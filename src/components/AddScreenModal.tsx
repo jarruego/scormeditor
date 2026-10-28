@@ -6,6 +6,7 @@ import type { ScreenInput } from '../schema/course.schema'
 import { INTRO_CONTAINER_ID, OUTRO_CONTAINER_ID, moduleClosingContainerId } from '../schema/traverse'
 import { RECIPE_GROUPS, RECIPE_GROUP_LABELS, RECIPE_GROUP_HINTS, RECIPE_GROUP_COLORS, SCREEN_RECIPES, type ScreenRecipe } from '../schema/screenRecipes'
 import { screenTypeLabel, type CoverLevel } from '../schema/labels'
+import { isNewSince } from '../schema/newBadge'
 import { SettingsWindow } from './SettingsModal'
 import { Icon } from './Icon'
 
@@ -145,7 +146,10 @@ export function AddScreenModal({ containerId, atIndex, onClose }: { containerId:
                       style={{ '--ico-c': RECIPE_GROUP_COLORS[r.group] } as React.CSSProperties}>
                       <Icon name={r.icon} size={18} /></span>
                     <span className="ed-recipe-text">
-                      <span className="ed-recipe-name">{recipeLabel(r)}</span>
+                      <span className="ed-recipe-name">
+                        {recipeLabel(r)}
+                        {isNewSince(r.since) && <span className="ed-new-badge">Nueva</span>}
+                      </span>
                       <span className="ed-recipe-desc">{r.description}</span>
                     </span>
                   </button>

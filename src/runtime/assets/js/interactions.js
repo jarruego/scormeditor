@@ -791,6 +791,487 @@
     return { result: function () { return { completed: done, scored: !!data.scored, correct: correct, score: correct ? (data.points || 1) : 0, maxScore: data.points || 1 }; } };
   });
 
+  // Resumen al terminar una práctica de varios pasos: «X/N», anillo con el
+  // porcentaje (conic-gradient sobre --pct) y un mensaje según el acierto.
+  function summaryCard(ok, total) {
+    var pct = Math.round(ok / Math.max(1, total) * 100);
+    var msg = pct === 100 ? '¡Perfecto!' : pct >= 70 ? 'Muy bien' : pct >= 50 ? 'Vas bien: repasa los comentarios de los fallos'
+      : 'Repasa los comentarios de cada paso';
+    return '<div class="me-summary" role="status">' +
+      '<div class="me-summary-ring" style="--pct:' + pct + '"><strong>' + ok + '/' + total + '</strong></div>' +
+      '<div><p class="me-summary-msg">' + msg + '</p><p class="me-summary-sub">' + pct + ' % de aciertos</p></div></div>';
+  }
+
+  // --- Caso por decisiones (scenario_steps) ----------------------------------
+  // Un caso que avanza decisión a decisión: cada paso muestra su situación y
+  // sus opciones (barajadas, deterministas por id); al elegir se marca la
+  // opción y sale su comentario en línea, y «Siguiente decisión» avanza. Una
+  // respuesta por paso (la primera cuenta, sin `attempts`). Al terminar,
+  // resumen de aciertos. Crédito parcial: score = points × aciertos/pasos.
+  // Estado { picks: [id de opción | null, por paso en orden de autor], idx
+  // (paso a la vista; == nº de pasos = resumen), done }. `done` se conserva al
+  // «Repetir» (solo sin nota) para no volver a bloquear la navegación.
+  register('scenario_steps', function (el, data, ctx) {
+    var cfg = data.config || {};
+    var steps = (cfg.steps || []).filter(function (s) { return s && (s.options || []).length; });
+    var n = steps.length;
+    var st = ctx.state || {};
+    function optOf(step, id) { return (step.options || []).filter(function (o) { return o.id === id; })[0] || null; }
+    var picks = steps.map(function (s, i) { var id = st.picks && st.picks[i]; return id && optOf(s, id) ? id : null; });
+    var idx = Math.max(0, Math.min(typeof st.idx === 'number' ? st.idx : 0, n));
+    var done = !!st.done || (n > 0 && picks.every(Boolean));
+    function hits() { return picks.filter(function (id, i) { var o = id && optOf(steps[i], id); return !!(o && o.correct); }).length; }
+    function save() { ctx.save({ picks: picks.slice(), idx: idx, done: done }); }
+
+    function paint() {
+      var html = header(data);
+      if (cfg.scenario) html += '<div class="me-scenario">' + rich(cfg.scenario) + '</div>';
+      if (!n) { el.innerHTML = html; return; }
+      html += '<div class="me-steps" role="group" aria-label="Decisiones del caso">' +
+        '<ol class="me-steps-dots" aria-hidden="true">';
+      steps.forEach(function (s, i) {
+        var o = picks[i] && optOf(s, picks[i]);
+        html += '<li class="' + (o ? (o.correct ? 'is-ok' : 'is-bad') : '') + (i === idx ? ' is-current' : '') + '"></li>';
+      });
+      html += '</ol>';
+      if (idx >= n) {
+        html += summaryCard(hits(), n);
+        if (!data.scored) html += '<button type="button" class="me-btn me-steps-restart">↺ Repetir el caso</button>';
+      } else {
+        var step = steps[idx];
+        var picked = picks[idx] && optOf(step, picks[idx]);
+        html += '<div class="me-step">' +
+          '<p class="me-step-count">Decisión ' + (idx + 1) + ' de ' + n + '</p>' +
+          '<div class="me-step-text">' + block(step.text) + '</div><div class="me-choices">';
+        shuffle(step.options, data.id + ':' + (step.id || idx)).forEach(function (o) {
+          var mark = picked ? (o.id === picked.id ? (o.correct ? ' is-right' : ' is-wrong') : '') : '';
+          html += '<button type="button" class="me-btn me-option' + mark + '" data-id="' + esc(o.id) + '"' + (picked ? ' disabled' : '') + '>' + rich(o.text) + '</button>';
+        });
+        html += '</div>';
+        if (picked) {
+          var fb = picked.feedback || (picked.correct ? data.feedback.correct : data.feedback.incorrect);
+          html += '<div class="me-feedback ' + (picked.correct ? 'is-ok' : 'is-error') + '" role="status">' +
+            '<strong>' + (picked.correct ? '✔ ' : '✖ ') + rich(fb) + '</strong></div>' +
+            '<button type="button" class="me-btn me-primary me-steps-next">' + (idx === n - 1 ? 'Ver el resumen' : 'Siguiente decisión') + ' →</button>';
+        }
+        html += '</div>';
+      }
+      el.innerHTML = html + '</div>';
+    }
+
+    el.addEventListener('click', function (e) {
+      var opt = e.target.closest('.me-option');
+      if (opt && el.contains(opt) && idx < n && !picks[idx]) {
+        picks[idx] = opt.getAttribute('data-id');
+        if (picks.every(Boolean)) done = true;
+        var o = optOf(steps[idx], picks[idx]);
+        paint();
+        save();
+        ctx.announce(o && o.correct ? 'Decisión correcta.' : 'Decisión mejorable.');
+        var next = el.querySelector('.me-steps-next'); if (next) next.focus();
+        return;
+      }
+      if (e.target.closest('.me-steps-next')) {
+        idx++;
+        paint();
+        save();
+        var first = el.querySelector('.me-option:not([disabled])') || el.querySelector('.me-summary');
+        if (first && first.focus) first.focus();
+        if (idx >= n) ctx.announce('Caso terminado: ' + hits() + ' de ' + n + ' decisiones acertadas.');
+        return;
+      }
+      if (e.target.closest('.me-steps-restart')) {
+        picks = steps.map(function () { return null; });
+        idx = 0;
+        paint();
+        save();
+      }
+    });
+    paint();
+
+    return {
+      result: function () {
+        var pts = data.points || 1;
+        if (!n) return { completed: true, scored: false, correct: false, score: 0, maxScore: pts };
+        var ok = hits();
+        return { completed: done, scored: !!data.scored, correct: done && ok === n, score: done ? pts * ok / n : 0, maxScore: pts };
+      },
+    };
+  });
+
+  // --- Conversación ramificada (decision_tree) -------------------------------
+  // Diálogo tipo chat: cada nodo es lo que dice un personaje (`speaker`, id de
+  // `config.characters`) y sus respuestas (`choices`, cada una `to` otro nodo).
+  // Un nodo sin respuestas válidas es un FINAL con `outcome` good/bad/neutral y
+  // un comentario (`feedback`). Empieza en el primer nodo. Antes de llegar a un
+  // final se puede deshacer la última respuesta; al llegar, «Volver a empezar»
+  // permite explorar otros caminos, pero la nota la fija el PRIMER final
+  // alcanzado (`first`), como un intento único. Estado { path: [índice de
+  // respuesta en cada nodo recorrido], first: 'good'|'bad'|'neutral'|null }.
+  // El grafo no admite ciclos (validador DT_CYCLE); aun así, el recorrido se
+  // corta a nº de nodos pasos para no colgarse con un proyecto mal formado.
+  register('decision_tree', function (el, data, ctx) {
+    var cfg = data.config || {};
+    var nodes = cfg.nodes || [];
+    var byId = {};
+    nodes.forEach(function (nd) { if (nd && nd.id) byId[nd.id] = nd; });
+    var chars = {};
+    (cfg.characters || []).forEach(function (c) { if (c && c.id) chars[c.id] = c; });
+    function choicesOf(nd) { return (nd.choices || []).filter(function (c) { return c && byId[c.to]; }); }
+    var start = nodes[0] || null;
+    var st = ctx.state || {};
+    var first = st.first === 'good' || st.first === 'bad' || st.first === 'neutral' ? st.first : null;
+    var path = [];
+    (function replayPath() {
+      var cur = start;
+      (st.path || []).some(function (k) {
+        var ch = cur && choicesOf(cur)[k];
+        if (!ch || path.length >= nodes.length) return true;
+        path.push(k);
+        cur = byId[ch.to];
+        return false;
+      });
+    })();
+    // Nodos recorridos según `path` (el último es el actual).
+    function trail() {
+      var out = [start], cur = start;
+      path.forEach(function (k) { cur = byId[choicesOf(cur)[k].to]; out.push(cur); });
+      return out;
+    }
+    var OUTCOME = {
+      good: { cls: 'is-good', icon: '✔', label: 'Buen final' },
+      bad: { cls: 'is-bad', icon: '✖', label: 'Final mejorable' },
+      neutral: { cls: 'is-neutral', icon: '●', label: 'Fin de la conversación' },
+    };
+    function outcomeOf(nd) { return OUTCOME[nd.outcome] ? nd.outcome : 'neutral'; }
+    function bubble(nd) {
+      if (!String(nd.text || '').trim()) return '';
+      var who = chars[nd.speaker];
+      return '<li class="me-dt-msg">' + (who ? '<span class="me-dt-who">' + esc(who.name || '') +
+        (who.role ? ' <small>· ' + esc(who.role) + '</small>' : '') + '</span>' : '') +
+        '<div class="me-dt-text">' + block(nd.text) + '</div></li>';
+    }
+
+    function paint() {
+      var html = header(data);
+      if (!start) { el.innerHTML = html; return; }
+      var t = trail();
+      var cur = t[t.length - 1];
+      var atEnd = !choicesOf(cur).length;
+      html += '<ol class="me-dt-chat" aria-live="polite">';
+      t.forEach(function (nd, i) {
+        html += bubble(nd);
+        if (i < path.length) html += '<li class="me-dt-msg is-me"><span class="me-dt-who">Tú</span><div class="me-dt-text">' + rich(choicesOf(nd)[path[i]].text) + '</div></li>';
+      });
+      if (atEnd) {
+        var oc = OUTCOME[outcomeOf(cur)];
+        html += '<li class="me-dt-end ' + oc.cls + '" role="status"><strong>' + oc.icon + ' ' + oc.label + '</strong>' +
+          (cur.feedback ? '<div class="me-dt-text">' + block(cur.feedback) + '</div>' : '') + '</li>';
+      }
+      html += '</ol>';
+      if (!atEnd) {
+        html += '<div class="me-dt-choices" role="group" aria-label="¿Qué respondes?">';
+        choicesOf(cur).forEach(function (ch, k) {
+          html += '<button type="button" class="me-btn me-option me-dt-choice" data-k="' + k + '">' + rich(ch.text) + '</button>';
+        });
+        html += '</div>';
+      }
+      html += '<div class="me-dt-foot">' +
+        (!atEnd && path.length ? '<button type="button" class="me-btn me-dt-undo">↶ Deshacer la última respuesta</button>' : '') +
+        (atEnd ? '<button type="button" class="me-btn me-dt-restart">↺ Volver a empezar</button>' : '') +
+        (atEnd && first && t.length > 1 && data.scored ? '<span class="me-dt-note">Cuenta el primer final al que llegaste.</span>' : '') +
+        '</div>';
+      el.innerHTML = html;
+    }
+
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('.me-dt-choice');
+      if (b && el.contains(b)) {
+        path.push(+b.getAttribute('data-k'));
+        var t = trail(), cur = t[t.length - 1];
+        var ended = !choicesOf(cur).length;
+        if (ended && !first) first = outcomeOf(cur);
+        paint();
+        ctx.save({ path: path.slice(), first: first });
+        if (ended) ctx.announce(OUTCOME[outcomeOf(cur)].label + '.');
+        var last = el.querySelector('.me-dt-chat').lastElementChild;
+        if (last && last.scrollIntoView) last.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        var nextBtn = el.querySelector('.me-dt-choice') || el.querySelector('.me-dt-restart');
+        if (nextBtn) nextBtn.focus({ preventScroll: true });
+        return;
+      }
+      if (e.target.closest('.me-dt-undo')) {
+        path.pop();
+        paint();
+        ctx.save({ path: path.slice(), first: first });
+        var c0 = el.querySelector('.me-dt-choice'); if (c0) c0.focus();
+        return;
+      }
+      if (e.target.closest('.me-dt-restart')) {
+        path = [];
+        paint();
+        ctx.save({ path: [], first: first });
+        var c1 = el.querySelector('.me-dt-choice'); if (c1) c1.focus();
+      }
+    });
+    paint();
+
+    return {
+      result: function () {
+        var pts = data.points || 1;
+        if (!start) return { completed: true, scored: false, correct: false, score: 0, maxScore: pts };
+        return { completed: !!first, scored: !!data.scored, correct: first === 'good', score: first === 'good' ? pts : 0, maxScore: pts };
+      },
+    };
+  });
+
+  // --- Fórmulas del reto numérico --------------------------------------------
+  // Evaluador SEGURO (descenso recursivo, sin eval/Function): + - * / ^,
+  // paréntesis, números con punto decimal, identificadores (variables y
+  // resultados anteriores) y funciones round(x[, decimales]) min max abs sqrt
+  // floor ceil. Lanza Error ante una fórmula mal escrita, un valor que falta o
+  // un resultado no finito (división por cero). Duplicado a propósito en
+  // src/calc/formula.ts (el runtime no comparte módulos con el editor): si
+  // cambia la gramática, cambiar los dos.
+  var CALC_FN = {
+    round: function (x, d) { var f = Math.pow(10, d || 0); return Math.round(x * f) / f; },
+    min: Math.min, max: Math.max, abs: Math.abs, sqrt: Math.sqrt, floor: Math.floor, ceil: Math.ceil,
+  };
+  function evalFormula(src, vars) {
+    var s = String(src == null ? '' : src), i = 0;
+    function fail(msg) { throw new Error(msg); }
+    function ws() { while (i < s.length && /\s/.test(s.charAt(i))) i++; }
+    function expr() {
+      var v = term();
+      for (;;) {
+        ws();
+        var c = s.charAt(i);
+        if (c === '+') { i++; v += term(); } else if (c === '-') { i++; v -= term(); } else return v;
+      }
+    }
+    function term() {
+      var v = unary();
+      for (;;) {
+        ws();
+        var c = s.charAt(i);
+        if (c === '*') { i++; v *= unary(); } else if (c === '/') { i++; v /= unary(); } else return v;
+      }
+    }
+    function unary() {
+      ws();
+      if (s.charAt(i) === '-') { i++; return -unary(); }
+      if (s.charAt(i) === '+') { i++; return unary(); }
+      return power();
+    }
+    function power() {
+      var b = atom();
+      ws();
+      if (s.charAt(i) === '^') { i++; return Math.pow(b, unary()); }
+      return b;
+    }
+    function atom() {
+      ws();
+      var rest = s.slice(i), m;
+      if ((m = /^(\d+\.?\d*|\.\d+)/.exec(rest))) { i += m[0].length; return parseFloat(m[0]); }
+      if ((m = /^[A-Za-z_][A-Za-z0-9_]*/.exec(rest))) {
+        var name = m[0];
+        i += name.length;
+        ws();
+        if (s.charAt(i) === '(') {
+          var key = name.toLowerCase();
+          // Solo funciones PROPIAS de CALC_FN: nunca heredadas (constructor, toString…).
+          var fn = Object.prototype.hasOwnProperty.call(CALC_FN, key) ? CALC_FN[key] : null;
+          if (!fn) fail('Función desconocida: ' + name);
+          i++;
+          var args = [expr()];
+          ws();
+          while (s.charAt(i) === ',') { i++; args.push(expr()); ws(); }
+          if (s.charAt(i) !== ')') fail('Falta un paréntesis de cierre');
+          i++;
+          return fn.apply(null, args);
+        }
+        if (!Object.prototype.hasOwnProperty.call(vars, name)) fail('Nombre desconocido: ' + name);
+        var v = vars[name];
+        if (typeof v !== 'number' || !isFinite(v)) fail('Falta el valor de ' + name);
+        return v;
+      }
+      if (s.charAt(i) === '(') {
+        i++;
+        var inner = expr();
+        ws();
+        if (s.charAt(i) !== ')') fail('Falta un paréntesis de cierre');
+        i++;
+        return inner;
+      }
+      fail(i >= s.length ? 'La fórmula está incompleta' : 'Carácter inesperado: ' + s.charAt(i));
+    }
+    var out = expr();
+    ws();
+    if (i < s.length) fail('Carácter inesperado: ' + s.charAt(i));
+    if (typeof out !== 'number' || !isFinite(out)) fail('El resultado no es un número válido');
+    return out;
+  }
+  // Número escrito por el alumno: admite coma decimal (y entonces el punto es
+  // separador de miles), espacios y los símbolos € y %. null si no es un número.
+  function parseUserNumber(t) {
+    var s = String(t == null ? '' : t).replace(/[\s€%]/g, '');
+    if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+    if (!/^[-+]?(\d+\.?\d*|\.\d+)$/.test(s)) return null;
+    return parseFloat(s);
+  }
+  function fmtNumber(v, dec) {
+    try { return new Intl.NumberFormat('es-ES', { maximumFractionDigits: dec }).format(v); }
+    catch (e) { return String(Math.round(v * Math.pow(10, dec)) / Math.pow(10, dec)).replace('.', ','); }
+  }
+  function decimalsOf(r) { var d = +r.decimals; return isFinite(d) ? Math.max(0, Math.min(6, Math.round(d))) : 2; }
+
+  // --- Reto numérico (calculator) --------------------------------------------
+  // `config: { mode: 'challenge'|'tool', variables: [{id, label, unit, value}],
+  // results: [{id, label, formula, unit, decimals}] }`. Cada resultado se
+  // calcula en orden y puede usar los anteriores.
+  // - challenge (evaluable, Comprobar + attempts): se muestran los datos y el
+  //   alumno escribe cada resultado. Acierta si se desvía como mucho media
+  //   unidad del último decimal pedido o un 0,5 % (lo mayor: redondear a
+  //   menos decimales no penaliza). Al resolverse se muestra la solución de
+  //   los fallados. Estado { values: [texto saneado por resultado], correct,
+  //   attempts } — solo dígitos y , . + - (ASCII acotado, ver codec).
+  // - tool (informativa): el alumno escribe los datos y ve los resultados al
+  //   momento. Completa al calcular todo una vez (`{ used: true }`).
+  register('calculator', function (el, data, ctx) {
+    var cfg = data.config || {};
+    var vars = (cfg.variables || []).filter(function (v) { return v && v.id; });
+    var results = (cfg.results || []).filter(function (r) { return r && r.id; });
+    var tool = cfg.mode === 'tool';
+    var st = ctx.state || {};
+    // Siempre una celda (vacía si no hay unidad): la rejilla de .me-calc-row cuenta con ella.
+    function unit(u) { return ' <span class="me-calc-unit">' + esc(u || '') + '</span>'; }
+    function compute(values) {
+      var scope = {}, out = {};
+      vars.forEach(function (v) { scope[v.id] = values[v.id]; });
+      results.forEach(function (r) {
+        try { out[r.id] = evalFormula(r.formula, scope); } catch (e) { out[r.id] = null; }
+        scope[r.id] = out[r.id];
+      });
+      return out;
+    }
+
+    if (tool) {
+      var used = !!st.used;
+      var html = header(data) + '<div class="me-calc is-tool"><div class="me-calc-in">';
+      vars.forEach(function (v, i) {
+        html += '<label class="me-calc-row"><span class="me-calc-label">' + rich(v.label || v.id) + '</span>' +
+          '<input type="text" inputmode="decimal" class="me-calc-input" data-v="' + i + '" maxlength="16" value="' +
+          (typeof v.value === 'number' ? esc(fmtNumber(v.value, 6)) : '') + '">' + unit(v.unit) + '</label>';
+      });
+      html += '</div><div class="me-calc-out" aria-live="polite">';
+      results.forEach(function (r, i) {
+        html += '<div class="me-calc-row"><span class="me-calc-label">' + rich(r.label || r.id) + '</span>' +
+          '<output class="me-calc-value" data-r="' + i + '">—</output>' + unit(r.unit) + '</div>';
+      });
+      el.innerHTML = html + '</div></div>';
+      var inputs = [].slice.call(el.querySelectorAll('.me-calc-input'));
+      function refresh(fromUser) {
+        var values = {}, complete = true;
+        inputs.forEach(function (inp, i) {
+          var x = parseUserNumber(inp.value);
+          values[vars[i].id] = x;
+          if (x === null) complete = false;
+        });
+        var out = compute(values);
+        results.forEach(function (r, i) {
+          var o = el.querySelector('.me-calc-value[data-r="' + i + '"]');
+          o.textContent = out[r.id] === null ? '—' : fmtNumber(out[r.id], decimalsOf(r));
+        });
+        if (fromUser && complete && !used) { used = true; ctx.save({ used: true }); }
+      }
+      el.addEventListener('input', function () { refresh(true); });
+      refresh(false);
+      return { result: function () { return { completed: used, scored: false, correct: false, score: 0, maxScore: data.points || 1 }; } };
+    }
+
+    // --- Modo reto ---
+    var given = {};
+    vars.forEach(function (v) { given[v.id] = typeof v.value === 'number' ? v.value : +v.value; });
+    var expected = compute(given);
+    var maxAtt = attemptsOf(data);
+    var h = header(data) + '<div class="me-calc"><div class="me-calc-data"><p class="me-calc-title">Datos</p><dl>';
+    vars.forEach(function (v) {
+      h += '<div><dt>' + rich(v.label || v.id) + '</dt><dd>' + esc(fmtNumber(given[v.id], 6)) + unit(v.unit) + '</dd></div>';
+    });
+    h += '</dl></div><div class="me-calc-in">';
+    results.forEach(function (r, i) {
+      h += '<label class="me-calc-row"><span class="me-calc-label">' + rich(r.label || r.id) + '</span>' +
+        '<input type="text" inputmode="decimal" class="me-calc-input" data-r="' + i + '" maxlength="16" autocomplete="off">' + unit(r.unit) +
+        '<span class="me-calc-sol" hidden></span></label>';
+    });
+    el.innerHTML = h + '</div></div><button class="me-btn me-check">Comprobar</button><span class="me-attempts" aria-live="polite"></span>' + feedbackBox(data);
+    var boxes = [].slice.call(el.querySelectorAll('.me-calc-input'));
+    var attempts = st.attempts || 0, correct = false, done = false;
+    var updateAttempts = attemptsHint(el, maxAtt);
+    function hasAnswer() { return boxes.every(function (b) { return parseUserNumber(b.value) !== null; }); }
+    var refreshCheck = wireCheck(el, hasAnswer);
+    function clean(t) { return String(t || '').replace(/[^0-9.,+-]/g, '').slice(0, 16); }
+    function isRight(r, txt) {
+      var x = parseUserNumber(txt), exp = expected[r.id];
+      if (x === null || exp === null) return false;
+      var tol = Math.max(0.5 * Math.pow(10, -decimalsOf(r)), Math.abs(exp) * 0.005) + 1e-9;
+      return Math.abs(x - exp) <= tol;
+    }
+    function mark(showSolution) {
+      results.forEach(function (r, i) {
+        var ok = isRight(r, boxes[i].value);
+        boxes[i].classList.remove('is-right', 'is-wrong');
+        boxes[i].classList.add(ok ? 'is-right' : 'is-wrong');
+        var sol = boxes[i].parentNode.querySelector('.me-calc-sol');
+        sol.hidden = !(showSolution && !ok && expected[r.id] !== null);
+        if (!sol.hidden) sol.textContent = 'Solución: ' + fmtNumber(expected[r.id], decimalsOf(r)) + (r.unit ? ' ' + r.unit : '');
+      });
+    }
+    function lock() {
+      boxes.forEach(function (b) { b.readOnly = true; });
+      var cb = el.querySelector('.me-check'); if (cb) cb.disabled = true;
+    }
+    if (Array.isArray(st.values)) {
+      boxes.forEach(function (b, i) { b.value = clean(st.values[i]); });
+      if (typeof st.correct === 'boolean') {
+        correct = st.correct;
+        done = correct || (maxAtt > 0 && attempts >= maxAtt);
+        mark(done);
+        showFeedback(el, correct, data);
+        if (done) lock();
+      }
+    }
+    updateAttempts(attempts, correct);
+    if (!done) refreshCheck(false);
+    el.addEventListener('input', function (e) {
+      if (done || !e.target.classList.contains('me-calc-input')) return;
+      e.target.classList.remove('is-right', 'is-wrong');
+      refreshCheck(true);
+    });
+    function check() {
+      if (done) return { resolved: true, correct: correct };
+      if (!hasAnswer()) { ctx.announce('Escribe un número en cada resultado.'); return { resolved: false, correct: false }; }
+      attempts++;
+      correct = results.every(function (r, i) { return isRight(r, boxes[i].value); });
+      done = correct || (maxAtt > 0 && attempts >= maxAtt);
+      mark(done);
+      showFeedbackModal(el, correct, data, el.querySelector('.me-check'));
+      if (done) lock();
+      updateAttempts(attempts, correct);
+      ctx.save({ values: boxes.map(function (b) { return clean(b.value); }), correct: correct, attempts: attempts });
+      ctx.announce(correct ? 'Resultado correcto.' : (done ? 'Resultado incorrecto. Sin más intentos.' : 'Resultado incorrecto. Inténtalo de nuevo.'));
+      return { resolved: done, correct: correct };
+    }
+    el.querySelector('.me-check').addEventListener('click', check);
+    return {
+      result: function () {
+        return { completed: done, scored: !!data.scored, correct: correct, score: correct ? (data.points || 1) : 0, maxScore: data.points || 1 };
+      },
+      check: check,
+      hasAnswer: hasAnswer,
+    };
+  });
+
   // --- 10. Case practice (reflexión guiada + autoevaluación por rúbrica) ------
   // Sin campo de texto a propósito: la respuesta se piensa o se escribe en papel
   // (no gasta suspend_data); solo se persisten los criterios marcados.
@@ -2444,5 +2925,5 @@
     var f = registry[data.type];
     if (!f) { el.innerHTML = '<p class="me-warn">Tipo de interacción no soportado: ' + esc(data.type) + '</p>'; return { result: function () { return { completed: true, scored: false }; } }; }
     return f(el, data, ctx);
-  }, esc: esc, rich: rich, stripTags: stripTags, asset: assetUrl, shuffle: shuffle, stopItemAudio: stopItemAudio, setItemAudioRate: setItemAudioRate, setItemAudioVolume: setItemAudioVolume, normLetters: normLetters };
+  }, esc: esc, rich: rich, stripTags: stripTags, asset: assetUrl, shuffle: shuffle, stopItemAudio: stopItemAudio, setItemAudioRate: setItemAudioRate, setItemAudioVolume: setItemAudioVolume, normLetters: normLetters, evalFormula: evalFormula, parseUserNumber: parseUserNumber };
 })(window);

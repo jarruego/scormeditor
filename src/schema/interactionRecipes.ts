@@ -112,6 +112,8 @@ export type InteractionRecipe = {
    */
   defaultPrompt?: string
   defaultInstructions?: string
+  /** Fecha ISO de publicación: muestra la etiqueta «Nueva» un tiempo (`newBadge.ts`). */
+  since?: string
 }
 
 const oid = () => `o-${Math.random().toString(36).slice(2, 7)}`
@@ -230,6 +232,63 @@ export const INTERACTION_RECIPES: InteractionRecipe[] = [
     family: 'options',
     defaultPrompt: 'Decide qué harías en esta situación.',
     defaultInstructions: 'Elige una opción; cada una tiene su propio comentario.',
+  },
+  {
+    type: 'scenario_steps',
+    icon: 'steps',
+    description: 'Un caso que avanza decisión a decisión, con comentario en cada paso y resumen final.',
+    group: 'preguntar',
+    gradable: true,
+    supportsAttempts: false,
+    seed: () => ({
+      config: {
+        steps: [
+          { id: oid(), text: '', options: [{ id: oid(), text: '', correct: true }, { id: oid(), text: '' }] },
+        ],
+      },
+    }),
+    defaultPrompt: 'Resuelve el caso tomando una decisión en cada paso.',
+    defaultInstructions: 'Elige una opción en cada paso; verás el comentario antes de seguir.',
+    since: '2026-10-28',
+  },
+  {
+    type: 'decision_tree',
+    icon: 'chat',
+    description: 'Una conversación con personajes donde cada respuesta lleva a una situación distinta.',
+    group: 'preguntar',
+    gradable: true,
+    supportsAttempts: false,
+    seed: () => ({
+      config: {
+        characters: [{ id: oid(), name: '', role: '' }],
+        nodes: [
+          { id: 'n1', speaker: '', text: '', choices: [{ id: oid(), text: '', to: 'n2' }, { id: oid(), text: '', to: 'n3' }] },
+          { id: 'n2', text: '', choices: [], outcome: 'good' },
+          { id: 'n3', text: '', choices: [], outcome: 'bad' },
+        ],
+      },
+    }),
+    defaultPrompt: 'Gestiona la conversación.',
+    defaultInstructions: 'Elige qué responder en cada momento. Puedes deshacer la última respuesta antes de llegar al final.',
+    since: '2026-10-28',
+  },
+  {
+    type: 'calculator',
+    icon: 'calculator',
+    description: 'Calcula un resultado a partir de unos datos; se corrige con un pequeño margen de redondeo.',
+    group: 'preguntar',
+    gradable: true,
+    supportsAttempts: true,
+    seed: () => ({
+      config: {
+        mode: 'challenge',
+        variables: [{ id: 'a', label: '', unit: '', value: 0 }],
+        results: [{ id: 'r', label: '', formula: 'a', unit: '', decimals: 2 }],
+      },
+    }),
+    defaultPrompt: 'Calcula el resultado a partir de los datos.',
+    defaultInstructions: 'Escribe el resultado (puedes usar coma decimal) y pulsa Comprobar.',
+    since: '2026-10-28',
   },
   {
     type: 'fill_blanks',

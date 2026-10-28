@@ -271,7 +271,14 @@ desplegable «Tipo de pantalla» queda como ajuste avanzado). Decisiones:
   Verdadero/Falso (variante de Pregunta). Glosario y bibliografía tampoco: son materiales
   únicos a nivel de curso (sección «Materiales» del árbol), no pantallas.
 - Las interacciones de las recetas se construyen con `Interaction.parse(...)` — los
-  defaults del esquema son la única fuente de verdad (no hay literales duplicados).
+  defaults del esquema son la única fuente de verdad (no hay literales duplicados). Los
+  tipos con estructura anidada (`scenario_steps`, `decision_tree`, `calculator`) usan
+  `makeRecipeInteraction`, que añade el `seed()` y los textos habituales del catálogo de
+  interacciones: vacíos no serían usables (un caso sin pasos, una conversación sin nodos).
+- **Etiqueta «Nueva»** (`.ed-new-badge`): una receta de pantalla o de interacción con
+  `since: 'AAAA-MM-DD'` la muestra junto al nombre durante `NEW_BADGE_DAYS` (30) días y
+  luego desaparece sola (`isNewSince`, `src/schema/newBadge.ts`). Sale en «Añadir
+  pantalla» y en el selector de tipo de interacción. Solo UI, no toca `course.json`.
 - `place?: (screens) => number` coloca la pantalla (portada al principio, objetivos tras
   la portada, resumen antes del test, test al final); para ello `addScreen` acepta un
   cuarto parámetro `atIndex` (si falta: tras `afterId` o al final).

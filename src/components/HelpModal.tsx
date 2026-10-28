@@ -428,6 +428,32 @@ const SECTIONS: Section[] = [
             acertado. El crucigrama, en cambio, sí lleva «Comprobar» e intentos, como una
             pregunta más.
           </li>
+          <li>
+            <strong>Caso por decisiones</strong> encadena varias decisiones sobre la misma
+            situación: el alumno ve una cada vez, responde una sola vez y lee el comentario
+            de su opción antes de seguir. Al final ve un resumen de aciertos; si puntúa, la
+            nota es proporcional a las decisiones acertadas.
+          </li>
+          <li>
+            <strong>Conversación ramificada</strong> se escribe como una lista de
+            «momentos»: lo que dice un personaje y las respuestas posibles, cada una con el
+            momento al que lleva (en el desplegable «Lleva a…», la opción «＋ Un momento
+            nuevo» lo crea y lo enlaza de una vez). Un momento sin respuestas es un final:
+            bueno, mejorable o neutro, con su comentario. El alumno puede deshacer su última
+            respuesta antes de llegar a un final; después puede volver a empezar para
+            explorar otros caminos, pero la nota la fija el primer final al que llegó. La
+            conversación empieza siempre en el primer momento y no admite bucles.
+          </li>
+          <li>
+            <strong>Reto numérico</strong> pide calcular resultados a partir de unos datos.
+            Cada dato lleva un nombre corto (por ejemplo, <code>peso</code>) que se usa en
+            las fórmulas (<code>peso * 0.5</code>; admite + − * / ^, paréntesis y round,
+            min, max, abs, sqrt, floor y ceil), y el editor muestra al momento el resultado
+            de cada fórmula. El alumno puede responder con coma decimal y se acepta un
+            pequeño margen de redondeo; al agotar los intentos ve la solución. En modo
+            «Calculadora» no hay nada que corregir: el alumno escribe sus propios datos y
+            ve los resultados, útil como herramienta de consulta.
+          </li>
         </ul>
       </>
     ),

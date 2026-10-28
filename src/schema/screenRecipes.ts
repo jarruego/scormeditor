@@ -1,5 +1,6 @@
 import type { InteractionType, Screen, ScreenInput, ScreenType } from './course.schema'
 import { Interaction } from './course.schema'
+import { interactionRecipe } from './interactionRecipes'
 import type { IconName } from '../components/Icon'
 import guideVideoUrl from '../assets/instrucciones/instrucciones-uso.mp4?url'
 import guidePosterUrl from '../assets/instrucciones/instrucciones-uso.jpg?url'
@@ -43,6 +44,17 @@ function newId(prefix: string): string {
 /** Interacción completa vía `Interaction.parse`: los defaults del esquema son la única fuente de verdad. */
 function makeInteraction(type: InteractionType, extra?: Partial<Interaction>): Interaction {
   return Interaction.parse({ id: newId('i'), type, ...extra })
+}
+
+/** Interacción con el estado inicial del catálogo (`seed`) y sus textos habituales:
+ *  los tipos con estructura anidada (pasos, nodos, fórmulas) no son usables vacíos. */
+function makeRecipeInteraction(type: InteractionType): Interaction {
+  const rec = interactionRecipe(type)
+  return makeInteraction(type, {
+    prompt: rec.defaultPrompt ?? '',
+    instructions: rec.defaultInstructions ?? '',
+    ...rec.seed?.(),
+  })
 }
 
 /** Índice tras la última pantalla cuyo tipo esté en `types` (0 si no hay ninguna). */
@@ -114,6 +126,8 @@ export type ScreenRecipe = {
    *  introducción del curso, antes de cualquier módulo). Sin `scope`, la
    *  receta vale para los tres. */
   scope?: 'unit' | 'module' | 'course'
+  /** Fecha ISO de publicación: muestra la etiqueta «Nueva» un tiempo (`newBadge.ts`). */
+  since?: string
 }
 
 export const SCREEN_RECIPES: ScreenRecipe[] = [
@@ -366,6 +380,36 @@ export const SCREEN_RECIPES: ScreenRecipe[] = [
     group: 'practica',
     type: 'content',
     extras: () => ({ interaction: makeInteraction('scenario_decision') }),
+  },
+  {
+    key: 'scenario-steps',
+    icon: 'steps',
+    label: 'Caso por decisiones',
+    description: 'Un caso que avanza paso a paso: una decisión en cada uno, con comentario y resumen final.',
+    group: 'practica',
+    type: 'content',
+    extras: () => ({ interaction: makeRecipeInteraction('scenario_steps') }),
+    since: '2026-10-28',
+  },
+  {
+    key: 'decision-tree',
+    icon: 'chat',
+    label: 'Conversación ramificada',
+    description: 'Diálogo con personajes: cada respuesta lleva a otra situación y a un final distinto.',
+    group: 'practica',
+    type: 'content',
+    extras: () => ({ interaction: makeRecipeInteraction('decision_tree') }),
+    since: '2026-10-28',
+  },
+  {
+    key: 'calculator',
+    icon: 'calculator',
+    label: 'Reto numérico',
+    description: 'Calcular un resultado (dosis, costes, ratios…) a partir de unos datos.',
+    group: 'practica',
+    type: 'content',
+    extras: () => ({ interaction: makeRecipeInteraction('calculator') }),
+    since: '2026-10-28',
   },
   {
     key: 'case',

@@ -1,10 +1,11 @@
-import type { Course, QuizQuestion, Screen, Unit, UnitTest } from '../schema/course.schema'
+import type { Course, InteractionOption, QuizQuestion, Screen, Unit, UnitTest } from '../schema/course.schema'
 import { allScreens, screenContainers, containerLabel } from '../schema/traverse'
 import { normalizeObjective } from './objectives'
 import { buildTranscript, contentHash, itemsOf, skipsItemNarration, skipsScreenNarration } from '../tts/buildTranscript'
 import { countFlaggedForReview } from '../schema/review'
 import { MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_TOTAL_BYTES, fmtBytes } from '../schema/attachments'
 import { getStateCodec } from '../scorm/stateCodec'
+import { CALC_ID_RE, CALC_RESERVED, computeResults, type CalcResult, type CalcVariable } from '../calc/formula'
 
 export type Severity = 'error' | 'warning' | 'info'
 
@@ -262,6 +263,51 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
       if (!String(c.image || '').trim()) add('PZ_NO_IMAGE', 'error', 'Puzzle sin imagen.')
       else if (!String(c.alt || '').trim()) add('IMG_NO_ALT', 'error', 'El puzzle no tiene texto alternativo (alt).')
     }
+    if (it.type === 'scenario_steps') {
+      const steps = (((it.config as any)?.steps || []) as { text?: string; options?: InteractionOption[] }[])
+      if (steps.length === 0) add('SS_EMPTY', 'error', 'Caso por decisiones sin ninguna decisión.')
+      steps.forEach((st, i) => {
+        const tag = `La decisión ${i + 1} del caso`
+        const opts = st.options || []
+        if (!String(st.text || '').trim()) add('SS_STEP_NO_TEXT', 'error', `${tag} no tiene situación ni pregunta.`)
+        if (opts.length < 2) add('SS_STEP_FEW_OPTIONS', 'error', `${tag} necesita al menos 2 opciones.`)
+        else if (!opts.some((o) => o.correct)) add('SS_STEP_NO_CORRECT', 'error', `${tag} no tiene ninguna opción correcta.`)
+        if (opts.some((o) => o.text.trim() && !String(o.feedback || '').trim()))
+          add('SS_NO_FEEDBACK', 'warning', `${tag} tiene opciones sin comentario: el alumno solo verá el feedback genérico.`)
+      })
+    }
+    if (it.type === 'decision_tree') {
+      for (const issue of checkDecisionTree((it.config as any) || {}, it.scored)) add(issue.code, issue.severity, issue.message)
+    }
+    if (it.type === 'calculator') {
+      const c = (it.config as any) || {}
+      const tool = c.mode === 'tool'
+      const vars = (c.variables || []) as CalcVariable[]
+      const results = (c.results || []) as CalcResult[]
+      if (results.length === 0) add('CALC_EMPTY', 'error', 'Reto numérico sin ningún resultado que calcular.')
+      const seen = new Set<string>()
+      for (const x of [...vars, ...results]) {
+        const id = String(x.id || '')
+        if (!CALC_ID_RE.test(id) || CALC_RESERVED.includes(id.toLowerCase()))
+          add('CALC_BAD_ID', 'error', `«${id || '(vacío)'}» no sirve como nombre en las fórmulas: usa letras sin tilde, números y _ (sin empezar por número ni usar round, min, max…).`)
+        else if (seen.has(id)) add('CALC_BAD_ID', 'error', `El nombre «${id}» está repetido: cada dato y resultado necesita uno distinto.`)
+        seen.add(id)
+      }
+      if (!tool) {
+        vars.forEach((v) => {
+          if (typeof v.value !== 'number' || !Number.isFinite(v.value))
+            add('CALC_NO_VALUE', 'error', `El dato «${v.label || v.id}» no tiene valor: en modo reto el curso da todos los datos.`)
+        })
+      }
+      // En la calculadora libre los valores los escribe el alumno: se comprueba
+      // la fórmula con valores de prueba (solo sintaxis y nombres).
+      const probe = tool ? vars.map((v) => ({ ...v, value: typeof v.value === 'number' ? v.value : 1 })) : vars
+      computeResults(probe, results).forEach((r, i) => {
+        if (r.error && !(r.error.startsWith('Falta el valor') && !tool))
+          add('CALC_FORMULA', 'error', `La fórmula de «${results[i].label || results[i].id}» no es válida: ${r.error}.`)
+      })
+      if (tool && it.scored) add('CALC_TOOL_SCORED', 'warning', 'La calculadora libre no tiene respuesta que corregir: no debería puntuar (scored: false).')
+    }
     if (it.type === 'flashcards') {
       if (((it.config as any)?.cards || []).length === 0)
         add('FC_EMPTY', 'error', 'Tarjetas de repaso sin tarjetas.')
@@ -269,6 +315,58 @@ function checkScreen(ctx: Ctx, s: Screen, loc: string) {
         add('FC_SCORED', 'warning', 'Las tarjetas de repaso son autoevaluación: no deberían puntuar (scored: false).')
     }
   }
+}
+
+// --- Conversación ramificada (decision_tree): el grafo de momentos ---------
+// Mismo criterio que el runtime: empieza en el primer nodo; una respuesta sin
+// destino existente no cuenta, y un nodo sin respuestas válidas es un final.
+type TreeCfg = {
+  characters?: { id: string }[]
+  nodes?: { id: string; speaker?: string; text?: string; choices?: { text?: string; to?: string }[]; outcome?: string }[]
+}
+export function checkDecisionTree(cfg: TreeCfg, scored: boolean): { code: string; severity: Severity; message: string }[] {
+  const out: { code: string; severity: Severity; message: string }[] = []
+  const add = (code: string, severity: Severity, message: string) => out.push({ code, severity, message })
+  const nodes = cfg.nodes || []
+  if (!nodes.length) {
+    add('DT_EMPTY', 'error', 'Conversación sin ningún momento.')
+    return out
+  }
+  const index = new Map(nodes.map((n, i) => [n.id, i]))
+  const chars = new Set((cfg.characters || []).map((c) => c.id))
+  const valid = (n: (typeof nodes)[number]) => (n.choices || []).filter((c) => c.to && index.has(c.to))
+  nodes.forEach((n, i) => {
+    const tag = `El momento ${i + 1} de la conversación`
+    const choices = n.choices || []
+    if (choices.length && !String(n.text || '').trim()) add('DT_NO_TEXT', 'error', `${tag} no tiene texto.`)
+    choices.forEach((c, k) => {
+      if (!String(c.text || '').trim()) add('DT_CHOICE_NO_TEXT', 'error', `${tag}: la respuesta ${k + 1} no tiene texto.`)
+      if (!c.to || !index.has(c.to)) add('DT_DANGLING', 'error', `${tag}: la respuesta ${k + 1} no lleva a ningún momento.`)
+    })
+    if (n.speaker && !chars.has(n.speaker)) add('DT_SPEAKER_MISSING', 'warning', `${tag} lo dice un personaje que ya no existe.`)
+  })
+  if (!valid(nodes[0]).length) add('DT_START_END', 'error', 'El primer momento de la conversación no tiene respuestas: la conversación no puede empezar.')
+  // Alcanzables desde el inicio + detección de ciclos (DFS con pila).
+  const state = new Map<string, 'open' | 'done'>()
+  let cycle = false
+  const visit = (id: string) => {
+    state.set(id, 'open')
+    for (const c of valid(nodes[index.get(id)!])) {
+      const st = state.get(c.to!)
+      if (st === 'open') cycle = true
+      else if (!st) visit(c.to!)
+    }
+    state.set(id, 'done')
+  }
+  visit(nodes[0].id)
+  if (cycle) add('DT_CYCLE', 'error', 'La conversación tiene un bucle: alguna respuesta vuelve a un momento anterior del mismo camino.')
+  const unreachable = nodes.map((n, i) => (state.has(n.id) ? 0 : i + 1)).filter(Boolean)
+  if (unreachable.length)
+    add('DT_UNREACHABLE', 'warning', `Ningún camino llega a ${unreachable.length === 1 ? 'el momento' : 'los momentos'} ${unreachable.join(', ')}.`)
+  const reachableEnds = nodes.filter((n) => state.has(n.id) && !valid(n).length)
+  if (scored && !reachableEnds.some((n) => n.outcome === 'good'))
+    add('DT_NO_GOOD_END', 'error', 'La conversación puntúa pero ningún camino lleva a un «Buen final»: nadie podría acertar.')
+  return out
 }
 
 // --- Reglas por pregunta de test (final o de unidad) -------------------------

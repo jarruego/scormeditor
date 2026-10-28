@@ -18,6 +18,7 @@
 import type { Interaction, InteractionOption } from '../../schema/course.schema'
 import type { ElpxComponent } from './types'
 import { esc, rich, stripInline, mdToHtml } from './mdToHtml'
+import { computeResults, type CalcResult, type CalcVariable } from '../../calc/formula'
 import { encodeDataGame, plainDataGame } from './datagame'
 import {
   MSGS_WORDSEARCH,
@@ -663,6 +664,55 @@ export function degradeToTextHtml(
       // El HTML a medida se conserva dentro de un aviso (queda editable en eXe).
       body += `<div>${String(cfg.html || '')}</div>`
       break
+    case 'scenario_steps':
+      if (cfg.scenario) body += mdToHtml(String(cfg.scenario), resolve)
+      body += ((cfg.steps as Array<Record<string, unknown>>) || [])
+        .map((st, i) =>
+          `<h4>Decisión ${i + 1}</h4>` + mdToHtml(String(st.text || ''), resolve) +
+          optionsList((st.options as InteractionOption[]) || []))
+        .join('')
+      break
+    case 'decision_tree': {
+      // Guion de la conversación: cada momento numerado, con sus respuestas y
+      // a qué momento llevan, o el tipo de final.
+      const nodes = (cfg.nodes as Array<Record<string, any>>) || []
+      const who = new Map(((cfg.characters as Array<Record<string, any>>) || []).map((c) => [String(c.id), String(c.name || '')]))
+      const num = new Map(nodes.map((n, i) => [String(n.id), i + 1]))
+      const ENDS: Record<string, string> = { good: '✔ Buen final', bad: '✖ Final mejorable', neutral: 'Final' }
+      body += nodes
+        .map((n, i) => {
+          const speaker = who.get(String(n.speaker || ''))
+          const choices = ((n.choices as Array<Record<string, any>>) || []).filter((c) => num.has(String(c.to)))
+          return `<h4>Momento ${i + 1}${speaker ? ` · ${esc(speaker)}` : ''}</h4>` +
+            mdToHtml(String(n.text || ''), resolve) +
+            (choices.length
+              ? `<ul>${choices.map((c) => `<li>${rich(String(c.text || ''))} → momento ${num.get(String(c.to))}</li>`).join('')}</ul>`
+              : `<p><strong>${ENDS[String(n.outcome)] || ENDS.neutral}</strong></p>` + mdToHtml(String(n.feedback || ''), resolve))
+        })
+        .join('')
+      break
+    }
+    case 'calculator': {
+      const vars = (cfg.variables as Array<Record<string, any>>) || []
+      const results = (cfg.results as Array<Record<string, any>>) || []
+      const sols = computeResults(vars as CalcVariable[], results as CalcResult[])
+      const unit = (u: unknown) => (u ? ` ${esc(String(u))}` : '')
+      if (vars.length) {
+        body += `<p><strong>Datos</strong></p><ul>${vars
+          .map((v) => `<li>${rich(String(v.label || v.id || ''))}${typeof v.value === 'number' ? `: ${v.value.toLocaleString('es-ES')}${unit(v.unit)}` : ''}</li>`)
+          .join('')}</ul>`
+      }
+      body += `<p><strong>${cfg.mode === 'tool' ? 'Resultados' : 'Se pide (con su solución)'}</strong></p><ul>${results
+        .map((r, i) => {
+          const v = sols[i]?.value
+          const sol = cfg.mode !== 'tool' && typeof v === 'number'
+            ? `: ${v.toLocaleString('es-ES', { maximumFractionDigits: Number(r.decimals ?? 2) })}${unit(r.unit)}`
+            : ''
+          return `<li>${rich(String(r.label || r.id || ''))}${sol} <em>(${esc(String(r.formula || ''))})</em></li>`
+        })
+        .join('')}</ul>`
+      break
+    }
     default:
       body += optionsList(it.options || [])
   }

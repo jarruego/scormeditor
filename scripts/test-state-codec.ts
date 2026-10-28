@@ -276,6 +276,16 @@ function synthDetail(type: string, it: AnyRec): AnyRec | null {
       const n = cols * rows
       return { order: Array.from({ length: n }, (_, i) => n - 1 - i), solved: false }
     }
+    case 'scenario_steps': {
+      const steps = (cfg.steps || []).filter((x: AnyRec) => (x.options || []).length)
+      if (!steps.length) return null
+      return { picks: steps.map((x: AnyRec, i: number) => (i === 0 ? x.options[1].id : null)), idx: 1, done: false }
+    }
+    case 'decision_tree':
+      return (cfg.nodes || []).length ? { path: [0, 1], first: 'bad' } : null
+    case 'calculator':
+      return cfg.mode === 'tool' ? { used: true }
+        : { values: (cfg.results || []).map((_: AnyRec, i: number) => (i ? '1,45' : '87')), correct: false, attempts: 1 }
     default:
       return null
   }
@@ -390,8 +400,49 @@ interactions.forEach((it, i) => {
       ok(Array.isArray(d.order) && d.order.length === it.interaction.config.cols * it.interaction.config.rows || true,
         `round-trip [${it.type}]: order no tiene la longitud esperada`)
       break
+    case 'scenario_steps': {
+      const first = it.interaction.config.steps[0]
+      ok(Array.isArray(d.picks) && d.picks[0] === first.options[1].id && d.picks[1] === null,
+        `round-trip [${it.type}]: picks no coinciden`)
+      ok(d.idx === 1 && d.done === false, `round-trip [${it.type}]: idx/done no coinciden`)
+      break
+    }
+    case 'decision_tree':
+      ok(deepEqual(d.path, [0, 1]) && d.first === 'bad', `round-trip [${it.type}]: path/first no coinciden`)
+      break
+    case 'calculator':
+      ok(deepEqual(d.values, ['87', '1,45']) && d.correct === false && d.attempts === 1,
+        `round-trip [${it.type}]: values/correct/attempts no coinciden`)
+      break
   }
 })
+
+// --- 4b) Round-trip directo de CADA interacción del demo -------------------
+// El round-trip de arriba deja a propósito una de cada tres pendientes (para
+// probar el estado '.'), así que algún tipo puede quedarse sin pasar por él.
+// Aquí cada interacción del demo codifica su detalle sintético por separado:
+// debe usar su codec compacto (modo '0', no el JSON genérico) y decodificarse.
+{
+  const { encodeDetail, decodeDetail } = StateCodec._internal
+  interactions.forEach((it) => {
+    const detail = synthDetail(it.type, it.interaction)
+    if (!detail) return
+    const enc: string = encodeDetail(it.type, detail, it.interaction)
+    ok(enc.charAt(0) === '0', `codec directo [${it.type}]: usa el fallback JSON en vez de su codec compacto`)
+    const dec = decodeDetail(it.type, enc, it.interaction)
+    ok(dec && typeof dec === 'object', `codec directo [${it.type}]: no se decodifica`)
+    if (it.type === 'scenario_steps') {
+      const first = it.interaction.config.steps[0]
+      ok(dec.picks[0] === first.options[1].id && dec.picks[1] === null && dec.idx === 1 && dec.done === false,
+        `codec directo [${it.type}]: picks/idx/done no coinciden`)
+    }
+    if (it.type === 'decision_tree') {
+      // Un recorrido que ya no encaja con el grafo actual conserva su prefijo válido.
+      const bad = decodeDetail(it.type, encodeDetail(it.type, { path: [0, 9, 0], first: null }, it.interaction), it.interaction)
+      ok(deepEqual(bad.path, [0]) && bad.first === null, `codec directo [${it.type}]: el prefijo válido no se conserva`)
+    }
+  })
+}
 
 // --- 5) Migración del formato antiguo (JSON por ids), sin pérdida ----------
 {
