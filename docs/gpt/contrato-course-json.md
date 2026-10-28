@@ -407,6 +407,24 @@ el editor pone icono y título automáticamente):
 - **Bloque personalizado** (cuando ninguno encaje):
   `::: custom | #color | icono | título` … `:::` (color en hex; p. ej.
   `::: custom | #7787BF | 📖 | Glosario`). Úsalo con moderación.
+- **Bloques con estructura** (misma sintaxis `::: tipo` … `:::`; dentro, markdown
+  normal que la carcasa maqueta como tarjetas o columnas):
+
+  | keyword | Resultado | Estructura que espera |
+  |---|---|---|
+  | `stats` | Cifras destacadas (una tarjeta por punto) | Lista `- `; la **negrita inicial** de cada punto es la cifra grande (`- **80 %** de las caídas ocurren en la habitación`). Lo que no es lista, entradilla |
+  | `compare` | Comparativa en columnas («vs» si son dos) | Cada encabezado `### ` abre una columna con lo que haya debajo; **2-3 columnas** |
+  | `dodont` | Qué hacer / qué evitar (✓ verde / ✗ rojo) | **Dos** `### `: el primero = qué hacer, el segundo = qué evitar; debajo de cada uno, su lista |
+
+  ```json
+  "student_text": "::: dodont\n### Qué hacer\n- Hablar con calma.\n- Escuchar sin interrumpir.\n### Qué evitar\n- Elevar el tono.\n- Prometer lo que no depende de ti.\n:::"
+  ```
+  Úsalos **solo cuando el fuente ya trae esa forma** (cifras sueltas que destacan, dos
+  o tres enfoques contrapuestos, listas de recomendaciones y errores): el texto sigue
+  siendo el del fuente (Regla Nº1), solo cambia la maquetación. Sin su estructura
+  (`stats` sin lista, `compare`/`dodont` con menos de dos `### `) se ven como un callout
+  normal: no se pierde texto, pero tampoco luce. Cuentan como callout a efectos de «no
+  dos del mismo tipo por pantalla».
 - Dentro de un callout vale markdown ligero (viñetas, negrita…). **No** anides un
   callout dentro de otro.
 - **El cuerpo del callout es contenido real** (la frase destacada del original), **nunca
@@ -563,7 +581,8 @@ Estructura común a TODAS:
   `sort_steps`, `single_choice`, `true_false`, `classification`,
   `scenario_decision`, `case_practice`, `hotspots`, `video`, `fill_blanks`,
   `timeline`, `flashcards`, `html_embed`, `image_cards`, `before_after`,
-  `word_search`, `crossword`, `hidden_image`, `az_quiz`, `puzzle`.
+  `word_search`, `crossword`, `hidden_image`, `az_quiz`, `puzzle`,
+  `scenario_steps`, `decision_tree`, `calculator`.
   **`reflection` NO está en esta lista**: es un tipo de
   *pantalla* (§3), no de interacción. Una reflexión se modela como pantalla
   `type: "reflection"` con `interaction: null`, o —si tiene tarea con
@@ -596,8 +615,8 @@ Estructura común a TODAS:
 - Reglas del validador para preguntas evaluables: deben tener **respuesta
   correcta** y **feedback** (acierto/error).
 - **No te preocupes del orden de las opciones**: la carcasa **baraja** al mostrar las
-  opciones de `single_choice`, `scenario_decision`, `match_pairs`/`classification`,
-  `sort_steps` y las preguntas del test (no `true_false`, que mantiene V/F). Escribe
+  opciones de `single_choice`, `scenario_decision`, `scenario_steps`,
+  `match_pairs`/`classification`, `sort_steps` y las preguntas del test (no `true_false`, que mantiene V/F). Escribe
   las opciones en el orden que te resulte natural (p. ej. la correcta primero, que
   facilita revisar); no intentes «aleatorizarlas» tú.
 
@@ -626,10 +645,14 @@ Para `true_false` usa dos opciones (Verdadero/Falso) con `correct`.
 > Para “emparejar” en 2 columnas, modela cada elemento de la columna derecha como
 > un `group` y cada elemento de la izquierda como `option` con su `group`.
 
-**`sort_steps`** — ordenar pasos. `config.steps` con `order` (1..n):
+**`sort_steps`** — ordenar pasos. `config.steps` con `order` (1..n) y `explanation`
+opcional por paso (por qué va en ese lugar). La explicación **solo se ve al quedar
+resuelta** la actividad (acierto o intentos agotados), junto a cada paso marcado ✔/✖
+con su posición correcta; antes no se muestra, así que puede razonar el orden sin
+desvelarlo. Ponla cuando el fuente explique el porqué de la secuencia:
 ```json
 "config": { "steps": [
-  { "id": "p1", "text": "Primer paso", "order": 1 },
+  { "id": "p1", "text": "Primer paso", "order": 1, "explanation": "Va primero porque…" },
   { "id": "p2", "text": "Segundo paso", "order": 2 }
 ] }
 ```
@@ -643,6 +666,93 @@ con `correct` y `feedback` por opción:
   { "id": "b", "text": "Ajustar el horario del apoyo.", "correct": true,  "feedback": "..." }
 ]
 ```
+
+**`scenario_steps`** — caso por decisiones (evaluable). Un mismo caso con **varias
+decisiones encadenadas**, una cada vez: en cada paso el alumno elige, ve en línea el
+comentario de su opción y pasa a la siguiente; al final, resumen «X/N». Una respuesta
+por paso (sin intentos) y **crédito parcial**: puntúa `points × aciertos/pasos`. Todo
+va en `config` (`options` de la raíz vacío). Cada paso con `text` (situación +
+pregunta), **≥2 opciones**, al menos una `correct: true` y **`feedback` en cada
+opción** (es el sentido del tipo; sin él el validador avisa `SS_NO_FEEDBACK`).
+`config.scenario` (opcional) presenta el caso. Las opciones se barajan solas:
+```json
+"config": {
+  "scenario": "Una persona usuaria se niega a ducharse esta mañana.",
+  "steps": [
+    { "id": "st1", "text": "Te dice que hoy no quiere. ¿Qué haces primero?", "options": [
+      { "id": "st1-a", "text": "Preguntarle con calma qué le ocurre.", "correct": true,  "feedback": "Bien: entender el motivo abre opciones." },
+      { "id": "st1-b", "text": "Insistir en que es la hora de la ducha.", "correct": false, "feedback": "Insistir suele aumentar la resistencia." }
+    ] },
+    { "id": "st2", "text": "Prefiere hacerlo por la tarde. ¿Cómo sigues?", "options": [
+      { "id": "st2-a", "text": "Ajustar el horario y anotarlo en su plan.", "correct": true,  "feedback": "Respetas su preferencia y lo dejas registrado." },
+      { "id": "st2-b", "text": "Dejarlo para mañana sin decir nada.", "correct": false, "feedback": "Sin registro, el equipo no sabrá del cambio." }
+    ] }
+  ]
+}
+```
+
+**`decision_tree`** — conversación ramificada (evaluable). Un diálogo con uno o más
+personajes en el que **cada respuesta lleva a un momento distinto** y el recorrido
+acaba en un final bueno, mejorable o neutro. `config.characters` (`id`, `name`,
+`role`) y `config.nodes`, cada momento con `id`, `speaker` (id de un personaje;
+opcional), `text` (lo que dice) y `choices` (`id`, `text`, `to` = id del momento al
+que lleva). Reglas del grafo:
+- **Empieza en el primer nodo** de la lista, que debe tener respuestas.
+- Un nodo **sin `choices`** es un **final**: lleva `outcome` (`"good"`, `"bad"` o
+  `"neutral"`) y `feedback` (comentario del final).
+- **Sin ciclos**: ninguna respuesta vuelve a un momento anterior del mismo camino.
+  Todo `to` apunta a un `id` existente y todo nodo debe ser alcanzable.
+- Si puntúa (`scored: true`), al menos un final `good` alcanzable; `correct` = el
+  **primer** final al que llega el alumno es `good` (puede deshacer antes del final y
+  repetir después, pero la nota la fija el primer final).
+- Tamaño manejable: **4-8 momentos, 2-3 respuestas por momento**.
+```json
+"config": {
+  "characters": [ { "id": "p1", "name": "Carmen", "role": "hija de una persona usuaria" } ],
+  "nodes": [
+    { "id": "n1", "speaker": "p1", "text": "Mi madre lleva dos días sin querer comer. ¿Qué le estáis haciendo?", "choices": [
+      { "id": "c1", "text": "Entiendo su preocupación. Cuénteme qué ha notado.", "to": "n2" },
+      { "id": "c2", "text": "Aquí hacemos las cosas bien, no se preocupe.", "to": "n3" }
+    ] },
+    { "id": "n2", "speaker": "p1", "text": "Gracias por escucharme. ¿Me tendréis al tanto?", "choices": [],
+      "outcome": "good", "feedback": "Validar la emoción antes de explicar baja la tensión." },
+    { "id": "n3", "speaker": "p1", "text": "Pues quiero hablar con la dirección.", "choices": [],
+      "outcome": "bad", "feedback": "Restar importancia a la queja la escala." }
+  ]
+}
+```
+
+**`calculator`** — reto numérico. Dos modos en `config.mode`:
+- `"challenge"` (evaluable, con Comprobar e intentos): el curso da **todos los datos**
+  (`value` numérico en cada variable) y el alumno escribe cada resultado. Admite coma
+  decimal y se corrige con margen de redondeo (media unidad del último decimal
+  pedido o 0,5 %).
+- `"tool"` (calculadora libre, informativa, **`scored: false`**): el alumno mete sus
+  propios datos (el `value` es solo valor inicial, opcional) y ve los resultados.
+
+`config.variables` (`id`, `label`, `unit`, `value`) y `config.results` (`id`,
+`label`, `formula`, `unit`, `decimals`). **Gramática de `formula`**: números con
+**punto** decimal, `+ - * / ^`, paréntesis, los `id` de las variables y de los
+resultados **anteriores** (se calculan en orden) y las funciones `round(x)` /
+`round(x, d)`, `min`, `max`, `abs`, `sqrt`, `floor`, `ceil`. Nada más (ni `%`, ni
+coma decimal, ni texto). Cada `id` cumple `^[A-Za-z_][A-Za-z0-9_]*$` (sin tildes, ñ
+ni espacios), no es un nombre de función y es **único** entre variables y resultados:
+```json
+"config": {
+  "mode": "challenge",
+  "variables": [
+    { "id": "peso", "label": "Peso de la persona", "unit": "kg", "value": 70 },
+    { "id": "dosis_kg", "label": "Dosis prescrita", "unit": "mg/kg", "value": 15 }
+  ],
+  "results": [
+    { "id": "dosis", "label": "Dosis total", "formula": "peso * dosis_kg", "unit": "mg", "decimals": 0 },
+    { "id": "dosis_g", "label": "En gramos", "formula": "dosis / 1000", "unit": "g", "decimals": 2 }
+  ]
+}
+```
+Solo cuando el contenido **ya pide calcular** (dosis, costes, ratios, tiempos,
+consumos): no fuerces un cálculo donde no lo hay. Los datos y el resultado salen del
+fuente (o de un supuesto coherente con él); comprueba el resultado tú mismo en Python.
 
 **`accordion` / `tabs`** — informativas (no evalúan; `scored: false`).
 `config.items` con `title` + `body`. El `body` debe tener **desarrollo real, claramente
@@ -685,6 +795,18 @@ desplegable cuyas opciones son todas las respuestas + `config.distractors`
 "config": {
   "text": "El paquete SCORM se sube a [[Moodle]] en formato [[ZIP]].",
   "distractors": ["PDF", "Wordpress"]
+}
+```
+**Respuesta escrita** (`config.mode: "type"`): el alumno **escribe** cada hueco en vez
+de elegirlo. Varias respuestas válidas con `|` dentro del hueco (`[[EPI|equipo de
+protección individual]]`); al corregir no cuentan mayúsculas, tildes ni espacios de
+más. **Sin `distractors`** en este modo. Úsalo para términos que el alumno debe
+recordar sin pista (no reconocer), con respuestas cortas e inequívocas. Sin `mode`
+(lo habitual) son desplegables y ahí `|` es texto literal:
+```json
+"config": {
+  "mode": "type",
+  "text": "Antes de mover a la persona, comprueba los [[frenos]] de la [[silla|silla de ruedas]]."
 }
 ```
 
@@ -821,7 +943,9 @@ con una `editor_note` describiendo el interactivo deseado y el autor lo montará
 
 > Tipos de tu GPT que NO existen aquí y su equivalencia:
 > `match_to_category` → `classification`; `classify` → `classification`;
-> `decision` → `scenario_decision`; `accordion_with_check` → `accordion`
+> `decision` → `scenario_decision`; `multi_step_case`/`case_steps` → `scenario_steps`;
+> `branching_scenario`/`dialogue`/`role_play` → `decision_tree`;
+> `numeric`/`calculation` → `calculator`; `accordion_with_check` → `accordion`
 > (informativo) **+** una `single_choice` aparte si quieres puntuarlo;
 > `reflection_note`/`open_reflection` → `case_practice` o pantalla `reflection`;
 > `checklist_acknowledgement`/`completion_acknowledgement` → **omitir** (la
@@ -940,7 +1064,12 @@ preguntas.
    recorrido»).
 3. Toda imagen (`kind="image"`) con `alt`.
 4. Todo vídeo con `transcript`; medios con voz (`has_voice:true`) con `tracks` VTT.
-5. Toda pregunta evaluable con **respuesta correcta** y **feedback**.
+5. Toda pregunta evaluable con **respuesta correcta** y **feedback**. En las prácticas
+   de varios pasos (§6): cada paso de `scenario_steps` con texto, ≥2 opciones, una
+   correcta y comentario por opción; `decision_tree` sin respuestas colgantes ni
+   ciclos, con el primer nodo con respuestas y, si puntúa, un final `good`
+   alcanzable; `calculator` con ids válidos y únicos, fórmulas de la gramática §6,
+   todos los datos con `value` en modo `challenge` y `scored: false` en modo `tool`.
 6. Toda pregunta de test con `learning_objective` **copiado literalmente** de un
    `objective` declarado en pantallas (la interacción no lleva este campo: evalúa el
    `objective` de su propia pantalla); cada objetivo declarado con al menos una
@@ -1035,7 +1164,7 @@ tener el dato en la fuente). Nunca entregues con errores de preflight: el usuari
 los verá igualmente al abrir el proyecto.
 
 ```python
-import json, zipfile, os, re, unicodedata
+import json, zipfile, os, re, unicodedata, math
 
 def validate_course(course: dict) -> list:
     """Preflight de las reglas §9 sobre el course.json ANTES de empaquetar.
@@ -1055,7 +1184,8 @@ def validate_course(course: dict) -> list:
                          "scenario_decision", "case_practice", "hotspots", "video",
                          "fill_blanks", "timeline", "flashcards", "html_embed",
                          "image_cards", "before_after", "word_search", "crossword",
-                         "hidden_image", "az_quiz", "puzzle"}
+                         "hidden_image", "az_quiz", "puzzle", "scenario_steps",
+                         "decision_tree", "calculator"}
     # "status" tiene un enum DISTINTO por nivel — "borrador" existe solo en pantalla.
     # Confundirlos (p. ej. copiar el status de una pantalla a su unidad) pasaba
     # inadvertido aquí y solo se veía al abrir el .scormproj en el editor real
@@ -1082,6 +1212,132 @@ def validate_course(course: dict) -> list:
             err(f"{where}: sin respuesta correcta")
         if not str(fb.get("correct", "")).strip() and not str(fb.get("incorrect", "")).strip():
             err(f"{where}: sin feedback de acierto/error")
+
+    def check_steps(c, w):  # scenario_steps (§6)
+        steps = c.get("steps") or []
+        if not steps: err(f"{w}: scenario_steps sin ninguna decisión (SS_EMPTY)")
+        for k, st in enumerate(steps, 1):
+            opts = st.get("options") or []
+            if not str(st.get("text", "")).strip():
+                err(f"{w}: decisión {k} sin situación ni pregunta (SS_STEP_NO_TEXT)")
+            if len(opts) < 2: err(f"{w}: decisión {k} con menos de 2 opciones (SS_STEP_FEW_OPTIONS)")
+            elif not any(o.get("correct") for o in opts):
+                err(f"{w}: decisión {k} sin opción correcta (SS_STEP_NO_CORRECT)")
+            if any(str(o.get("text", "")).strip() and not str(o.get("feedback", "")).strip() for o in opts):
+                warn(f"{w}: decisión {k} con opciones sin feedback (SS_NO_FEEDBACK)")
+
+    def check_tree(c, scored, w):  # decision_tree (§6): mismo criterio que el editor
+        nodes = c.get("nodes") or []
+        if not nodes: return err(f"{w}: decision_tree sin ningún momento (DT_EMPTY)")
+        idx = {n.get("id"): n for n in nodes}
+        chars = {p.get("id") for p in c.get("characters") or []}
+        valid = lambda n: [x for x in n.get("choices") or [] if x.get("to") in idx]
+        for k, n in enumerate(nodes, 1):
+            ch = n.get("choices") or []
+            if ch and not str(n.get("text", "")).strip(): err(f"{w}: momento {k} sin texto (DT_NO_TEXT)")
+            for j, x in enumerate(ch, 1):
+                if not str(x.get("text", "")).strip():
+                    err(f"{w}: momento {k}, respuesta {j} sin texto (DT_CHOICE_NO_TEXT)")
+                if x.get("to") not in idx:
+                    err(f"{w}: momento {k}, respuesta {j} no lleva a ningún momento (DT_DANGLING)")
+            if n.get("speaker") and n.get("speaker") not in chars:
+                warn(f"{w}: momento {k} con speaker que no está en characters (DT_SPEAKER_MISSING)")
+        if not valid(nodes[0]): err(f"{w}: el primer momento no tiene respuestas (DT_START_END)")
+        state, cycle = {}, [False]
+        def visit(i):  # alcanzables desde el inicio + detección de ciclos
+            state[i] = "open"
+            for x in valid(idx[i]):
+                if state.get(x["to"]) == "open": cycle[0] = True
+                elif x["to"] not in state: visit(x["to"])
+            state[i] = "done"
+        visit(nodes[0].get("id"))
+        if cycle[0]: err(f"{w}: la conversación tiene un bucle (DT_CYCLE)")
+        lost = [k for k, n in enumerate(nodes, 1) if n.get("id") not in state]
+        if lost: warn(f"{w}: ningún camino llega a los momentos {lost} (DT_UNREACHABLE)")
+        ends = [n for n in nodes if n.get("id") in state and not valid(n)]
+        if scored and not any(n.get("outcome") == "good" for n in ends):
+            err(f"{w}: puntúa pero ningún camino lleva a un final good (DT_NO_GOOD_END)")
+
+    CALC_ID = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+    CALC_FN = {"round": lambda x, d=0: math.floor(x * 10 ** d + 0.5) / 10 ** d,
+               "min": lambda *a: min(a), "max": lambda *a: max(a), "abs": abs,
+               "sqrt": math.sqrt, "floor": math.floor, "ceil": math.ceil}
+
+    def calc_eval(src, scope):  # misma gramática que el evaluador de la carcasa (§6)
+        toks = re.findall(r"\d+\.?\d*|\.\d+|[A-Za-z_][A-Za-z0-9_]*|\S", str(src or ""))
+        pos = [0]
+        peek = lambda: toks[pos[0]] if pos[0] < len(toks) else ""
+        def take():
+            t = peek(); pos[0] += 1; return t
+        def expr():
+            v = term()
+            while peek() in ("+", "-"):
+                op, r = take(), term(); v = v + r if op == "+" else v - r
+            return v
+        def term():
+            v = unary()
+            while peek() in ("*", "/"):
+                op, r = take(), unary(); v = v * r if op == "*" else v / r
+            return v
+        def unary():
+            if peek() == "-": take(); return -unary()
+            if peek() == "+": take(); return unary()
+            b = atom()
+            if peek() == "^": take(); return b ** unary()
+            return b
+        def atom():
+            t = take()
+            if not t: raise ValueError("fórmula incompleta")
+            if re.fullmatch(r"\d+\.?\d*|\.\d+", t): return float(t)
+            if CALC_ID.fullmatch(t):
+                if peek() == "(":
+                    if t.lower() not in CALC_FN: raise ValueError(f"función desconocida: {t}")
+                    take(); args = [expr()]
+                    while peek() == ",": take(); args.append(expr())
+                    if take() != ")": raise ValueError("falta un paréntesis de cierre")
+                    return CALC_FN[t.lower()](*args)
+                if t not in scope: raise ValueError(f"nombre desconocido: {t}")
+                if scope[t] is None: raise ValueError(f"falta el valor de {t}")
+                return scope[t]
+            if t == "(":
+                v = expr()
+                if take() != ")": raise ValueError("falta un paréntesis de cierre")
+                return v
+            raise ValueError(f"carácter inesperado: {t}")
+        v = expr()
+        if pos[0] < len(toks): raise ValueError(f"carácter inesperado: {peek()}")
+        if not isinstance(v, (int, float)) or not math.isfinite(v):
+            raise ValueError("el resultado no es un número válido")
+        return v
+
+    def check_calc(c, scored, w):  # calculator (§6)
+        tool = c.get("mode") == "tool"
+        variables, results = c.get("variables") or [], c.get("results") or []
+        if not results: err(f"{w}: calculator sin ningún resultado (CALC_EMPTY)")
+        seen = set()
+        for x in variables + results:
+            i = str(x.get("id") or "")
+            if not CALC_ID.fullmatch(i) or i.lower() in CALC_FN:
+                err(f"{w}: id «{i}» no vale en fórmulas — letras sin tilde, números y _, "
+                    "sin empezar por número ni usar round/min/max… (CALC_BAD_ID)")
+            elif i in seen: err(f"{w}: id «{i}» repetido entre datos y resultados (CALC_BAD_ID)")
+            seen.add(i)
+        scope = {}
+        for v in variables:
+            val = v.get("value")
+            ok = isinstance(val, (int, float)) and not isinstance(val, bool) and math.isfinite(val)
+            if not tool and not ok:
+                err(f"{w}: dato «{v.get('label') or v.get('id')}» sin value numérico "
+                    "(en modo challenge el curso da todos los datos) (CALC_NO_VALUE)")
+            scope[v.get("id")] = val if ok else (1 if tool else None)
+        for r in results:
+            try:
+                scope[r.get("id")] = calc_eval(r.get("formula"), scope)
+            except Exception as e:  # ZeroDivisionError, OverflowError, ValueError…
+                scope[r.get("id")] = None
+                if tool or not str(e).startswith("falta el valor"):
+                    err(f"{w}: fórmula de «{r.get('label') or r.get('id')}» no válida: {e} (CALC_FORMULA)")
+        if tool and scored: warn(f"{w}: calculadora libre (mode tool) con scored:true (CALC_TOOL_SCORED)")
 
     declared, evaluated = {}, set()
 
@@ -1126,6 +1382,10 @@ def validate_course(course: dict) -> list:
             if it.get("type") == "fill_blanks" and \
                     not re.findall(r"\[\[.+?\]\]", str((it.get("config") or {}).get("text", ""))):
                 err(f"{w}: fill_blanks sin ningún hueco [[respuesta]]")
+            cfg = it.get("config") or {}
+            if it.get("type") == "scenario_steps": check_steps(cfg, w)
+            if it.get("type") == "decision_tree": check_tree(cfg, it.get("scored"), w)
+            if it.get("type") == "calculator": check_calc(cfg, it.get("scored"), w)
 
     for m in course.get("modules") or []:
         uid(m.get("id"), "módulo")

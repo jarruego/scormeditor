@@ -648,7 +648,8 @@ Con esta forma, trata las reglas numeradas del prompt reforzado (más abajo) com
 >    aplicado cada 4-5, tipos variados, ninguna pantalla de más de ~800 caracteres sin
 >    interactividad informativa.
 > 8. Toda evaluable o pregunta directa en SU PROPIA pantalla, alternando todo el
->    repertorio (choice, V/F, huecos, parejas, clasificar, ordenar, escenario, caso).
+>    repertorio (choice, V/F, huecos, parejas, clasificar, ordenar, escenario, caso
+>    por decisiones, conversación, reto numérico si hay cálculo, caso).
 >    Cierre de cada unidad: Tarjetas de repaso + una lúdica (alterna entre unidades).
 >    Nunca hotspots, before_after, hidden_image, puzzle, vídeo interactivo ni
 >    html_embed.

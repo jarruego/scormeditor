@@ -69,7 +69,8 @@ Para **cada** tema, y **solo** ese tema (ver Regla Nº1 de la guía):
    contienen el texto fuente; ~1 de cada 3-4 pantallas) y, cada **4-5 pantallas**, una
    pantalla de checkpoint con una interactividad **aplicada en pantalla propia** (sin
    teoría: solo el enunciado), **alternando todo el repertorio evaluable** sin repetir
-   tipo dos veces seguidas. Cierra cada tema con `flashcards` **+ una lúdica**
+   tipo dos veces seguidas (incluidas las prácticas de varios pasos —
+   `scenario_steps`, `decision_tree`, `calculator`— donde el contenido las pida). Cierra cada tema con `flashcards` **+ una lúdica**
    (`word_search`/`crossword`/`az_quiz`, alternando entre temas, `scored: false`).
    Nunca `hotspots`/`before_after`/`hidden_image`/`puzzle`/`video`/`html_embed`
    (los añade el editor humano). Una interacción por pantalla, según el guion.
@@ -330,7 +331,8 @@ Si el GPT recibe una orden con esta forma, debe tratar las reglas numeradas como
 >    nunca con un corte mecánico de longitud: los caracteres son solo una alarma.
 > 8. Toda evaluable o pregunta directa en SU PROPIA pantalla (sin teoría en
 >    student_text), alternando todo el repertorio (choice, V/F, huecos, parejas,
->    clasificar, ordenar, escenario, caso). Cierre de cada tema: Tarjetas de repaso
+>    clasificar, ordenar, escenario, caso por decisiones, conversación, reto
+>    numérico si hay cálculo, caso). Cierre de cada tema: Tarjetas de repaso
 >    + una lúdica (sopa de letras / crucigrama / rosco, alterna entre temas).
 >    Nunca hotspots, before_after, hidden_image, puzzle, vídeo interactivo ni
 >    html_embed: esos los añade el editor humano desde SCORMEditor.

@@ -74,6 +74,7 @@ Se escribe igual, envolviendo el trozo de texto al que se refiere:
 | `{{tarjetas_volteables}}` | Tarjetas que se giran para mostrar el reverso | Parejas concepto↔definición, dato↔ejemplo (máx. 4) |
 | `{{linea_tiempo}}` | Cronología con hitos en orden | Evolución histórica, fases de un proceso |
 | `{{tarjetas_imagen}}` | Rejilla de tarjetas con imagen y título que abren un texto | Series de elementos con imagen propia (tendrás que añadir las imágenes después en el editor) |
+| `{{calculadora}}` | Calculadora en la que el alumno mete sus propios datos y ve el resultado | Cuando el procedimiento incluye un cálculo que conviene practicar con datos propios |
 
 **Para preguntar o poner a prueba (se puntúan)**
 
@@ -87,6 +88,9 @@ Se escribe igual, envolviendo el trozo de texto al que se refiere:
 | `{{ordenar}}` | Ordenar los pasos de un proceso |
 | `{{decision}}` | Un caso o situación donde el alumno decide qué hacer |
 | `{{caso_practico}}` | Un ejercicio práctico con su solución explicada |
+| `{{caso_decisiones}}` | Un caso con varias decisiones seguidas, cada una con su comentario |
+| `{{conversacion}}` | Un diálogo (con un familiar, una persona usuaria, un compañero…) en el que cada respuesta lleva a un desenlace distinto |
+| `{{reto_numerico}}` | Un cálculo con datos (dosis, costes, tiempos…) que el alumno debe resolver |
 
 **Para reflexionar (abierta, sin nota)**
 

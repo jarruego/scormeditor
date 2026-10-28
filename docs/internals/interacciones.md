@@ -460,8 +460,9 @@ la respuesta (`buildTranscript` los trata como evaluables). Los tres degradan a 
   identificadores, `round(x[,d]) min max abs sqrt floor ceil`) — nunca `eval`/`Function`
   (invariante anti-XSS), y solo funciones **propias** de la tabla (`hasOwnProperty`:
   `constructor(…)` no llega a `Function`). Copia deliberada en `src/calc/formula.ts` para
-  el editor (vista previa «= 87 min» y `CALC_FORMULA`): si cambia la gramática, cambiar
-  las dos. Cada resultado puede usar los anteriores.
+  el editor (vista previa «= 87 min» y `CALC_FORMULA`), y una tercera en Python en el
+  preflight `validate_course` del contrato del GPT (`docs/gpt/contrato-course-json.md`
+  §11): si cambia la gramática, cambiar las tres. Cada resultado puede usar los anteriores.
   - *Reto* (evaluable, Comprobar + `attempts`, feedback en modal): datos a la vista, el
     alumno escribe cada resultado. `parseUserNumber` admite coma decimal (y entonces el
     punto es de miles), espacios, € y %. Acierta si se desvía ≤ media unidad del último

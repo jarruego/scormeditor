@@ -41,7 +41,10 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
     guardas duros del esquema Zod — enums cerrados de pantalla/interacción (el GPT
     emitía `interaction.type: "reflection"`, que es tipo de pantalla) y `unit_id`
     obligatorio en `final_test`/`unit_tests`, errores que solo afloraban al abrir
-    el proyecto en el editor;
+    el proyecto en el editor; también replica los validadores por tipo de las
+    prácticas de varios pasos (`SS_*`, `DT_*` con el mismo recorrido del grafo,
+    `CALC_*` con un **evaluador de fórmulas en Python** — tercera copia de la
+    gramática de `evalFormula`/`src/calc/formula.ts`: si cambia, cambiar las tres);
     `build_scormproj` lo ejecuta y aborta con ERRORes, de modo que el GPT corrige en
     origen lo que antes solo afloraba al abrir el proyecto en el editor — idea tomada
     del flujo «valida y regenera con el error» de eXeLearning). **Manda en caso de
@@ -215,7 +218,19 @@ El contenido de los cursos **no se teclea a mano**: lo genera un **GPT de ChatGP
   → s05 pregunta). **Alternar todo el repertorio evaluable** (choice, V/F, huecos,
   parejas, clasificar, ordenar, escenario, caso) sin repetir tipo dos seguidos; ante
   la duda, un checkpoint de más (al usuario le es más fácil borrar/retocar en
-  SCORMEditor que crear). **Cierre de cada tema**: `flashcards` + una lúdica
+  SCORMEditor que crear). Las **prácticas de varios pasos** (`scenario_steps` caso
+  por decisiones, `decision_tree` conversación ramificada, `calculator` reto
+  numérico) entran en ese repertorio: son solo texto, así que el GPT **sí** las
+  genera (a diferencia de los tipos vetados), pero solo donde el contenido las pide
+  — caso con varias decisiones encadenadas; diálogo con un familiar/persona
+  usuaria/compañero con consecuencias (árbol pequeño: 4-8 momentos, 2-3 respuestas);
+  cálculo que el procedimiento ya trae (dosis, costes, ratios, tiempos), nunca
+  forzado — y como mucho uno o dos por tema. Igual de aditivos: `fill_blanks` con
+  `mode: "type"` (respuesta escrita sin pista, alternativas `[[a|b]]`) y
+  `explanation` por paso en `sort_steps`; y en `student_text`, los **bloques con
+  estructura** `::: stats`/`::: compare`/`::: dodont` (contrato §4.1), solo cuando el
+  fuente ya trae cifras destacadas, enfoques contrapuestos o «qué hacer/qué
+  evitar» — cambian la maquetación, no el texto (Regla Nº1). **Cierre de cada tema**: `flashcards` + una lúdica
   (`word_search`/`crossword`/`az_quiz`, alternando entre temas, `scored: false`) —
   ejemplo dorado s08-s09. **Tipos vetados al GPT** (reservados al editor humano:
   piden ajustar a mano imagen/medio/código): `hotspots`, `before_after`,

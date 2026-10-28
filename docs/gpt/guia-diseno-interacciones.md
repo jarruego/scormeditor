@@ -95,6 +95,12 @@ adivinar el «objetivo cognitivo»:
 | Proceso o secuencia de pasos | `sort_steps` (checkpoint) o `timeline` (informativa) |
 | Cronología / evolución histórica | `timeline` |
 | Caso o situación que admite decisión | `scenario_decision` (checkpoint) |
+| Caso aplicado con varias decisiones encadenadas (qué haces primero, y después…) | `scenario_steps` (checkpoint) |
+| Diálogo con un familiar, persona usuaria o compañero en el que la respuesta tiene consecuencias | `decision_tree` (checkpoint) |
+| Procedimiento con cálculo (dosis, costes, ratios, tiempos, consumos) | `calculator` `challenge` (checkpoint) o `tool` (informativa) |
+| Cifras o porcentajes que el fuente destaca | `::: stats` en `student_text` |
+| Dos o tres enfoques, modelos u opciones contrapuestos | `::: compare` en `student_text` |
+| Recomendaciones junto a errores que evitar | `::: dodont` en `student_text` |
 | Ejercicio/actividad propuesta en el fuente | pantalla propia `case_practice`/`reflection` |
 | Pares término→definición, concepto→ejemplo | `flip_cards` (≤4) o glosario |
 | Caja destacada del fuente | callout `::: tipo` dentro de la pantalla de su texto |
@@ -112,7 +118,8 @@ guion es barato; regenerar pantallas, no):
   pantallas), repartidos —no acumulados al final—, cada uno tras un bloque aplicable
   y **en pantalla propia** (fila propia del guion, sin teoría). **Alterna todo el
   repertorio** (`single_choice`, `true_false`, `fill_blanks`, `match_pairs`,
-  `classification`, `sort_steps`, `scenario_decision`, `case_practice`) sin repetir
+  `classification`, `sort_steps`, `scenario_decision`, `scenario_steps`,
+  `decision_tree`, `case_practice`, y `calculator` si hay cálculo) sin repetir
   tipo dos veces seguidas: decidir, clasificar u ordenar engancha y enseña más que
   reconocer una opción. Ante la duda, uno **de más** (borrar en SCORMEditor es fácil).
 - **Cierre de tema**: `flashcards` (repaso) **+ una lúdica** — `word_search`,
@@ -337,8 +344,8 @@ El ritmo se fija en el **guion** (ver arriba), no improvisando pantalla a pantal
 - **Informativas** (accordion/tabs/flip_cards/timeline) a razón de **~1 de cada 3-4
   pantallas de desarrollo**; nunca más de 3 seguidas de solo texto (**no las suprimas**
   en favor de micro-pantallas de texto).
-- **Aplicadas y evaluables** (`scenario_decision`, `classification`, `sort_steps`,
-  `single_choice`, `case_practice`) como **checkpoints repartidos a lo largo del tema,
+- **Aplicadas y evaluables** (`scenario_decision`, `scenario_steps`, `decision_tree`,
+  `classification`, `sort_steps`, `single_choice`, `case_practice`) como **checkpoints repartidos a lo largo del tema,
   uno cada 4-5 pantallas** de contenido. Es **obligatorio el reparto**: **NO las
   acumules al final**. Regla práctica: un tema de N pantallas lleva **al menos ⌈N/5⌉
   checkpoints** intercalados (un tema de 30 → ~6, hacia las pantallas 5, 10, 15, 20,
@@ -347,7 +354,8 @@ El ritmo se fija en el **guion** (ver arriba), no improvisando pantalla a pantal
   tras un bloque aplicable), **en pantalla propia** (sin teoría) y **alternando todo
   el repertorio evaluable** (`single_choice`, `true_false`, `fill_blanks`,
   `match_pairs`, `classification`, `sort_steps`, `scenario_decision`,
-  `case_practice`) sin repetir tipo dos veces seguidas — decidir/clasificar/ordenar
+  `scenario_steps`, `decision_tree`, `case_practice`, y `calculator` si hay cálculo)
+  sin repetir tipo dos veces seguidas — decidir/clasificar/ordenar
   antes que reconocer una opción. Ante la duda, genera un checkpoint **de más**: en
   SCORMEditor retocar o borrar es fácil; crear desde cero, no.
 - **Una sola interacción por pantalla** (contrato): el checkpoint es su propia
@@ -460,7 +468,14 @@ Pautas:
   observado; si no tienes el texto de la caja, no emitas la caja (el editor lo marca
   con el aviso `CALLOUT_EMPTY`).
 - Si un «Caso práctico» del documento admite una decisión, valora convertirlo en
-  interacción `scenario_decision` en vez de (o además de) un callout `case`.
+  interacción `scenario_decision` (o `scenario_steps` si encadena varias) en vez de
+  (o además de) un callout `case`.
+- **Bloques con estructura** (`::: stats`, `::: compare`, `::: dodont`, contrato
+  §4.1): cuando el fuente ya trae cifras que destacan, enfoques contrapuestos o una
+  lista de «qué hacer» frente a «qué evitar», vuélcalo en el bloque correspondiente
+  en vez de en párrafos o listas sueltas: el texto es el mismo (Regla Nº1), solo se
+  maqueta mejor y rompe un tramo de «solo texto». No inventes cifras ni fuerces la
+  oposición si el fuente no la plantea.
 - No abuses: 1–2 callouts por pantalla como mucho; si hay más, probablemente toque
   trocear la pantalla.
 
@@ -471,11 +486,14 @@ rápido para elegir el tipo:
 | Objetivo cognitivo | Interacción sugerida | Evalúa |
 |---|---|---|
 | Recordar/identificar | `single_choice`, `true_false` | Sí |
-| Recordar terminología en contexto | `fill_blanks` (huecos `[[...]]`) | Sí |
+| Recordar terminología en contexto | `fill_blanks` (huecos `[[...]]`; `mode: "type"` para escribir sin pista) | Sí |
 | Comprender relaciones | `match_pairs`, `classification` | Sí |
-| Ordenar un proceso | `sort_steps` | Sí |
+| Ordenar un proceso | `sort_steps` (con `explanation` por paso si el fuente da el porqué) | Sí |
 | Cronología / evolución por fases | `timeline` | No |
 | Aplicar a un caso / decidir | `scenario_decision`, `case_practice` | Sí / abierta |
+| Aplicar a un caso con varias decisiones seguidas | `scenario_steps` | Sí (parcial) |
+| Practicar una conversación difícil | `decision_tree` | Sí |
+| Aplicar un cálculo del procedimiento | `calculator` (`challenge`; `tool` = calculadora sin nota) | Sí / No |
 | Explorar información densa | `accordion`, `tabs`, `flip_cards` | No |
 | Repasar al cierre del tema | `flashcards` + una lúdica: `word_search`/`crossword`/`az_quiz` | No |
 
@@ -495,6 +513,30 @@ Reglas de oro:
   el humano los añade desde SCORMEditor si procede. Ojo a la distinción: los vídeos
   de YouTube del fuente **sí** van, pero como `visual_resource` `video_youtube`, no
   como interacción `video`.
+
+### Prácticas de varios pasos: cuándo sí y cuándo no
+`scenario_steps`, `decision_tree` y `calculator` son solo texto (sin imágenes ni
+código), así que **sí los generas** — forma exacta en el contrato §6. Son los
+checkpoints más ricos del repertorio, pero cuestan más de leer: úsalos donde el
+contenido los pide, no por variar.
+- **`scenario_steps` (caso por decisiones)**: el fuente plantea un caso aplicado
+  (protocolo, actuación ante una incidencia) con **varias decisiones encadenadas**.
+  2-5 pasos, cada uno con su situación y 2-4 opciones con comentario propio; puntúa
+  en proporción a los aciertos. Si el caso solo tiene una decisión,
+  `scenario_decision`.
+- **`decision_tree` (conversación ramificada)**: el contenido trata de **comunicarse**
+  con alguien (familiar, persona usuaria, compañero, superior) y la forma de responder
+  cambia el desenlace (acogida, queja, conflicto, mala noticia). Pequeño y legible:
+  **4-8 momentos, 2-3 respuestas por momento**, sin bucles, con al menos un final
+  bueno y algún final mejorable que explique por qué. Personajes con nombre y papel
+  verosímiles; las réplicas, breves y naturales.
+- **`calculator` (reto numérico)**: solo si el procedimiento **ya incluye un
+  cálculo** (dosis, costes, ratios, tiempos, consumos, plazos). Datos y fórmula salen
+  del fuente o de un supuesto coherente con él; comprueba el resultado en Python.
+  `mode: "tool"` (`scored: false`) cuando lo útil es que el alumno pruebe sus propios
+  datos. **No fuerces un cálculo** donde el contenido no lo tiene.
+- Cuentan como un checkpoint más para el ritmo y la alternancia (no dos seguidos del
+  mismo tipo). En un tema, como mucho uno o dos de estos tres: son intensos.
 
 ## De reflexión pasiva a actividad corregible
 Convierte «reflexiona sobre…» en algo accionable siempre que puedas:

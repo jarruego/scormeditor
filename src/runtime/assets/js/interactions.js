@@ -1056,7 +1056,8 @@
   // floor ceil. Lanza Error ante una fórmula mal escrita, un valor que falta o
   // un resultado no finito (división por cero). Duplicado a propósito en
   // src/calc/formula.ts (el runtime no comparte módulos con el editor): si
-  // cambia la gramática, cambiar los dos.
+  // cambia la gramática, cambiar los tres (y la copia en Python de
+  // validate_course, docs/gpt/contrato-course-json.md §11).
   var CALC_FN = {
     round: function (x, d) { var f = Math.pow(10, d || 0); return Math.round(x * f) / f; },
     min: Math.min, max: Math.max, abs: Math.abs, sqrt: Math.sqrt, floor: Math.floor, ceil: Math.ceil,

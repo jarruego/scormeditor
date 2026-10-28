@@ -3,7 +3,8 @@
  * (vista previa del resultado y validadores). Es una copia deliberada de
  * `evalFormula` de `src/runtime/assets/js/interactions.js` — el runtime es JS
  * plano sin build y no puede importar este módulo —, así que si cambia la
- * gramática hay que cambiar los dos. Descenso recursivo, sin `eval`:
+ * gramática hay que cambiar los tres (también la copia en Python del preflight
+ * `validate_course`, docs/gpt/contrato-course-json.md §11). Sin `eval`:
  * `+ - * / ^`, paréntesis, números con punto decimal, identificadores y las
  * funciones `round(x[, d]) min max abs sqrt floor ceil`.
  */

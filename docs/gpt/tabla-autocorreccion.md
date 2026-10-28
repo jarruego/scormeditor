@@ -75,7 +75,7 @@ informe de revisión.
 | `Q_NO_PROMPT` | ⛔ | Pregunta sin enunciado | Redáctalo a partir del contenido que evalúa | GPT |
 | `Q_NO_CORRECT` | ⛔ | Ninguna opción con `correct:true` (o, en `classification`/`match_pairs`, opciones sin `group`) | Marca la correcta; en clasificación, asigna a cada `option` su `group` | GPT |
 | `Q_NO_FEEDBACK` | ⛔ | `feedback.correct` e `incorrect` vacíos | Escribe ambos, pedagógicos: por qué es correcta / qué repasar. Nunca un «¡Bien!» vacío | GPT |
-| `FB_NO_BLANKS` | ⛔ | `fill_blanks` sin ningún hueco en `config.text` | Marca cada respuesta correcta entre dobles corchetes `[[respuesta]]` | GPT |
+| `FB_NO_BLANKS` | ⛔ | `fill_blanks` sin ningún hueco en `config.text` | Marca cada respuesta correcta entre dobles corchetes `[[respuesta]]` (en `mode:"type"`, alternativas válidas con `[[a\|b]]`) | GPT |
 | `TL_EMPTY` | ⛔ | `timeline` sin hitos | Añade `config.milestones` (`label`/`title`/`body`) con el contenido del fuente, o cambia el tipo | GPT |
 | `CP_NO_RUBRIC` | ⚠ | `case_practice` sin rúbrica | Añade `config.rubric` con criterios de autoevaluación verificables | GPT |
 | `FC_EMPTY` | ⛔ | `flashcards` sin tarjetas | Añade `config.cards` (`front`/`back`) con conceptos del tema, o elimina la interacción | GPT |
@@ -83,6 +83,30 @@ informe de revisión.
 | `IC_EMPTY` | ⛔ | `image_cards` sin tarjetas | Añade las `cards` (`alt`, `title`, `text`); `image` vacío + `editor_note` describiendo cada imagen | GPT |
 | `IC_NO_IMAGE` | ⛔ | Tarjeta de imagen sin `image` | **Esperado** si generaste el tipo: las imágenes las sube el editor humano. **No inventes rutas `assets/`** | Editor |
 | `IC_NO_TITLE` | ⛔ | `image_cards` con `show_cover_image:false` y una tarjeta sin `title` | Pon un `title` breve en cada tarjeta: es lo único que se ve en su portada | GPT |
+
+## Prácticas de varios pasos (caso por decisiones, conversación, reto numérico)
+
+| Código | Sev | Causa raíz | Corrección canónica | Quién |
+|---|:-:|---|---|:-:|
+| `SS_EMPTY` | ⛔ | `scenario_steps` sin ningún paso en `config.steps` | Añade las decisiones del caso (2-5 pasos encadenados, cada uno con su situación y opciones), o cámbialo a `scenario_decision` si el caso solo tiene una decisión | GPT |
+| `SS_STEP_NO_TEXT` | ⛔ | Un paso del caso sin `text` | Escribe la situación de ese momento y la pregunta («¿Qué haces?») a partir del fuente | GPT |
+| `SS_STEP_FEW_OPTIONS` | ⛔ | Un paso con menos de 2 opciones | Añade opciones plausibles hasta tener 2-4, con una sola claramente mejor | GPT |
+| `SS_STEP_NO_CORRECT` | ⛔ | Ningún `correct:true` en las opciones de un paso | Marca la opción que el fuente respalda como buena práctica | GPT |
+| `SS_NO_FEEDBACK` | ⚠ | Opciones de un paso sin `feedback` propio | Escribe el comentario de **cada** opción (por qué es adecuada o qué consecuencia tiene): es lo que el alumno lee antes de seguir | GPT |
+| `DT_EMPTY` | ⛔ | `decision_tree` sin `nodes` | Monta la conversación (4-8 momentos, 2-3 respuestas por momento, finales con `outcome`) o elimina la interacción | GPT |
+| `DT_NO_TEXT` | ⛔ | Un momento con respuestas pero sin `text` (lo que dice el personaje) | Redacta la intervención del personaje en ese momento | GPT |
+| `DT_CHOICE_NO_TEXT` | ⛔ | Una respuesta (`choices[]`) sin `text` | Escribe lo que diría el alumno, o elimina la respuesta | GPT |
+| `DT_DANGLING` | ⛔ | Una respuesta cuyo `to` no es el `id` de ningún momento | Apunta `to` a un momento existente, o crea el momento al que debe llevar | GPT |
+| `DT_START_END` | ⛔ | El primer nodo de `nodes` no tiene respuestas: la conversación acaba antes de empezar | Pon primero el momento de arranque (con `choices`); los finales, sin respuestas, van después | GPT |
+| `DT_CYCLE` | ⛔ | Una respuesta vuelve a un momento anterior del mismo camino | Rompe el bucle: en vez de volver atrás, crea un momento nuevo (p. ej. «reformula») que siga hacia un final | GPT |
+| `DT_NO_GOOD_END` | ⛔ | Puntúa (`scored:true`) y ningún final alcanzable tiene `outcome:"good"` | Marca `outcome:"good"` en el final que corresponde a la buena práctica (y que algún camino llegue a él), o pon `scored:false` | GPT |
+| `DT_UNREACHABLE` | ⚠ | Hay momentos a los que no lleva ningún camino desde el inicio | Enlázalos desde una respuesta (`to`) o elimínalos | GPT |
+| `DT_SPEAKER_MISSING` | ⚠ | Un `speaker` que no es el `id` de ningún personaje de `characters` | Corrige el `speaker` o añade el personaje (`id`, `name`, `role`) | GPT |
+| `CALC_EMPTY` | ⛔ | `calculator` sin `config.results` | Añade el resultado que se pide calcular (con su `formula`), o elimina la interacción si el contenido no pide un cálculo | GPT |
+| `CALC_BAD_ID` | ⛔ | Un `id` de dato o resultado no válido (tildes, ñ, espacios, empieza por número, es `round`/`min`/`max`/`abs`/`sqrt`/`floor`/`ceil`) o repetido | Renómbralo a `^[A-Za-z_][A-Za-z0-9_]*$`, único entre datos y resultados (`ano`, `dosis_kg`…), y actualiza las fórmulas que lo usan | GPT |
+| `CALC_NO_VALUE` | ⛔ | Modo `challenge` con algún dato sin `value` numérico | Pon el valor del dato (del fuente o de un supuesto coherente): en el reto el curso da todos los datos. Si los datos debe meterlos el alumno, es `mode:"tool"` | GPT |
+| `CALC_FORMULA` | ⛔ | Una `formula` no se puede calcular: sintaxis fuera de la gramática (`%`, coma decimal, `×`, texto), nombre desconocido o función inexistente | Reescríbela con `+ - * / ^`, paréntesis, punto decimal, los `id` existentes (y resultados anteriores) y las funciones permitidas; compruébala en Python | GPT |
+| `CALC_TOOL_SCORED` | ⚠ | Calculadora libre (`mode:"tool"`) con `scored:true` | Pon `scored:false`: no hay respuesta que corregir | GPT |
 
 ## Tipos reservados al editor humano
 

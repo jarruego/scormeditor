@@ -328,7 +328,8 @@ pantallas de desarrollo compartirán el mismo `objective`.
   variadas: alterna las informativas (`accordion`/`tabs`/`flip_cards`/`timeline`) y
   **todo el repertorio evaluable** (`single_choice`, `true_false`, `fill_blanks`,
   `match_pairs`, `classification`, `sort_steps`, `scenario_decision`,
-  `case_practice`) sin repetir tipo dos veces seguidas.
+  `scenario_steps`, `decision_tree`, `case_practice`, y `calculator` si el contenido
+  trae un cálculo) sin repetir tipo dos veces seguidas.
 - Fíjate en **s04→s05**: la teoría (con su imagen) y la pregunta van en pantallas
   **separadas** con el mismo `title`. Una evaluable nunca comparte pantalla con
   teoría.
@@ -351,5 +352,6 @@ pantallas de desarrollo compartirán el mismo `objective`.
 - Si una pantalla referencia una imagen pero no tienes el binario, pon
   `visual_resource.kind = "none"` y anótalo en `editor_notes`.
 - Para las formas concretas de `sort_steps`, `classification`, `match_pairs`,
-  `flip_cards`, `tabs`, `word_search`, `crossword` y `az_quiz`, consulta §6 del
-  contrato.
+  `flip_cards`, `tabs`, `word_search`, `crossword`, `az_quiz`, `scenario_steps`,
+  `decision_tree` y `calculator` (y de `fill_blanks` con respuesta escrita), consulta
+  §6 del contrato; para los bloques `::: stats`/`::: compare`/`::: dodont`, §4.1.

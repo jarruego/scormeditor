@@ -85,6 +85,7 @@ todo este texto, tal cual, es UNA pantalla — ni se parte ni se fusiona
 | `tarjetas_volteables` | `flip_cards` |
 | `linea_tiempo` | `timeline` |
 | `tarjetas_imagen` | `image_cards` (deja `image` vacío + `editor_note`: las imágenes las aporta el autor después) |
+| `calculadora` | `calculator` con `mode: "tool"` (el alumno mete sus datos y ve el resultado) |
 
 **Evaluables** (checkpoint, `scored: true`):
 
@@ -98,6 +99,9 @@ todo este texto, tal cual, es UNA pantalla — ni se parte ni se fusiona
 | `ordenar` | `sort_steps` |
 | `decision` | `scenario_decision` |
 | `caso_practico` | `case_practice` |
+| `caso_decisiones` | `scenario_steps` |
+| `conversacion` | `decision_tree` |
+| `reto_numerico` | `calculator` con `mode: "challenge"` |
 
 **Abierta** (sin puntuar, ver «De reflexión pasiva a actividad corregible» de la
 guía): `reflexion` → pantalla `reflection`, o `scenario_decision`/`case_practice` si
@@ -193,7 +197,16 @@ reconocible, el GPT lo usa **literal** en vez de inventarlo:
 - `{{huecos}}`: si el autor ya marca la palabra a ocultar con `[[palabra]]` (mismo
   marcador que usa el propio `course.json` para huecos, contrato §6), el GPT respeta
   esos huecos tal cual; si no hay ninguno, elige términos clave del bloque como
-  siempre.
+  siempre. Con la nota `{{huecos: escribir}}` el hueco se escribe en vez de elegirse
+  (`config.mode: "type"`), y `[[a|b]]` da varias respuestas válidas.
+- `{{caso_decisiones}}`: cada decisión como un `{{opcion_unica}}` literal (enunciado +
+  opciones `- `, la correcta con `*`), una tras otra en el orden del caso; el
+  comentario de cada opción, tras ` — ` en su misma línea si el autor lo escribe.
+- `{{reto_numerico}}`/`{{calculadora}}`: datos en líneas `Etiqueta = valor unidad` y
+  lo que se pide en `¿Etiqueta? = fórmula` si el autor ya da la operación; si no, el
+  GPT plantea la fórmula a partir del procedimiento del bloque (y la comprueba).
+- `{{conversacion}}`: sin mini-sintaxis; el GPT monta el árbol (contrato §6) a partir
+  del diálogo o la situación marcada.
 
 Si el bloque no sigue ninguna de estas convenciones, se comporta exactamente como un
 checkpoint automático: el GPT redacta todo a partir del texto marcado.

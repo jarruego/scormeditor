@@ -103,7 +103,10 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   arranca con contenido residual del epígrafe anterior (ni con un bloque que su
   `title` no anuncie); **no dos callouts del mismo
   tipo en una pantalla** (dos `::: important` juntos = dos pantallas fusionadas:
-  divide); **ningún callout vacío** (`::: tipo` sin cuerpo); el texto interno de una
+  divide); **ningún callout vacío** (`::: tipo` sin cuerpo); **bloques con
+  estructura** solo si el fuente ya tiene esa forma (`::: stats` cifras con la cifra en
+  negrita inicial de cada punto, `::: compare` 2-3 columnas con `### `, `::: dodont`
+  dos `### `: qué hacer / qué evitar; contrato §4.1); el texto interno de una
   infografía (rótulos, flechas «→») no se vuelca como párrafos sueltos;
   **enlaces del original preservados** como `[texto](url)`
   (`extract_text_markdown` ya captura las anotaciones del PDF; sin `target`, lo pone
@@ -152,7 +155,13 @@ Cada tema es SCO independiente: indícalo solo en campos internos (`subtitle`,
   **cierre de cada tema**: `flashcards` + una lúdica (`word_search`/`crossword`/
   `az_quiz`, alternando entre temas, `scored: false`); **tipos reservados al editor
   humano, nunca generados**: `hotspots`, `before_after`, `hidden_image`, `puzzle`,
-  `video` (vídeo interactivo) y `html_embed`;
+  `video` (vídeo interactivo) y `html_embed`; **prácticas de varios pasos sí**, solo
+  donde el contenido las pide: `scenario_steps` (caso con varias decisiones
+  encadenadas, comentario en cada opción), `decision_tree` (conversación con un
+  familiar/persona usuaria/compañero: 4-8 momentos, 2-3 respuestas, sin bucles, un
+  final `good` si puntúa) y `calculator` (solo si el procedimiento ya trae un cálculo;
+  en `challenge` todos los datos con `value`, fórmulas con la gramática del contrato
+  §6 comprobadas en Python; `tool` con `scored: false`);
   bibliografía **solo** en
   `bibliography[]` (la carcasa la muestra sola; sin pantalla «Referencias»), una
   entrada por referencia con **formato homogéneo** (`Autor/Entidad (año). Título.
